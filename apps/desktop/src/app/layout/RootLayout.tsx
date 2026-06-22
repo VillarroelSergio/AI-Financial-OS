@@ -14,7 +14,14 @@ import {
 } from "lucide-react";
 import { NavLink, Outlet } from "react-router-dom";
 
-const navItems = [
+interface NavItem {
+  to: string;
+  icon: typeof LayoutDashboard;
+  label: string;
+  end?: boolean;
+}
+
+const navItems: NavItem[] = [
   { to: "/", icon: LayoutDashboard, label: "Resumen", end: true },
   { to: "/spending", icon: TrendingDown, label: "Gastos" },
   { to: "/transactions", icon: ArrowLeftRight, label: "Movimientos" },
@@ -27,7 +34,7 @@ const navItems = [
   { to: "/insights", icon: Lightbulb, label: "Insights" },
   { to: "/assistant", icon: Bot, label: "Asistente" },
   { to: "/settings", icon: Settings, label: "Ajustes" },
-] as const;
+];
 
 export default function RootLayout() {
   return (
