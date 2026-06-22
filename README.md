@@ -26,7 +26,7 @@ O por separado:
 ```powershell
 # Backend
 cd backend
-uv run fastapi dev app/main.py
+uv run uvicorn app.main:app --reload
 
 # Desktop (en otra terminal)
 cd apps/desktop
