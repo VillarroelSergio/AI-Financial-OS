@@ -1,6 +1,20 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.modules.accounts.routes import router as accounts_router
+from app.modules.ai.routes import router as ai_router
+from app.modules.categories.routes import router as categories_router
+from app.modules.dashboard.routes import router as dashboard_router
+from app.modules.economic_data.routes import router as economic_data_router
+from app.modules.goals.routes import router as goals_router
+from app.modules.imports.routes import router as imports_router
+from app.modules.insights.routes import router as insights_router
+from app.modules.investments.routes import router as investments_router
+from app.modules.market_data.routes import router as market_data_router
+from app.modules.rag.routes import router as rag_router
+from app.modules.settings.routes import router as settings_router
+from app.modules.transactions.routes import router as transactions_router
+
 app = FastAPI(title="AI Financial OS", version="0.1.0")
 
 app.add_middleware(
@@ -19,3 +33,18 @@ app.add_middleware(
 @app.get("/health")
 def health() -> dict[str, str]:
     return {"status": "ok", "version": "0.1.0"}
+
+
+app.include_router(accounts_router, prefix="/api/accounts", tags=["accounts"])
+app.include_router(categories_router, prefix="/api/categories", tags=["categories"])
+app.include_router(transactions_router, prefix="/api/transactions", tags=["transactions"])
+app.include_router(imports_router, prefix="/api/imports", tags=["imports"])
+app.include_router(dashboard_router, prefix="/api/dashboard", tags=["dashboard"])
+app.include_router(investments_router, prefix="/api/investments", tags=["investments"])
+app.include_router(market_data_router, prefix="/api/markets", tags=["market_data"])
+app.include_router(economic_data_router, prefix="/api/economy", tags=["economic_data"])
+app.include_router(goals_router, prefix="/api/goals", tags=["goals"])
+app.include_router(insights_router, prefix="/api/insights", tags=["insights"])
+app.include_router(ai_router, prefix="/api/ai", tags=["ai"])
+app.include_router(rag_router, prefix="/api/rag", tags=["rag"])
+app.include_router(settings_router, prefix="/api/settings", tags=["settings"])
