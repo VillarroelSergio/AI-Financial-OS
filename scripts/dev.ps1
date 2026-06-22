@@ -3,7 +3,7 @@ $root = Split-Path $PSScriptRoot -Parent
 Write-Host "Iniciando AI Financial OS..." -ForegroundColor Cyan
 
 $backend = Start-Process -FilePath "uv" `
-    -ArgumentList "run", "fastapi", "dev", "app/main.py", "--port", "8000" `
+    -ArgumentList "run", "uvicorn", "app.main:app", "--reload", "--port", "8000" `
     -WorkingDirectory "$root\backend" `
     -PassThru `
     -NoNewWindow
