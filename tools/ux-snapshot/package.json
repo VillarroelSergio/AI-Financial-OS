@@ -1,0 +1,16 @@
+{
+  "name": "ux-snapshot",
+  "version": "1.0.0",
+  "description": "UX snapshot tool for AI Financial OS — generates Playwright screenshots with mock data",
+  "type": "module",
+  "scripts": {
+    "snapshots": "tsx run-ux-snapshots.ts",
+    "snapshots:headed": "tsx run-ux-snapshots.ts --headed",
+    "report": "tsx report.ts"
+  },
+  "devDependencies": {
+    "playwright": "^1.49.0",
+    "tsx": "^4.19.0",
+    "@types/node": "^22.0.0"
+  }
+}
