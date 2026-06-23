@@ -1,6 +1,6 @@
 import { chromium } from "playwright";
-import { spawn, type ChildProcess } from "child_process";
-import { mkdir, writeFile } from "fs/promises";
+import { spawn, execSync, type ChildProcess } from "child_process";
+import { mkdir, writeFile, readFile } from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
 import { snapshotRoutes, type SnapshotRoute } from "./snapshot-routes.js";
@@ -109,6 +109,13 @@ ${skipped.length > 0 ? `## Capturas omitidas (requieren interacción manual)\n\n
 async function main(): Promise<void> {
   const headed = process.argv.includes("--headed");
 
+  // Read app version from desktop package.json
+  const pkgRaw = await readFile(
+    path.join(PROJECT_ROOT, "apps", "desktop", "package.json"),
+    "utf-8",
+  );
+  const pkg = JSON.parse(pkgRaw) as { version: string };
+
   await mkdir(OUTPUT_DIR, { recursive: true });
 
   console.log("▶  Arrancando Vite con mock data…");
@@ -158,12 +165,23 @@ async function main(): Promise<void> {
     }
   } finally {
     await browser.close();
-    viteProc.kill();
+    const isWin = process.platform === "win32";
+    if (isWin && viteProc.pid != null) {
+      try {
+        execSync(`taskkill /F /T /PID ${viteProc.pid}`, { stdio: "ignore" });
+      } catch {
+        viteProc.kill();
+      }
+    } else {
+      viteProc.kill();
+    }
+    await new Promise<void>((r) => viteProc.once("close", r));
     console.log("✓  Navegador y Vite cerrados");
   }
 
   const metadata = {
-    generated_at: generatedAt,
+    generatedAt,
+    appVersion: pkg.version,
     viewport: VIEWPORT,
     base_url: BASE_URL,
     mock_data: true,
@@ -172,7 +190,7 @@ async function main(): Promise<void> {
 
   await writeFile(
     path.join(OUTPUT_DIR, "metadata.json"),
-    JSON.stringify(metadata, null, 2),
+    JSON.stringify(metadata, null, 2) + "\n",
   );
 
   await writeFile(

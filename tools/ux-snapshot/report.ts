@@ -15,7 +15,8 @@ interface ScreenshotMeta {
 }
 
 interface Metadata {
-  generated_at: string;
+  generatedAt: string;
+  appVersion: string;
   viewport: { width: number; height: number };
   screenshots: ScreenshotMeta[];
 }
@@ -25,7 +26,7 @@ async function main(): Promise<void> {
   try {
     raw = await readFile(METADATA_PATH, "utf-8");
   } catch {
-    console.error("❌ No se encontró metadata.json. Ejecuta primero: npm run ux:snapshots");
+    console.error("❌ No se encontró metadata.json. Ejecuta primero: npm run snapshots");
     process.exit(1);
   }
 
@@ -35,7 +36,7 @@ async function main(): Promise<void> {
 
   console.log("\n📊 UX Snapshot Report — AI Financial OS");
   console.log("─".repeat(50));
-  console.log(`Generado: ${meta.generated_at}`);
+  console.log(`Generado: ${meta.generatedAt}`);
   console.log(`Viewport: ${meta.viewport.width}×${meta.viewport.height}`);
   console.log(`Capturas: ${captured.length} ok / ${skipped.length} omitidas\n`);
 
