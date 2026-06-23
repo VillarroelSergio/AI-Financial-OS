@@ -50,3 +50,11 @@ npx tsc --noEmit
 ## Documentación
 
 Ver `docs/` para arquitectura, modelo de datos, contrato API y roadmap.
+
+
+Para usar la herramienta de capturas desde apps/desktop/:
+
+
+npm run ux:snapshots        # captura 8 rutas en headless
+npm run ux:snapshots:headed # ídem con navegador visible
+npm run ux:report           # muestra resumen de la última capt
