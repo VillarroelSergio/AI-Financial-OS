@@ -88,4 +88,20 @@ export const snapshotRoutes: SnapshotRoute[] = [
     description: "Configuración de la aplicación — idioma, moneda y tema",
     requiresInteraction: false,
   },
+  {
+    path: "/markets",
+    filename: "markets.png",
+    screenName: "Markets",
+    state: "mock_data",
+    description: "Market Watch con 36 activos en 8 categorías, tab Todos",
+    requiresInteraction: false,
+  },
+  {
+    path: "/markets",
+    filename: "markets-europa.png",
+    screenName: "Markets Europa",
+    state: "mock_data",
+    description: "Market Watch filtrado por categoría Europa",
+    requiresInteraction: false,
+  },
 ];
