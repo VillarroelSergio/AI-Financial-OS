@@ -7,7 +7,7 @@
 | 0 | Foundation | ✅ Completa | `e9f2fc9`..`ce21c51`, `20abbeb` |
 | 1 | Financial Core MVP | ✅ Completa | `8861adf` |
 | 2 | CSV Import Center | ✅ Completa | rama `feature/fase-2-import-center` |
-| 3 | Investments Basic | ⏳ Pendiente | — |
+| 3 | Investments Basic | ✅ Completa | `feature/fase-3-investments` |
 | 4 | Market Watch | ⏳ Pendiente | — |
 | 5 | Economic Intelligence | ⏳ Pendiente | — |
 | 6 | Local AI Assistant | ⏳ Pendiente | — |
@@ -29,6 +29,14 @@
 | TD-03 | `ChartCard` no existe como componente independiente — Recharts se usa directamente en `SpendingPage` | Bajo | Consistencia del design system |
 
 > Estas deudas no bloquean Fase 2, pero TD-02 debería resolverse antes de Fase 3 para evitar regresiones silenciosas.
+
+### Fase 3 — Investments Portfolio Tracker
+
+| # | Deuda | Impacto | Bloquea |
+|---|-------|---------|---------|
+| TD-04 | Conversión de divisas solo USD→EUR via yfinance `EURUSD=X` — otras divisas no soportadas | Medio | Multi-divisa en Fase 3+ |
+| TD-05 | Sin histórico de precios — solo precio actual cacheado | Bajo | Gráfica histórica en Fase 4 |
+| TD-06 | NAV de fondos Finizens siempre manual — sin proveedor automático | Bajo | No bloquea nada |
 
 ---
 

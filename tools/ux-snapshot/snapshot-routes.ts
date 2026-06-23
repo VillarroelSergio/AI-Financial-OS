@@ -28,8 +28,16 @@ export const snapshotRoutes: SnapshotRoute[] = [
     path: "/investments",
     filename: "investments.png",
     screenName: "Investments",
+    state: "mock_data",
+    description: "Portfolio tracker con TR stocks, Finizens funds y cuenta remunerada",
+    requiresInteraction: false,
+  },
+  {
+    path: "/investments",
+    filename: "investments-empty.png",
+    screenName: "Investments (empty)",
     state: "empty",
-    description: "Cartera de inversiones — estado inicial sin datos",
+    description: "Estado vacío sin posiciones registradas",
     requiresInteraction: false,
   },
   {
