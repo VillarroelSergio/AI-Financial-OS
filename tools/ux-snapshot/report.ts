@@ -37,6 +37,7 @@ async function main(): Promise<void> {
   console.log("\n📊 UX Snapshot Report — AI Financial OS");
   console.log("─".repeat(50));
   console.log(`Generado: ${meta.generatedAt}`);
+  console.log(`App version: ${meta.appVersion}`);
   console.log(`Viewport: ${meta.viewport.width}×${meta.viewport.height}`);
   console.log(`Capturas: ${captured.length} ok / ${skipped.length} omitidas\n`);
 

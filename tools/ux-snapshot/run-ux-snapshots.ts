@@ -179,6 +179,7 @@ async function main(): Promise<void> {
     console.log("✓  Navegador y Vite cerrados");
   }
 
+  // Note: key is `generatedAt` (camelCase), not `generated_at` (snake_case) as in the original plan spec.
   const metadata = {
     generatedAt,
     appVersion: pkg.version,
