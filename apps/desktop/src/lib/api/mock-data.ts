@@ -241,10 +241,10 @@ export const mockMarketQuotes: MarketQuote[] = [
   { symbol: "^FCHI", name: "CAC 40", category: "indices_eu", price: 7834.60, change_pct: 0.31, currency: "EUR", sparkline: makeSparkline(7810, 2.5), last_updated: "2026-06-23T10:00:00Z", market_open: true },
   { symbol: "^FTSE", name: "FTSE 100", category: "indices_eu", price: 8642.30, change_pct: -0.12, currency: "GBP", sparkline: makeSparkline(8660, -1.8), last_updated: "2026-06-23T10:00:00Z", market_open: true },
   // EEUU
-  { symbol: "^GSPC", name: "S&P 500", category: "indices_us", price: 5945.28, change_pct: 1.12, currency: "USD", sparkline: makeSparkline(5879, 6.6), last_updated: "2026-06-23T10:00:00Z", market_open: false },
-  { symbol: "^NDX", name: "Nasdaq 100", category: "indices_us", price: 21432.60, change_pct: 1.38, currency: "USD", sparkline: makeSparkline(21138, 29.4), last_updated: "2026-06-23T10:00:00Z", market_open: false },
-  { symbol: "^DJI", name: "Dow Jones", category: "indices_us", price: 43128.40, change_pct: 0.67, currency: "USD", sparkline: makeSparkline(42841, 28.7), last_updated: "2026-06-23T10:00:00Z", market_open: false },
-  { symbol: "^RUT", name: "Russell 2000", category: "indices_us", price: 2184.75, change_pct: 0.94, currency: "USD", sparkline: makeSparkline(2164, 2.1), last_updated: "2026-06-23T10:00:00Z", market_open: false },
+  { symbol: "^GSPC", name: "S&P 500", category: "indices_us", price: 5945.28, change_pct: 1.12, currency: "USD", sparkline: makeSparkline(5879, 6.6), last_updated: "2026-06-23T10:00:00Z", market_open: true },
+  { symbol: "^NDX", name: "Nasdaq 100", category: "indices_us", price: 21432.60, change_pct: 1.38, currency: "USD", sparkline: makeSparkline(21138, 29.4), last_updated: "2026-06-23T10:00:00Z", market_open: true },
+  { symbol: "^DJI", name: "Dow Jones", category: "indices_us", price: 43128.40, change_pct: 0.67, currency: "USD", sparkline: makeSparkline(42841, 28.7), last_updated: "2026-06-23T10:00:00Z", market_open: true },
+  { symbol: "^RUT", name: "Russell 2000", category: "indices_us", price: 2184.75, change_pct: 0.94, currency: "USD", sparkline: makeSparkline(2164, 2.1), last_updated: "2026-06-23T10:00:00Z", market_open: true },
   // Asia
   { symbol: "^N225", name: "Nikkei 225", category: "indices_asia", price: 38420.50, change_pct: -0.45, currency: "JPY", sparkline: makeSparkline(38595, -17.5), last_updated: "2026-06-23T06:00:00Z", market_open: false },
   { symbol: "^HSI", name: "Hang Seng", category: "indices_asia", price: 23145.80, change_pct: 0.82, currency: "HKD", sparkline: makeSparkline(22957, 18.9), last_updated: "2026-06-23T08:00:00Z", market_open: false },
