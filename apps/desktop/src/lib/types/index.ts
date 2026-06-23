@@ -104,3 +104,84 @@ export interface ImportBatch {
   id: string; source_name: string; source_type: string; file_name: string; status: ImportStatus;
   rows_total: number; rows_imported: number; rows_failed: number; created_at: string; completed_at: string | null;
 }
+
+export type AssetType = "stock" | "etf" | "fund" | "savings_account";
+export type PriceSource = "yfinance" | "manual";
+export type OperationType =
+  | "buy" | "sell" | "deposit" | "withdrawal"
+  | "dividend" | "interest" | "fee";
+
+export interface InvestmentAsset {
+  id: string;
+  name: string;
+  ticker: string | null;
+  isin: string | null;
+  asset_type: AssetType;
+  currency: string;
+  region: string | null;
+  sector: string | null;
+  price_source: PriceSource;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Holding {
+  id: string;
+  account_id: string;
+  asset_id: string;
+  quantity: string;
+  average_price: string;
+  current_price: string | null;
+  current_price_currency: string;
+  current_price_updated_at: string | null;
+  market_value: string | null;
+  interest_rate: string | null;
+  inception_date: string | null;
+  created_at: string;
+  updated_at: string;
+  asset: InvestmentAsset;
+}
+
+export interface HoldingEnriched extends Holding {
+  cost_basis: string;
+  return_absolute: string | null;
+  return_percent: number | null;
+  accrued_interest: string | null;
+}
+
+export interface InvestmentOperation {
+  id: string;
+  account_id: string;
+  asset_id: string;
+  date: string;
+  operation_type: OperationType;
+  quantity: string | null;
+  price: string | null;
+  amount: string;
+  currency: string;
+  fees: string;
+  source: string;
+  created_at: string;
+}
+
+export interface AccountSummary {
+  account_id: string;
+  value: string;
+  invested: string;
+}
+
+export interface InvestmentSummary {
+  total_value: string;
+  total_invested: string;
+  return_absolute: string;
+  return_percent: number;
+  currency: string;
+  by_account: AccountSummary[];
+  last_updated: string | null;
+}
+
+export interface PriceRefreshResult {
+  updated: number;
+  failed: string[];
+  needs_manual_nav: string[];
+}
