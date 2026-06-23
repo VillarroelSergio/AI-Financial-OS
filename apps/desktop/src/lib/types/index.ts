@@ -185,3 +185,26 @@ export interface PriceRefreshResult {
   failed: string[];
   needs_manual_nav: string[];
 }
+
+// Market Watch
+export type MarketCategory =
+  | "indices_eu"
+  | "indices_us"
+  | "indices_asia"
+  | "crypto"
+  | "fx"
+  | "bonds"
+  | "commodities"
+  | "volatility";
+
+export interface MarketQuote {
+  symbol: string;
+  name: string;
+  category: MarketCategory;
+  price: number | null;
+  change_pct: number | null;
+  currency: string;
+  sparkline: number[];
+  last_updated: string;
+  market_open: boolean;
+}
