@@ -87,3 +87,20 @@ export interface ApiErrorResponse {
     details: Record<string, unknown>;
   };
 }
+
+export interface ImportPreviewRow {
+  row_number: number; date: string; account: string; category: string; amount: string;
+  currency: string; description: string; status: "valid" | "invalid" | "duplicate";
+  errors: string[]; warnings: string[];
+}
+
+export interface ImportPreview {
+  import_batch_id: string; source_type: "monefy" | "generic_csv"; columns: string[];
+  rows_total: number; rows_valid: number; rows_invalid: number; warnings_count: number;
+  preview_rows: ImportPreviewRow[]; mapping: Record<string, string>;
+}
+
+export interface ImportBatch {
+  id: string; source_name: string; source_type: string; file_name: string; status: ImportStatus;
+  rows_total: number; rows_imported: number; rows_failed: number; created_at: string; completed_at: string | null;
+}

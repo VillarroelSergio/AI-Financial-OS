@@ -6,7 +6,7 @@
 |------|--------|--------|-----------|
 | 0 | Foundation | ✅ Completa | `e9f2fc9`..`ce21c51`, `20abbeb` |
 | 1 | Financial Core MVP | ✅ Completa | `8861adf` |
-| 2 | CSV Import Center | ⏳ Pendiente | — |
+| 2 | CSV Import Center | ✅ Completa | rama `feature/fase-2-import-center` |
 | 3 | Investments Basic | ⏳ Pendiente | — |
 | 4 | Market Watch | ⏳ Pendiente | — |
 | 5 | Economic Intelligence | ⏳ Pendiente | — |
@@ -103,7 +103,7 @@ El usuario puede crear cuentas, añadir movimientos manuales y ver métricas fin
 
 ---
 
-## Fase 2 — CSV Import Center ⏳
+## Fase 2 — CSV Import Center ✅
 
 ### Objetivo
 

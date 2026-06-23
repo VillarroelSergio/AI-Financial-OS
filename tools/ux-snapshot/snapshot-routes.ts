@@ -65,12 +65,12 @@ export const snapshotRoutes: SnapshotRoute[] = [
     requiresInteraction: false,
   },
   {
-    path: "/imports",
+    path: "/imports?demo=preview",
     filename: "imports-preview.png",
     screenName: "Imports (preview)",
-    state: "empty",
-    description: "Centro de importación — estado vacío (preview requiere interacción manual con archivo CSV real)",
-    requiresInteraction: true,
+    state: "preview_demo",
+    description: "Centro de importación — preview y validación con datos ficticios",
+    requiresInteraction: false,
   },
   {
     path: "/settings",
