@@ -141,7 +141,7 @@ El usuario puede importar el CSV de Monefy, revisar los movimientos, confirmar l
 
 ---
 
-## Fase 3 — Investments Basic ⏳
+## Fase 3 — Investments Basic ✅
 
 ### Objetivo
 
