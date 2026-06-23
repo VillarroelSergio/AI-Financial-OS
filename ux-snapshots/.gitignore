@@ -1,0 +1,7 @@
+# Generated screenshots — do not commit
+*.png
+metadata.json
+
+# Keep structure and context files
+!.gitignore
+!UX_REVIEW_CONTEXT.md

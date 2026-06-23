@@ -106,3 +106,48 @@ La interfaz debe transmitir:
 - Confianza.
 - Privacidad.
 - Modernidad.
+
+---
+
+## Herramienta UX Snapshots
+
+### Descripción
+
+`tools/ux-snapshot` genera capturas automáticas de las pantallas principales usando Playwright con mock data. Sirve para que Claude Code y otros agentes tengan contexto visual actualizado sin necesitar datos reales del usuario ni tener la app arrancada manualmente.
+
+### Comandos
+
+Desde `apps/desktop/`:
+
+```bash
+# Capturar todas las pantallas (headless)
+npm run ux:snapshots
+
+# Capturar con navegador visible (debug)
+npm run ux:snapshots:headed
+
+# Ver resumen del último run
+npm run ux:report
+```
+
+### Output
+
+- `ux-snapshots/latest/*.png` — Capturas estables por pantalla (1440×900)
+- `ux-snapshots/latest/metadata.json` — Fecha, viewport, ruta y estado de cada captura
+- `ux-snapshots/latest/UX_REVIEW_CONTEXT.md` — Contexto completo para revisión
+
+### Cómo funciona
+
+1. Arranca Vite en el puerto 1422 con `VITE_USE_MOCK_DATA=true`.
+2. La app React usa fixtures locales en vez de llamar al backend.
+3. Playwright navega a cada ruta y espera `[data-app-ready="true"]` en el DOM.
+4. Captura y guarda PNG con nombre estable.
+5. Genera metadata.json y UX_REVIEW_CONTEXT.md.
+
+### Añadir una nueva pantalla
+
+Editar `tools/ux-snapshot/snapshot-routes.ts` y añadir una entrada al array `snapshotRoutes`. Ver la sección correspondiente en `08_UX_UI_GUIDELINES.md`.
+
+### Datos mock
+
+Los fixtures están en `apps/desktop/src/lib/api/mock-data.ts`. Si añades un endpoint nuevo, añade su mock en `getMockResponse()`.

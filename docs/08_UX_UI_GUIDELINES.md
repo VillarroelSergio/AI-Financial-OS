@@ -183,3 +183,18 @@ Evitar:
 - “Compra ahora”.
 - “Alerta crítica” salvo errores reales.
 - “Garantizado”.
+
+---
+
+## UX Snapshots
+
+Toda nueva pantalla principal debe registrarse en `tools/ux-snapshot/snapshot-routes.ts` añadiendo una entrada al array `snapshotRoutes` con:
+
+- `path`: ruta de React Router (e.g. `”/markets”`)
+- `filename`: nombre estable del PNG (e.g. `”markets.png”`)
+- `screenName`: nombre legible (e.g. `”Markets”`)
+- `state`: `”mock_data”` si tiene datos, `”empty”` si es estado vacío
+- `description`: una línea describiendo qué muestra la pantalla
+- `requiresInteraction`: `true` solo si la captura requiere acción del usuario
+
+Si la pantalla consume datos del backend, también añadir los fixtures correspondientes en `apps/desktop/src/lib/api/mock-data.ts`.
