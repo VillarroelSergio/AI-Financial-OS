@@ -88,11 +88,11 @@ class HoldingOut(BaseModel):
 
     model_config = {"from_attributes": True}
 
-    @field_serializer("quantity", "average_price", "market_value", "cost_basis")
+    @field_serializer("quantity", "average_price", "cost_basis")
     def serialize_decimal_required(self, v: Decimal) -> str:
         return str(v)
 
-    @field_serializer("current_price", "interest_rate", "return_absolute", "accrued_interest")
+    @field_serializer("current_price", "interest_rate", "return_absolute", "accrued_interest", "market_value")
     def serialize_decimal_optional(self, v: Decimal | None) -> str | None:
         return str(v) if v is not None else None
 

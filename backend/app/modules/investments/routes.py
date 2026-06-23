@@ -55,6 +55,12 @@ def delete_asset(asset_id: str, db: Session = Depends(get_db)):
             status_code=404,
             detail={"error": {"code": "NOT_FOUND", "message": "Activo no encontrado", "details": {}}},
         )
+    dependent_count = db.query(Holding).filter(Holding.asset_id == asset_id).count()
+    if dependent_count > 0:
+        raise HTTPException(
+            status_code=409,
+            detail={"error": {"code": "CONFLICT", "message": "El activo tiene posiciones asociadas. Elimina las posiciones primero.", "details": {}}},
+        )
     db.delete(asset)
     db.commit()
 
@@ -147,7 +153,7 @@ def update_holding(holding_id: str, payload: HoldingUpdate, db: Session = Depend
     for field, value in payload.model_dump(exclude_none=True).items():
         setattr(holding, field, value)
     if payload.current_price is not None:
-        holding.market_value = holding.quantity * holding.current_price
+        holding.market_value = (holding.quantity * holding.current_price).quantize(Decimal("0.01"))
         holding.current_price_updated_at = datetime.now(timezone.utc)
     db.commit()
     db.refresh(holding)

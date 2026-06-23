@@ -36,7 +36,7 @@ export default function PositionsTabs({
     if (active === "tr")
       return trAccountIds.includes(h.account_id) && h.asset.asset_type !== "savings_account";
     if (active === "finizens") return finizensAccountIds.includes(h.account_id);
-    return ahorroAccountIds.includes(h.account_id) || h.asset.asset_type === "savings_account";
+    return ahorroAccountIds.includes(h.account_id);
   });
 
   const addLabel =
