@@ -1,3 +1,4 @@
+import logging
 import threading
 import time
 from dataclasses import dataclass
@@ -6,6 +7,8 @@ from datetime import datetime, timezone
 import yfinance as yf
 
 from app.modules.market_data.schemas import QuoteOut
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -63,7 +66,8 @@ ASSET_CATALOG: list[AssetConfig] = [
     AssetConfig("^VIX", "VIX", "volatility", "USD"),
 ]
 
-_cache: dict = {"quotes": [], "updated_at": None, "refreshing": False}
+_cache: dict = {"quotes": [], "updated_at": None}
+_refresh_lock = threading.Lock()
 CACHE_TTL = 15.0
 
 
@@ -99,7 +103,8 @@ def _fetch_quote(asset: AssetConfig) -> QuoteOut:
             last_updated=datetime.now(timezone.utc).isoformat(),
             market_open=market_open,
         )
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Failed to fetch {asset.symbol}: {e}")
         return QuoteOut(
             symbol=asset.symbol,
             name=asset.name,
@@ -114,22 +119,21 @@ def _fetch_quote(asset: AssetConfig) -> QuoteOut:
 
 
 def _refresh_cache() -> None:
-    if _cache["refreshing"]:
+    if not _refresh_lock.acquire(blocking=False):
         return
-    _cache["refreshing"] = True
     try:
         quotes = [_fetch_quote(asset) for asset in ASSET_CATALOG]
         _cache["quotes"] = [q.model_dump() for q in quotes]
         _cache["updated_at"] = time.time()
     finally:
-        _cache["refreshing"] = False
+        _refresh_lock.release()
 
 
 def get_quotes(category: str | None = None) -> list[dict]:
     now = time.time()
     is_stale = _cache["updated_at"] is None or (now - _cache["updated_at"]) > CACHE_TTL
 
-    if is_stale and not _cache["refreshing"]:
+    if is_stale and not _refresh_lock.locked():
         if _cache["quotes"]:
             threading.Thread(target=_refresh_cache, daemon=True).start()
         else:
