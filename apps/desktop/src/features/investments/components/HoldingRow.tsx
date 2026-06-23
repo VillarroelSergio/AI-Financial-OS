@@ -32,7 +32,7 @@ export default function HoldingRow({ holding }: HoldingRowProps) {
         </div>
         {pct !== null && (
           <span
-            className={`text-caption font-medium px-sm py-xs rounded-full min-w-[52px] text-center ${
+            className={`text-xs font-medium px-2 py-0.5 rounded-full ${
               isPositive
                 ? "bg-accent-teal/10 text-accent-teal"
                 : "bg-accent-danger/10 text-accent-danger"
