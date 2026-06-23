@@ -96,3 +96,73 @@ def test_holdings_savings_account_accrued_interest(client):
     h = r.json()
     assert h["accrued_interest"] is not None
     assert float(h["accrued_interest"]) > 0
+
+
+def test_price_refresh_updates_holdings(client, monkeypatch):
+    import app.modules.investments.price_service as ps
+
+    prices = {"AAPL": 192.5, "EURUSD=X": 1.08}
+
+    class MockFastInfo:
+        def __init__(self, ticker):
+            self.last_price = prices.get(ticker)
+
+    class MockTicker:
+        def __init__(self, ticker):
+            self.fast_info = MockFastInfo(ticker)
+
+    monkeypatch.setattr(ps.yf, "Ticker", MockTicker)
+
+    account = client.post("/api/accounts", json={
+        "name": "TR", "type": "broker", "currency": "EUR",
+    }).json()
+    asset = client.post("/api/investments/assets", json={
+        "name": "Apple", "ticker": "AAPL", "asset_type": "stock",
+        "currency": "USD", "price_source": "yfinance",
+    }).json()
+    holding = client.post("/api/investments/holdings", json={
+        "account_id": account["id"], "asset_id": asset["id"],
+        "quantity": "10", "average_price": "140.00",
+    }).json()
+
+    r = client.post("/api/investments/prices/refresh")
+    assert r.status_code == 200
+    data = r.json()
+    assert data["updated"] == 1
+    assert data["failed"] == []
+
+    holdings = client.get("/api/investments/holdings").json()
+    h = next(x for x in holdings if x["id"] == holding["id"])
+    assert float(h["current_price"]) == 192.5
+    expected_mv = round(10 * 192.5 / 1.08, 2)
+    assert abs(float(h["market_value"]) - expected_mv) < 0.05
+
+
+def test_price_refresh_marks_manual_assets(client, monkeypatch):
+    import app.modules.investments.price_service as ps
+
+    class MockFastInfo:
+        last_price = 576.19
+
+    class MockTicker:
+        def __init__(self, ticker):
+            self.fast_info = MockFastInfo()
+
+    monkeypatch.setattr(ps.yf, "Ticker", MockTicker)
+
+    account = client.post("/api/accounts", json={
+        "name": "Finizens", "type": "investment", "currency": "EUR",
+    }).json()
+    asset = client.post("/api/investments/assets", json={
+        "name": "Vanguard US 500", "asset_type": "fund",
+        "currency": "EUR", "price_source": "manual",
+    }).json()
+    client.post("/api/investments/holdings", json={
+        "account_id": account["id"], "asset_id": asset["id"],
+        "quantity": "4.59", "average_price": "420.00",
+    })
+
+    r = client.post("/api/investments/prices/refresh")
+    assert r.status_code == 200
+    data = r.json()
+    assert asset["id"] in data["needs_manual_nav"]
