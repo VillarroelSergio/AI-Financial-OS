@@ -1,6 +1,10 @@
+from contextlib import asynccontextmanager
+from collections.abc import AsyncGenerator
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.core.database import SessionLocal, create_tables
 from app.modules.accounts.routes import router as accounts_router
 from app.modules.ai.routes import router as ai_router
 from app.modules.categories.routes import router as categories_router
@@ -15,7 +19,21 @@ from app.modules.rag.routes import router as rag_router
 from app.modules.settings.routes import router as settings_router
 from app.modules.transactions.routes import router as transactions_router
 
-app = FastAPI(title="AI Financial OS", version="0.1.0")
+@asynccontextmanager
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    create_tables()
+    db = SessionLocal()
+    try:
+        from app.seeds.categories import seed_categories
+        from app.seeds.settings import seed_settings
+        seed_categories(db)
+        seed_settings(db)
+    finally:
+        db.close()
+    yield
+
+
+app = FastAPI(title="AI Financial OS", version="0.1.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,

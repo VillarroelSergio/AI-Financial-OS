@@ -31,3 +31,8 @@ def get_duckdb() -> Generator[duckdb.DuckDBPyConnection, None, None]:
         yield conn
     finally:
         conn.close()
+
+
+def create_tables() -> None:
+    import app.models  # noqa: F401 — registers models with Base
+    Base.metadata.create_all(bind=engine)
