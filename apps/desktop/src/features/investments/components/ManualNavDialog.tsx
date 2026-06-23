@@ -16,6 +16,12 @@ export default function ManualNavDialog({ open, holdings, onClose, onSuccess }: 
 
   if (!open || holdings.length === 0) return null;
 
+  const handleClose = () => {
+    setNavValues({});
+    setError(null);
+    onClose();
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
@@ -41,7 +47,7 @@ export default function ManualNavDialog({ open, holdings, onClose, onSuccess }: 
       <div className="bg-surface-elevated border border-hairline-dark rounded-xl p-2xl w-full max-w-md">
         <h2 className="text-heading-sm text-on-dark mb-xs">Actualizar NAV</h2>
         <p className="text-body-sm text-stone mb-xl">
-          Introduce el valor liquidativo actual de cada fondo. Consúltalo en el portal de tu gestora.
+          Introduce el valor liquidativo actual de cada fondo. Consúltalo en tu portal de Finizens.
         </p>
         <form onSubmit={handleSubmit} className="space-y-md">
           {holdings.map(h => (
@@ -62,7 +68,7 @@ export default function ManualNavDialog({ open, holdings, onClose, onSuccess }: 
           <div className="flex gap-md justify-end pt-sm">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className="px-lg py-sm rounded-md text-body-sm text-stone hover:text-on-dark transition-colors"
             >
               Ahora no

@@ -9,7 +9,7 @@ interface AddSavingsDialogProps {
 }
 
 export default function AddSavingsDialog({ open, accountId, onClose, onSuccess }: AddSavingsDialogProps) {
-  const [name, setName] = useState("");
+  const [name, setName] = useState("Cuenta Remunerada Trade Republic");
   const [saldo, setSaldo] = useState("");
   const [tae, setTae] = useState("");
   const [fechaInicio, setFechaInicio] = useState("");
@@ -19,7 +19,7 @@ export default function AddSavingsDialog({ open, accountId, onClose, onSuccess }
   if (!open) return null;
 
   const reset = () => {
-    setName("");
+    setName("Cuenta Remunerada Trade Republic");
     setSaldo("");
     setTae("");
     setFechaInicio("");
