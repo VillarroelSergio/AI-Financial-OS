@@ -66,5 +66,6 @@ class PriceService:
 
             result.updated += 1
 
+        result.needs_manual_nav = list(dict.fromkeys(result.needs_manual_nav))
         db.commit()
         return result
