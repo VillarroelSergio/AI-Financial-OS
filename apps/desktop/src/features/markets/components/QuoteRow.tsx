@@ -20,6 +20,7 @@ export default function QuoteRow({ quote }: Props) {
   const [flashClass, setFlashClass] = useState("");
 
   useEffect(() => {
+    let t: ReturnType<typeof setTimeout> | undefined;
     if (
       prevPrice.current !== null &&
       quote.price !== null &&
@@ -27,10 +28,10 @@ export default function QuoteRow({ quote }: Props) {
     ) {
       const cls = quote.price > prevPrice.current ? "flash-up" : "flash-down";
       setFlashClass(cls);
-      const t = setTimeout(() => setFlashClass(""), 400);
-      return () => clearTimeout(t);
+      t = setTimeout(() => setFlashClass(""), 300);
     }
     prevPrice.current = quote.price ?? null;
+    return () => clearTimeout(t);
   }, [quote.price]);
 
   const positive = (quote.change_pct ?? 0) >= 0;

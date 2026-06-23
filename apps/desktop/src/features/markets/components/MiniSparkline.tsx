@@ -7,8 +7,19 @@ interface Props {
 }
 
 export default function MiniSparkline({ sparkline, changePct }: Props) {
-  if (!sparkline.length) {
-    return <div className="w-[60px] h-6 bg-surface-elevated rounded" />;
+  if (!sparkline || sparkline.length < 2) {
+    return (
+      <LineChart width={60} height={24} data={[{ v: 0 }, { v: 0 }]}>
+        <Line
+          type="monotone"
+          dataKey="v"
+          stroke="#78716c"
+          dot={false}
+          strokeWidth={1.5}
+          isAnimationActive={false}
+        />
+      </LineChart>
+    );
   }
 
   const positive = (changePct ?? 0) >= 0;
