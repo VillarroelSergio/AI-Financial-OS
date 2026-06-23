@@ -38,7 +38,7 @@ const navItems: NavItem[] = [
 
 export default function RootLayout() {
   return (
-    <div className="flex h-full">
+    <div className="flex h-full" data-app-ready="true">
       <aside className="w-60 flex-shrink-0 bg-surface-deep border-r border-hairline-dark flex flex-col">
         <div className="h-14 flex items-center px-6 border-b border-hairline-dark">
           <span className="text-heading-sm text-on-dark font-semibold tracking-tight">
