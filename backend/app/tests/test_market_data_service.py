@@ -478,3 +478,34 @@ class TestRateLimiting:
         result = p.get_quote("AAPL", "AAPL", "Apple", "stock", "stocks_us", "USD")
         assert result.freshness_status == "error"
         fh_mod._call_times.clear()
+
+
+# ─── 10. RequestBudget tests ────────────────────────────────────────────────────
+
+from app.modules.market_data.budget import RequestBudget
+
+
+class TestRequestBudget:
+    def test_can_request_when_under_limit(self):
+        budget = RequestBudget(limits={"alphavantage": 400})
+        with patch.object(budget, "_count_today", return_value=100):
+            assert budget.can_request("alphavantage") is True
+
+    def test_cannot_request_when_at_limit(self):
+        budget = RequestBudget(limits={"alphavantage": 400})
+        with patch.object(budget, "_count_today", return_value=400):
+            assert budget.can_request("alphavantage") is False
+
+    def test_can_request_for_unlimited_provider(self):
+        budget = RequestBudget(limits={"alphavantage": 400})
+        # stooq has no limit — always allowed
+        assert budget.can_request("stooq") is True
+
+    def test_get_remaining(self):
+        budget = RequestBudget(limits={"twelvedata": 700})
+        with patch.object(budget, "_count_today", return_value=250):
+            assert budget.get_remaining("twelvedata") == 450
+
+    def test_get_remaining_unlimited_provider(self):
+        budget = RequestBudget(limits={})
+        assert budget.get_remaining("yahoo") == 9999
