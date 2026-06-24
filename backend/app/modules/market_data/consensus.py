@@ -160,8 +160,12 @@ class ConsensusEngine:
             selected_price = consensus_price
             selected_source = "consensus_median"
             method = "median"
-            warnings.append("provider_mismatch")
-            reason = f"Primary provider {primary_provider} not in valid set; using median"
+            # Only emit provider_mismatch if primary was discarded as outlier
+            if primary_provider in discarded:
+                warnings.append("provider_mismatch")
+                reason = f"Primary provider {primary_provider} discarded as outlier; using median"
+            else:
+                reason = f"Primary provider {primary_provider} not in valid set; using median"
 
         confidence = self._weighted_confidence(valid, asset_type, primary_provider)
 
