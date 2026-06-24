@@ -22,7 +22,7 @@ _last_call_lock = threading.Lock()
 _last_call_time: float = 0.0
 
 _SUPPORTED_ASSET_TYPES: set[str] = {
-    "index", "forex", "commodity", "volatility", "crypto",
+    "index", "forex", "commodity", "volatility", "crypto", "bond",
 }
 
 

@@ -54,7 +54,7 @@ class RequestBudget:
 
     def _count_today(self, provider: str) -> int:
         """Count log entries for provider since midnight UTC today."""
-        from app.modules.market_data.cache import _get_conn, _conn_lock
+        from app.modules.investments.market_data.cache import _get_conn, _conn_lock
         today_start = datetime.combine(date.today(), datetime.min.time()).replace(
             tzinfo=timezone.utc
         )

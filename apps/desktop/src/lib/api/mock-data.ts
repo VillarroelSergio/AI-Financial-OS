@@ -232,7 +232,18 @@ function makeSparkline(base: number, trend: number): number[] {
   });
 }
 
-export const mockMarketQuotes: MarketQuote[] = [
+const rawMockMarketQuotes: Array<
+  Omit<
+    MarketQuote,
+    | "change_absolute"
+    | "freshness_status"
+    | "source"
+    | "is_fallback"
+    | "is_stale"
+    | "warning"
+    | "confidence_score"
+  >
+> = [
   // Europa
   { symbol: "^IBEX", name: "IBEX 35", category: "indices_eu", price: 12843.50, change_pct: 0.73, currency: "EUR", sparkline: makeSparkline(12750, 9.3), last_updated: "2026-06-23T10:00:00Z", market_open: true },
   { symbol: "^STOXX50E", name: "Euro Stoxx 50", category: "indices_eu", price: 5312.80, change_pct: 0.45, currency: "EUR", sparkline: makeSparkline(5289, 2.4), last_updated: "2026-06-23T10:00:00Z", market_open: true },
@@ -278,6 +289,17 @@ export const mockMarketQuotes: MarketQuote[] = [
   // Volatilidad
   { symbol: "^VIX", name: "VIX", category: "volatility", price: 14.82, change_pct: -3.44, currency: "USD", sparkline: makeSparkline(15.35, -0.053), last_updated: "2026-06-23T10:00:00Z", market_open: false },
 ];
+
+export const mockMarketQuotes: MarketQuote[] = rawMockMarketQuotes.map((quote) => ({
+  ...quote,
+  change_absolute: null,
+  freshness_status: "delayed",
+  source: "mock",
+  is_fallback: false,
+  is_stale: false,
+  warning: null,
+  confidence_score: 1,
+}));
 
 export function getMockResponse<T>(path: string): T {
   const clean = path.split("?")[0];

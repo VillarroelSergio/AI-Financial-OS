@@ -6,7 +6,7 @@ Definir contratos iniciales entre frontend Tauri/React y backend FastAPI.
 
 ## Convenciones
 
-- Base URL local: `http://127.0.0.1:8000`.
+- Base URL local de desarrollo: `http://127.0.0.1:8010`.
 - JSON.
 - Fechas ISO.
 - Importes como string decimal en API si se requiere máxima precisión.

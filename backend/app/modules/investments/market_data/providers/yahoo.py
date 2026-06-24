@@ -39,12 +39,25 @@ class YahooFinanceProvider(MarketDataProvider):
             fast = ticker.fast_info
             price = fast.last_price
 
-            prev_close = fast.previous_close
+            # Use Yahoo's own regularMarketChange fields — same values shown on
+            # finance.yahoo.com. Avoids divergence from computing against previous_close
+            # which may reference a different session than what widgets display.
             change_absolute: Optional[float] = None
             change_percent: Optional[float] = None
-            if price is not None and prev_close and prev_close != 0:
-                change_absolute = round(float(price - prev_close), 6)
-                change_percent = round(float((price - prev_close) / prev_close * 100), 4)
+            try:
+                raw_change = getattr(fast, "regular_market_change", None)
+                raw_pct = getattr(fast, "regular_market_change_percent", None)
+                if raw_change is not None and raw_pct is not None:
+                    change_absolute = round(float(raw_change), 6)
+                    change_percent = round(float(raw_pct * 100), 4)
+            except Exception:
+                pass
+            # Fallback: compute manually from previous_close
+            if change_absolute is None:
+                prev_close = fast.previous_close
+                if price is not None and prev_close and prev_close != 0:
+                    change_absolute = round(float(price - prev_close), 6)
+                    change_percent = round(float((price - prev_close) / prev_close * 100), 4)
 
             try:
                 hist = ticker.history(period="1d", interval="5m")

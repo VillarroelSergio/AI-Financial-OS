@@ -7,11 +7,12 @@ Does NOT support: fundamentals.
 from __future__ import annotations
 
 import logging
-import os
 from datetime import datetime, timezone
 from typing import Optional
 
 import requests
+
+from app.core.config import settings
 
 from .base import MarketDataProvider, MarketQuoteInternal
 
@@ -30,7 +31,7 @@ class TwelveDataProvider(MarketDataProvider):
     requires_api_key = True
 
     def __init__(self) -> None:
-        self.api_key: Optional[str] = os.environ.get("TWELVEDATA_API_KEY") or ""
+        self.api_key: Optional[str] = settings.TWELVEDATA_API_KEY.strip()
         self.enabled: bool = bool(self.api_key)
 
     def supports(self, asset_type: str, symbol: str) -> bool:
@@ -165,7 +166,11 @@ class TwelveDataProvider(MarketDataProvider):
                 "provider_timeout", is_fallback,
             )
         except Exception as exc:
-            logger.warning("TwelveDataProvider error for %s: %s", provider_symbol, exc)
+            logger.warning(
+                "TwelveDataProvider error for %s: %s",
+                provider_symbol,
+                type(exc).__name__,
+            )
             return self._error_quote(
                 internal_symbol, provider_symbol, name, asset_type, category, currency,
                 f"provider_error: {exc}", is_fallback,

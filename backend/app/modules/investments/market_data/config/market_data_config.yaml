@@ -130,7 +130,7 @@ provider_weights:
 ##############################################################################
 request_budget:
   alphavantage:
-    daily_limit: 400     # free tier is 500; keep 100 margin
+    daily_limit: 20      # standard free tier ~25 req/day; conservative cap
   twelvedata:
     daily_limit: 700     # free tier is 800; keep 100 margin
   fmp:
@@ -140,11 +140,15 @@ request_budget:
 # Routing — orden de proveedores por tipo de activo
 ##############################################################################
 routing:
+  # Yahoo is primary for indices/bonds/volatility because stooq is currently
+  # blocked on this IP. stooq and finnhub kept as validators for cross-check
+  # when stooq becomes available again. last_resort: none lets Yahoo enter the
+  # regular fetch pool (instead of the last-resort guard) so is_fallback stays false.
   indices:
-    primary: stooq
-    validators: [twelvedata, finnhub]
-    budget_aware: [alphavantage]
-    last_resort: yahoo
+    primary: yahoo
+    validators: [stooq, finnhub, fmp]
+    budget_aware: []
+    last_resort: none
 
   stocks_us:
     primary: finnhub
@@ -153,40 +157,40 @@ routing:
     last_resort: yahoo
 
   stocks_europe:
-    primary: stooq
-    validators: [twelvedata, fmp]
+    primary: yahoo
+    validators: [stooq]
     budget_aware: []
-    last_resort: yahoo
+    last_resort: none
 
   forex:
     primary: twelvedata
-    validators: [finnhub, alphavantage]
+    validators: [finnhub]
     budget_aware: [alphavantage]
     last_resort: yahoo
 
   crypto:
     primary: finnhub
-    validators: [twelvedata, alphavantage]
+    validators: [twelvedata]
     budget_aware: [alphavantage]
     last_resort: yahoo
 
   commodity:
-    primary: twelvedata
-    validators: []
+    primary: yahoo
+    validators: [twelvedata]
     budget_aware: []
-    last_resort: yahoo
+    last_resort: none
 
   bond:
-    primary: stooq
-    validators: []
+    primary: yahoo
+    validators: [stooq, fmp]
     budget_aware: []
-    last_resort: yahoo
+    last_resort: none
 
   volatility:
-    primary: stooq
-    validators: []
+    primary: yahoo
+    validators: [stooq]
     budget_aware: []
-    last_resort: yahoo
+    last_resort: none
 
   historical_daily:
     primary: alphavantage
@@ -295,6 +299,7 @@ symbol_mappings:
       yahoo: "^GSPC"
       finnhub: "^GSPC"
       twelvedata: "SPX"
+      fmp: "^GSPC"
 
   "^NDX":
     name: "Nasdaq 100"
@@ -305,6 +310,7 @@ symbol_mappings:
       stooq: "^ndx"
       yahoo: "^NDX"
       twelvedata: "NDX"
+      fmp: "^NDX"
 
   "^DJI":
     name: "Dow Jones"
@@ -315,6 +321,7 @@ symbol_mappings:
       stooq: "^dji"
       yahoo: "^DJI"
       twelvedata: "DJI"
+      fmp: "^DJI"
 
   "^RUT":
     name: "Russell 2000"
@@ -325,6 +332,7 @@ symbol_mappings:
       stooq: "^rut"
       yahoo: "^RUT"
       twelvedata: "RUT"
+      fmp: "^RUT"
 
   # ─── Asia ──────────────────────────────────────────────────────────────────
   "^N225":
@@ -422,7 +430,6 @@ symbol_mappings:
       stooq: "eurusd"
       yahoo: "EURUSD=X"
       alphavantage: "EURUSD"
-      finnhub: "OANDA:EUR_USD"
       twelvedata: "EUR/USD"
 
   "EURGBP=X":
@@ -434,7 +441,6 @@ symbol_mappings:
       stooq: "eurgbp"
       yahoo: "EURGBP=X"
       alphavantage: "EURGBP"
-      finnhub: "OANDA:EUR_GBP"
       twelvedata: "EUR/GBP"
 
   "EURJPY=X":
@@ -490,6 +496,7 @@ symbol_mappings:
     providers:
       stooq: "10ys.us"
       yahoo: "^TNX"
+      fmp: "^TNX"
 
   "SXRM.DE":
     name: "Bund ETF (Alemania)"
@@ -498,6 +505,7 @@ symbol_mappings:
     currency: "EUR"
     providers:
       yahoo: "SXRM.DE"
+      fmp: "SXRM.DE"
 
   "IEGA.AS":
     name: "EU Gov Bond ETF"
@@ -506,6 +514,7 @@ symbol_mappings:
     currency: "EUR"
     providers:
       yahoo: "IEGA.AS"
+      fmp: "IEGA.AS"
 
   "^TYX":
     name: "Treasury EEUU 30Y"
@@ -513,7 +522,9 @@ symbol_mappings:
     asset_type: "bond"
     currency: "USD"
     providers:
+      stooq: "30ys.us"
       yahoo: "^TYX"
+      fmp: "^TYX"
 
   "^FVX":
     name: "Treasury EEUU 5Y"
@@ -521,7 +532,9 @@ symbol_mappings:
     asset_type: "bond"
     currency: "USD"
     providers:
+      stooq: "5ys.us"
       yahoo: "^FVX"
+      fmp: "^FVX"
 
   # ─── Materias primas ───────────────────────────────────────────────────────
   "GC=F":

@@ -6,13 +6,14 @@ Supports: stocks, forex, crypto, indices (via ETF proxies).
 from __future__ import annotations
 
 import logging
-import os
 import threading
 import time
 from datetime import datetime, timezone
 from typing import Optional
 
 import requests
+
+from app.core.config import settings
 
 from .base import MarketDataProvider, MarketQuoteInternal
 
@@ -49,7 +50,7 @@ class AlphaVantageProvider(MarketDataProvider):
     requires_api_key = True
 
     def __init__(self) -> None:
-        self.api_key: Optional[str] = os.environ.get("ALPHA_VANTAGE_API_KEY") or ""
+        self.api_key: Optional[str] = settings.ALPHA_VANTAGE_API_KEY.strip()
         self.enabled: bool = bool(self.api_key)
 
     def supports(self, asset_type: str, symbol: str) -> bool:
@@ -124,7 +125,11 @@ class AlphaVantageProvider(MarketDataProvider):
                 "AlphaVantage: timeout", is_fallback,
             )
         except Exception as exc:
-            logger.warning("AlphaVantageProvider error for %s: %s", provider_symbol, exc)
+            logger.warning(
+                "AlphaVantageProvider error for %s: %s",
+                provider_symbol,
+                type(exc).__name__,
+            )
             return self._error_quote(
                 internal_symbol, provider_symbol, name, asset_type, category, currency,
                 f"AlphaVantage: {exc}", is_fallback,

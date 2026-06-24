@@ -6,13 +6,14 @@ Supports: US stocks, forex (limited), crypto, company profiles, fundamentals.
 from __future__ import annotations
 
 import logging
-import os
 import threading
 import time
 from datetime import datetime, timezone
 from typing import Optional
 
 import requests
+
+from app.core.config import settings
 
 from .base import CompanyProfile, Fundamentals, MarketDataProvider, MarketQuoteInternal
 
@@ -46,7 +47,7 @@ class FinnhubProvider(MarketDataProvider):
     requires_api_key = True
 
     def __init__(self) -> None:
-        self.api_key: Optional[str] = os.environ.get("FINNHUB_API_KEY") or ""
+        self.api_key: Optional[str] = settings.FINNHUB_API_KEY.strip()
         self.enabled: bool = bool(self.api_key)
 
     def supports(self, asset_type: str, symbol: str) -> bool:
@@ -150,7 +151,7 @@ class FinnhubProvider(MarketDataProvider):
                 "Finnhub: timeout", is_fallback,
             )
         except Exception as exc:
-            logger.warning("FinnhubProvider error for %s: %s", provider_symbol, exc)
+            logger.warning("FinnhubProvider error for %s: %s", provider_symbol, type(exc).__name__)
             return self._error_quote(
                 internal_symbol, provider_symbol, name, asset_type, category, currency,
                 f"Finnhub: {exc}", is_fallback,

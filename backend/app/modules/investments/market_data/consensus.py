@@ -19,7 +19,7 @@ from typing import Optional
 
 import yaml
 
-from app.modules.market_data.providers.base import MarketQuoteInternal
+from app.modules.investments.market_data.providers.base import MarketQuoteInternal
 
 logger = logging.getLogger(__name__)
 

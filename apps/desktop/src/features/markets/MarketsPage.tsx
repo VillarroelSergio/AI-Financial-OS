@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { RefreshCw } from "lucide-react";
 import type { FreshnessStatus, MarketCategory, MarketQuote } from "@/lib/types";
 import { useMarkets } from "@/lib/hooks/useMarkets";
 import CategoryTabs from "./components/CategoryTabs";
@@ -68,13 +69,17 @@ function ErrorState({ message }: { message: string }) {
   );
 }
 
-function EmptyState() {
+function EmptyState({ noData }: { noData?: boolean }) {
   return (
     <div className="rounded-lg border border-hairline-dark bg-surface-elevated p-12 flex flex-col items-center text-center gap-3">
       <div className="w-10 h-10 rounded-full bg-surface-card flex items-center justify-center">
         <span className="text-stone text-lg">—</span>
       </div>
-      <p className="text-body-sm text-stone">No hay activos disponibles para esta categoría</p>
+      <p className="text-body-sm text-stone">
+        {noData
+          ? "Pulsa «Actualizar» para cargar los datos de mercado"
+          : "No hay activos disponibles para esta categoría"}
+      </p>
     </div>
   );
 }
@@ -106,19 +111,23 @@ function QuoteGroupPanel({ quotes, selectedSymbol, onSelect }: QuotesPanelProps)
 export default function MarketsPage() {
   const [activeCategory, setActiveCategory] = useState<MarketCategory | "all">("all");
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
-  const { quotes, loading, error, secondsSinceUpdate } = useMarkets(
-    activeCategory === "all" ? undefined : activeCategory
-  );
+  const { quotes, loading, error, secondsSinceUpdate, refreshing, refresh } = useMarkets();
+
+  // Client-side category filter — no extra fetches needed when switching tabs.
+  const visibleQuotes = activeCategory === "all"
+    ? quotes
+    : quotes.filter((q) => q.category === activeCategory);
 
   // TODO: open asset detail panel when selectedSymbol is set
   const handleSelectAsset = (symbol: string) => {
     setSelectedSymbol((prev) => (prev === symbol ? null : symbol));
   };
 
-  const hasData = !loading && !error && quotes.length > 0;
-  const isEmpty = !loading && !error && quotes.length === 0;
+  const hasData = !loading && !error && visibleQuotes.length > 0;
+  const isEmpty = !loading && !error && visibleQuotes.length === 0;
+  const isInitial = isEmpty && quotes.length === 0;
 
-  // Compute worst freshness across all quotes to drive LiveIndicator
+  // Compute worst freshness across all loaded quotes to drive LiveIndicator
   const freshnessStatus = useMemo<FreshnessStatus>(() => {
     if (!quotes.length) return "unknown";
     const priority: FreshnessStatus[] = [
@@ -141,8 +150,17 @@ export default function MarketsPage() {
             Seguimiento en tiempo real de índices, divisas, cripto, bonos y materias primas.
           </p>
         </div>
-        <div className="flex-shrink-0 pt-1">
+        <div className="flex items-center gap-3 flex-shrink-0 pt-1">
           <LiveIndicator secondsSinceUpdate={secondsSinceUpdate} freshnessStatus={freshnessStatus} />
+          <button
+            type="button"
+            onClick={refresh}
+            disabled={refreshing}
+            className="inline-flex items-center gap-2 rounded-md border border-hairline-dark bg-surface-elevated px-3 py-1.5 text-caption font-medium text-on-dark transition-colors hover:bg-surface-card disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
+            {refreshing ? "Actualizando..." : "Actualizar"}
+          </button>
         </div>
       </div>
 
@@ -152,14 +170,14 @@ export default function MarketsPage() {
       {/* States */}
       {loading && <LoadingSkeleton />}
       {error && !loading && <ErrorState message={error} />}
-      {isEmpty && <EmptyState />}
+      {isEmpty && <EmptyState noData={isInitial} />}
 
       {/* All categories grouped */}
       {hasData && activeCategory === "all" && (
         <div className="rounded-lg border border-hairline-dark bg-surface-elevated overflow-hidden">
           <TableHeader />
           {CATEGORY_ORDER.map((cat, catIdx) => {
-            const catQuotes = quotes.filter((q) => q.category === cat.key);
+            const catQuotes = visibleQuotes.filter((q) => q.category === cat.key);
             if (!catQuotes.length) return null;
             return (
               <div key={cat.key}>
@@ -188,7 +206,7 @@ export default function MarketsPage() {
       {/* Single category flat list */}
       {hasData && activeCategory !== "all" && (
         <QuoteGroupPanel
-          quotes={quotes}
+          quotes={visibleQuotes}
           selectedSymbol={selectedSymbol}
           onSelect={handleSelectAsset}
         />

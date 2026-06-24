@@ -6,13 +6,14 @@ Supports: stocks, ETFs, company profiles, fundamentals, ratios.
 from __future__ import annotations
 
 import logging
-import os
 import threading
 import time
 from datetime import datetime, timezone
 from typing import Optional
 
 import requests
+
+from app.core.config import settings
 
 from .base import CompanyProfile, Fundamentals, MarketDataProvider, MarketQuoteInternal
 
@@ -43,7 +44,7 @@ def _check_rate_limit() -> bool:
 
 
 _SUPPORTED_ASSET_TYPES: set[str] = {
-    "stock", "etf",
+    "stock", "etf", "index", "bond",
 }
 
 
@@ -52,7 +53,7 @@ class FMPProvider(MarketDataProvider):
     requires_api_key = True
 
     def __init__(self) -> None:
-        self.api_key: Optional[str] = os.environ.get("FMP_API_KEY") or ""
+        self.api_key: Optional[str] = settings.FMP_API_KEY.strip()
         self.enabled: bool = bool(self.api_key)
 
     def supports(self, asset_type: str, symbol: str) -> bool:
@@ -141,7 +142,7 @@ class FMPProvider(MarketDataProvider):
                 "FMP: timeout", is_fallback,
             )
         except Exception as exc:
-            logger.warning("FMPProvider error for %s: %s", provider_symbol, exc)
+            logger.warning("FMPProvider error for %s: %s", provider_symbol, type(exc).__name__)
             return self._error_quote(
                 internal_symbol, provider_symbol, name, asset_type, category, currency,
                 f"FMP: {exc}", is_fallback,

@@ -17,14 +17,26 @@ from pathlib import Path
 from typing import Optional
 
 import duckdb
+import pandas as pd
 
 from app.core.config import settings
-from app.modules.market_data.providers.base import MarketQuoteInternal
+from app.modules.investments.market_data.providers.base import MarketQuoteInternal
 
 logger = logging.getLogger(__name__)
 
 _conn: Optional[duckdb.DuckDBPyConnection] = None
 _conn_lock = threading.Lock()
+
+
+def _normalize_row(row: dict) -> dict:
+    """Convert every Pandas/DuckDB missing scalar back to a Python null."""
+    normalized = {}
+    for key, value in row.items():
+        try:
+            normalized[key] = None if pd.isna(value) else value
+        except (TypeError, ValueError):
+            normalized[key] = value
+    return normalized
 
 _DDL = """
 CREATE TABLE IF NOT EXISTS market_quotes_cache (
@@ -147,7 +159,7 @@ class MarketCache:
                 ).fetchdf()
             if rows.empty:
                 return None
-            row = rows.iloc[0].to_dict()
+            row = _normalize_row(rows.iloc[0].to_dict())
             # Deserialize sparkline JSON
             sparkline_raw = row.get("sparkline")
             row["sparkline"] = json.loads(sparkline_raw) if sparkline_raw else []
@@ -237,7 +249,7 @@ class MarketCache:
                     ).fetchdf()
             result = []
             for _, row in rows.iterrows():
-                d = row.to_dict()
+                d = _normalize_row(row.to_dict())
                 sparkline_raw = d.get("sparkline")
                 d["sparkline"] = json.loads(sparkline_raw) if sparkline_raw else []
                 result.append(d)

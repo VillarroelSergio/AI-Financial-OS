@@ -9,10 +9,11 @@ if (-not (Test-Path "$root\data")) {
     Write-Host "  Creado: data/" -ForegroundColor Gray
 }
 
-# .env
-if (-not (Test-Path "$root\.env")) {
-    Copy-Item "$root\.env.example" "$root\.env"
-    Write-Host "  Creado: .env desde .env.example" -ForegroundColor Gray
+# Backend .env. The backend starts with backend/ as its working directory,
+# which is also where pydantic-settings resolves env_file=".env".
+if (-not (Test-Path "$root\backend\.env")) {
+    Copy-Item "$root\.env.example" "$root\backend\.env"
+    Write-Host "  Creado: backend/.env desde .env.example" -ForegroundColor Gray
 }
 
 # Python

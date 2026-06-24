@@ -192,40 +192,40 @@ class TestYahooFinanceProvider:
 
 class TestOptionalProvidersWithoutApiKey:
     def test_alphavantage_disabled_without_key(self, monkeypatch):
-        monkeypatch.delenv("ALPHA_VANTAGE_API_KEY", raising=False)
+        monkeypatch.setattr("app.core.config.settings.ALPHA_VANTAGE_API_KEY", "")
         p = AlphaVantageProvider()
         assert not p.enabled
 
     def test_alphavantage_supports_nothing_when_disabled(self, monkeypatch):
-        monkeypatch.delenv("ALPHA_VANTAGE_API_KEY", raising=False)
+        monkeypatch.setattr("app.core.config.settings.ALPHA_VANTAGE_API_KEY", "")
         p = AlphaVantageProvider()
         assert not p.supports("stock", "AAPL")
 
     def test_alphavantage_returns_error_quote_when_disabled(self, monkeypatch):
-        monkeypatch.delenv("ALPHA_VANTAGE_API_KEY", raising=False)
+        monkeypatch.setattr("app.core.config.settings.ALPHA_VANTAGE_API_KEY", "")
         p = AlphaVantageProvider()
         result = p.get_quote("AAPL", "AAPL", "Apple", "stock", "stocks_us", "USD")
         assert result.freshness_status == "error"
         assert result.price is None
 
     def test_finnhub_disabled_without_key(self, monkeypatch):
-        monkeypatch.delenv("FINNHUB_API_KEY", raising=False)
+        monkeypatch.setattr("app.core.config.settings.FINNHUB_API_KEY", "")
         p = FinnhubProvider()
         assert not p.enabled
 
     def test_finnhub_returns_error_quote_when_disabled(self, monkeypatch):
-        monkeypatch.delenv("FINNHUB_API_KEY", raising=False)
+        monkeypatch.setattr("app.core.config.settings.FINNHUB_API_KEY", "")
         p = FinnhubProvider()
         result = p.get_quote("AAPL", "AAPL", "Apple", "stock", "stocks_us", "USD")
         assert result.freshness_status == "error"
 
     def test_fmp_disabled_without_key(self, monkeypatch):
-        monkeypatch.delenv("FMP_API_KEY", raising=False)
+        monkeypatch.setattr("app.core.config.settings.FMP_API_KEY", "")
         p = FMPProvider()
         assert not p.enabled
 
     def test_fmp_returns_error_quote_when_disabled(self, monkeypatch):
-        monkeypatch.delenv("FMP_API_KEY", raising=False)
+        monkeypatch.setattr("app.core.config.settings.FMP_API_KEY", "")
         p = FMPProvider()
         result = p.get_quote("AAPL", "AAPL", "Apple", "stock", "stocks_us", "USD")
         assert result.freshness_status == "error"
@@ -485,7 +485,7 @@ class TestSymbolMappings:
 
 class TestRateLimiting:
     def test_alphavantage_rate_limit_returns_error(self, monkeypatch):
-        monkeypatch.setenv("ALPHA_VANTAGE_API_KEY", "testkey")
+        monkeypatch.setattr("app.core.config.settings.ALPHA_VANTAGE_API_KEY", "testkey")
         p = AlphaVantageProvider()
         # Exhaust the rate limit
         import time
@@ -499,7 +499,7 @@ class TestRateLimiting:
         av_mod._call_times.clear()
 
     def test_finnhub_rate_limit_returns_error(self, monkeypatch):
-        monkeypatch.setenv("FINNHUB_API_KEY", "testkey")
+        monkeypatch.setattr("app.core.config.settings.FINNHUB_API_KEY", "testkey")
         p = FinnhubProvider()
         import time
         import app.modules.market_data.providers.finnhub as fh_mod

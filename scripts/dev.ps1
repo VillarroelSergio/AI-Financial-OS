@@ -2,29 +2,31 @@ $ErrorActionPreference = "Stop"
 $root = Split-Path $PSScriptRoot -Parent
 $backend = $null
 $desktop = $null
+$backendPort = 8010
+$backendUrl = "http://127.0.0.1:$backendPort"
 
 Write-Host "Iniciando AI Financial OS..." -ForegroundColor Cyan
 
 try {
 try {
-    $health = Invoke-RestMethod "http://127.0.0.1:8000/health" -TimeoutSec 2
+    $health = Invoke-RestMethod "$backendUrl/health" -TimeoutSec 2
     if ($health.status -eq "ok") {
-        Write-Host "  Backend ya iniciado en http://127.0.0.1:8000" -ForegroundColor Green
+        Write-Host "  Backend ya iniciado en $backendUrl" -ForegroundColor Green
     }
 } catch {
-    $listener = Get-NetTCPConnection -LocalPort 8000 -State Listen -ErrorAction SilentlyContinue
+    $listener = Get-NetTCPConnection -LocalPort $backendPort -State Listen -ErrorAction SilentlyContinue
     if ($listener) {
-        throw "El puerto 8000 está ocupado por el proceso $($listener.OwningProcess)."
+        throw "El puerto $backendPort está ocupado por el proceso $($listener.OwningProcess)."
     }
 
     $uv = Get-Command "uv" -ErrorAction SilentlyContinue
     $venvPython = Join-Path $root "backend\.venv\Scripts\python.exe"
     if ($uv) {
         $backendCommand = $uv.Source
-        $backendArguments = @("run", "uvicorn", "app.main:app", "--reload", "--port", "8000")
+        $backendArguments = @("run", "uvicorn", "app.main:app", "--reload", "--port", "$backendPort")
     } elseif (Test-Path $venvPython) {
         $backendCommand = $venvPython
-        $backendArguments = @("-m", "uvicorn", "app.main:app", "--reload", "--port", "8000")
+        $backendArguments = @("-m", "uvicorn", "app.main:app", "--reload", "--port", "$backendPort")
     } else {
         throw "No se encontró uv ni backend\.venv. Ejecuta .\scripts\setup.ps1."
     }
@@ -33,7 +35,7 @@ try {
         -WorkingDirectory "$root\backend" -PassThru -NoNewWindow
     Start-Sleep -Seconds 2
     if ($backend.HasExited) { throw "El backend terminó durante el arranque." }
-    Write-Host "  Backend iniciado en http://127.0.0.1:8000" -ForegroundColor Green
+    Write-Host "  Backend iniciado en $backendUrl" -ForegroundColor Green
 }
 
 $npmCommand = if ($IsWindows -or $env:OS -eq "Windows_NT") { "npm.cmd" } else { "npm" }

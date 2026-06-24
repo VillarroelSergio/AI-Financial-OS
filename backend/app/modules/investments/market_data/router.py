@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import logging
 import threading
-import time
 from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError as FuturesTimeout
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -23,10 +22,10 @@ from typing import Optional
 
 import yaml
 
-from app.modules.market_data.budget import get_budget, RequestBudget
-from app.modules.market_data.cache import MarketCache
-from app.modules.market_data.consensus import ConsensusEngine
-from app.modules.market_data.providers import (
+from app.modules.investments.market_data.budget import get_budget, RequestBudget
+from app.modules.investments.market_data.cache import MarketCache
+from app.modules.investments.market_data.consensus import ConsensusEngine
+from app.modules.investments.market_data.providers import (
     AlphaVantageProvider,
     FinnhubProvider,
     FMPProvider,
@@ -124,12 +123,14 @@ class ProviderRouter:
     def catalog(self) -> list[AssetConfig]:
         return self._catalog
 
-    def get_quote(self, asset: AssetConfig) -> MarketQuoteInternal:
+    def get_quote(
+        self, asset: AssetConfig, *, force_refresh: bool = False
+    ) -> MarketQuoteInternal:
         ttl = _TTL.get(asset.asset_type, 900)
 
         # 1. Cache check
         cached_row = self._cache.get_quote(asset.internal_symbol)
-        if cached_row and self._is_cache_fresh(cached_row, ttl):
+        if not force_refresh and cached_row and self._is_cache_fresh(cached_row, ttl):
             return self._row_to_internal(cached_row, asset)
 
         # 2. Build provider pool (excluding Yahoo)
@@ -381,48 +382,35 @@ def get_router() -> ProviderRouter:
     return _router
 
 
-def _refresh_all(router: ProviderRouter) -> None:
+def _refresh_all(router: ProviderRouter, category: Optional[str] = None) -> bool:
     if not _refresh_lock.acquire(blocking=False):
-        return
+        return False
     try:
         for asset in router.catalog:
-            router.get_quote(asset)
+            if category and asset.category != category:
+                continue
+            router.get_quote(asset, force_refresh=True)
+        return True
     finally:
         _refresh_lock.release()
 
 
-_last_refresh: float = 0.0
-_MIN_REFRESH_INTERVAL = 10.0  # seconds
-
-
 def get_quotes(category: Optional[str] = None) -> list[dict]:
-    """Public API: return quotes for all assets, optionally filtered by category.
-
-    Drives background refresh when the global cache is stale.
-    """
-    global _last_refresh
+    """Return cached quotes only. This function never calls external providers."""
     router = get_router()
-
-    # Trigger background refresh if enough time has passed
-    now = time.monotonic()
-    if now - _last_refresh > _MIN_REFRESH_INTERVAL and not _refresh_lock.locked():
-        _last_refresh = now
-        cached = router._cache.get_all_quotes(category)
-        if cached:
-            # We have something cached — refresh in background
-            threading.Thread(target=_refresh_all, args=(router,), daemon=True).start()
-        else:
-            # First call — block until we have at least some data
-            _refresh_all(router)
-
-    # Return from DuckDB cache (may include stale data)
     rows = router._cache.get_all_quotes(category)
-    if not rows:
-        # Fallback: blocking fetch if cache is still empty
-        _refresh_all(router)
-        rows = router._cache.get_all_quotes(category)
-
     return [_quote_row_to_api_dict(r) for r in rows]
+
+
+def refresh_quotes(category: Optional[str] = None) -> Optional[list[dict]]:
+    """Explicitly refresh providers once, then return the updated cache.
+
+    Returns None when another manual refresh is already running.
+    """
+    router = get_router()
+    if not _refresh_all(router, category):
+        return None
+    return get_quotes(category)
 
 
 def _quote_row_to_api_dict(row: dict) -> dict:

@@ -14,7 +14,7 @@ from app.modules.goals.routes import router as goals_router
 from app.modules.imports.routes import router as imports_router
 from app.modules.insights.routes import router as insights_router
 from app.modules.investments.routes import router as investments_router
-from app.modules.market_data.routes import router as market_data_router
+from app.modules.investments.market_data.routes import router as market_data_router
 from app.modules.rag.routes import router as rag_router
 from app.modules.settings.routes import router as settings_router
 from app.modules.transactions.routes import router as transactions_router
