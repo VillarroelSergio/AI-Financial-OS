@@ -122,7 +122,12 @@ def _get_conn() -> duckdb.DuckDBPyConnection:
             if _conn is None:
                 db_path = Path(settings.DUCKDB_PATH)
                 db_path.parent.mkdir(parents=True, exist_ok=True)
-                _conn = duckdb.connect(str(db_path))
+                try:
+                    _conn = duckdb.connect(str(db_path))
+                except Exception:
+                    # Another process holds the file lock — fall back to in-memory DB
+                    logger.warning("DuckDB file locked, falling back to in-memory cache")
+                    _conn = duckdb.connect(":memory:")
                 _conn.execute(_CREATE_SEQ)
                 _conn.execute(_DDL)
     return _conn

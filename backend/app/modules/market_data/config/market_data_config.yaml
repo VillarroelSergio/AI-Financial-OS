@@ -15,10 +15,9 @@ providers:
 
   yahoo:
     enabled: true
-    priority: 99
+    priority: 1
     requires_api_key: false
-    fallback_only: true
-    description: "Fallback general. Dato no garantizado. Puede estar retrasado."
+    description: "Fuente principal. Sin API key. Cobertura universal."
 
   finnhub:
     enabled: true
@@ -52,51 +51,42 @@ providers:
 ##############################################################################
 routing:
   indices:
-    - stooq
+    - yahoo
     - finnhub
     - fmp
     - alphavantage
-    - yahoo
 
   stocks_us:
     - finnhub
     - fmp
     - alphavantage
-    - stooq
     - yahoo
 
   stocks_europe:
-    - stooq
     - fmp
     - finnhub
     - yahoo
 
   forex:
-    - stooq
+    - yahoo
     - alphavantage
     - finnhub
-    - yahoo
 
   crypto:
     - finnhub
     - alphavantage
-    - fmp
     - yahoo
 
   commodity:
-    - stooq
     - yahoo
 
   bond:
-    - stooq
     - yahoo
 
   volatility:
-    - stooq
     - yahoo
 
   historical_daily:
-    - stooq
     - alphavantage
     - fmp
     - yahoo
@@ -375,41 +365,37 @@ symbol_mappings:
       stooq: "10ys.us"
       yahoo: "^TNX"
 
-  "^TMBMKDE-10Y":
-    name: "Bund Alemania 10Y"
+  "SXRM.DE":
+    name: "Bund ETF (Alemania)"
     category: "bonds"
     asset_type: "bond"
     currency: "EUR"
     providers:
-      stooq: "10ys.de"
-      yahoo: "^TMBMKDE-10Y"
+      yahoo: "SXRM.DE"
 
-  "^TMBMKES-10Y":
-    name: "Bono España 10Y"
+  "IEGA.AS":
+    name: "EU Gov Bond ETF"
     category: "bonds"
     asset_type: "bond"
     currency: "EUR"
     providers:
-      stooq: "10ys.es"
-      yahoo: "^TMBMKES-10Y"
+      yahoo: "IEGA.AS"
 
-  "^TMBMKGB-10Y":
-    name: "Gilt UK 10Y"
+  "^TYX":
+    name: "Treasury EEUU 30Y"
     category: "bonds"
     asset_type: "bond"
-    currency: "GBP"
+    currency: "USD"
     providers:
-      stooq: "10ys.uk"
-      yahoo: "^TMBMKGB-10Y"
+      yahoo: "^TYX"
 
-  "^TMBMKIT-10Y":
-    name: "BTP Italia 10Y"
+  "^FVX":
+    name: "Treasury EEUU 5Y"
     category: "bonds"
     asset_type: "bond"
-    currency: "EUR"
+    currency: "USD"
     providers:
-      stooq: "10ys.it"
-      yahoo: "^TMBMKIT-10Y"
+      yahoo: "^FVX"
 
   # ─── Materias primas ───────────────────────────────────────────────────────
   "GC=F":

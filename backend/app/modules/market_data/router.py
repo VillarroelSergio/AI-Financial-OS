@@ -132,6 +132,7 @@ class ProviderRouter:
         provider_names: list[str] = self._routing.get(route_key, ["yahoo"])
 
         last_error: Optional[str] = None
+        primary_provider: Optional[str] = None
         for pname in provider_names:
             provider = self._providers.get(pname)
             if not provider or not provider.enabled:
@@ -144,7 +145,9 @@ class ProviderRouter:
             if not provider.supports(asset.asset_type, provider_symbol):
                 continue
 
-            is_fb = pname in ("yahoo",) or pname not in ("stooq", "finnhub")
+            if primary_provider is None:
+                primary_provider = pname
+            is_fb = pname != primary_provider
             try:
                 quote = provider.get_quote(
                     internal_symbol=asset.internal_symbol,

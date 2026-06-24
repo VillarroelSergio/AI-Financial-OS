@@ -140,7 +140,8 @@ class TestYahooFinanceProvider:
         p = YahooFinanceProvider()
         with patch("app.modules.market_data.providers.yahoo.yf.Ticker", return_value=mock_ticker):
             result = p.get_quote("^IBEX", "^IBEX", "IBEX 35", "index", "indices_eu", "EUR")
-        assert result.is_fallback is True
+        # Yahoo is now primary source; is_fallback depends on router position, not provider default
+        assert result.is_fallback is False
 
     def test_freshness_is_never_live(self):
         mock_ticker = MagicMock()

@@ -1,6 +1,6 @@
-"""Yahoo Finance provider — fallback only, no API key required.
+"""Yahoo Finance provider — primary source, no API key required.
 
-Wraps yfinance. Marked as fallback; data quality and freshness are not guaranteed.
+Wraps yfinance. Universal coverage. Data freshness is not guaranteed (delayed).
 """
 from __future__ import annotations
 
@@ -32,7 +32,7 @@ class YahooFinanceProvider(MarketDataProvider):
         asset_type: str,
         category: str,
         currency: str,
-        is_fallback: bool = True,
+        is_fallback: bool = False,
     ) -> MarketQuoteInternal:
         try:
             ticker = yf.Ticker(provider_symbol)
@@ -92,14 +92,14 @@ class YahooFinanceProvider(MarketDataProvider):
                 freshness_status=freshness,
                 delay_minutes=15,
                 is_stale=False,
-                is_fallback=True,
-                confidence_score=0.65,
-                warning="Fuente fallback. Dato no verificado, puede estar retrasado.",
+                is_fallback=is_fallback,
+                confidence_score=0.70,
+                warning="Dato retrasado (Yahoo Finance). Puede no reflejar el precio actual." if price is not None else None,
                 sparkline=sparkline,
             )
         except Exception as exc:
             logger.warning("YahooFinanceProvider error for %s: %s", provider_symbol, exc)
             return self._error_quote(
                 internal_symbol, provider_symbol, name, asset_type, category, currency,
-                f"Yahoo: {exc}", is_fallback=True,
+                f"Yahoo: {exc}", is_fallback=is_fallback,
             )
