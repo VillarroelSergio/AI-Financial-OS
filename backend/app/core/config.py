@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     ALPHA_VANTAGE_API_KEY: str = ""
     FINNHUB_API_KEY: str = ""
     FMP_API_KEY: str = ""
+    TWELVEDATA_API_KEY: str = ""
 
 
 settings = Settings()
