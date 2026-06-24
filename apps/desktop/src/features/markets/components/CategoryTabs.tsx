@@ -20,20 +20,32 @@ interface Props {
 
 export default function CategoryTabs({ activeCategory, onSelect }: Props) {
   return (
-    <div className="flex flex-wrap gap-2">
-      {TABS.map((tab) => (
-        <button
-          key={tab.value}
-          onClick={() => onSelect(tab.value)}
-          className={`text-button-sm rounded-full px-[14px] py-[6px] h-8 transition-colors duration-150 ${
-            activeCategory === tab.value
-              ? "bg-primary text-on-primary"
-              : "bg-surface-elevated text-stone border border-hairline-dark hover:text-on-dark"
-          }`}
-        >
-          {tab.label}
-        </button>
-      ))}
+    <div
+      role="tablist"
+      aria-label="Filtrar por categoría de mercado"
+      className="flex gap-1.5 overflow-x-auto pb-0.5 scrollbar-none"
+      style={{ scrollbarWidth: "none" }}
+    >
+      {TABS.map((tab) => {
+        const isActive = activeCategory === tab.value;
+        return (
+          <button
+            key={tab.value}
+            role="tab"
+            aria-selected={isActive}
+            onClick={() => onSelect(tab.value)}
+            className={[
+              "flex-shrink-0 text-button-sm rounded-full px-3.5 py-1.5 h-8 transition-all duration-150",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas-dark",
+              isActive
+                ? "bg-primary text-on-dark shadow-[0_0_0_1px_rgba(73,79,223,0.6)] font-medium"
+                : "bg-surface-elevated text-stone border border-hairline-dark hover:text-on-dark hover:border-primary/40 hover:bg-surface-card",
+            ].join(" ")}
+          >
+            {tab.label}
+          </button>
+        );
+      })}
     </div>
   );
 }

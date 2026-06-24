@@ -10,7 +10,9 @@
     "tauri": "tauri",
     "ux:snapshots": "npm install --prefix ../../tools/ux-snapshot && npm run snapshots --prefix ../../tools/ux-snapshot",
     "ux:snapshots:headed": "npm install --prefix ../../tools/ux-snapshot && npm run snapshots:headed --prefix ../../tools/ux-snapshot",
-    "ux:report": "npm run report --prefix ../../tools/ux-snapshot"
+    "ux:report": "npm run report --prefix ../../tools/ux-snapshot",
+    "screenshot:mercados": "npm install --prefix ../../tools/ux-snapshot && npm run snapshots:mercados --prefix ../../tools/ux-snapshot",
+    "screenshot:mercados:headed": "npm install --prefix ../../tools/ux-snapshot && npm run snapshots:mercados:headed --prefix ../../tools/ux-snapshot"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.1.1",
