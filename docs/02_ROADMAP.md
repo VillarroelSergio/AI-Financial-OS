@@ -10,7 +10,7 @@
 | 3 | Investments Basic | ✅ Completa | rama `feature/fase-2-import-center` |
 | 4 | Market Watch | ✅ Completa | rama `main` |
 | 4.5 | Multi-Provider Market Data | ✅ Completa | rama `feat/multi-provider-market-data` |
-| 5 | Economic Intelligence | ⏳ Pendiente | — |
+| 5 | Economic Intelligence | ✅ Completa | rama `feature/fase-5-economic-intelligence` |
 | 6 | Local AI Assistant | ⏳ Pendiente | — |
 | 7 | Insights Engine | ⏳ Pendiente | — |
 | 8 | Goals & Simulations | ⏳ Pendiente | — |
@@ -306,7 +306,7 @@ relegado a último recurso. Se añade TwelveData como nuevo proveedor primario p
 
 ---
 
-## Fase 5 — Economic Intelligence ⏳
+## Fase 5 — Economic Intelligence ✅
 
 ### Objetivo
 
@@ -314,21 +314,34 @@ Incorporar datos macroeconómicos reales para España, Eurozona y EEUU.
 
 ### Incluye
 
-- Inflación.
-- Inflación subyacente.
-- Paro.
-- PIB.
-- Tipos BCE.
-- Tipos FED.
-- Euríbor.
-- Bonos 10 años.
-- Comparativas España / Eurozona / EEUU.
-- Gráficas históricas.
-- Vista de impacto personal inicial sin IA.
+- **FredProvider** — fuente principal de indicadores macro (inflación, subyacente, paro, PIB, tipos BCE/FED). API key gratuita: `FRED_API_KEY`.
+- **StooqMacroProvider** — bridge sobre el ProviderRouter de Fase 4.6 para euríbor, bonos 10Y, índices y divisas.
+- **DuckDB cache** — tabla `economic_indicators_cache` con TTL por categoría (4h para datos diarios, 24–48h para mensuales/trimestrales).
+- **Modelos normalizados** — `IndicatorOut`, `RegionSnapshotOut`, `MacroSnapshotOut`, `PersonalImpactOut`.
+- **4 endpoints REST** — `/snapshot`, `/indicators`, `/refresh`, `/impact`.
+- **Vista de impacto personal (determinista, sin IA)** — 4 comparativas calculadas: inflación vs tasa de ahorro, tipo BCE vs liquidez, mercado vs cartera, poder adquisitivo.
+- **EconomyPage** — snapshot global, tabs por región (España / Eurozona / EEUU), sección de impacto personal.
+- **23 tests** — cobertura de FredProvider, repositorio, endpoints y cálculos de impacto.
 
-### Resultado esperado
+### Proveedores
 
-La app ofrece un snapshot económico limpio, actualizado y conectado conceptualmente con ahorro, gastos e inversiones.
+| Indicador | Fuente |
+|-----------|--------|
+| Inflación, subyacente, paro, PIB | FRED |
+| Tipo BCE, Fed Funds | FRED |
+| Euríbor 3M, Bonos 10Y | Stooq (vía ProviderRouter) |
+| Índices, EUR/USD | Stooq (vía ProviderRouter) |
+
+### Restricciones cumplidas
+
+- `FRED_API_KEY` en `.env`, nunca en código.
+- App funciona sin API key (indicadores macro muestran "no disponible"; índices y bonos funcionan vía Stooq).
+- No se mezclan noticias ni calendarios macro.
+- Siempre se muestra fecha de observación y fuente.
+
+### Documentación
+
+- `docs/superpowers/specs/2026-06-24-economic-intelligence-design.md` — spec técnico.
 
 ---
 

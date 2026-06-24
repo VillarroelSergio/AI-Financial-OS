@@ -22,5 +22,8 @@ class Settings(BaseSettings):
     FMP_API_KEY: str = ""
     TWELVEDATA_API_KEY: str = ""
 
+    # ── Economic data providers ───────────────────────────────────────────────
+    FRED_API_KEY: str = ""
+
 
 settings = Settings()
