@@ -768,6 +768,7 @@ class TestRouterParallelFetch:
         p.enabled = True
         p.supports.return_value = True
         q = _make_quote(name, price)
+        p.get_quote.return_value = q
         return p
 
     def _mock_error_provider(self, name: str) -> MagicMock:
