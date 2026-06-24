@@ -11,6 +11,7 @@ from .base import (
 from .finnhub import FinnhubProvider
 from .fmp import FMPProvider
 from .stooq import StooqProvider
+from .twelvedata import TwelveDataProvider
 from .yahoo import YahooFinanceProvider
 
 __all__ = [
@@ -26,4 +27,5 @@ __all__ = [
     "AlphaVantageProvider",
     "FinnhubProvider",
     "FMPProvider",
+    "TwelveDataProvider",
 ]

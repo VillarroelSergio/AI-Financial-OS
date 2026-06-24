@@ -509,3 +509,77 @@ class TestRequestBudget:
     def test_get_remaining_unlimited_provider(self):
         budget = RequestBudget(limits={})
         assert budget.get_remaining("yahoo") == 9999
+
+
+# ── TwelveDataProvider tests ─────────────────────────────────────────────────
+
+from unittest.mock import patch, MagicMock
+
+
+class TestTwelveDataProvider:
+    def _make_provider(self) -> "TwelveDataProvider":
+        from app.modules.market_data.providers.twelvedata import TwelveDataProvider
+        p = TwelveDataProvider.__new__(TwelveDataProvider)
+        p.api_key = "test_key"
+        p.enabled = True
+        return p
+
+    def test_supports_all_asset_types(self):
+        from app.modules.market_data.providers.twelvedata import TwelveDataProvider
+        p = TwelveDataProvider.__new__(TwelveDataProvider)
+        p.api_key = "key"
+        p.enabled = True
+        for at in ["index", "stock", "forex", "crypto", "commodity", "bond", "volatility"]:
+            assert p.supports(at, "ANY") is True
+
+    def test_does_not_support_fundamentals(self):
+        from app.modules.market_data.providers.twelvedata import TwelveDataProvider
+        p = TwelveDataProvider.__new__(TwelveDataProvider)
+        p.api_key = "key"
+        p.enabled = True
+        assert p.supports("fundamentals", "AAPL") is False
+
+    @patch("app.modules.market_data.providers.twelvedata.requests.get")
+    def test_get_quote_success(self, mock_get):
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {
+            "price": "150.00",
+            "close": "148.50",
+            "datetime": "2026-06-24 15:30:00",
+            "exchange": "NYSE",
+            "is_market_open": True,
+        }
+        mock_get.return_value = mock_resp
+
+        p = self._make_provider()
+        result = p.get_quote("AAPL", "AAPL", "Apple", "stock", "stocks_us", "USD")
+
+        assert result.price == 150.0
+        assert result.change_absolute == round(150.0 - 148.5, 6)
+        assert result.freshness_status != "error"
+        assert result.source == "twelvedata"
+
+    @patch("app.modules.market_data.providers.twelvedata.requests.get")
+    def test_get_quote_returns_error_on_no_price(self, mock_get):
+        mock_resp = MagicMock()
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {"price": None}
+        mock_get.return_value = mock_resp
+
+        p = self._make_provider()
+        result = p.get_quote("AAPL", "AAPL", "Apple", "stock", "stocks_us", "USD")
+
+        assert result.price is None
+        assert result.freshness_status == "error"
+
+    @patch("app.modules.market_data.providers.twelvedata.requests.get")
+    def test_get_quote_timeout_returns_error(self, mock_get):
+        import requests as req_lib
+        mock_get.side_effect = req_lib.exceptions.Timeout()
+
+        p = self._make_provider()
+        result = p.get_quote("SPX", "SPX", "S&P 500", "index", "indices_us", "USD")
+
+        assert result.price is None
+        assert "timeout" in (result.warning or "").lower()
