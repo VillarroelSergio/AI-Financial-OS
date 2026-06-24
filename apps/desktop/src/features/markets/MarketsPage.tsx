@@ -1,5 +1,5 @@
-import { useState } from "react";
-import type { MarketCategory, MarketQuote } from "@/lib/types";
+import { useMemo, useState } from "react";
+import type { FreshnessStatus, MarketCategory, MarketQuote } from "@/lib/types";
 import { useMarkets } from "@/lib/hooks/useMarkets";
 import CategoryTabs from "./components/CategoryTabs";
 import LiveIndicator from "./components/LiveIndicator";
@@ -118,6 +118,19 @@ export default function MarketsPage() {
   const hasData = !loading && !error && quotes.length > 0;
   const isEmpty = !loading && !error && quotes.length === 0;
 
+  // Compute worst freshness across all quotes to drive LiveIndicator
+  const freshnessStatus = useMemo<FreshnessStatus>(() => {
+    if (!quotes.length) return "unknown";
+    const priority: FreshnessStatus[] = [
+      "error", "stale", "unknown", "closed", "eod", "delayed", "fresh", "live",
+    ];
+    const statuses = quotes.map((q) => q.freshness_status ?? "unknown");
+    for (const level of priority) {
+      if (statuses.includes(level)) return level;
+    }
+    return "unknown";
+  }, [quotes]);
+
   return (
     <div className="p-8 space-y-6 max-w-[1400px]">
       {/* Header */}
@@ -129,7 +142,7 @@ export default function MarketsPage() {
           </p>
         </div>
         <div className="flex-shrink-0 pt-1">
-          <LiveIndicator secondsSinceUpdate={secondsSinceUpdate} />
+          <LiveIndicator secondsSinceUpdate={secondsSinceUpdate} freshnessStatus={freshnessStatus} />
         </div>
       </div>
 

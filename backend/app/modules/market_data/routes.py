@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 
+from app.modules.market_data.router import get_quotes
 from app.modules.market_data.schemas import QuoteOut
-from app.modules.market_data.service import get_quotes
 
 router = APIRouter()
 

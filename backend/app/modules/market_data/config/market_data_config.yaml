@@ -1,0 +1,477 @@
+##############################################################################
+# AI Financial OS — Market Data Provider Configuration
+# Todos los proveedores configurados son GRATUITOS.
+# No se permite ningún proveedor de pago ni plan premium.
+##############################################################################
+
+paid_providers_allowed: false
+
+providers:
+  stooq:
+    enabled: true
+    priority: 1
+    requires_api_key: false
+    description: "Fuente principal. Sin API key. EOD + histórico diario para índices, forex, commodities."
+
+  yahoo:
+    enabled: true
+    priority: 99
+    requires_api_key: false
+    fallback_only: true
+    description: "Fallback general. Dato no garantizado. Puede estar retrasado."
+
+  finnhub:
+    enabled: true
+    priority: 2
+    requires_api_key: true
+    api_key_env: FINNHUB_API_KEY
+    free_tier_only: true
+    rate_limit_per_minute: 60
+    description: "Acciones USA, forex, crypto, fundamentales. Free tier 60 req/min."
+
+  alphavantage:
+    enabled: true
+    priority: 3
+    requires_api_key: true
+    api_key_env: ALPHA_VANTAGE_API_KEY
+    free_tier_only: true
+    rate_limit_per_day: 500
+    description: "Acciones, forex, crypto. Free tier 25–500 req/día según cuenta."
+
+  fmp:
+    enabled: true
+    priority: 4
+    requires_api_key: true
+    api_key_env: FMP_API_KEY
+    free_tier_only: true
+    rate_limit_per_day: 250
+    description: "Acciones, ETFs, fundamentales, perfiles. Free tier 250 req/día."
+
+##############################################################################
+# Routing — orden de proveedores por tipo de activo
+##############################################################################
+routing:
+  indices:
+    - stooq
+    - finnhub
+    - fmp
+    - alphavantage
+    - yahoo
+
+  stocks_us:
+    - finnhub
+    - fmp
+    - alphavantage
+    - stooq
+    - yahoo
+
+  stocks_europe:
+    - stooq
+    - fmp
+    - finnhub
+    - yahoo
+
+  forex:
+    - stooq
+    - alphavantage
+    - finnhub
+    - yahoo
+
+  crypto:
+    - finnhub
+    - alphavantage
+    - fmp
+    - yahoo
+
+  commodity:
+    - stooq
+    - yahoo
+
+  bond:
+    - stooq
+    - yahoo
+
+  volatility:
+    - stooq
+    - yahoo
+
+  historical_daily:
+    - stooq
+    - alphavantage
+    - fmp
+    - yahoo
+
+  fundamentals:
+    - fmp
+    - finnhub
+    - alphavantage
+
+##############################################################################
+# TTL de caché por tipo (segundos)
+##############################################################################
+cache_ttl:
+  quote_crypto: 300        # 5 min
+  quote_index: 900         # 15 min
+  quote_stock: 900         # 15 min
+  quote_forex: 900         # 15 min
+  quote_commodity: 900     # 15 min
+  quote_bond: 900          # 15 min
+  quote_volatility: 300    # 5 min
+  eod: 86400               # 24 horas
+  historical_daily: 86400  # 24 horas
+  fundamentals: 604800     # 7 días
+  company_profile: 2592000 # 30 días
+
+##############################################################################
+# Mapeo de símbolos internos a símbolos por proveedor
+# internal_symbol = clave interna de la app (se usa en la API response)
+# Los valores de "yahoo" son el símbolo yfinance (backward compat)
+##############################################################################
+symbol_mappings:
+  # ─── Europa ────────────────────────────────────────────────────────────────
+  "^IBEX":
+    name: "IBEX 35"
+    category: "indices_eu"
+    asset_type: "index"
+    currency: "EUR"
+    providers:
+      stooq: "^ibex"
+      yahoo: "^IBEX"
+      finnhub: ""
+
+  "^STOXX50E":
+    name: "Euro Stoxx 50"
+    category: "indices_eu"
+    asset_type: "index"
+    currency: "EUR"
+    providers:
+      stooq: "^sx5e"
+      yahoo: "^STOXX50E"
+
+  "^STOXX":
+    name: "STOXX Europe 600"
+    category: "indices_eu"
+    asset_type: "index"
+    currency: "EUR"
+    providers:
+      stooq: "^stoxx"
+      yahoo: "^STOXX"
+
+  "^GDAXI":
+    name: "DAX"
+    category: "indices_eu"
+    asset_type: "index"
+    currency: "EUR"
+    providers:
+      stooq: "^dax"
+      yahoo: "^GDAXI"
+
+  "^FCHI":
+    name: "CAC 40"
+    category: "indices_eu"
+    asset_type: "index"
+    currency: "EUR"
+    providers:
+      stooq: "^cac"
+      yahoo: "^FCHI"
+
+  "^FTSE":
+    name: "FTSE 100"
+    category: "indices_eu"
+    asset_type: "index"
+    currency: "GBP"
+    providers:
+      stooq: "^ftse"
+      yahoo: "^FTSE"
+
+  # ─── EEUU ──────────────────────────────────────────────────────────────────
+  "^GSPC":
+    name: "S&P 500"
+    category: "indices_us"
+    asset_type: "index"
+    currency: "USD"
+    providers:
+      stooq: "^spx"
+      yahoo: "^GSPC"
+      finnhub: "^GSPC"
+
+  "^NDX":
+    name: "Nasdaq 100"
+    category: "indices_us"
+    asset_type: "index"
+    currency: "USD"
+    providers:
+      stooq: "^ndx"
+      yahoo: "^NDX"
+
+  "^DJI":
+    name: "Dow Jones"
+    category: "indices_us"
+    asset_type: "index"
+    currency: "USD"
+    providers:
+      stooq: "^dji"
+      yahoo: "^DJI"
+
+  "^RUT":
+    name: "Russell 2000"
+    category: "indices_us"
+    asset_type: "index"
+    currency: "USD"
+    providers:
+      stooq: "^rut"
+      yahoo: "^RUT"
+
+  # ─── Asia ──────────────────────────────────────────────────────────────────
+  "^N225":
+    name: "Nikkei 225"
+    category: "indices_asia"
+    asset_type: "index"
+    currency: "JPY"
+    providers:
+      stooq: "^nky"
+      yahoo: "^N225"
+
+  "^HSI":
+    name: "Hang Seng"
+    category: "indices_asia"
+    asset_type: "index"
+    currency: "HKD"
+    providers:
+      stooq: "^hsi"
+      yahoo: "^HSI"
+
+  "000001.SS":
+    name: "Shanghai Composite"
+    category: "indices_asia"
+    asset_type: "index"
+    currency: "CNY"
+    providers:
+      stooq: "sh.000001"
+      yahoo: "000001.SS"
+
+  "^NSEI":
+    name: "Nifty 50"
+    category: "indices_asia"
+    asset_type: "index"
+    currency: "INR"
+    providers:
+      stooq: "^nsei"
+      yahoo: "^NSEI"
+
+  # ─── Cripto ────────────────────────────────────────────────────────────────
+  "BTC-USD":
+    name: "Bitcoin"
+    category: "crypto"
+    asset_type: "crypto"
+    currency: "USD"
+    providers:
+      stooq: "btcusd"
+      yahoo: "BTC-USD"
+      finnhub: "BINANCE:BTCUSDT"
+      alphavantage: "BTCUSD"
+
+  "ETH-USD":
+    name: "Ethereum"
+    category: "crypto"
+    asset_type: "crypto"
+    currency: "USD"
+    providers:
+      stooq: "ethusd"
+      yahoo: "ETH-USD"
+      finnhub: "BINANCE:ETHUSDT"
+      alphavantage: "ETHUSD"
+
+  "BNB-USD":
+    name: "BNB"
+    category: "crypto"
+    asset_type: "crypto"
+    currency: "USD"
+    providers:
+      stooq: "bnbusd"
+      yahoo: "BNB-USD"
+      finnhub: "BINANCE:BNBUSDT"
+
+  "SOL-USD":
+    name: "Solana"
+    category: "crypto"
+    asset_type: "crypto"
+    currency: "USD"
+    providers:
+      stooq: "solusd"
+      yahoo: "SOL-USD"
+      finnhub: "BINANCE:SOLUSDT"
+
+  # ─── Divisas ───────────────────────────────────────────────────────────────
+  "EURUSD=X":
+    name: "EUR/USD"
+    category: "fx"
+    asset_type: "forex"
+    currency: "USD"
+    providers:
+      stooq: "eurusd"
+      yahoo: "EURUSD=X"
+      alphavantage: "EURUSD"
+      finnhub: "OANDA:EUR_USD"
+
+  "EURGBP=X":
+    name: "EUR/GBP"
+    category: "fx"
+    asset_type: "forex"
+    currency: "GBP"
+    providers:
+      stooq: "eurgbp"
+      yahoo: "EURGBP=X"
+      alphavantage: "EURGBP"
+      finnhub: "OANDA:EUR_GBP"
+
+  "EURJPY=X":
+    name: "EUR/JPY"
+    category: "fx"
+    asset_type: "forex"
+    currency: "JPY"
+    providers:
+      stooq: "eurjpy"
+      yahoo: "EURJPY=X"
+      alphavantage: "EURJPY"
+
+  "GBPUSD=X":
+    name: "GBP/USD"
+    category: "fx"
+    asset_type: "forex"
+    currency: "USD"
+    providers:
+      stooq: "gbpusd"
+      yahoo: "GBPUSD=X"
+      alphavantage: "GBPUSD"
+
+  "JPY=X":
+    name: "USD/JPY"
+    category: "fx"
+    asset_type: "forex"
+    currency: "JPY"
+    providers:
+      stooq: "usdjpy"
+      yahoo: "JPY=X"
+      alphavantage: "USDJPY"
+
+  "CHF=X":
+    name: "USD/CHF"
+    category: "fx"
+    asset_type: "forex"
+    currency: "CHF"
+    providers:
+      stooq: "usdchf"
+      yahoo: "CHF=X"
+      alphavantage: "USDCHF"
+
+  # ─── Bonos 10Y ─────────────────────────────────────────────────────────────
+  "^TNX":
+    name: "Treasury EEUU 10Y"
+    category: "bonds"
+    asset_type: "bond"
+    currency: "USD"
+    providers:
+      stooq: "10ys.us"
+      yahoo: "^TNX"
+
+  "^TMBMKDE-10Y":
+    name: "Bund Alemania 10Y"
+    category: "bonds"
+    asset_type: "bond"
+    currency: "EUR"
+    providers:
+      stooq: "10ys.de"
+      yahoo: "^TMBMKDE-10Y"
+
+  "^TMBMKES-10Y":
+    name: "Bono España 10Y"
+    category: "bonds"
+    asset_type: "bond"
+    currency: "EUR"
+    providers:
+      stooq: "10ys.es"
+      yahoo: "^TMBMKES-10Y"
+
+  "^TMBMKGB-10Y":
+    name: "Gilt UK 10Y"
+    category: "bonds"
+    asset_type: "bond"
+    currency: "GBP"
+    providers:
+      stooq: "10ys.uk"
+      yahoo: "^TMBMKGB-10Y"
+
+  "^TMBMKIT-10Y":
+    name: "BTP Italia 10Y"
+    category: "bonds"
+    asset_type: "bond"
+    currency: "EUR"
+    providers:
+      stooq: "10ys.it"
+      yahoo: "^TMBMKIT-10Y"
+
+  # ─── Materias primas ───────────────────────────────────────────────────────
+  "GC=F":
+    name: "Oro"
+    category: "commodities"
+    asset_type: "commodity"
+    currency: "USD"
+    providers:
+      stooq: "xauusd"
+      yahoo: "GC=F"
+
+  "SI=F":
+    name: "Plata"
+    category: "commodities"
+    asset_type: "commodity"
+    currency: "USD"
+    providers:
+      stooq: "xagusd"
+      yahoo: "SI=F"
+
+  "BZ=F":
+    name: "Petróleo Brent"
+    category: "commodities"
+    asset_type: "commodity"
+    currency: "USD"
+    providers:
+      stooq: "cb.f"
+      yahoo: "BZ=F"
+
+  "CL=F":
+    name: "Petróleo WTI"
+    category: "commodities"
+    asset_type: "commodity"
+    currency: "USD"
+    providers:
+      stooq: "cl.f"
+      yahoo: "CL=F"
+
+  "NG=F":
+    name: "Gas Natural"
+    category: "commodities"
+    asset_type: "commodity"
+    currency: "USD"
+    providers:
+      stooq: "ng.f"
+      yahoo: "NG=F"
+
+  "HG=F":
+    name: "Cobre"
+    category: "commodities"
+    asset_type: "commodity"
+    currency: "USD"
+    providers:
+      stooq: "hg.f"
+      yahoo: "HG=F"
+
+  # ─── Volatilidad ───────────────────────────────────────────────────────────
+  "^VIX":
+    name: "VIX"
+    category: "volatility"
+    asset_type: "volatility"
+    currency: "USD"
+    providers:
+      stooq: "^vix"
+      yahoo: "^VIX"

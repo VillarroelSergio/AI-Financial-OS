@@ -9,6 +9,7 @@
 | 2 | CSV Import Center | ✅ Completa | rama `feature/fase-2-import-center` |
 | 3 | Investments Basic | ✅ Completa | rama `feature/fase-2-import-center` |
 | 4 | Market Watch | ✅ Completa | rama `main` |
+| 4.5 | Multi-Provider Market Data | ✅ Completa | rama `feat/multi-provider-market-data` |
 | 5 | Economic Intelligence | ⏳ Pendiente | — |
 | 6 | Local AI Assistant | ⏳ Pendiente | — |
 | 7 | Insights Engine | ⏳ Pendiente | — |
@@ -170,7 +171,7 @@ El usuario puede registrar posiciones básicas y ver su patrimonio financiero co
 
 ---
 
-## Fase 4 — Market Watch ⏳
+## Fase 4 — Market Watch ✅
 
 ### Objetivo
 
@@ -203,6 +204,45 @@ Añadir datos de mercado actualizados con caché local.
 ### Resultado esperado
 
 El usuario puede consultar contexto de mercado desde la app sin mezclarlo con sus datos personales.
+
+---
+
+---
+
+## Fase 4.5 — Multi-Provider Market Data ✅
+
+### Objetivo
+
+Sustituir el proveedor único (yfinance) por una arquitectura multi-provider gratuita
+con máxima cobertura, caché DuckDB y señales de frescura de datos.
+
+### Incluye
+
+- **StooqProvider** — fuente primaria, sin API key, índices/forex/commodities/cripto/volatilidad.
+- **YahooFinanceProvider** — fallback general, sin API key, marcado como fuente no garantizada.
+- **AlphaVantageProvider** — opcional, API key gratuita (ALPHA_VANTAGE_API_KEY), acciones/forex/cripto.
+- **FinnhubProvider** — opcional, API key gratuita (FINNHUB_API_KEY), acciones USA/forex/cripto/fundamentales.
+- **FMPProvider** — opcional, API key gratuita (FMP_API_KEY), acciones/ETFs/perfiles/fundamentales.
+- **ProviderRouter** — routing por asset_type, TTL por categoría, cross-validation, fallback en cascada.
+- **DuckDB cache** — tablas `market_quotes_cache`, `market_candles_cache`, `market_provider_logs`, perfiles, fundamentales.
+- **Modelos normalizados** — `MarketQuoteInternal`, `MarketCandle`, `CompanyProfile`, `Fundamentals`.
+- **Freshness status** — live / fresh / delayed / eod / closed / stale / error / unknown.
+- **Rate limiters** — por proveedor, respetando free tier.
+- **UI actualizada** — `LiveIndicator` muestra estado real, `QuoteRow` muestra badge FB/CACHE, `change_absolute` desde servidor.
+- **35 tests unitarios** — cobertura de providers, routing, caché, rate limiting, freshness.
+- **`market_data_config.yaml`** — configuración declarativa de providers, routing, TTL y mappings de 36 activos.
+
+### Restricciones cumplidas
+
+- Ningún proveedor de pago.
+- API keys nunca hardcodeadas (variables de entorno).
+- No existe `ManualCsvProvider` ni importación CSV para mercados.
+- "En vivo" solo cuando `freshness_status == "live"` — nunca asumido.
+- App funciona sin API keys (Stooq + Yahoo).
+
+### Documentación
+
+- `docs/15_MARKET_PROVIDERS.md` — guía completa de proveedores.
 
 ---
 

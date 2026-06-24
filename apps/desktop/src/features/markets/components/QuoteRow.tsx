@@ -17,13 +17,6 @@ function formatPrice(price: number): string {
   });
 }
 
-function deriveChangeAbs(price: number | null, changePct: number | null): number | null {
-  if (price === null || changePct === null) return null;
-  // previous = price / (1 + changePct/100), changeAbs = price - previous
-  const previous = price / (1 + changePct / 100);
-  return price - previous;
-}
-
 function formatChangeAbs(value: number): string {
   const abs = Math.abs(value);
   const decimals = abs < 10 ? 4 : 2;
@@ -54,7 +47,14 @@ export default function QuoteRow({ quote, isSelected = false, onSelect }: Props)
   }, [quote.price]);
 
   const positive = (quote.change_pct ?? 0) >= 0;
-  const changeAbs = deriveChangeAbs(quote.price, quote.change_pct);
+  // Use server-provided change_absolute; fall back to client-side derivation if absent
+  const changeAbs =
+    quote.change_absolute !== null && quote.change_absolute !== undefined
+      ? quote.change_absolute
+      : quote.price !== null && quote.change_pct !== null
+      ? quote.price - quote.price / (1 + quote.change_pct / 100)
+      : null;
+
   const isInteractive = Boolean(onSelect);
 
   return (
@@ -78,6 +78,7 @@ export default function QuoteRow({ quote, isSelected = false, onSelect }: Props)
             }
           : undefined
       }
+      title={quote.warning ?? undefined}
       className={[
         "grid grid-cols-[1fr_80px_120px_100px] items-center gap-4 px-6 py-3 transition-colors duration-150",
         flashClass,
@@ -93,9 +94,29 @@ export default function QuoteRow({ quote, isSelected = false, onSelect }: Props)
         .filter(Boolean)
         .join(" ")}
     >
-      {/* Nombre + ticker */}
+      {/* Nombre + ticker + badges */}
       <div className="min-w-0">
-        <p className="text-body-sm text-on-dark truncate">{quote.name}</p>
+        <div className="flex items-center gap-1.5 min-w-0">
+          <p className="text-body-sm text-on-dark truncate">{quote.name}</p>
+          {quote.is_fallback && (
+            <span
+              className="flex-shrink-0 text-[10px] font-medium text-accent-warning bg-accent-warning/10 border border-accent-warning/20 rounded px-1 py-px leading-tight"
+              aria-label="Fuente fallback"
+              title="Dato de fuente fallback (Yahoo Finance). Puede estar retrasado."
+            >
+              FB
+            </span>
+          )}
+          {quote.is_stale && (
+            <span
+              className="flex-shrink-0 text-[10px] font-medium text-stone bg-surface-card border border-hairline-dark rounded px-1 py-px leading-tight"
+              aria-label="Dato en caché"
+              title="Usando dato en caché. Todos los proveedores fallaron temporalmente."
+            >
+              CACHE
+            </span>
+          )}
+        </div>
         <p className="text-caption text-stone">{quote.symbol}</p>
       </div>
 
