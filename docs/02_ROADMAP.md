@@ -10,6 +10,7 @@
 | 3 | Investments Basic | ✅ Completa | rama `feature/fase-2-import-center` |
 | 4 | Market Watch | ✅ Completa | rama `main` |
 | 4.5 | Multi-Provider Market Data | ✅ Completa | rama `feat/multi-provider-market-data` |
+| 4.7 | EOD Market Data | ✅ Completa | rama actual |
 | 5 | Economic Intelligence | ✅ Completa | rama `feature/fase-5-economic-intelligence` |
 | 6 | Local AI Assistant | ⏳ Pendiente | — |
 | 7 | Insights Engine | ⏳ Pendiente | — |
@@ -303,6 +304,22 @@ relegado a último recurso. Se añade TwelveData como nuevo proveedor primario p
 - `docs/15_MARKET_PROVIDERS.md` — guía completa actualizada con TwelveData y ConsensusEngine.
 - `docs/superpowers/specs/2026-06-24-market-data-consensus-engine-design.md` — spec técnico.
 - `docs/superpowers/plans/2026-06-24-market-data-consensus-engine.md` — plan de implementación.
+
+---
+
+## Fase 4.7 — EOD Market Data ✅
+
+### Objetivo
+
+Simplificar el modelo de datos de mercado a cierre diario (EOD). Una única llamada al arranque, sin refresh manual, sin estados "live".
+
+### Incluye
+
+- `EodMarketService` — fetch secuencial Stooq al arrancar (background thread).
+- `eod_only` mode en `ProviderRouter` — TTL 24h, pool filtrado a Stooq.
+- `EodBadge` — sustituye `LiveIndicator`, muestra "Cierre DD/MM/YYYY".
+- Eliminación del botón "Actualizar" en Market Watch.
+- 6 tests unitarios cubriendo cache hit, cache miss, fallo, concurrencia y filtrado de providers.
 
 ---
 
