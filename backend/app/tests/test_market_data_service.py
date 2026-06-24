@@ -583,3 +583,144 @@ class TestTwelveDataProvider:
 
         assert result.price is None
         assert "timeout" in (result.warning or "").lower()
+
+
+# ── ConsensusEngine tests ────────────────────────────────────────────────────
+
+from app.modules.market_data.consensus import ConsensusEngine, ConsensusResult
+
+
+def _make_cq(source: str, price: float, freshness: str = "delayed",
+             market_time: datetime = None, is_fallback: bool = False) -> MarketQuoteInternal:
+    return MarketQuoteInternal(
+        internal_symbol="^GSPC",
+        provider_symbol="SPX",
+        name="S&P 500",
+        asset_type="index",
+        category="indices_us",
+        price=price,
+        currency="USD",
+        change_absolute=None,
+        change_percent=None,
+        source=source,
+        source_type="delayed",
+        fetched_at=datetime.now(timezone.utc),
+        market_time=market_time,
+        market_status="unknown",
+        freshness_status=freshness,
+        delay_minutes=15,
+        is_stale=False,
+        is_fallback=is_fallback,
+        confidence_score=0.8,
+        warning=None,
+        sparkline=[],
+    )
+
+
+def _make_ceq(source: str) -> MarketQuoteInternal:
+    return MarketQuoteInternal(
+        internal_symbol="^GSPC", provider_symbol="SPX", name="S&P 500",
+        asset_type="index", category="indices_us", price=None, currency="USD",
+        change_absolute=None, change_percent=None, source=source,
+        source_type="error", fetched_at=datetime.now(timezone.utc),
+        market_time=None, market_status="unknown", freshness_status="error",
+        delay_minutes=0, is_stale=False, is_fallback=False,
+        confidence_score=0.0, warning="error", sparkline=[],
+    )
+
+
+class TestConsensusEngine:
+    def setup_method(self):
+        self.engine = ConsensusEngine()
+
+    def test_primary_wins_when_within_threshold(self):
+        # primary (stooq) at 5000, validators at 5001 and 5002 — all within 1%
+        quotes = [
+            _make_cq("stooq", 5000.0),
+            _make_cq("twelvedata", 5001.0),
+            _make_cq("finnhub", 5002.0),
+        ]
+        result = self.engine.resolve(quotes, "index", "stooq")
+        assert result.consensus_method == "primary"
+        assert result.selected_source == "stooq"
+        assert result.price == 5000.0
+        assert result.confidence_score > 0.5
+        assert "provider_mismatch" not in result.warnings
+
+    def test_median_used_when_primary_deviates(self):
+        # primary (stooq) deviates >1% from median
+        quotes = [
+            _make_cq("stooq", 5100.0),     # outlier
+            _make_cq("twelvedata", 5000.0),
+            _make_cq("finnhub", 5001.0),
+        ]
+        result = self.engine.resolve(quotes, "index", "stooq")
+        assert result.consensus_method == "median"
+        assert result.selected_source == "consensus_median"
+        assert abs(result.price - 5000.5) < 1.0  # median of 5000 and 5001
+        assert "provider_mismatch" in result.warnings
+
+    def test_outlier_discarded(self):
+        # One provider grossly wrong — must be discarded
+        quotes = [
+            _make_cq("stooq", 5000.0),
+            _make_cq("twelvedata", 5001.0),
+            _make_cq("finnhub", 9999.0),  # outlier
+        ]
+        result = self.engine.resolve(quotes, "index", "stooq")
+        assert "finnhub" in result.outliers
+        assert result.price < 6000  # outlier not affecting price
+
+    def test_single_provider_lowers_confidence(self):
+        quotes = [_make_cq("stooq", 5000.0)]
+        result = self.engine.resolve(quotes, "index", "stooq")
+        assert result.consensus_method == "single"
+        assert result.confidence_score <= 0.6
+        assert "unverified_single_provider" in result.warnings
+
+    def test_no_valid_providers_returns_error(self):
+        quotes = [_make_ceq("stooq"), _make_ceq("twelvedata")]
+        result = self.engine.resolve(quotes, "index", "stooq")
+        assert result.consensus_method == "error"
+        assert result.price is None
+        assert result.confidence_score == 0.0
+
+    def test_two_providers_no_outlier_detection(self):
+        # With only 2 providers, no outlier removal — compare directly
+        quotes = [
+            _make_cq("stooq", 5000.0),
+            _make_cq("twelvedata", 5002.0),  # 0.04% diff — within 1%
+        ]
+        result = self.engine.resolve(quotes, "index", "stooq")
+        assert result.consensus_method == "primary"
+        assert result.price == 5000.0
+        assert len(result.outliers) == 0
+
+    def test_confidence_score_higher_with_live_data(self):
+        now = datetime.now(timezone.utc)
+        quotes_live = [
+            _make_cq("stooq", 5000.0, freshness="live", market_time=now),
+            _make_cq("twelvedata", 5001.0, freshness="live", market_time=now),
+        ]
+        quotes_eod = [
+            _make_cq("stooq", 5000.0, freshness="eod"),
+            _make_cq("twelvedata", 5001.0, freshness="eod"),
+        ]
+        result_live = self.engine.resolve(quotes_live, "index", "stooq")
+        result_eod = self.engine.resolve(quotes_eod, "index", "stooq")
+        assert result_live.confidence_score > result_eod.confidence_score
+
+    def test_result_contains_all_log_fields(self):
+        quotes = [
+            _make_cq("stooq", 5000.0),
+            _make_cq("twelvedata", 5001.0),
+        ]
+        result = self.engine.resolve(quotes, "index", "stooq")
+        assert isinstance(result.selected_source, str)
+        assert isinstance(result.consensus_method, str)
+        assert isinstance(result.provider_count, int)
+        assert isinstance(result.valid_provider_count, int)
+        assert isinstance(result.outliers, list)
+        assert isinstance(result.discarded_providers, list)
+        assert isinstance(result.warnings, list)
+        assert isinstance(result.reason, str)
