@@ -15,9 +15,11 @@ providers:
 
   yahoo:
     enabled: true
-    priority: 1
+    priority: 99
     requires_api_key: false
-    description: "Fuente principal. Sin API key. Cobertura universal."
+    role: last_resort
+    diagnostic_mode: false
+    description: "Último recurso. Solo si todos los demás proveedores fallan."
 
   finnhub:
     enabled: true
@@ -46,55 +48,157 @@ providers:
     rate_limit_per_day: 250
     description: "Acciones, ETFs, fundamentales, perfiles. Free tier 250 req/día."
 
+  twelvedata:
+    enabled: true
+    priority: 2
+    requires_api_key: true
+    api_key_env: TWELVEDATA_API_KEY
+    free_tier_only: true
+    rate_limit_per_minute: 8
+    rate_limit_per_day: 800
+    description: "Índices, forex, acciones, crypto, commodities. Free tier 800 req/día."
+
+##############################################################################
+# Outlier detection thresholds per asset_type (fraction, not percent)
+# A provider price is discarded if it deviates > threshold from median.
+##############################################################################
+outlier_thresholds:
+  index:      0.01    # 1%
+  stock:      0.02    # 2%
+  forex:      0.005   # 0.5%
+  crypto:     0.05    # 5%
+  commodity:  0.03    # 3%
+  bond:       0.01    # 1%
+  volatility: 0.05    # 5%
+
+##############################################################################
+# Provider base weights per asset_type (used by ConsensusEngine)
+# Higher = more trusted for that asset type.
+##############################################################################
+provider_weights:
+  stooq:
+    index: 0.9
+    stock: 0.5
+    bond: 0.8
+    volatility: 0.8
+    forex: 0.4
+    crypto: 0.0
+    commodity: 0.5
+  finnhub:
+    index: 0.7
+    stock: 0.9
+    forex: 0.6
+    crypto: 0.85
+    commodity: 0.3
+    bond: 0.3
+    volatility: 0.3
+  twelvedata:
+    index: 0.8
+    stock: 0.75
+    forex: 0.9
+    crypto: 0.7
+    commodity: 0.8
+    bond: 0.5
+    volatility: 0.5
+  alphavantage:
+    index: 0.6
+    stock: 0.65
+    forex: 0.7
+    crypto: 0.6
+    commodity: 0.4
+    bond: 0.3
+    volatility: 0.3
+  fmp:
+    index: 0.5
+    stock: 0.7
+    forex: 0.3
+    crypto: 0.3
+    commodity: 0.3
+    bond: 0.3
+    volatility: 0.2
+  yahoo:
+    index: 0.3
+    stock: 0.3
+    forex: 0.3
+    crypto: 0.3
+    commodity: 0.3
+    bond: 0.3
+    volatility: 0.3
+
+##############################################################################
+# Request budget limits (conservative daily caps for free-tier APIs)
+##############################################################################
+request_budget:
+  alphavantage:
+    daily_limit: 400     # free tier is 500; keep 100 margin
+  twelvedata:
+    daily_limit: 700     # free tier is 800; keep 100 margin
+  fmp:
+    daily_limit: 200     # free tier is 250; keep 50 margin
+
 ##############################################################################
 # Routing — orden de proveedores por tipo de activo
 ##############################################################################
 routing:
   indices:
-    - yahoo
-    - finnhub
-    - fmp
-    - alphavantage
+    primary: stooq
+    validators: [twelvedata, finnhub]
+    budget_aware: [alphavantage]
+    last_resort: yahoo
 
   stocks_us:
-    - finnhub
-    - fmp
-    - alphavantage
-    - yahoo
+    primary: finnhub
+    validators: [twelvedata, fmp]
+    budget_aware: [alphavantage]
+    last_resort: yahoo
 
   stocks_europe:
-    - fmp
-    - finnhub
-    - yahoo
+    primary: stooq
+    validators: [twelvedata, fmp]
+    budget_aware: []
+    last_resort: yahoo
 
   forex:
-    - yahoo
-    - alphavantage
-    - finnhub
+    primary: twelvedata
+    validators: [finnhub, alphavantage]
+    budget_aware: [alphavantage]
+    last_resort: yahoo
 
   crypto:
-    - finnhub
-    - alphavantage
-    - yahoo
+    primary: finnhub
+    validators: [twelvedata, alphavantage]
+    budget_aware: [alphavantage]
+    last_resort: yahoo
 
   commodity:
-    - yahoo
+    primary: twelvedata
+    validators: []
+    budget_aware: []
+    last_resort: yahoo
 
   bond:
-    - yahoo
+    primary: stooq
+    validators: []
+    budget_aware: []
+    last_resort: yahoo
 
   volatility:
-    - yahoo
+    primary: stooq
+    validators: []
+    budget_aware: []
+    last_resort: yahoo
 
   historical_daily:
-    - alphavantage
-    - fmp
-    - yahoo
+    primary: alphavantage
+    validators: [fmp, yahoo]
+    budget_aware: [alphavantage]
+    last_resort: yahoo
 
   fundamentals:
-    - fmp
-    - finnhub
-    - alphavantage
+    primary: fmp
+    validators: [finnhub, alphavantage]
+    budget_aware: [alphavantage]
+    last_resort: yahoo
 
 ##############################################################################
 # TTL de caché por tipo (segundos)
@@ -128,6 +232,7 @@ symbol_mappings:
       stooq: "^ibex"
       yahoo: "^IBEX"
       finnhub: ""
+      twelvedata: "IBEX35"
 
   "^STOXX50E":
     name: "Euro Stoxx 50"
@@ -137,6 +242,7 @@ symbol_mappings:
     providers:
       stooq: "^sx5e"
       yahoo: "^STOXX50E"
+      twelvedata: "STOXX50E"
 
   "^STOXX":
     name: "STOXX Europe 600"
@@ -146,6 +252,7 @@ symbol_mappings:
     providers:
       stooq: "^stoxx"
       yahoo: "^STOXX"
+      twelvedata: "STOXX600"
 
   "^GDAXI":
     name: "DAX"
@@ -155,6 +262,7 @@ symbol_mappings:
     providers:
       stooq: "^dax"
       yahoo: "^GDAXI"
+      twelvedata: "DAX"
 
   "^FCHI":
     name: "CAC 40"
@@ -164,6 +272,7 @@ symbol_mappings:
     providers:
       stooq: "^cac"
       yahoo: "^FCHI"
+      twelvedata: "CAC40"
 
   "^FTSE":
     name: "FTSE 100"
@@ -173,6 +282,7 @@ symbol_mappings:
     providers:
       stooq: "^ftse"
       yahoo: "^FTSE"
+      twelvedata: "FTSE100"
 
   # ─── EEUU ──────────────────────────────────────────────────────────────────
   "^GSPC":
@@ -184,6 +294,7 @@ symbol_mappings:
       stooq: "^spx"
       yahoo: "^GSPC"
       finnhub: "^GSPC"
+      twelvedata: "SPX"
 
   "^NDX":
     name: "Nasdaq 100"
@@ -193,6 +304,7 @@ symbol_mappings:
     providers:
       stooq: "^ndx"
       yahoo: "^NDX"
+      twelvedata: "NDX"
 
   "^DJI":
     name: "Dow Jones"
@@ -202,6 +314,7 @@ symbol_mappings:
     providers:
       stooq: "^dji"
       yahoo: "^DJI"
+      twelvedata: "DJI"
 
   "^RUT":
     name: "Russell 2000"
@@ -211,6 +324,7 @@ symbol_mappings:
     providers:
       stooq: "^rut"
       yahoo: "^RUT"
+      twelvedata: "RUT"
 
   # ─── Asia ──────────────────────────────────────────────────────────────────
   "^N225":
@@ -221,6 +335,7 @@ symbol_mappings:
     providers:
       stooq: "^nky"
       yahoo: "^N225"
+      twelvedata: "N225"
 
   "^HSI":
     name: "Hang Seng"
@@ -230,6 +345,7 @@ symbol_mappings:
     providers:
       stooq: "^hsi"
       yahoo: "^HSI"
+      twelvedata: "HSI"
 
   "000001.SS":
     name: "Shanghai Composite"
@@ -260,6 +376,7 @@ symbol_mappings:
       yahoo: "BTC-USD"
       finnhub: "BINANCE:BTCUSDT"
       alphavantage: "BTCUSD"
+      twelvedata: "BTC/USD"
 
   "ETH-USD":
     name: "Ethereum"
@@ -271,6 +388,7 @@ symbol_mappings:
       yahoo: "ETH-USD"
       finnhub: "BINANCE:ETHUSDT"
       alphavantage: "ETHUSD"
+      twelvedata: "ETH/USD"
 
   "BNB-USD":
     name: "BNB"
@@ -281,6 +399,7 @@ symbol_mappings:
       stooq: "bnbusd"
       yahoo: "BNB-USD"
       finnhub: "BINANCE:BNBUSDT"
+      twelvedata: "BNB/USD"
 
   "SOL-USD":
     name: "Solana"
@@ -291,6 +410,7 @@ symbol_mappings:
       stooq: "solusd"
       yahoo: "SOL-USD"
       finnhub: "BINANCE:SOLUSDT"
+      twelvedata: "SOL/USD"
 
   # ─── Divisas ───────────────────────────────────────────────────────────────
   "EURUSD=X":
@@ -303,6 +423,7 @@ symbol_mappings:
       yahoo: "EURUSD=X"
       alphavantage: "EURUSD"
       finnhub: "OANDA:EUR_USD"
+      twelvedata: "EUR/USD"
 
   "EURGBP=X":
     name: "EUR/GBP"
@@ -314,6 +435,7 @@ symbol_mappings:
       yahoo: "EURGBP=X"
       alphavantage: "EURGBP"
       finnhub: "OANDA:EUR_GBP"
+      twelvedata: "EUR/GBP"
 
   "EURJPY=X":
     name: "EUR/JPY"
@@ -324,6 +446,7 @@ symbol_mappings:
       stooq: "eurjpy"
       yahoo: "EURJPY=X"
       alphavantage: "EURJPY"
+      twelvedata: "EUR/JPY"
 
   "GBPUSD=X":
     name: "GBP/USD"
@@ -334,6 +457,7 @@ symbol_mappings:
       stooq: "gbpusd"
       yahoo: "GBPUSD=X"
       alphavantage: "GBPUSD"
+      twelvedata: "GBP/USD"
 
   "JPY=X":
     name: "USD/JPY"
@@ -344,6 +468,7 @@ symbol_mappings:
       stooq: "usdjpy"
       yahoo: "JPY=X"
       alphavantage: "USDJPY"
+      twelvedata: "USD/JPY"
 
   "CHF=X":
     name: "USD/CHF"
@@ -354,6 +479,7 @@ symbol_mappings:
       stooq: "usdchf"
       yahoo: "CHF=X"
       alphavantage: "USDCHF"
+      twelvedata: "USD/CHF"
 
   # ─── Bonos 10Y ─────────────────────────────────────────────────────────────
   "^TNX":
@@ -406,6 +532,7 @@ symbol_mappings:
     providers:
       stooq: "xauusd"
       yahoo: "GC=F"
+      twelvedata: "XAU/USD"
 
   "SI=F":
     name: "Plata"
@@ -415,6 +542,7 @@ symbol_mappings:
     providers:
       stooq: "xagusd"
       yahoo: "SI=F"
+      twelvedata: "XAG/USD"
 
   "BZ=F":
     name: "Petróleo Brent"
@@ -424,6 +552,7 @@ symbol_mappings:
     providers:
       stooq: "cb.f"
       yahoo: "BZ=F"
+      twelvedata: "BRENT/USD"
 
   "CL=F":
     name: "Petróleo WTI"
@@ -433,6 +562,7 @@ symbol_mappings:
     providers:
       stooq: "cl.f"
       yahoo: "CL=F"
+      twelvedata: "WTI/USD"
 
   "NG=F":
     name: "Gas Natural"
@@ -442,6 +572,7 @@ symbol_mappings:
     providers:
       stooq: "ng.f"
       yahoo: "NG=F"
+      twelvedata: "NATURAL_GAS/USD"
 
   "HG=F":
     name: "Cobre"
@@ -451,6 +582,7 @@ symbol_mappings:
     providers:
       stooq: "hg.f"
       yahoo: "HG=F"
+      twelvedata: "COPPER/USD"
 
   # ─── Volatilidad ───────────────────────────────────────────────────────────
   "^VIX":
