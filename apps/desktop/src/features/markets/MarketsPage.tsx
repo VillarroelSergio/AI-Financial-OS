@@ -1,9 +1,8 @@
 import { useMemo, useState } from "react";
-import { RefreshCw } from "lucide-react";
-import type { FreshnessStatus, MarketCategory, MarketQuote } from "@/lib/types";
+import type { MarketCategory } from "@/lib/types";
 import { useMarkets } from "@/lib/hooks/useMarkets";
 import CategoryTabs from "./components/CategoryTabs";
-import LiveIndicator from "./components/LiveIndicator";
+import EodBadge from "./components/EodBadge";
 import QuoteRow from "./components/QuoteRow";
 
 const CATEGORY_ORDER: Array<{ key: MarketCategory; label: string }> = [
@@ -22,8 +21,8 @@ function TableHeader() {
     <div className="grid grid-cols-[1fr_80px_120px_100px] items-center gap-4 px-6 py-2 border-b border-divider-soft">
       <span className="text-caption text-mute uppercase tracking-widest">Activo</span>
       <span className="text-caption text-mute uppercase tracking-widest text-center">Tendencia</span>
-      <span className="text-caption text-mute uppercase tracking-widest text-right">Último precio</span>
-      <span className="text-caption text-mute uppercase tracking-widest text-right">Cambio</span>
+      <span className="text-caption text-mute uppercase tracking-widest text-right">Precio cierre</span>
+      <span className="text-caption text-mute uppercase tracking-widest text-right">Variación</span>
     </div>
   );
 }
@@ -69,41 +68,15 @@ function ErrorState({ message }: { message: string }) {
   );
 }
 
-function EmptyState({ noData }: { noData?: boolean }) {
+function EmptyState() {
   return (
     <div className="rounded-lg border border-hairline-dark bg-surface-elevated p-12 flex flex-col items-center text-center gap-3">
       <div className="w-10 h-10 rounded-full bg-surface-card flex items-center justify-center">
         <span className="text-stone text-lg">—</span>
       </div>
       <p className="text-body-sm text-stone">
-        {noData
-          ? "Pulsa «Actualizar» para cargar los datos de mercado"
-          : "No hay activos disponibles para esta categoría"}
+        Los datos de cierre se cargarán al arrancar la aplicación.
       </p>
-    </div>
-  );
-}
-
-interface QuotesPanelProps {
-  quotes: MarketQuote[];
-  selectedSymbol: string | null;
-  onSelect: (symbol: string) => void;
-}
-
-function QuoteGroupPanel({ quotes, selectedSymbol, onSelect }: QuotesPanelProps) {
-  return (
-    <div className="rounded-lg border border-hairline-dark bg-surface-elevated overflow-hidden">
-      <TableHeader />
-      <div className="divide-y divide-divider-soft">
-        {quotes.map((q) => (
-          <QuoteRow
-            key={q.symbol}
-            quote={q}
-            isSelected={selectedSymbol === q.symbol}
-            onSelect={onSelect}
-          />
-        ))}
-      </div>
     </div>
   );
 }
@@ -112,34 +85,29 @@ export default function MarketsPage() {
   const initialCategory = new URLSearchParams(window.location.search).get("category") as MarketCategory | null;
   const [activeCategory, setActiveCategory] = useState<MarketCategory | "all">(initialCategory ?? "all");
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
-  const { quotes, loading, error, secondsSinceUpdate, refreshing, refresh } = useMarkets();
+  const { quotes, loading, error } = useMarkets();
 
-  // Client-side category filter — no extra fetches needed when switching tabs.
   const visibleQuotes = activeCategory === "all"
     ? quotes
     : quotes.filter((q) => q.category === activeCategory);
 
-  // TODO: open asset detail panel when selectedSymbol is set
   const handleSelectAsset = (symbol: string) => {
     setSelectedSymbol((prev) => (prev === symbol ? null : symbol));
   };
 
   const hasData = !loading && !error && visibleQuotes.length > 0;
   const isEmpty = !loading && !error && visibleQuotes.length === 0;
-  const isInitial = isEmpty && quotes.length === 0;
 
-  // Compute worst freshness across all loaded quotes to drive LiveIndicator
-  const freshnessStatus = useMemo<FreshnessStatus>(() => {
-    if (!quotes.length) return "unknown";
-    const priority: FreshnessStatus[] = [
-      "error", "stale", "unknown", "closed", "eod", "delayed", "fresh", "live",
-    ];
-    const statuses = quotes.map((q) => q.freshness_status ?? "unknown");
-    for (const level of priority) {
-      if (statuses.includes(level)) return level;
-    }
-    return "unknown";
+  // Tomar la fecha de cierre del quote más reciente para el badge
+  const latestUpdated = useMemo(() => {
+    if (!quotes.length) return null;
+    return quotes.reduce((latest, q) =>
+      !latest || q.last_updated > latest ? q.last_updated : latest,
+      null as string | null,
+    );
   }, [quotes]);
+
+  const anyStale = quotes.some((q) => q.is_stale);
 
   return (
     <div className="p-8 space-y-6 max-w-[1400px]">
@@ -148,20 +116,11 @@ export default function MarketsPage() {
         <div>
           <h1 className="text-heading-md text-on-dark">Mercados</h1>
           <p className="text-caption text-stone mt-1">
-            Seguimiento en tiempo real de índices, divisas, cripto, bonos y materias primas.
+            Precios de cierre diario de índices, divisas, cripto, bonos y materias primas.
           </p>
         </div>
         <div className="flex items-center gap-3 flex-shrink-0 pt-1">
-          <LiveIndicator secondsSinceUpdate={secondsSinceUpdate} freshnessStatus={freshnessStatus} />
-          <button
-            type="button"
-            onClick={refresh}
-            disabled={refreshing}
-            className="inline-flex items-center gap-2 rounded-md border border-hairline-dark bg-surface-elevated px-3 py-1.5 text-caption font-medium text-on-dark transition-colors hover:bg-surface-card disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
-            {refreshing ? "Actualizando..." : "Actualizar"}
-          </button>
+          <EodBadge lastUpdated={latestUpdated} isStale={anyStale} />
         </div>
       </div>
 
@@ -171,7 +130,7 @@ export default function MarketsPage() {
       {/* States */}
       {loading && <LoadingSkeleton />}
       {error && !loading && <ErrorState message={error} />}
-      {isEmpty && <EmptyState noData={isInitial} />}
+      {isEmpty && <EmptyState />}
 
       {/* All categories grouped */}
       {hasData && activeCategory === "all" && (
@@ -206,11 +165,19 @@ export default function MarketsPage() {
 
       {/* Single category flat list */}
       {hasData && activeCategory !== "all" && (
-        <QuoteGroupPanel
-          quotes={visibleQuotes}
-          selectedSymbol={selectedSymbol}
-          onSelect={handleSelectAsset}
-        />
+        <div className="rounded-lg border border-hairline-dark bg-surface-elevated overflow-hidden">
+          <TableHeader />
+          <div className="divide-y divide-divider-soft">
+            {visibleQuotes.map((q) => (
+              <QuoteRow
+                key={q.symbol}
+                quote={q}
+                isSelected={selectedSymbol === q.symbol}
+                onSelect={handleSelectAsset}
+              />
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );
