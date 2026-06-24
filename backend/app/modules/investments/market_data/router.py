@@ -124,9 +124,9 @@ class ProviderRouter:
         return self._catalog
 
     def get_quote(
-        self, asset: AssetConfig, *, force_refresh: bool = False
+        self, asset: AssetConfig, *, force_refresh: bool = False, eod_only: bool = False
     ) -> MarketQuoteInternal:
-        ttl = _TTL.get(asset.asset_type, 900)
+        ttl = 86400 if eod_only else _TTL.get(asset.asset_type, 900)
 
         # 1. Cache check
         cached_row = self._cache.get_quote(asset.internal_symbol)
@@ -164,6 +164,9 @@ class ProviderRouter:
                 logger.debug("Skipping %s for %s: budget_exhausted", pname, asset.internal_symbol)
                 continue
             fetch_pool.append((pname, provider, sym))
+
+        if eod_only:
+            fetch_pool = [(p, prov, sym) for p, prov, sym in fetch_pool if p == "stooq"]
 
         # 3. Parallel fetch
         quotes: list[MarketQuoteInternal] = []

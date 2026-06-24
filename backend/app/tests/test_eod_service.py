@@ -109,3 +109,34 @@ def test_concurrent_calls_run_only_once():
             t1.join(); t2.join()
 
     assert call_count == 1
+
+
+def test_provider_router_eod_only_filters_to_stooq():
+    """Con eod_only=True, solo Stooq entra en el fetch pool."""
+    from app.modules.investments.market_data.router import ProviderRouter, AssetConfig
+
+    router = ProviderRouter()
+    asset = AssetConfig(
+        internal_symbol="IBEX35",
+        name="IBEX 35",
+        category="indices_eu",
+        asset_type="index",
+        currency="EUR",
+        provider_symbols={"stooq": "^ibex", "yahoo": "^IBEX", "twelvedata": "IBEX35"},
+    )
+
+    called_providers: list[str] = []
+    original_get_quote = router._providers["stooq"].get_quote
+
+    def tracking_stooq(*args, **kwargs):
+        called_providers.append("stooq")
+        return original_get_quote(*args, **kwargs)
+
+    for name in ["alphavantage", "finnhub", "fmp", "twelvedata", "yahoo"]:
+        router._providers[name].get_quote = lambda *a, **kw: (_ for _ in ()).throw(
+            AssertionError(f"{name} should not be called in eod_only mode")
+        )
+    router._providers["stooq"].get_quote = tracking_stooq
+
+    router.get_quote(asset, force_refresh=True, eod_only=True)
+    assert called_providers == ["stooq"]
