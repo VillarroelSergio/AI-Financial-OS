@@ -149,8 +149,9 @@ def get_personal_impact(db: Session) -> PersonalImpactOut:
 
 
 def _calc_inflation_vs_savings(db: Session) -> ImpactItem:
-    from app.models.transaction import Transaction
     from decimal import Decimal
+
+    from app.models.transaction import Transaction
 
     inflation_row = repo.get_latest("ESPCPIALLMINMEI")
     macro_value = inflation_row["value"] if inflation_row else None
@@ -244,7 +245,7 @@ def _calc_rates_vs_liquidity(db: Session) -> ImpactItem:
 
 
 def _calc_market_vs_portfolio(db: Session) -> ImpactItem:
-    from app.models.investment import Holding, InvestmentOperation
+    from app.models.investment import Holding
 
     eurostoxx_row = repo.get_latest("EUROSTOXX50")
     macro_value = None
@@ -294,9 +295,10 @@ def _calc_market_vs_portfolio(db: Session) -> ImpactItem:
 
 
 def _calc_purchasing_power(db: Session) -> ImpactItem:
-    from app.models.transaction import Transaction
+    from datetime import datetime, timedelta, timezone
     from decimal import Decimal
-    from datetime import datetime, timezone, timedelta
+
+    from app.models.transaction import Transaction
 
     inflation_row = repo.get_latest("ESPCPIALLMINMEI")
     macro_value = inflation_row["value"] if inflation_row else None

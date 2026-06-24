@@ -1,4 +1,4 @@
-"""Tests for market data — Fase 4.5 Multi-Provider Architecture."""
+﻿"""Tests for market data â€” Fase 4.5 Multi-Provider Architecture."""
 from __future__ import annotations
 
 from datetime import datetime, timezone
@@ -6,17 +6,16 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-from app.modules.market_data.providers.base import MarketQuoteInternal
-from app.modules.market_data.providers.stooq import StooqProvider
-from app.modules.market_data.providers.yahoo import YahooFinanceProvider
-from app.modules.market_data.providers.alphavantage import AlphaVantageProvider
-from app.modules.market_data.providers.finnhub import FinnhubProvider
-from app.modules.market_data.providers.fmp import FMPProvider
-from app.modules.market_data.router import ProviderRouter, _quote_row_to_api_dict
-from app.modules.market_data.schemas import QuoteOut
+from app.modules.investments.market_data.providers.alphavantage import AlphaVantageProvider
+from app.modules.investments.market_data.providers.base import MarketQuoteInternal
+from app.modules.investments.market_data.providers.finnhub import FinnhubProvider
+from app.modules.investments.market_data.providers.fmp import FMPProvider
+from app.modules.investments.market_data.providers.stooq import StooqProvider
+from app.modules.investments.market_data.providers.yahoo import YahooFinanceProvider
+from app.modules.investments.market_data.router import ProviderRouter, _quote_row_to_api_dict
+from app.modules.investments.market_data.schemas import QuoteOut
 
-
-# ─── Helpers ─────────────────────────────────────────────────────────────────
+# â”€â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _make_quote(
     symbol: str = "^IBEX",
@@ -78,7 +77,7 @@ def _make_error_quote(source: str = "stooq") -> MarketQuoteInternal:
     )
 
 
-# ─── 1. Stooq CSV parsing ────────────────────────────────────────────────────
+# â”€â”€â”€ 1. Stooq CSV parsing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class TestStooqProvider:
     def test_supports_index(self):
@@ -98,7 +97,7 @@ class TestStooqProvider:
 
     def test_get_quote_network_failure_returns_error(self):
         p = StooqProvider()
-        with patch("app.modules.market_data.providers.stooq.requests.get", side_effect=Exception("network error")):
+        with patch("app.modules.investments.market_data.providers.stooq.requests.get", side_effect=Exception("network error")):
             result = p.get_quote("^IBEX", "^ibex", "IBEX 35", "index", "indices_eu", "EUR")
         assert result.freshness_status == "error"
         assert result.price is None
@@ -107,7 +106,7 @@ class TestStooqProvider:
     def test_get_quote_timeout_returns_error(self):
         import requests as req
         p = StooqProvider()
-        with patch("app.modules.market_data.providers.stooq.requests.get", side_effect=req.exceptions.Timeout):
+        with patch("app.modules.investments.market_data.providers.stooq.requests.get", side_effect=req.exceptions.Timeout):
             result = p.get_quote("^IBEX", "^ibex", "IBEX 35", "index", "indices_eu", "EUR")
         assert result.freshness_status == "error"
         assert "timeout" in (result.warning or "").lower()
@@ -117,7 +116,7 @@ class TestStooqProvider:
         mock_resp = MagicMock()
         mock_resp.status_code = 200
         mock_resp.text = "Date,Open,High,Low,Close,Volume\n"  # header only, no data
-        with patch("app.modules.market_data.providers.stooq.requests.get", return_value=mock_resp):
+        with patch("app.modules.investments.market_data.providers.stooq.requests.get", return_value=mock_resp):
             result = p.get_quote("^IBEX", "^ibex", "IBEX 35", "index", "indices_eu", "EUR")
         assert result.freshness_status == "error"
 
@@ -131,7 +130,7 @@ class TestStooqProvider:
         mock_resp = MagicMock()
         mock_resp.status_code = 200
         mock_resp.text = csv_data
-        with patch("app.modules.market_data.providers.stooq.requests.get", return_value=mock_resp):
+        with patch("app.modules.investments.market_data.providers.stooq.requests.get", return_value=mock_resp):
             result = p.get_quote("^IBEX", "^ibex", "IBEX 35", "index", "indices_eu", "EUR")
         assert result.price == pytest.approx(9876.0)
         assert result.change_percent is not None
@@ -144,12 +143,12 @@ class TestStooqProvider:
         mock_resp = MagicMock()
         mock_resp.status_code = 200
         mock_resp.text = csv_data
-        with patch("app.modules.market_data.providers.stooq.requests.get", return_value=mock_resp):
+        with patch("app.modules.investments.market_data.providers.stooq.requests.get", return_value=mock_resp):
             result = p.get_quote("^IBEX", "^ibex", "IBEX 35", "index", "indices_eu", "EUR")
         assert result.freshness_status == "error"
 
 
-# ─── 2. Yahoo fallback ───────────────────────────────────────────────────────
+# â”€â”€â”€ 2. Yahoo fallback â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class TestYahooFinanceProvider:
     def test_supports_any_asset_type(self):
@@ -164,7 +163,7 @@ class TestYahooFinanceProvider:
         mock_ticker.fast_info.market_state = "REGULAR"
         mock_ticker.history.return_value = MagicMock(empty=True)
         p = YahooFinanceProvider()
-        with patch("app.modules.market_data.providers.yahoo.yf.Ticker", return_value=mock_ticker):
+        with patch("app.modules.investments.market_data.providers.yahoo.yf.Ticker", return_value=mock_ticker):
             result = p.get_quote("^IBEX", "^IBEX", "IBEX 35", "index", "indices_eu", "EUR")
         # Yahoo is now primary source; is_fallback depends on router position, not provider default
         assert result.is_fallback is False
@@ -176,19 +175,19 @@ class TestYahooFinanceProvider:
         mock_ticker.fast_info.market_state = "REGULAR"
         mock_ticker.history.return_value = MagicMock(empty=True)
         p = YahooFinanceProvider()
-        with patch("app.modules.market_data.providers.yahoo.yf.Ticker", return_value=mock_ticker):
+        with patch("app.modules.investments.market_data.providers.yahoo.yf.Ticker", return_value=mock_ticker):
             result = p.get_quote("^IBEX", "^IBEX", "IBEX 35", "index", "indices_eu", "EUR")
         assert result.freshness_status != "live", "Yahoo must never claim 'live' freshness"
 
     def test_yahoo_failure_returns_error_quote(self):
         p = YahooFinanceProvider()
-        with patch("app.modules.market_data.providers.yahoo.yf.Ticker", side_effect=Exception("net err")):
+        with patch("app.modules.investments.market_data.providers.yahoo.yf.Ticker", side_effect=Exception("net err")):
             result = p.get_quote("X", "X", "X", "index", "indices_eu", "EUR")
         assert result.freshness_status == "error"
         assert result.price is None
 
 
-# ─── 3. Optional providers without API key ───────────────────────────────────
+# â”€â”€â”€ 3. Optional providers without API key â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class TestOptionalProvidersWithoutApiKey:
     def test_alphavantage_disabled_without_key(self, monkeypatch):
@@ -231,7 +230,7 @@ class TestOptionalProvidersWithoutApiKey:
         assert result.freshness_status == "error"
 
 
-# ─── 4. Provider routing ─────────────────────────────────────────────────────
+# â”€â”€â”€ 4. Provider routing â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class TestProviderRouting:
     def _make_router_with_mock_providers(
@@ -250,9 +249,9 @@ class TestProviderRouting:
         router._config = {"routing": routing}
         router._routing = routing
         router._catalog = []
-        from app.modules.market_data.cache import MarketCache
-        from app.modules.market_data.consensus import ConsensusEngine
-        from app.modules.market_data.budget import RequestBudget
+        from app.modules.investments.market_data.budget import RequestBudget
+        from app.modules.investments.market_data.cache import MarketCache
+        from app.modules.investments.market_data.consensus import ConsensusEngine
         router._cache = MagicMock(spec=MarketCache)
         router._cache.get_quote.return_value = None  # no cache by default
         router._consensus = ConsensusEngine()
@@ -276,7 +275,7 @@ class TestProviderRouting:
         return router
 
     def _make_asset(self, asset_type: str = "index") -> "AssetConfig":
-        from app.modules.market_data.router import AssetConfig
+        from app.modules.investments.market_data.router import AssetConfig
         return AssetConfig(
             internal_symbol="^IBEX",
             name="IBEX 35",
@@ -315,7 +314,7 @@ class TestProviderRouting:
             "warning": None, "sparkline": [], "market_status": "closed",
             "market_time": None, "provider_symbol": "^ibex",
             "fetched_at": datetime.now(timezone.utc).isoformat(),
-            "cached_at": "2000-01-01T00:00:00",  # very old → stale
+            "cached_at": "2000-01-01T00:00:00",  # very old â†’ stale
         }
         router._cache.get_quote.return_value = stale_row
         # Make all providers fail
@@ -332,11 +331,11 @@ class TestProviderRouting:
         assert result.price == 9800.0
 
 
-# ─── 5. Cache TTL ────────────────────────────────────────────────────────────
+# â”€â”€â”€ 5. Cache TTL â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class TestCacheTTL:
     def test_fresh_cache_is_returned_without_calling_provider(self):
-        from app.modules.market_data.router import ProviderRouter, AssetConfig
+        from app.modules.investments.market_data.router import AssetConfig, ProviderRouter
         router = ProviderRouter.__new__(ProviderRouter)
         router._config = {"routing": {"indices": ["stooq", "yahoo"]}}
         router._catalog = []
@@ -350,9 +349,9 @@ class TestCacheTTL:
             "warning": None, "sparkline": [], "market_status": "closed",
             "market_time": None, "provider_symbol": "^ibex",
             "fetched_at": datetime.now(timezone.utc).isoformat(),
-            "cached_at": datetime.now(timezone.utc).isoformat(),  # just now → fresh
+            "cached_at": datetime.now(timezone.utc).isoformat(),  # just now â†’ fresh
         }
-        from app.modules.market_data.cache import MarketCache
+        from app.modules.investments.market_data.cache import MarketCache
         router._cache = MagicMock(spec=MarketCache)
         router._cache.get_quote.return_value = fresh_row
         router._providers = {}
@@ -368,7 +367,7 @@ class TestCacheTTL:
         assert router._providers == {}
 
 
-# ─── 6. Freshness status rules ───────────────────────────────────────────────
+# â”€â”€â”€ 6. Freshness status rules â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class TestFreshnessStatus:
     def test_yahoo_never_returns_live(self):
@@ -378,7 +377,7 @@ class TestFreshnessStatus:
         mock_ticker.fast_info.market_state = "REGULAR"
         mock_ticker.history.return_value = MagicMock(empty=True)
         p = YahooFinanceProvider()
-        with patch("app.modules.market_data.providers.yahoo.yf.Ticker", return_value=mock_ticker):
+        with patch("app.modules.investments.market_data.providers.yahoo.yf.Ticker", return_value=mock_ticker):
             result = p.get_quote("X", "X", "X", "index", "indices_eu", "EUR")
         assert result.freshness_status not in ("live",)
 
@@ -392,13 +391,13 @@ class TestFreshnessStatus:
         mock_resp = MagicMock()
         mock_resp.status_code = 200
         mock_resp.text = csv_data
-        with patch("app.modules.market_data.providers.stooq.requests.get", return_value=mock_resp):
+        with patch("app.modules.investments.market_data.providers.stooq.requests.get", return_value=mock_resp):
             result = p.get_quote("^IBEX", "^ibex", "IBEX 35", "index", "indices_eu", "EUR")
-        # Old data → eod
+        # Old data â†’ eod
         assert result.freshness_status == "eod"
 
 
-# ─── 7. QuoteOut schema validation ───────────────────────────────────────────
+# â”€â”€â”€ 7. QuoteOut schema validation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class TestQuoteOutSchema:
     def test_quote_out_has_all_required_fields(self):
@@ -437,7 +436,7 @@ class TestQuoteOutSchema:
         assert d["source"] == "stooq"
 
 
-# ─── 8. Symbol mapping coverage ──────────────────────────────────────────────
+# â”€â”€â”€ 8. Symbol mapping coverage â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class TestSymbolMappings:
     def test_all_36_assets_present_in_catalog(self):
@@ -460,11 +459,11 @@ class TestSymbolMappings:
             )
 
     def test_no_manual_csv_provider_in_catalog(self):
-        """ManualCsvProvider must never exist — data comes exclusively from web providers."""
+        """ManualCsvProvider must never exist â€” data comes exclusively from web providers."""
         router = ProviderRouter()
         for pname in router._providers:
             assert "csv" not in pname.lower(), (
-                f"Provider '{pname}' looks like a manual CSV importer — not allowed"
+                f"Provider '{pname}' looks like a manual CSV importer â€” not allowed"
             )
 
     def test_category_counts(self):
@@ -481,7 +480,7 @@ class TestSymbolMappings:
         assert counts["volatility"] == 1
 
 
-# ─── 9. Rate limit handling ──────────────────────────────────────────────────
+# â”€â”€â”€ 9. Rate limit handling â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class TestRateLimiting:
     def test_alphavantage_rate_limit_returns_error(self, monkeypatch):
@@ -489,12 +488,13 @@ class TestRateLimiting:
         p = AlphaVantageProvider()
         # Exhaust the rate limit
         import time
-        import app.modules.market_data.providers.alphavantage as av_mod
+
+        import app.modules.investments.market_data.providers.alphavantage as av_mod
         now = time.monotonic()
         av_mod._call_times[:] = [now] * 100  # fill with recent timestamps
         result = p.get_quote("AAPL", "AAPL", "Apple", "stock", "stocks_us", "USD")
         assert result.freshness_status == "error"
-        assert "rate" in (result.warning or "").lower() or "límite" in (result.warning or "").lower()
+        assert "rate" in (result.warning or "").lower() or "llamadas" in (result.warning or "").lower()
         # Clean up
         av_mod._call_times.clear()
 
@@ -502,7 +502,8 @@ class TestRateLimiting:
         monkeypatch.setattr("app.core.config.settings.FINNHUB_API_KEY", "testkey")
         p = FinnhubProvider()
         import time
-        import app.modules.market_data.providers.finnhub as fh_mod
+
+        import app.modules.investments.market_data.providers.finnhub as fh_mod
         now = time.monotonic()
         fh_mod._call_times[:] = [now] * 100
         result = p.get_quote("AAPL", "AAPL", "Apple", "stock", "stocks_us", "USD")
@@ -510,9 +511,9 @@ class TestRateLimiting:
         fh_mod._call_times.clear()
 
 
-# ─── 10. RequestBudget tests ────────────────────────────────────────────────────
+# â”€â”€â”€ 10. RequestBudget tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-from app.modules.market_data.budget import RequestBudget
+from app.modules.investments.market_data.budget import RequestBudget
 
 
 class TestRequestBudget:
@@ -528,7 +529,7 @@ class TestRequestBudget:
 
     def test_can_request_for_unlimited_provider(self):
         budget = RequestBudget(limits={"alphavantage": 400})
-        # stooq has no limit — always allowed
+        # stooq has no limit â€” always allowed
         assert budget.can_request("stooq") is True
 
     def test_get_remaining(self):
@@ -541,21 +542,20 @@ class TestRequestBudget:
         assert budget.get_remaining("yahoo") == 9999
 
 
-# ── TwelveDataProvider tests ─────────────────────────────────────────────────
+# â”€â”€ TwelveDataProvider tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-from unittest.mock import patch, MagicMock
 
 
 class TestTwelveDataProvider:
     def _make_provider(self) -> "TwelveDataProvider":
-        from app.modules.market_data.providers.twelvedata import TwelveDataProvider
+        from app.modules.investments.market_data.providers.twelvedata import TwelveDataProvider
         p = TwelveDataProvider.__new__(TwelveDataProvider)
         p.api_key = "test_key"
         p.enabled = True
         return p
 
     def test_supports_all_asset_types(self):
-        from app.modules.market_data.providers.twelvedata import TwelveDataProvider
+        from app.modules.investments.market_data.providers.twelvedata import TwelveDataProvider
         p = TwelveDataProvider.__new__(TwelveDataProvider)
         p.api_key = "key"
         p.enabled = True
@@ -563,13 +563,13 @@ class TestTwelveDataProvider:
             assert p.supports(at, "ANY") is True
 
     def test_does_not_support_fundamentals(self):
-        from app.modules.market_data.providers.twelvedata import TwelveDataProvider
+        from app.modules.investments.market_data.providers.twelvedata import TwelveDataProvider
         p = TwelveDataProvider.__new__(TwelveDataProvider)
         p.api_key = "key"
         p.enabled = True
         assert p.supports("fundamentals", "AAPL") is False
 
-    @patch("app.modules.market_data.providers.twelvedata.requests.get")
+    @patch("app.modules.investments.market_data.providers.twelvedata.requests.get")
     def test_get_quote_success(self, mock_get):
         mock_resp = MagicMock()
         mock_resp.status_code = 200
@@ -590,7 +590,7 @@ class TestTwelveDataProvider:
         assert result.freshness_status != "error"
         assert result.source == "twelvedata"
 
-    @patch("app.modules.market_data.providers.twelvedata.requests.get")
+    @patch("app.modules.investments.market_data.providers.twelvedata.requests.get")
     def test_get_quote_returns_error_on_no_price(self, mock_get):
         mock_resp = MagicMock()
         mock_resp.status_code = 200
@@ -603,7 +603,7 @@ class TestTwelveDataProvider:
         assert result.price is None
         assert result.freshness_status == "error"
 
-    @patch("app.modules.market_data.providers.twelvedata.requests.get")
+    @patch("app.modules.investments.market_data.providers.twelvedata.requests.get")
     def test_get_quote_timeout_returns_error(self, mock_get):
         import requests as req_lib
         mock_get.side_effect = req_lib.exceptions.Timeout()
@@ -615,9 +615,9 @@ class TestTwelveDataProvider:
         assert "timeout" in (result.warning or "").lower()
 
 
-# ── ConsensusEngine tests ────────────────────────────────────────────────────
+# â”€â”€ ConsensusEngine tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-from app.modules.market_data.consensus import ConsensusEngine, ConsensusResult
+from app.modules.investments.market_data.consensus import ConsensusEngine
 
 
 def _make_cq(source: str, price: float, freshness: str = "delayed",
@@ -664,7 +664,7 @@ class TestConsensusEngine:
         self.engine = ConsensusEngine()
 
     def test_primary_wins_when_within_threshold(self):
-        # primary (stooq) at 5000, validators at 5001 and 5002 — all within 1%
+        # primary (stooq) at 5000, validators at 5001 and 5002 â€” all within 1%
         quotes = [
             _make_cq("stooq", 5000.0),
             _make_cq("twelvedata", 5001.0),
@@ -691,7 +691,7 @@ class TestConsensusEngine:
         assert "provider_mismatch" in result.warnings
 
     def test_outlier_discarded(self):
-        # One provider grossly wrong — must be discarded
+        # One provider grossly wrong â€” must be discarded
         quotes = [
             _make_cq("stooq", 5000.0),
             _make_cq("twelvedata", 5001.0),
@@ -716,10 +716,10 @@ class TestConsensusEngine:
         assert result.confidence_score == 0.0
 
     def test_two_providers_no_outlier_detection(self):
-        # With only 2 providers, no outlier removal — compare directly
+        # With only 2 providers, no outlier removal â€” compare directly
         quotes = [
             _make_cq("stooq", 5000.0),
-            _make_cq("twelvedata", 5002.0),  # 0.04% diff — within 1%
+            _make_cq("twelvedata", 5002.0),  # 0.04% diff â€” within 1%
         ]
         result = self.engine.resolve(quotes, "index", "stooq")
         assert result.consensus_method == "primary"
@@ -756,9 +756,9 @@ class TestConsensusEngine:
         assert isinstance(result.reason, str)
 
 
-# ── Router parallel fetch + consensus integration tests ──────────────────────
+# â”€â”€ Router parallel fetch + consensus integration tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 
 class TestRouterParallelFetch:
@@ -780,8 +780,7 @@ class TestRouterParallelFetch:
         return p
 
     def test_yahoo_not_called_when_others_succeed(self):
-        from app.modules.market_data.router import ProviderRouter
-        from app.modules.market_data.providers.base import MarketQuoteInternal
+        from app.modules.investments.market_data.router import ProviderRouter
 
         router = ProviderRouter.__new__(ProviderRouter)
         router._config = {
@@ -790,19 +789,20 @@ class TestRouterParallelFetch:
             "provider_weights": {"stooq": {"index": 0.9}, "twelvedata": {"index": 0.8}, "yahoo": {"index": 0.3}},
             "request_budget": {},
         }
-        from app.modules.market_data.router import AssetConfig
-        from app.modules.market_data.cache import MarketCache
-        from app.modules.market_data.consensus import ConsensusEngine
-        from app.modules.market_data.budget import RequestBudget
+        from app.modules.investments.market_data.budget import RequestBudget
+        from app.modules.investments.market_data.cache import MarketCache
+        from app.modules.investments.market_data.consensus import ConsensusEngine
+        from app.modules.investments.market_data.router import AssetConfig
 
         router._catalog = []
         router._routing = router._config["routing"]
         router._cache = MagicMock(spec=MarketCache)
         router._cache.get_quote.return_value = None
         router._consensus = ConsensusEngine.__new__(ConsensusEngine)
-        import yaml
         from pathlib import Path
-        cfg = yaml.safe_load(Path("app/modules/market_data/config/market_data_config.yaml").read_text(encoding="utf-8"))
+
+        import yaml
+        cfg = yaml.safe_load(Path("app/modules/investments/market_data/config/market_data_config.yaml").read_text(encoding="utf-8"))
         router._consensus._outlier_thresholds = cfg["outlier_thresholds"]
         router._consensus._provider_weights = cfg["provider_weights"]
         router._budget = RequestBudget(limits={})
@@ -834,10 +834,10 @@ class TestRouterParallelFetch:
         yahoo_mock.get_quote.assert_not_called()
 
     def test_yahoo_called_as_last_resort_when_all_fail(self):
-        from app.modules.market_data.router import ProviderRouter, AssetConfig
-        from app.modules.market_data.cache import MarketCache
-        from app.modules.market_data.consensus import ConsensusEngine
-        from app.modules.market_data.budget import RequestBudget
+        from app.modules.investments.market_data.budget import RequestBudget
+        from app.modules.investments.market_data.cache import MarketCache
+        from app.modules.investments.market_data.consensus import ConsensusEngine
+        from app.modules.investments.market_data.router import AssetConfig, ProviderRouter
 
         router = ProviderRouter.__new__(ProviderRouter)
         router._config = {
@@ -851,9 +851,10 @@ class TestRouterParallelFetch:
         router._cache = MagicMock(spec=MarketCache)
         router._cache.get_quote.return_value = None
         router._consensus = ConsensusEngine.__new__(ConsensusEngine)
-        import yaml
         from pathlib import Path
-        cfg = yaml.safe_load(Path("app/modules/market_data/config/market_data_config.yaml").read_text(encoding="utf-8"))
+
+        import yaml
+        cfg = yaml.safe_load(Path("app/modules/investments/market_data/config/market_data_config.yaml").read_text(encoding="utf-8"))
         router._consensus._outlier_thresholds = cfg["outlier_thresholds"]
         router._consensus._provider_weights = cfg["provider_weights"]
         router._budget = RequestBudget(limits={})
@@ -880,3 +881,4 @@ class TestRouterParallelFetch:
         result = router.get_quote(asset)
         yahoo_mock.get_quote.assert_called_once()
         assert "yahoo_last_resort" in (result.warning or "")
+

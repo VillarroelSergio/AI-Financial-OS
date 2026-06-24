@@ -33,7 +33,7 @@ export const snapshotRoutes: SnapshotRoute[] = [
     requiresInteraction: false,
   },
   {
-    path: "/investments",
+    path: "/investments?demo=empty",
     filename: "investments-empty.png",
     screenName: "Investments (empty)",
     state: "empty",
@@ -97,7 +97,7 @@ export const snapshotRoutes: SnapshotRoute[] = [
     requiresInteraction: false,
   },
   {
-    path: "/markets",
+    path: "/markets?category=indices_eu",
     filename: "markets-europa.png",
     screenName: "Markets Europa",
     state: "mock_data",

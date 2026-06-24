@@ -8,6 +8,7 @@ Public API surface is preserved:
 """
 from app.modules.investments.market_data.router import get_quotes  # noqa: F401 — re-exported
 
+
 # ASSET_CATALOG is now owned by the router (loaded from market_data_config.yaml).
 # Keep a reference here for tests that import it.
 def _get_catalog():

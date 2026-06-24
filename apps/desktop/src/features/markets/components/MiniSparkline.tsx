@@ -1,5 +1,5 @@
 // apps/desktop/src/features/markets/components/MiniSparkline.tsx
-import { Line, LineChart, ResponsiveContainer } from "recharts";
+import { Line, LineChart } from "recharts";
 
 interface Props {
   sparkline: number[];
@@ -45,8 +45,7 @@ export default function MiniSparkline({ sparkline, changePct }: Props) {
       style={{ width: SPARKLINE_WIDTH, height: SPARKLINE_HEIGHT }}
       aria-hidden="true"
     >
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={chartData} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
+        <LineChart width={SPARKLINE_WIDTH} height={SPARKLINE_HEIGHT} data={chartData} margin={{ top: 2, right: 2, bottom: 2, left: 2 }}>
           <Line
             type="monotone"
             dataKey="v"
@@ -56,7 +55,6 @@ export default function MiniSparkline({ sparkline, changePct }: Props) {
             isAnimationActive={false}
           />
         </LineChart>
-      </ResponsiveContainer>
     </div>
   );
 }

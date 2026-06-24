@@ -224,6 +224,8 @@ const mockSettings: AppSetting[] = [
   { id: "set-3", key: "app.currency", value_json: '"EUR"', created_at: "2024-01-01T00:00:00", updated_at: "2024-01-01T00:00:00" },
 ];
 
+const mockGoals: import("./goals").Goal[] = [];
+
 // Sparkline sintético: tendencia con ruido
 function makeSparkline(base: number, trend: number): number[] {
   return Array.from({ length: 20 }, (_, i) => {
@@ -301,7 +303,7 @@ export const mockMarketQuotes: MarketQuote[] = rawMockMarketQuotes.map((quote) =
   confidence_score: 1,
 }));
 
-export function getMockResponse<T>(path: string): T {
+export function getMockResponse<T>(path: string, init?: RequestInit): T {
   const clean = path.split("?")[0];
 
   if (clean === "/api/accounts") return mockAccounts as T;
@@ -310,6 +312,41 @@ export function getMockResponse<T>(path: string): T {
   if (clean === "/api/dashboard/overview") return mockOverview as T;
   if (clean === "/api/dashboard/spending") return mockSpending as T;
   if (clean === "/api/settings") return mockSettings as T;
+  if (clean.startsWith("/api/settings/")) {
+    const key = decodeURIComponent(clean.slice("/api/settings/".length));
+    const existing = mockSettings.find((setting) => setting.key === key);
+    const payload = typeof init?.body === "string" ? JSON.parse(init.body) as { value_json?: string } : {};
+    const updated = existing ?? {
+      id: `mock-${key}`,
+      key,
+      value_json: '""',
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    if (payload.value_json !== undefined) updated.value_json = payload.value_json;
+    updated.updated_at = new Date().toISOString();
+    return updated as T;
+  }
+  if (clean === "/api/goals") {
+    if (init?.method === "POST" && typeof init.body === "string") {
+      const payload = JSON.parse(init.body) as import("./goals").GoalCreate;
+      const now = new Date().toISOString();
+      const goal: import("./goals").Goal = { ...payload, id: crypto.randomUUID(), status: "active", created_at: now, updated_at: now };
+      mockGoals.unshift(goal);
+      return goal as T;
+    }
+    return [...mockGoals] as T;
+  }
+  if (clean.startsWith("/api/goals/")) {
+    const id = clean.slice("/api/goals/".length);
+    const index = mockGoals.findIndex((goal) => goal.id === id);
+    if (init?.method === "DELETE") { if (index >= 0) mockGoals.splice(index, 1); return undefined as T; }
+    if (init?.method === "PATCH" && index >= 0 && typeof init.body === "string") {
+      mockGoals[index] = { ...mockGoals[index], ...JSON.parse(init.body), updated_at: new Date().toISOString() };
+      return mockGoals[index] as T;
+    }
+  }
+  if (clean.startsWith("/api/accounts/") && init?.method === "DELETE") return undefined as T;
   if (clean === "/api/investments/assets") return mockInvestmentAssets as T;
   if (clean === "/api/investments/holdings") return mockHoldings as T;
   if (clean === "/api/investments/summary") return mockInvestmentSummary as T;

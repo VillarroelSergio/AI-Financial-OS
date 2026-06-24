@@ -18,7 +18,6 @@ from typing import Optional
 import duckdb
 import pandas as pd
 
-from app.core.config import settings
 from app.core.duckdb import get_duckdb
 from app.modules.investments.market_data.providers.base import MarketQuoteInternal
 

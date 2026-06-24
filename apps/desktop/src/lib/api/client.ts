@@ -16,7 +16,7 @@ export class ApiError extends Error {
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (USE_MOCK) {
-    return Promise.resolve(getMockResponse<T>(path));
+    return Promise.resolve(getMockResponse<T>(path, init));
   }
 
   const isFormData = init?.body instanceof FormData;
@@ -37,7 +37,12 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     );
   }
 
-  return response.json() as Promise<T>;
+  if (response.status === 204 || response.headers.get("content-length") === "0") {
+    return undefined as T;
+  }
+
+  const text = await response.text();
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
 export const api = {

@@ -5,6 +5,7 @@ import IndicatorCard from "./components/IndicatorCard";
 import RegionTabs, { type RegionTab } from "./components/RegionTabs";
 import ImpactCard from "./components/ImpactCard";
 import type { EconomicIndicator, RegionSnapshot } from "@/lib/types";
+import { ErrorState as PremiumErrorState } from "@/components/ui/Dashboard";
 
 // Indicators shown in the top global snapshot strip
 const GLOBAL_SERIES = ["ESPCPIALLMINMEI", "ECBDFR", "FEDFUNDS", "EURUSD"];
@@ -22,14 +23,6 @@ function LoadingSkeleton() {
           <div key={i} className="h-24 rounded-xl bg-surface-elevated border border-hairline-dark" />
         ))}
       </div>
-    </div>
-  );
-}
-
-function ErrorState({ message }: { message: string }) {
-  return (
-    <div className="rounded-xl border border-accent-danger/30 bg-accent-danger/5 p-6">
-      <p className="text-body-sm text-accent-danger">{message}</p>
     </div>
   );
 }
@@ -118,7 +111,13 @@ export default function EconomyPage() {
       </div>
 
       {loading && <LoadingSkeleton />}
-      {error && !loading && <ErrorState message={error} />}
+      {error && !loading && (
+        <PremiumErrorState
+          title="No se han podido cargar los indicadores macroeconómicos"
+          description="El proveedor local no devolvió datos para Economía. Puedes reintentar o revisar la configuración."
+          onRetry={refresh}
+        />
+      )}
 
       {!loading && snapshot && (
         <>

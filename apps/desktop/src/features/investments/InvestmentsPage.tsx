@@ -14,6 +14,7 @@ import AddFundDialog from "./components/AddFundDialog";
 import AddSavingsDialog from "./components/AddSavingsDialog";
 
 export default function InvestmentsPage() {
+  const demoEmpty = new URLSearchParams(window.location.search).get("demo") === "empty";
   const { summary, loading: summaryLoading, refresh: refreshSummary } = useInvestmentSummary();
   const { holdings, loading: holdingsLoading, refresh: refreshHoldings } = useHoldings();
   const { accounts } = useAccounts();
@@ -65,7 +66,7 @@ export default function InvestmentsPage() {
     );
   }
 
-  const hasHoldings = holdings.length > 0;
+  const hasHoldings = !demoEmpty && holdings.length > 0;
   const returnPct = summary?.return_percent ?? 0;
   const isPositive = returnPct >= 0;
 

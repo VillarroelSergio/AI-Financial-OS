@@ -109,7 +109,8 @@ function QuoteGroupPanel({ quotes, selectedSymbol, onSelect }: QuotesPanelProps)
 }
 
 export default function MarketsPage() {
-  const [activeCategory, setActiveCategory] = useState<MarketCategory | "all">("all");
+  const initialCategory = new URLSearchParams(window.location.search).get("category") as MarketCategory | null;
+  const [activeCategory, setActiveCategory] = useState<MarketCategory | "all">(initialCategory ?? "all");
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
   const { quotes, loading, error, secondsSinceUpdate, refreshing, refresh } = useMarkets();
 

@@ -1,8 +1,8 @@
 """Tests for Fase 5 — Economic Intelligence."""
 from decimal import Decimal
 from unittest.mock import MagicMock, patch
-import pytest
 
+import pytest
 
 # ── FredProvider ──────────────────────────────────────────────────────────────
 
@@ -82,10 +82,10 @@ class TestFredProvider:
 @pytest.fixture
 def temp_repo(monkeypatch):
     """Returns a fresh repository instance backed by an in-memory DuckDB."""
-    import app.modules.economic_data.repository as repo_mod
-
     # Force a fresh in-memory connection for each test
     import duckdb
+
+    import app.modules.economic_data.repository as repo_mod
     in_mem_conn = duckdb.connect(":memory:")
     # Pre-create the table
     in_mem_conn.execute(repo_mod._DDL)
@@ -220,7 +220,7 @@ class TestEconomyRoutes:
         assert r.status_code == 409
 
     def test_impact_endpoint_returns_200(self, client):
-        from app.modules.economic_data.schemas import PersonalImpactOut, ImpactItem
+        from app.modules.economic_data.schemas import ImpactItem, PersonalImpactOut
         no_data = ImpactItem(
             title="T", macro_value=None, personal_value=None,
             delta=None, interpretation="no_data", description="Sin datos.",

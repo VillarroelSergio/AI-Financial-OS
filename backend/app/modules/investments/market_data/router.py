@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import logging
 import threading
-from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError as FuturesTimeout
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -22,7 +22,7 @@ from typing import Optional
 
 import yaml
 
-from app.modules.investments.market_data.budget import get_budget, RequestBudget
+from app.modules.investments.market_data.budget import RequestBudget, get_budget
 from app.modules.investments.market_data.cache import MarketCache
 from app.modules.investments.market_data.consensus import ConsensusEngine
 from app.modules.investments.market_data.providers import (

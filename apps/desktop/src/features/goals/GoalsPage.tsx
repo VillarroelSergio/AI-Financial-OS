@@ -1,8 +1,27 @@
+import { useState } from "react";
+import { CalendarDays, Plus, Target, Trash2 } from "lucide-react";
+import { EmptyState, ErrorState, LoadingState, PageHeader } from "@/components/ui/Dashboard";
+import { formatCurrency } from "@/lib/formatters/currency";
+import { useGoals } from "@/lib/hooks/useGoals";
+import type { GoalCreate } from "@/lib/api/goals";
+
+const EMPTY: GoalCreate = { name: "", type: "custom", target_amount: "", current_amount: "0", target_date: null, monthly_contribution: null, priority: "medium" };
+
 export default function GoalsPage() {
-  return (
-    <div className="p-8">
-      <h1 className="text-display-lg text-on-dark">Objetivos</h1>
-      <p className="text-body-md text-stone mt-2">Objetivos financieros — Fase 8</p>
-    </div>
-  );
+  const { goals, loading, error, reload, add, remove } = useGoals();
+  const [open, setOpen] = useState(false); const [form, setForm] = useState<GoalCreate>(EMPTY); const [saving, setSaving] = useState(false); const [actionError, setActionError] = useState<string | null>(null);
+  const submit = async (event: React.FormEvent) => { event.preventDefault(); setSaving(true); setActionError(null); try { await add(form); setForm(EMPTY); setOpen(false); } catch { setActionError("No se ha podido crear el objetivo. Revisa los importes e inténtalo de nuevo."); } finally { setSaving(false); } };
+  if (loading) return <LoadingState label="Cargando objetivos"/>;
+  return <div className="p-8 max-w-[1500px] mx-auto space-y-6">
+    <PageHeader eyebrow="Planificación" title="Objetivos" description="Convierte tus prioridades financieras en un plan medible" actions={<button onClick={()=>setOpen(true)} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold"><Plus size={16}/>Crear objetivo</button>}/>
+    {error && <ErrorState title="No se han podido cargar los objetivos" description={error} onRetry={reload}/>} {actionError && <ErrorState title="No se ha podido completar la acción" description={actionError}/>} 
+    {open && <form onSubmit={submit} className="premium-card rounded-xl p-6 space-y-5"><div className="flex items-center justify-between"><h2 className="font-semibold">Nuevo objetivo</h2><button type="button" onClick={()=>setOpen(false)} className="text-sm text-stone">Cancelar</button></div><div className="grid grid-cols-2 gap-4">
+      <label className="col-span-2 text-sm text-stone">Nombre<input required maxLength={120} value={form.name} onChange={e=>setForm({...form,name:e.target.value})} className="mt-2 w-full rounded-lg border border-hairline-dark bg-surface-elevated px-3 py-2.5 text-on-dark" placeholder="Fondo de emergencia"/></label>
+      <label className="text-sm text-stone">Cantidad objetivo<input required min="0.01" step="0.01" type="number" value={form.target_amount} onChange={e=>setForm({...form,target_amount:e.target.value})} className="mt-2 w-full rounded-lg border border-hairline-dark bg-surface-elevated px-3 py-2.5 text-on-dark"/></label>
+      <label className="text-sm text-stone">Ahorrado actualmente<input min="0" step="0.01" type="number" value={form.current_amount} onChange={e=>setForm({...form,current_amount:e.target.value})} className="mt-2 w-full rounded-lg border border-hairline-dark bg-surface-elevated px-3 py-2.5 text-on-dark"/></label>
+      <label className="text-sm text-stone">Fecha objetivo<input type="date" value={form.target_date??""} onChange={e=>setForm({...form,target_date:e.target.value||null})} className="mt-2 w-full rounded-lg border border-hairline-dark bg-surface-elevated px-3 py-2.5 text-on-dark"/></label>
+      <label className="text-sm text-stone">Aportación mensual<input min="0" step="0.01" type="number" value={form.monthly_contribution??""} onChange={e=>setForm({...form,monthly_contribution:e.target.value||null})} className="mt-2 w-full rounded-lg border border-hairline-dark bg-surface-elevated px-3 py-2.5 text-on-dark"/></label>
+    </div><button disabled={saving} className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold disabled:opacity-50">{saving?"Guardando…":"Guardar objetivo"}</button></form>}
+    {!error && goals.length===0 ? <EmptyState icon={Target} title="Define tus próximos objetivos financieros" description="Crea metas como fondo de emergencia, entrada de vivienda o inversión a largo plazo." action={<button onClick={()=>setOpen(true)} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold"><Plus size={16}/>Crear objetivo</button>}/> : <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">{goals.map(goal=>{const progress=Math.min(100,Number(goal.current_amount)/Math.max(1,Number(goal.target_amount))*100);return <article key={goal.id} className="premium-card rounded-xl p-5"><div className="flex justify-between gap-4"><div><p className="text-xs text-primary-bright uppercase tracking-wider">{goal.priority === "high" ? "Prioridad alta" : "Objetivo activo"}</p><h2 className="mt-2 text-lg font-semibold">{goal.name}</h2></div><button aria-label={`Eliminar ${goal.name}`} onClick={()=>void remove(goal.id).catch(()=>setActionError("No se ha podido eliminar el objetivo."))} className="h-9 w-9 grid place-items-center rounded-lg text-stone hover:bg-accent-danger/10 hover:text-accent-danger"><Trash2 size={16}/></button></div><div className="mt-6 flex justify-between financial-number"><span>{formatCurrency(goal.current_amount)}</span><span className="text-stone">de {formatCurrency(goal.target_amount)}</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-white/5"><div className="h-full rounded-full bg-primary" style={{width:`${progress}%`}}/></div><div className="mt-4 flex justify-between text-xs text-stone"><span>{progress.toFixed(0)}% completado</span>{goal.target_date&&<span className="inline-flex items-center gap-1"><CalendarDays size={13}/>{new Date(`${goal.target_date}T00:00:00`).toLocaleDateString("es-ES")}</span>}</div></article>})}</div>}
+  </div>;
 }
