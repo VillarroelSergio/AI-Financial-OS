@@ -1,20 +1,21 @@
-"""ProviderRouter — selects the best provider for each asset and manages cache + fallback.
+"""ProviderRouter — parallel fetch + ConsensusEngine + Yahoo last resort.
 
 Algorithm per asset:
   1. Check DuckDB cache. Return immediately if fresh (within TTL).
-  2. Try providers in routing order for this asset_type.
-     - Skip disabled providers and those without API key.
-     - Skip if provider.supports() returns False.
-     - On success: cache result, return.
-     - On error: log, try next provider.
-  3. If all providers fail: return stale cache (marked stale) or error quote.
-  4. Optional cross-validation: if two providers agree within 1%, increase confidence.
+  2. Fetch all configured providers in parallel (ThreadPoolExecutor, 5s timeout).
+     - Skip providers without symbol mapping for this asset.
+     - Skip budget-aware providers if RequestBudget.can_request() is False.
+     - Yahoo is only added to the pool if valid_provider_count == 0 after all others.
+  3. Run ConsensusEngine.resolve() on collected quotes.
+  4. Store consensus result in cache, return.
+  5. If all providers fail AND cache stale: return stale cache with stale_cache_used warning.
 """
 from __future__ import annotations
 
 import logging
 import threading
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError as FuturesTimeout
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -22,7 +23,9 @@ from typing import Optional
 
 import yaml
 
+from app.modules.market_data.budget import get_budget, RequestBudget
 from app.modules.market_data.cache import MarketCache
+from app.modules.market_data.consensus import ConsensusEngine
 from app.modules.market_data.providers import (
     AlphaVantageProvider,
     FinnhubProvider,
@@ -30,23 +33,25 @@ from app.modules.market_data.providers import (
     MarketDataProvider,
     MarketQuoteInternal,
     StooqProvider,
+    TwelveDataProvider,
     YahooFinanceProvider,
 )
 
 logger = logging.getLogger(__name__)
 
 _CONFIG_PATH = Path(__file__).parent / "config" / "market_data_config.yaml"
+_PROVIDER_FETCH_TIMEOUT = 5.0  # seconds per provider
 
 
 @dataclass
 class AssetConfig:
     """Full asset descriptor loaded from market_data_config.yaml."""
-    internal_symbol: str    # e.g. "^IBEX" (used as API symbol for backward compat)
+    internal_symbol: str
     name: str
     category: str
     asset_type: str
     currency: str
-    provider_symbols: dict[str, str]   # {"stooq": "^ibex", "yahoo": "^IBEX", ...}
+    provider_symbols: dict[str, str]
 
 
 def _load_config() -> dict:
@@ -63,14 +68,11 @@ def _build_asset_catalog(config: dict) -> list[AssetConfig]:
             category=meta["category"],
             asset_type=meta["asset_type"],
             currency=meta["currency"],
-            provider_symbols={
-                k: v for k, v in meta.get("providers", {}).items() if v
-            },
+            provider_symbols={k: v for k, v in meta.get("providers", {}).items() if v},
         ))
     return catalog
 
 
-# Routing key from asset_type
 def _route_key(asset_type: str, category: str) -> str:
     mapping = {
         "index": "indices",
@@ -82,11 +84,11 @@ def _route_key(asset_type: str, category: str) -> str:
         "bond": "bond",
         "volatility": "volatility",
     }
-    # Distinguish EU/US/Asia stocks if needed (not currently used for indices)
+    if asset_type == "stock" and "europe" in category:
+        return "stocks_europe"
     return mapping.get(asset_type, "indices")
 
 
-# TTL seconds by asset_type
 _TTL: dict[str, int] = {
     "crypto": 300,
     "index": 900,
@@ -100,19 +102,22 @@ _TTL: dict[str, int] = {
 
 
 class ProviderRouter:
-    """Selects providers, manages cache, handles fallback and cross-validation."""
+    """Parallel fetch + ConsensusEngine routing."""
 
     def __init__(self) -> None:
         self._config = _load_config()
         self._catalog = _build_asset_catalog(self._config)
         self._routing = self._config.get("routing", {})
         self._cache = MarketCache()
+        self._consensus = ConsensusEngine()
+        self._budget: RequestBudget = get_budget()
         self._providers: dict[str, MarketDataProvider] = {
             "stooq": StooqProvider(),
             "yahoo": YahooFinanceProvider(),
             "finnhub": FinnhubProvider(),
             "alphavantage": AlphaVantageProvider(),
             "fmp": FMPProvider(),
+            "twelvedata": TwelveDataProvider(),
         }
 
     @property
@@ -122,110 +127,189 @@ class ProviderRouter:
     def get_quote(self, asset: AssetConfig) -> MarketQuoteInternal:
         ttl = _TTL.get(asset.asset_type, 900)
 
-        # 1. Check cache
+        # 1. Cache check
         cached_row = self._cache.get_quote(asset.internal_symbol)
         if cached_row and self._is_cache_fresh(cached_row, ttl):
             return self._row_to_internal(cached_row, asset)
 
-        # 2. Try providers in routing order
+        # 2. Build provider pool (excluding Yahoo)
         route_key = _route_key(asset.asset_type, asset.category)
-        provider_names: list[str] = self._routing.get(route_key, ["yahoo"])
+        route = self._routing.get(route_key, {})
 
-        last_error: Optional[str] = None
-        primary_provider: Optional[str] = None
-        for pname in provider_names:
+        primary_name: str = route.get("primary", "stooq")
+        validators: list[str] = route.get("validators", [])
+        budget_aware: list[str] = route.get("budget_aware", [])
+        last_resort: str = route.get("last_resort", "yahoo")
+
+        all_providers = [primary_name] + [v for v in validators if v != primary_name]
+        # Add budget_aware providers if not already listed and if budget allows
+        for ba in budget_aware:
+            if ba not in all_providers:
+                all_providers.append(ba)
+
+        fetch_pool = []
+        for pname in all_providers:
+            if pname == last_resort:
+                continue  # Yahoo guard — added only if needed
             provider = self._providers.get(pname)
             if not provider or not provider.enabled:
                 continue
-
-            provider_symbol = asset.provider_symbols.get(pname, "")
-            if not provider_symbol:
-                continue  # no mapping for this provider
-
-            if not provider.supports(asset.asset_type, provider_symbol):
+            sym = asset.provider_symbols.get(pname, "")
+            if not sym:
                 continue
+            if not provider.supports(asset.asset_type, sym):
+                continue
+            if pname in budget_aware and not self._budget.can_request(pname):
+                logger.debug("Skipping %s for %s: budget_exhausted", pname, asset.internal_symbol)
+                continue
+            fetch_pool.append((pname, provider, sym))
 
-            if primary_provider is None:
-                primary_provider = pname
-            is_fb = pname != primary_provider
-            try:
-                quote = provider.get_quote(
-                    internal_symbol=asset.internal_symbol,
-                    provider_symbol=provider_symbol,
-                    name=asset.name,
-                    asset_type=asset.asset_type,
-                    category=asset.category,
-                    currency=asset.currency,
-                    is_fallback=is_fb,
-                )
-                if quote.freshness_status == "error" or quote.price is None:
-                    last_error = quote.warning
-                    continue  # try next provider
-
-                # Cross-validate if cached and prices differ >1%
-                if cached_row and cached_row.get("price") and quote.price:
-                    old_price = float(cached_row["price"])
-                    diff_pct = abs(quote.price - old_price) / old_price * 100
-                    if diff_pct > 1.0:
-                        logger.info(
-                            "provider_mismatch %s: old=%.4f new=%.4f diff=%.2f%%",
-                            asset.internal_symbol, old_price, quote.price, diff_pct,
+        # 3. Parallel fetch
+        quotes: list[MarketQuoteInternal] = []
+        if fetch_pool:
+            with ThreadPoolExecutor(max_workers=len(fetch_pool)) as executor:
+                futures = {
+                    executor.submit(
+                        provider.get_quote,
+                        asset.internal_symbol, sym, asset.name,
+                        asset.asset_type, asset.category, asset.currency,
+                        is_fallback=(pname != primary_name),
+                    ): pname
+                    for pname, provider, sym in fetch_pool
+                }
+                for future in as_completed(futures, timeout=_PROVIDER_FETCH_TIMEOUT + 1):
+                    pname = futures[future]
+                    try:
+                        q = future.result(timeout=_PROVIDER_FETCH_TIMEOUT)
+                        quotes.append(q)
+                        self._cache.log_fetch(
+                            provider=pname,
+                            internal_symbol=asset.internal_symbol,
+                            provider_symbol=asset.provider_symbols.get(pname, ""),
+                            asset_type=asset.asset_type,
+                            cache_hit=False,
+                            freshness_status=q.freshness_status,
+                            fallback_used=(pname != primary_name),
                         )
-                        if not quote.warning:
-                            quote.warning = (
-                                f"Precio cambió {diff_pct:.1f}% respecto a dato anterior"
-                            )
-                        if diff_pct > 5.0:
-                            quote.confidence_score = min(quote.confidence_score, 0.6)
+                    except Exception as exc:
+                        logger.warning("Router: %s failed for %s: %s", pname, asset.internal_symbol, exc)
 
-                self._cache.put_quote(quote)
-                self._cache.log_fetch(
-                    provider=pname,
-                    internal_symbol=asset.internal_symbol,
-                    provider_symbol=provider_symbol,
-                    asset_type=asset.asset_type,
-                    cache_hit=False,
-                    freshness_status=quote.freshness_status,
-                    fallback_used=is_fb,
-                )
-                return quote
+        # 4. Yahoo last resort — only if no valid price found
+        valid_count = sum(1 for q in quotes if q.price is not None and q.freshness_status != "error")
+        if valid_count == 0:
+            yahoo_provider = self._providers.get(last_resort)
+            yahoo_sym = asset.provider_symbols.get(last_resort, "")
+            if yahoo_provider and yahoo_provider.enabled and yahoo_sym:
+                try:
+                    yq = yahoo_provider.get_quote(
+                        asset.internal_symbol, yahoo_sym, asset.name,
+                        asset.asset_type, asset.category, asset.currency,
+                        is_fallback=True,
+                    )
+                    if yq.price is not None:
+                        yq.warning = "yahoo_last_resort"
+                    quotes.append(yq)
+                    self._cache.log_fetch(
+                        provider=last_resort,
+                        internal_symbol=asset.internal_symbol,
+                        provider_symbol=yahoo_sym,
+                        asset_type=asset.asset_type,
+                        cache_hit=False,
+                        freshness_status=yq.freshness_status,
+                        fallback_used=True,
+                    )
+                except Exception as exc:
+                    logger.warning("Router: yahoo last resort failed for %s: %s", asset.internal_symbol, exc)
 
-            except Exception as exc:
-                logger.warning("Router: provider %s failed for %s: %s", pname, asset.internal_symbol, exc)
-                last_error = str(exc)
-                continue
+        # 5. ConsensusEngine resolution
+        result = self._consensus.resolve(quotes, asset.asset_type, primary_name)
 
-        # 3. All providers failed — return stale cache or error
-        if cached_row:
-            stale = self._row_to_internal(cached_row, asset)
-            stale.is_stale = True
-            stale.freshness_status = "stale"
-            stale.warning = f"Dato cacheado (todos los proveedores fallaron). Último: {last_error or 'error desconocido'}"
-            return stale
+        # 6. Log decision
+        logger.debug(
+            "consensus_decision symbol=%s source=%s method=%s confidence=%.2f "
+            "valid=%d/%d outliers=%s warnings=%s reason=%s",
+            asset.internal_symbol, result.selected_source, result.consensus_method,
+            result.confidence_score, result.valid_provider_count, result.provider_count,
+            result.outliers, result.warnings, result.reason,
+        )
 
-        return MarketQuoteInternal(
+        if result.price is None:
+            # All failed — return stale cache if available
+            if cached_row:
+                stale = self._row_to_internal(cached_row, asset)
+                stale.is_stale = True
+                stale.freshness_status = "stale"
+                stale.warning = "stale_cache_used"
+                return stale
+            # Build error quote
+            return MarketQuoteInternal(
+                internal_symbol=asset.internal_symbol,
+                provider_symbol=asset.provider_symbols.get("yahoo", asset.internal_symbol),
+                name=asset.name,
+                asset_type=asset.asset_type,
+                category=asset.category,
+                price=None,
+                currency=asset.currency,
+                change_absolute=None,
+                change_percent=None,
+                source="none",
+                source_type="error",
+                fetched_at=datetime.now(timezone.utc),
+                market_time=None,
+                market_status="unknown",
+                freshness_status="error",
+                delay_minutes=0,
+                is_stale=False,
+                is_fallback=False,
+                confidence_score=0.0,
+                warning="; ".join(result.warnings) or "Sin datos disponibles",
+                sparkline=[],
+            )
+
+        # 7. Build final MarketQuoteInternal from consensus result
+        # Take sparkline and change fields from the selected-source quote or primary
+        source_quote = next(
+            (q for q in quotes if q.source == result.selected_source),
+            next((q for q in quotes if q.price is not None), quotes[0] if quotes else None),
+        )
+        sparkline = source_quote.sparkline if source_quote else []
+        change_absolute = source_quote.change_absolute if source_quote else None
+        change_percent = source_quote.change_percent if source_quote else None
+        market_time = source_quote.market_time if source_quote else None
+        market_status = source_quote.market_status if source_quote else "unknown"
+
+        yahoo_last_resort_used = any(q.warning == "yahoo_last_resort" for q in quotes)
+        all_warnings = list(result.warnings)
+        if yahoo_last_resort_used and "yahoo_last_resort" not in all_warnings:
+            all_warnings.append("yahoo_last_resort")
+        warning_str = "; ".join(all_warnings) if all_warnings else None
+
+        final_quote = MarketQuoteInternal(
             internal_symbol=asset.internal_symbol,
-            provider_symbol=asset.provider_symbols.get("yahoo", asset.internal_symbol),
+            provider_symbol=asset.provider_symbols.get(result.selected_source, asset.internal_symbol),
             name=asset.name,
             asset_type=asset.asset_type,
             category=asset.category,
-            price=None,
+            price=result.price,
             currency=asset.currency,
-            change_absolute=None,
-            change_percent=None,
-            source="none",
-            source_type="error",
+            change_absolute=change_absolute,
+            change_percent=change_percent,
+            source=result.selected_source,
+            source_type=result.source_type,
             fetched_at=datetime.now(timezone.utc),
-            market_time=None,
-            market_status="unknown",
-            freshness_status="error",
-            delay_minutes=0,
+            market_time=market_time,
+            market_status=market_status,
+            freshness_status=result.freshness_status,
+            delay_minutes=15,
             is_stale=False,
-            is_fallback=False,
-            confidence_score=0.0,
-            warning=f"Sin datos disponibles. Último error: {last_error or 'desconocido'}",
-            sparkline=[],
+            is_fallback=(result.selected_source != primary_name),
+            confidence_score=result.confidence_score,
+            warning=warning_str,
+            sparkline=sparkline,
         )
+
+        self._cache.put_quote(final_quote)
+        return final_quote
 
     def _is_cache_fresh(self, row: dict, ttl: int) -> bool:
         cached_at = row.get("cached_at")
@@ -238,11 +322,9 @@ class ProviderRouter:
                 return False
         if cached_at.tzinfo is None:
             cached_at = cached_at.replace(tzinfo=timezone.utc)
-        age = (datetime.now(timezone.utc) - cached_at).total_seconds()
-        return age < ttl
+        return (datetime.now(timezone.utc) - cached_at).total_seconds() < ttl
 
     def _row_to_internal(self, row: dict, asset: AssetConfig) -> MarketQuoteInternal:
-        """Convert a DuckDB cache row dict back to MarketQuoteInternal."""
         fetched_raw = row.get("fetched_at")
         fetched_at = (
             datetime.fromisoformat(str(fetched_raw))
@@ -250,7 +332,6 @@ class ProviderRouter:
         )
         if fetched_at.tzinfo is None:
             fetched_at = fetched_at.replace(tzinfo=timezone.utc)
-
         market_time_raw = row.get("market_time")
         market_time: Optional[datetime] = None
         if market_time_raw:
@@ -260,7 +341,6 @@ class ProviderRouter:
                     market_time = market_time.replace(tzinfo=timezone.utc)
             except (ValueError, TypeError):
                 pass
-
         return MarketQuoteInternal(
             internal_symbol=asset.internal_symbol,
             provider_symbol=row.get("provider_symbol", ""),

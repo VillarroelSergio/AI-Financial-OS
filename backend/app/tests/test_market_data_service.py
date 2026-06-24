@@ -52,6 +52,32 @@ def _make_quote(
     )
 
 
+def _make_error_quote(source: str = "stooq") -> MarketQuoteInternal:
+    return MarketQuoteInternal(
+        internal_symbol="^GSPC",
+        provider_symbol="^gspc",
+        name="Test Asset",
+        asset_type="index",
+        category="indices_us",
+        price=None,
+        currency="USD",
+        change_absolute=None,
+        change_percent=None,
+        source=source,
+        source_type="error",
+        fetched_at=datetime.now(timezone.utc),
+        market_time=None,
+        market_status="unknown",
+        freshness_status="error",
+        delay_minutes=0,
+        is_stale=False,
+        is_fallback=False,
+        confidence_score=0.0,
+        warning="provider_error",
+        sparkline=[],
+    )
+
+
 # ─── 1. Stooq CSV parsing ────────────────────────────────────────────────────
 
 class TestStooqProvider:
@@ -213,20 +239,24 @@ class TestProviderRouting:
     ) -> ProviderRouter:
         router = ProviderRouter.__new__(ProviderRouter)
         routing = {
-            "indices": ["stooq", "yahoo"],
-            "forex": ["stooq", "yahoo"],
-            "crypto": ["yahoo"],
-            "commodity": ["stooq", "yahoo"],
-            "bond": ["stooq", "yahoo"],
-            "volatility": ["stooq", "yahoo"],
-            "stocks_us": ["yahoo"],
+            "indices": {"primary": "stooq", "validators": [], "budget_aware": [], "last_resort": "yahoo"},
+            "forex": {"primary": "stooq", "validators": [], "budget_aware": [], "last_resort": "yahoo"},
+            "crypto": {"primary": "yahoo", "validators": [], "budget_aware": [], "last_resort": "yahoo"},
+            "commodity": {"primary": "stooq", "validators": [], "budget_aware": [], "last_resort": "yahoo"},
+            "bond": {"primary": "stooq", "validators": [], "budget_aware": [], "last_resort": "yahoo"},
+            "volatility": {"primary": "stooq", "validators": [], "budget_aware": [], "last_resort": "yahoo"},
+            "stocks_us": {"primary": "yahoo", "validators": [], "budget_aware": [], "last_resort": "yahoo"},
         }
         router._config = {"routing": routing}
         router._routing = routing
         router._catalog = []
         from app.modules.market_data.cache import MarketCache
+        from app.modules.market_data.consensus import ConsensusEngine
+        from app.modules.market_data.budget import RequestBudget
         router._cache = MagicMock(spec=MarketCache)
         router._cache.get_quote.return_value = None  # no cache by default
+        router._consensus = ConsensusEngine()
+        router._budget = RequestBudget(limits={})
 
         mock_stooq = MagicMock()
         mock_stooq.enabled = True
@@ -724,3 +754,128 @@ class TestConsensusEngine:
         assert isinstance(result.discarded_providers, list)
         assert isinstance(result.warnings, list)
         assert isinstance(result.reason, str)
+
+
+# ── Router parallel fetch + consensus integration tests ──────────────────────
+
+from unittest.mock import patch, MagicMock
+
+
+class TestRouterParallelFetch:
+    def _mock_provider(self, name: str, price: float) -> MagicMock:
+        p = MagicMock()
+        p.name = name
+        p.enabled = True
+        p.supports.return_value = True
+        q = _make_quote(name, price)
+        return p
+
+    def _mock_error_provider(self, name: str) -> MagicMock:
+        p = MagicMock()
+        p.name = name
+        p.enabled = True
+        p.supports.return_value = True
+        p.get_quote.return_value = _make_error_quote(name)
+        return p
+
+    def test_yahoo_not_called_when_others_succeed(self):
+        from app.modules.market_data.router import ProviderRouter
+        from app.modules.market_data.providers.base import MarketQuoteInternal
+
+        router = ProviderRouter.__new__(ProviderRouter)
+        router._config = {
+            "routing": {"indices": {"primary": "stooq", "validators": ["twelvedata"], "budget_aware": [], "last_resort": "yahoo"}},
+            "outlier_thresholds": {"index": 0.01},
+            "provider_weights": {"stooq": {"index": 0.9}, "twelvedata": {"index": 0.8}, "yahoo": {"index": 0.3}},
+            "request_budget": {},
+        }
+        from app.modules.market_data.router import AssetConfig
+        from app.modules.market_data.cache import MarketCache
+        from app.modules.market_data.consensus import ConsensusEngine
+        from app.modules.market_data.budget import RequestBudget
+
+        router._catalog = []
+        router._routing = router._config["routing"]
+        router._cache = MagicMock(spec=MarketCache)
+        router._cache.get_quote.return_value = None
+        router._consensus = ConsensusEngine.__new__(ConsensusEngine)
+        import yaml
+        from pathlib import Path
+        cfg = yaml.safe_load(Path("app/modules/market_data/config/market_data_config.yaml").read_text(encoding="utf-8"))
+        router._consensus._outlier_thresholds = cfg["outlier_thresholds"]
+        router._consensus._provider_weights = cfg["provider_weights"]
+        router._budget = RequestBudget(limits={})
+
+        yahoo_mock = self._mock_provider("yahoo", 5000.0)
+        stooq_mock = self._mock_provider("stooq", 5000.0)
+        twelvedata_mock = self._mock_provider("twelvedata", 5001.0)
+
+        stooq_mock.get_quote.return_value = _make_quote("^GSPC", 5000.0, source="stooq")
+        twelvedata_mock.get_quote.return_value = _make_quote("^GSPC", 5001.0, source="twelvedata")
+
+        router._providers = {
+            "stooq": stooq_mock,
+            "twelvedata": twelvedata_mock,
+            "yahoo": yahoo_mock,
+        }
+
+        asset = AssetConfig(
+            internal_symbol="^GSPC",
+            name="S&P 500",
+            category="indices_us",
+            asset_type="index",
+            currency="USD",
+            provider_symbols={"stooq": "^spx", "twelvedata": "SPX", "yahoo": "^GSPC"},
+        )
+
+        result = router.get_quote(asset)
+        assert result.price is not None
+        yahoo_mock.get_quote.assert_not_called()
+
+    def test_yahoo_called_as_last_resort_when_all_fail(self):
+        from app.modules.market_data.router import ProviderRouter, AssetConfig
+        from app.modules.market_data.cache import MarketCache
+        from app.modules.market_data.consensus import ConsensusEngine
+        from app.modules.market_data.budget import RequestBudget
+
+        router = ProviderRouter.__new__(ProviderRouter)
+        router._config = {
+            "routing": {"indices": {"primary": "stooq", "validators": ["twelvedata"], "budget_aware": [], "last_resort": "yahoo"}},
+            "outlier_thresholds": {"index": 0.01},
+            "provider_weights": {"stooq": {"index": 0.9}, "twelvedata": {"index": 0.8}, "yahoo": {"index": 0.3}},
+            "request_budget": {},
+        }
+        router._catalog = []
+        router._routing = router._config["routing"]
+        router._cache = MagicMock(spec=MarketCache)
+        router._cache.get_quote.return_value = None
+        router._consensus = ConsensusEngine.__new__(ConsensusEngine)
+        import yaml
+        from pathlib import Path
+        cfg = yaml.safe_load(Path("app/modules/market_data/config/market_data_config.yaml").read_text(encoding="utf-8"))
+        router._consensus._outlier_thresholds = cfg["outlier_thresholds"]
+        router._consensus._provider_weights = cfg["provider_weights"]
+        router._budget = RequestBudget(limits={})
+
+        yahoo_mock = self._mock_provider("yahoo", 5000.0)
+        yahoo_mock.get_quote.return_value = _make_quote("^GSPC", 5000.0, source="yahoo")
+        stooq_mock = self._mock_error_provider("stooq")
+        twelvedata_mock = self._mock_error_provider("twelvedata")
+        router._providers = {
+            "stooq": stooq_mock,
+            "twelvedata": twelvedata_mock,
+            "yahoo": yahoo_mock,
+        }
+
+        asset = AssetConfig(
+            internal_symbol="^GSPC",
+            name="S&P 500",
+            category="indices_us",
+            asset_type="index",
+            currency="USD",
+            provider_symbols={"stooq": "^spx", "twelvedata": "SPX", "yahoo": "^GSPC"},
+        )
+
+        result = router.get_quote(asset)
+        yahoo_mock.get_quote.assert_called_once()
+        assert "yahoo_last_resort" in (result.warning or "")
