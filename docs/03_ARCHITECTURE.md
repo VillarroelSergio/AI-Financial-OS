@@ -52,7 +52,7 @@ FastAPI Backend
  ├─ Import Center
  ├─ Analytics Engine
  ├─ Investment Module
- ├─ Market Data Module
+ ├─ Market Data Module (providers + ConsensusEngine + RequestBudget + DuckDB cache)
  ├─ Economic Intelligence Module
  ├─ AI Service
  ├─ RAG Service future
@@ -101,7 +101,7 @@ backend/app/modules/
   imports/
   dashboard/
   investments/
-  market_data/
+  market_data/          # providers/, consensus.py, budget.py, router.py, cache.py
   economic_data/
   goals/
   insights/

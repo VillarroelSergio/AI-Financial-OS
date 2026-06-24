@@ -246,6 +246,66 @@ con máxima cobertura, caché DuckDB y señales de frescura de datos.
 
 ---
 
+## Fase 4.6 — Consensus Engine & TwelveData ✅
+
+### Objetivo
+
+Sustituir el fetch secuencial con fallback por un sistema de **fetch paralelo + motor de consenso**
+que cruza los datos de múltiples proveedores para maximizar precisión. Yahoo Finance queda
+relegado a último recurso. Se añade TwelveData como nuevo proveedor primario para forex y commodities.
+
+### Incluye
+
+- **TwelveDataProvider** — nuevo proveedor gratuito (800 req/día, 8 req/min). Primario para forex,
+  commodities y validador para índices y cripto. API key: `TWELVEDATA_API_KEY`.
+- **ConsensusEngine** (`consensus.py`) — motor de resolución de precio aislado y testeable:
+  - **Estrategia D**: proveedor primario por asset_type con validadores en paralelo.
+  - **Estrategia B**: mediana como precio de referencia cuando ≥3 proveedores disponibles.
+  - **Estrategia C**: ponderación por proveedor × frescura × bonus primario × penalización fallback.
+  - Detección y descarte de outliers con umbrales configurables por asset_type.
+  - `confidence_score` final refleja calidad del consenso (0.0–1.0).
+- **RequestBudget** (`budget.py`) — contador diario de peticiones por proveedor, backed en DuckDB.
+  Alpha Vantage (400/día), TwelveData (700/día), FMP (200/día). Falla en abierto.
+- **Fetch paralelo** — `ThreadPoolExecutor` en el router. Todos los providers se consultan
+  simultáneamente, no en cascada. Timeout: 5 segundos por proveedor.
+- **Yahoo como último recurso** — solo se invoca si `valid_provider_count == 0` tras el fetch paralelo.
+  Nunca actúa como fuente primaria ni validador.
+- **Routing declarativo** por `primary / validators / budget_aware / last_resort` en el YAML.
+- **Logs de decisión estructurados** — cada resolución emite `selected_source`, `consensus_method`,
+  `confidence_score`, `valid_provider_count`, `outliers`, `warnings`, `reason`.
+- **Warnings normalizados** — `rate_limited`, `budget_exhausted`, `provider_error`, `provider_timeout`,
+  `provider_mismatch`, `outlier_detected`, `unverified_single_provider`, `yahoo_last_resort`, `stale_cache_used`.
+- **55 tests** — cobertura de ConsensusEngine (8 casos), RequestBudget (5), TwelveData (5),
+  Router paralelo (2) y todos los tests anteriores (35).
+
+### Primario por tipo de activo
+
+| Tipo | Primario | Validadores | Último recurso |
+|---|---|---|---|
+| Índices | Stooq | TwelveData, Finnhub | Yahoo |
+| Acciones USA | Finnhub | TwelveData, FMP | Yahoo |
+| Acciones Europa | Stooq | TwelveData, FMP | Yahoo |
+| Forex | TwelveData | Finnhub, AV | Yahoo |
+| Cripto | Finnhub | TwelveData, AV | Yahoo |
+| Commodities | TwelveData | — | Yahoo |
+| Bonos | Stooq | — | Yahoo |
+| Volatilidad | Stooq | — | Yahoo |
+
+### Restricciones cumplidas
+
+- Yahoo Finance nunca es fuente primaria ni validador.
+- `TWELVEDATA_API_KEY` en `.env`, nunca en código.
+- Ningún proveedor de pago.
+- `MarketQuoteInternal` sin campos requeridos nuevos — contrato de API sin cambios.
+
+### Documentación
+
+- `docs/15_MARKET_PROVIDERS.md` — guía completa actualizada con TwelveData y ConsensusEngine.
+- `docs/superpowers/specs/2026-06-24-market-data-consensus-engine-design.md` — spec técnico.
+- `docs/superpowers/plans/2026-06-24-market-data-consensus-engine.md` — plan de implementación.
+
+---
+
 ## Fase 5 — Economic Intelligence ⏳
 
 ### Objetivo
