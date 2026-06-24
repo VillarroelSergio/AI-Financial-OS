@@ -198,9 +198,9 @@ class ProviderRouter:
                     except Exception as exc:
                         logger.warning("Router: %s failed for %s: %s", pname, asset.internal_symbol, exc)
 
-        # 4. Yahoo last resort — only if no valid price found
+        # 4. Yahoo last resort — only if no valid price found AND not in EOD-only mode
         valid_count = sum(1 for q in quotes if q.price is not None and q.freshness_status != "error")
-        if valid_count == 0:
+        if valid_count == 0 and not eod_only:
             yahoo_provider = self._providers.get(last_resort)
             yahoo_sym = asset.provider_symbols.get(last_resort, "")
             if yahoo_provider and yahoo_provider.enabled and yahoo_sym:
@@ -311,6 +311,9 @@ class ProviderRouter:
             warning=warning_str,
             sparkline=sparkline,
         )
+
+        if eod_only and final_quote.freshness_status not in ("eod", "stale", "error"):
+            final_quote.freshness_status = "eod"
 
         self._cache.put_quote(final_quote)
         return final_quote
