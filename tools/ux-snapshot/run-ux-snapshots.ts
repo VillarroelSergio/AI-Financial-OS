@@ -108,6 +108,8 @@ ${skipped.length > 0 ? `## Capturas omitidas (requieren interacción manual)\n\n
 
 async function main(): Promise<void> {
   const headed = process.argv.includes("--headed");
+  const filterArg = process.argv.find((a) => a.startsWith("--filter="));
+  const filterPath = filterArg ? filterArg.split("=")[1] : null;
 
   // Read app version from desktop package.json
   const pkgRaw = await readFile(
@@ -128,9 +130,16 @@ async function main(): Promise<void> {
 
   const screenshots: ScreenshotMeta[] = [];
   const generatedAt = new Date().toISOString();
+  const activeRoutes = filterPath
+    ? snapshotRoutes.filter((r) => r.path.startsWith(filterPath))
+    : snapshotRoutes;
+
+  if (filterPath) {
+    console.log(`🔍 Filtrando rutas: ${filterPath} (${activeRoutes.length} capturas)`);
+  }
 
   try {
-    for (const route of snapshotRoutes) {
+    for (const route of activeRoutes) {
       if (route.requiresInteraction) {
         console.log(`⊘  Omitiendo ${route.filename} (requiere interacción manual)`);
         screenshots.push({
@@ -200,7 +209,7 @@ async function main(): Promise<void> {
   );
 
   const capturedCount = screenshots.filter((s) => s.captured).length;
-  console.log(`\n✅ ${capturedCount}/${snapshotRoutes.length} capturas generadas en ${OUTPUT_DIR}`);
+  console.log(`\n✅ ${capturedCount}/${activeRoutes.length} capturas generadas en ${OUTPUT_DIR}`);
 }
 
 main().catch((err) => {

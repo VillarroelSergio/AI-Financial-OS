@@ -15,5 +15,12 @@ class Settings(BaseSettings):
     LM_STUDIO_BASE_URL: str = "http://localhost:1234/v1"
     DEFAULT_AI_MODEL: str = "qwen"
 
+    # ── Market data providers (opcionales, todos gratuitos) ───────────────────
+    # Dejar vacíos si no se dispone de key — los proveedores se desactivarán.
+    ALPHA_VANTAGE_API_KEY: str = ""
+    FINNHUB_API_KEY: str = ""
+    FMP_API_KEY: str = ""
+    TWELVEDATA_API_KEY: str = ""
+
 
 settings = Settings()

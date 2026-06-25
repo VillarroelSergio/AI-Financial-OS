@@ -9,6 +9,7 @@
 | 2 | CSV Import Center | ✅ Completa | rama `feature/fase-2-import-center` |
 | 3 | Investments Basic | ✅ Completa | rama `feature/fase-2-import-center` |
 | 4 | Market Watch | ✅ Completa | rama `main` |
+| 4.5 | Multi-Provider Market Data | ✅ Completa | rama `feat/multi-provider-market-data` |
 | 5 | Economic Intelligence | ⏳ Pendiente | — |
 | 6 | Local AI Assistant | ⏳ Pendiente | — |
 | 7 | Insights Engine | ⏳ Pendiente | — |
@@ -170,7 +171,7 @@ El usuario puede registrar posiciones básicas y ver su patrimonio financiero co
 
 ---
 
-## Fase 4 — Market Watch ⏳
+## Fase 4 — Market Watch ✅
 
 ### Objetivo
 
@@ -203,6 +204,105 @@ Añadir datos de mercado actualizados con caché local.
 ### Resultado esperado
 
 El usuario puede consultar contexto de mercado desde la app sin mezclarlo con sus datos personales.
+
+---
+
+---
+
+## Fase 4.5 — Multi-Provider Market Data ✅
+
+### Objetivo
+
+Sustituir el proveedor único (yfinance) por una arquitectura multi-provider gratuita
+con máxima cobertura, caché DuckDB y señales de frescura de datos.
+
+### Incluye
+
+- **StooqProvider** — fuente primaria, sin API key, índices/forex/commodities/cripto/volatilidad.
+- **YahooFinanceProvider** — fallback general, sin API key, marcado como fuente no garantizada.
+- **AlphaVantageProvider** — opcional, API key gratuita (ALPHA_VANTAGE_API_KEY), acciones/forex/cripto.
+- **FinnhubProvider** — opcional, API key gratuita (FINNHUB_API_KEY), acciones USA/forex/cripto/fundamentales.
+- **FMPProvider** — opcional, API key gratuita (FMP_API_KEY), acciones/ETFs/perfiles/fundamentales.
+- **ProviderRouter** — routing por asset_type, TTL por categoría, cross-validation, fallback en cascada.
+- **DuckDB cache** — tablas `market_quotes_cache`, `market_candles_cache`, `market_provider_logs`, perfiles, fundamentales.
+- **Modelos normalizados** — `MarketQuoteInternal`, `MarketCandle`, `CompanyProfile`, `Fundamentals`.
+- **Freshness status** — live / fresh / delayed / eod / closed / stale / error / unknown.
+- **Rate limiters** — por proveedor, respetando free tier.
+- **UI actualizada** — `LiveIndicator` muestra estado real, `QuoteRow` muestra badge FB/CACHE, `change_absolute` desde servidor.
+- **35 tests unitarios** — cobertura de providers, routing, caché, rate limiting, freshness.
+- **`market_data_config.yaml`** — configuración declarativa de providers, routing, TTL y mappings de 36 activos.
+
+### Restricciones cumplidas
+
+- Ningún proveedor de pago.
+- API keys nunca hardcodeadas (variables de entorno).
+- No existe `ManualCsvProvider` ni importación CSV para mercados.
+- "En vivo" solo cuando `freshness_status == "live"` — nunca asumido.
+- App funciona sin API keys (Stooq + Yahoo).
+
+### Documentación
+
+- `docs/15_MARKET_PROVIDERS.md` — guía completa de proveedores.
+
+---
+
+## Fase 4.6 — Consensus Engine & TwelveData ✅
+
+### Objetivo
+
+Sustituir el fetch secuencial con fallback por un sistema de **fetch paralelo + motor de consenso**
+que cruza los datos de múltiples proveedores para maximizar precisión. Yahoo Finance queda
+relegado a último recurso. Se añade TwelveData como nuevo proveedor primario para forex y commodities.
+
+### Incluye
+
+- **TwelveDataProvider** — nuevo proveedor gratuito (800 req/día, 8 req/min). Primario para forex,
+  commodities y validador para índices y cripto. API key: `TWELVEDATA_API_KEY`.
+- **ConsensusEngine** (`consensus.py`) — motor de resolución de precio aislado y testeable:
+  - **Estrategia D**: proveedor primario por asset_type con validadores en paralelo.
+  - **Estrategia B**: mediana como precio de referencia cuando ≥3 proveedores disponibles.
+  - **Estrategia C**: ponderación por proveedor × frescura × bonus primario × penalización fallback.
+  - Detección y descarte de outliers con umbrales configurables por asset_type.
+  - `confidence_score` final refleja calidad del consenso (0.0–1.0).
+- **RequestBudget** (`budget.py`) — contador diario de peticiones por proveedor, backed en DuckDB.
+  Alpha Vantage (400/día), TwelveData (700/día), FMP (200/día). Falla en abierto.
+- **Fetch paralelo** — `ThreadPoolExecutor` en el router. Todos los providers se consultan
+  simultáneamente, no en cascada. Timeout: 5 segundos por proveedor.
+- **Yahoo como último recurso** — solo se invoca si `valid_provider_count == 0` tras el fetch paralelo.
+  Nunca actúa como fuente primaria ni validador.
+- **Routing declarativo** por `primary / validators / budget_aware / last_resort` en el YAML.
+- **Logs de decisión estructurados** — cada resolución emite `selected_source`, `consensus_method`,
+  `confidence_score`, `valid_provider_count`, `outliers`, `warnings`, `reason`.
+- **Warnings normalizados** — `rate_limited`, `budget_exhausted`, `provider_error`, `provider_timeout`,
+  `provider_mismatch`, `outlier_detected`, `unverified_single_provider`, `yahoo_last_resort`, `stale_cache_used`.
+- **55 tests** — cobertura de ConsensusEngine (8 casos), RequestBudget (5), TwelveData (5),
+  Router paralelo (2) y todos los tests anteriores (35).
+
+### Primario por tipo de activo
+
+| Tipo | Primario | Validadores | Último recurso |
+|---|---|---|---|
+| Índices | Stooq | TwelveData, Finnhub | Yahoo |
+| Acciones USA | Finnhub | TwelveData, FMP | Yahoo |
+| Acciones Europa | Stooq | TwelveData, FMP | Yahoo |
+| Forex | TwelveData | Finnhub, AV | Yahoo |
+| Cripto | Finnhub | TwelveData, AV | Yahoo |
+| Commodities | TwelveData | — | Yahoo |
+| Bonos | Stooq | — | Yahoo |
+| Volatilidad | Stooq | — | Yahoo |
+
+### Restricciones cumplidas
+
+- Yahoo Finance nunca es fuente primaria ni validador.
+- `TWELVEDATA_API_KEY` en `.env`, nunca en código.
+- Ningún proveedor de pago.
+- `MarketQuoteInternal` sin campos requeridos nuevos — contrato de API sin cambios.
+
+### Documentación
+
+- `docs/15_MARKET_PROVIDERS.md` — guía completa actualizada con TwelveData y ConsensusEngine.
+- `docs/superpowers/specs/2026-06-24-market-data-consensus-engine-design.md` — spec técnico.
+- `docs/superpowers/plans/2026-06-24-market-data-consensus-engine.md` — plan de implementación.
 
 ---
 

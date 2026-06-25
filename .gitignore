@@ -23,9 +23,8 @@ venv/
 .mypy_cache/
 
 # Data local — nunca commitear bases de datos personales
-data/*.db
-data/*.sqlite
-data/*.duckdb
+data/
+backend/data/
 
 # Entorno
 .env
@@ -40,3 +39,4 @@ data/*.duckdb
 # OS
 .DS_Store
 Thumbs.db
+*.json

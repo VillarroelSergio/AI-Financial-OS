@@ -197,14 +197,32 @@ export type MarketCategory =
   | "commodities"
   | "volatility";
 
+export type FreshnessStatus =
+  | "live"      // dato ≤5 min, mercado abierto
+  | "fresh"     // dato ≤15 min
+  | "delayed"   // dato retrasado 15–60 min
+  | "eod"       // último cierre de mercado
+  | "closed"    // mercado confirmado cerrado
+  | "stale"     // caché vencida (todos los providers fallaron)
+  | "error"     // sin datos disponibles
+  | "unknown";  // sin información de frescura
+
 export interface MarketQuote {
   symbol: string;
   name: string;
   category: MarketCategory;
   price: number | null;
   change_pct: number | null;
+  change_absolute: number | null;
   currency: string;
   sparkline: number[];
   last_updated: string;
   market_open: boolean;
+  // Campos de Fase 4.5 — multi-provider
+  freshness_status: FreshnessStatus;
+  source: string;
+  is_fallback: boolean;
+  is_stale: boolean;
+  warning: string | null;
+  confidence_score: number;
 }
