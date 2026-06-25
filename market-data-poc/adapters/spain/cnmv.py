@@ -7,8 +7,9 @@ from adapters.base import BaseAdapter
 from models.base import AdapterResult, ProviderMetadata
 from models.company import CompanyProfile
 
-_PRIMARY_URL = "https://www.cnmv.es/portal/Alerta/API/Get?tipo=HR&pagina=1&filas=5"
+_PRIMARY_URL = "https://www.cnmv.es/portal/HR/ResultadoBusquedaHR.aspx?nif=&division=1"
 _FALLBACK_URL = "https://www.cnmv.es/portal/Publicaciones/ListadoFondos.aspx"
+_HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; MarketDataPOC/0.1)"}
 
 
 class CNMVAdapter(BaseAdapter):
@@ -19,8 +20,8 @@ class CNMVAdapter(BaseAdapter):
 
     def is_available(self) -> bool:
         try:
-            r = requests.head(_PRIMARY_URL, timeout=10)
-            return r.status_code < 500
+            r = requests.get(_PRIMARY_URL, timeout=10, headers=_HEADERS)
+            return r.status_code not in (403, 404) and r.status_code < 500
         except Exception:
             return False
 
@@ -30,7 +31,7 @@ class CNMVAdapter(BaseAdapter):
 
         # Try JSON API first
         try:
-            r = requests.get(_PRIMARY_URL, timeout=10, headers={"Accept": "application/json"})
+            r = requests.get(_PRIMARY_URL, timeout=10, headers=_HEADERS | {"Accept": "application/json"})
             latency_ms = (time.time() - t0) * 1000
             if r.status_code == 200:
                 content_type = r.headers.get("Content-Type", "")
@@ -43,7 +44,7 @@ class CNMVAdapter(BaseAdapter):
 
         # Fallback to listing page (HTML)
         try:
-            r = requests.get(_FALLBACK_URL, timeout=10)
+            r = requests.get(_FALLBACK_URL, timeout=10, headers=_HEADERS)
             latency_ms = (time.time() - t0) * 1000
             r.raise_for_status()
             return self._handle_html_partial(r.text, latency_ms, _FALLBACK_URL, metadata)
@@ -73,12 +74,9 @@ class CNMVAdapter(BaseAdapter):
                     country="Spain",
                     region=self.region,
                     confidence_score=0.85,
-                    company_id=str(item.get("id", item.get("nregistro", ""))),
                     name=item.get("nombre", item.get("denominacion", "Unknown")),
-                    ticker=item.get("ticker", None),
-                    isin=item.get("isin", None),
+                    symbol=item.get("ticker", item.get("isin", "")),
                     sector=item.get("sector", None),
-                    market=item.get("mercado", "CNMV"),
                 )
             )
         raw_sample = items[0] if items else None
@@ -114,12 +112,9 @@ class CNMVAdapter(BaseAdapter):
             country="Spain",
             region=self.region,
             confidence_score=0.5,  # Reduced quality — scraped HTML
-            company_id="CNMV_PARTIAL",
             name="CNMV — datos parciales (HTML)",
-            ticker=None,
-            isin=None,
+            symbol="CNMV_PARTIAL",
             sector=None,
-            market="CNMV",
         )
         return AdapterResult(
             provider=self.name,

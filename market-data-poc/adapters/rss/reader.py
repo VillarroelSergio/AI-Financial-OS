@@ -17,6 +17,16 @@ RSS_FEEDS = [
     {"name": "Federal Reserve", "url": "https://www.federalreserve.gov/feeds/press_all.xml", "category": "central_bank"},
 ]
 
+EXTRA_RSS_FEEDS = [
+    {"name": "CNBC Markets", "url": "https://www.cnbc.com/id/100003114/device/rss/rss.html", "category": "markets"},
+    {"name": "Financial Times Markets", "url": "https://www.ft.com/markets?format=rss", "category": "markets"},
+    {"name": "MarketWatch", "url": "https://feeds.content.dowjones.io/public/rss/mw_topstories", "category": "markets"},
+    {"name": "Bloomberg Markets", "url": "https://feeds.bloomberg.com/markets/news.rss", "category": "markets"},
+    {"name": "Investing", "url": "https://www.investing.com/rss/news.rss", "category": "markets"},
+    {"name": "Yahoo Finance", "url": "https://finance.yahoo.com/news/rssindex", "category": "markets"},
+    {"name": "Seeking Alpha", "url": "https://seekingalpha.com/market_currents.xml", "category": "markets"},
+]
+
 
 class RSSAdapter(BaseAdapter):
     name = "RSS Feeds"
@@ -34,7 +44,8 @@ class RSSAdapter(BaseAdapter):
         records = []
         retrieved_at = datetime.now(timezone.utc)
 
-        for feed_info in RSS_FEEDS:
+        feeds = RSS_FEEDS + [feed for feed in EXTRA_RSS_FEEDS if feed["url"] not in {f["url"] for f in RSS_FEEDS}]
+        for feed_info in feeds:
             try:
                 feed = feedparser.parse(feed_info["url"])
                 for entry in feed.entries:
@@ -86,6 +97,6 @@ class RSSAdapter(BaseAdapter):
             records=records,
             error=None,
             latency_ms=latency_ms,
-            raw_sample={"feeds_attempted": len(RSS_FEEDS), "items_retrieved": len(records)},
+            raw_sample={"feeds_attempted": len(feeds), "items_retrieved": len(records)},
             metadata=metadata,
         )

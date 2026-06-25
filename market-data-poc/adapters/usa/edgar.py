@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 
 from adapters.base import BaseAdapter
 from models.base import AdapterResult, ProviderMetadata
-from models.market import MarketQuote
+from models.company import CompanyProfile
 
 _HEADERS = {"User-Agent": "MarketDataPOC/0.1 contact@example.com"}
 
@@ -66,7 +66,7 @@ class EDGARAdapter(BaseAdapter):
             sector = _SIC_SECTORS.get(sic, f"SIC {sic}")
 
             # Represent company as a MarketQuote (placeholder price — EDGAR has no prices)
-            profile = MarketQuote(
+            profile = CompanyProfile(
                 provider=self.name,
                 source=_SUBMISSIONS_URL,
                 retrieved_at=retrieved_at,
@@ -75,11 +75,8 @@ class EDGARAdapter(BaseAdapter):
                 confidence_score=1.0,
                 symbol=symbol,
                 name=company_name,
-                asset_type="stock",
-                price=0.0,      # EDGAR does not provide price data
-                change_pct=0.0,
-                currency="USD",
-                market_status="unknown",
+                sector=sector,
+                exchange=exchange,
             )
 
             latency_ms = (time.time() - t0) * 1000

@@ -108,6 +108,7 @@ def _score_update_frequency(freq: str) -> float:
         "realtime": 100.0,
         "daily": 80.0,
         "weekly": 60.0,
+        "quarterly": 50.0,
         "monthly": 40.0,
         "yearly": 20.0,
         "unknown": 0.0,

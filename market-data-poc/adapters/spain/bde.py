@@ -64,9 +64,9 @@ class BDEAdapter(BaseAdapter):
         raw_sample = {"raw_preview": raw_text[:500]} if raw_text else None
         return AdapterResult(
             provider=self.name,
-            success=True,
+            success=bool(records),
             records=records,
-            error=None,
+            error=None if records else "No BDE data parsed",
             latency_ms=latency_ms,
             raw_sample=raw_sample,
             metadata=metadata,
@@ -91,45 +91,65 @@ class BDEAdapter(BaseAdapter):
         retrieved_at = datetime.now(timezone.utc)
         lines = raw_text.splitlines()
 
-        # Skip header/comment rows (lines that don't start with a digit or date-like)
+        header = None
         data_lines = []
         for line in lines:
             stripped = line.strip()
             if not stripped:
                 continue
+            if header is None and (";" in stripped or "," in stripped) and not stripped[0].isdigit():
+                header = stripped
+                continue
             first_char = stripped[0]
             if first_char.isdigit() or (len(stripped) > 4 and stripped[1:5].isdigit()):
                 data_lines.append(stripped)
 
-        # Take last 3 rows
-        rows = list(csv.reader(data_lines[-3:], delimiter=";"))
+        delimiter = ";" if (header or "").count(";") >= (header or "").count(",") else ","
+        rows = list(csv.reader(data_lines[-5:], delimiter=delimiter))
         if not rows:
-            # Retry with comma delimiter
             rows = list(csv.reader(data_lines[-3:], delimiter=","))
+            delimiter = ","
+        headers = list(csv.reader([header], delimiter=delimiter))[0] if header else []
 
         records: list[MacroIndicator] = []
         for row in rows:
             if len(row) < 2:
                 continue
             period = row[0].strip()
-            try:
-                value = float(row[1].strip().replace(",", "."))
-            except (ValueError, IndexError):
-                continue
-            records.append(
-                MacroIndicator(
-                    provider=self.name,
-                    source=_PRIMARY_URL,
-                    retrieved_at=retrieved_at,
-                    country="Spain",
-                    region=self.region,
-                    confidence_score=0.9,
-                    indicator_id="EURIBOR_12M",
-                    name="Euribor 12 meses",
-                    value=value,
-                    unit="%",
-                    period=period,
-                    frequency="monthly",
+            for idx, cell in enumerate(row[1:], start=1):
+                try:
+                    value = float(cell.strip().replace(",", "."))
+                except (ValueError, IndexError):
+                    continue
+                label = headers[idx] if idx < len(headers) else f"Serie {idx}"
+                indicator_id, name, unit = _classify_bde_series(label)
+                records.append(
+                    MacroIndicator(
+                        provider=self.name,
+                        source=_PRIMARY_URL,
+                        retrieved_at=retrieved_at,
+                        country="Spain",
+                        region=self.region,
+                        confidence_score=0.9 if headers else 0.75,
+                        indicator_id=indicator_id,
+                        name=name,
+                        value=value,
+                        unit=unit,
+                        period=period,
+                        frequency="monthly",
+                    )
                 )
-            )
         return records
+
+
+def _classify_bde_series(label: str) -> tuple[str, str, str]:
+    label_lower = label.lower()
+    if "euribor" in label_lower:
+        return "ES_EURIBOR", label or "Euribor", "%"
+    if "bce" in label_lower or "facilidad" in label_lower or "intervencion" in label_lower:
+        return "ECB_RATE", label or "Tipo BCE", "%"
+    if "ipc" in label_lower or "inflaci" in label_lower:
+        return "ES_INFLATION", label or "Inflacion", "%"
+    if "m1" in label_lower or "m2" in label_lower or "m3" in label_lower:
+        return "ES_MONEY_SUPPLY", label or "Indicador monetario", ""
+    return "BDE_SERIES", label or "Banco de Espana series", ""

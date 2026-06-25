@@ -1,6 +1,7 @@
 """US Treasury adapter — daily yield curve (focus: 10Y yield)."""
 import time
 import requests
+import os
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 
@@ -115,6 +116,8 @@ class TreasuryAdapter(BaseAdapter):
     category = "macro"
     region = "USA"
     requires_api_key = False
+    timeout_seconds = int(os.getenv("US_TREASURY_TIMEOUT", "10"))
+    retries = int(os.getenv("US_TREASURY_RETRIES", "2"))
 
     def fetch(self) -> AdapterResult:
         metadata = _metadata()
@@ -122,8 +125,17 @@ class TreasuryAdapter(BaseAdapter):
         retrieved_at = datetime.now(timezone.utc)
 
         try:
-            r = requests.get(_TREASURY_URL, headers=_HEADERS, timeout=10)
-            r.raise_for_status()
+            last_exc = None
+            for attempt in range(self.retries + 1):
+                try:
+                    r = requests.get(_TREASURY_URL, headers=_HEADERS, timeout=self.timeout_seconds)
+                    r.raise_for_status()
+                    break
+                except Exception as exc:
+                    last_exc = exc
+                    if attempt >= self.retries:
+                        raise
+                    time.sleep(0.5 * (attempt + 1))
             raw_sample = {"preview": r.text[:500]}
 
             records = _parse_treasury_xml(r.text, retrieved_at)

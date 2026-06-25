@@ -25,7 +25,7 @@ class TesoroAdapter(BaseAdapter):
 
     def is_available(self) -> bool:
         try:
-            r = requests.head(_PRIMARY_URL, timeout=10)
+            r = requests.get(_PRIMARY_URL, timeout=10)
             return r.status_code < 500
         except Exception:
             return False

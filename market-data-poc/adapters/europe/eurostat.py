@@ -48,16 +48,23 @@ class EurostatAdapter(BaseAdapter):
             data = r.json()
 
             values: dict = data.get("value", {})
-            time_labels: dict = (
+            time_category = (
                 data.get("dimension", {})
                     .get("time", {})
                     .get("category", {})
-                    .get("label", {})
             )
+            time_labels: dict = time_category.get("label", {})
+            time_index: dict = time_category.get("index", {})
 
             # time_labels: {"0": "2023-Q1", "1": "2023-Q2", ...}
             # values:      {"0": 0.3, "1": -0.1, ...}
-            indexed_periods = sorted(time_labels.items(), key=lambda x: int(x[0]))
+            if time_index:
+                indexed_periods = sorted(
+                    ((str(idx), period) for period, idx in time_index.items()),
+                    key=lambda x: int(x[0]),
+                )
+            else:
+                indexed_periods = sorted(time_labels.items(), key=lambda x: int(x[0]))
             records: list[MacroIndicator] = []
 
             for idx, period in indexed_periods[-3:]:

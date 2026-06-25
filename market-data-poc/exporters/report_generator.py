@@ -77,6 +77,32 @@ def generate_report(report: CoverageReport, timestamp: str | None = None) -> Pat
             lines.append(f"- **{asset_type.capitalize()}:** {best.provider} (score {best.score_total:.1f})")
     lines.append("")
 
+    # --- Capability Coverage ---
+    lines.append("## Coverage by Capability\n")
+    capability_map: dict[str, list[str]] = {}
+    for ev in report.evaluations:
+        for capability in getattr(ev.adapter_result.metadata, "capabilities", ()) or ():
+            capability_map.setdefault(capability, []).append(ev.provider)
+    if capability_map:
+        lines.append("| Capability | Providers |")
+        lines.append("|------------|-----------|")
+        for capability, providers in sorted(capability_map.items()):
+            lines.append(f"| {capability} | {', '.join(sorted(set(providers)))} |")
+    else:
+        lines.append("No explicit capabilities declared by tested providers.")
+    lines.append("")
+
+    # --- Quality and Latency ---
+    lines.append("## Quality and Latency\n")
+    lines.append("| Provider | Quality | Latency score | Latency ms |")
+    lines.append("|----------|---------|---------------|------------|")
+    for ev in sorted_evals:
+        lines.append(
+            f"| {ev.provider} | {ev.data_quality:.1f} | {ev.latency_score:.1f} | "
+            f"{ev.adapter_result.latency_ms:.0f} |"
+        )
+    lines.append("")
+
     # --- Detected Limitations ---
     lines.append("## Detected Limitations\n")
     failed_providers = [
@@ -88,6 +114,21 @@ def generate_report(report: CoverageReport, timestamp: str | None = None) -> Pat
             lines.append(f"- {p}")
     else:
         lines.append("No critical failures detected.")
+    lines.append("")
+
+    lines.append("### Gaps\n")
+    expected_capabilities = {
+        "stocks", "etf", "funds", "macro", "bonds", "commodities", "currency",
+        "crypto", "news", "dividends", "earnings", "economic_calendar",
+        "historical", "intraday", "realtime",
+    }
+    covered = set(capability_map)
+    missing = sorted(expected_capabilities - covered)
+    if missing:
+        for gap in missing:
+            lines.append(f"- {gap}")
+    else:
+        lines.append("No high-level capability gaps detected in declared provider coverage.")
     lines.append("")
 
     freemium_providers = [

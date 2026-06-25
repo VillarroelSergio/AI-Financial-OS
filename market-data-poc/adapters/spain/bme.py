@@ -31,7 +31,7 @@ class BMEAdapter(BaseAdapter):
 
     def is_available(self) -> bool:
         try:
-            r = requests.head(_PRIMARY_URL, timeout=10, headers=_HEADERS)
+            r = requests.get(_PRIMARY_URL, timeout=10, headers=_HEADERS)
             return r.status_code < 500
         except Exception:
             return False
@@ -89,7 +89,6 @@ class BMEAdapter(BaseAdapter):
             asset_type="index",
             price=float(value) if value is not None else None,
             currency="EUR",
-            market="BME",
         )
         return AdapterResult(
             provider=self.name,
@@ -136,7 +135,6 @@ class BMEAdapter(BaseAdapter):
             asset_type="index",
             price=price,
             currency="EUR",
-            market="BME",
         )
         return AdapterResult(
             provider=self.name,

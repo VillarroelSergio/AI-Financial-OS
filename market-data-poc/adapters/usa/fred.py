@@ -35,35 +35,43 @@ def _metadata() -> ProviderMetadata:
 
 
 def _parse_fred_csv(text: str, indicator_id: str, name: str, source_url: str, n: int = 3) -> list[MacroIndicator]:
-    """Parse FRED CSV (date,value) and return last n non-null rows."""
+    """Parse FRED CSV and return last n non-null rows.
+
+    Supports both single-series exports (DATE,VALUE) and multi-series exports
+    (DATE,UNRATE,FEDFUNDS,...).
+    """
     retrieved_at = datetime.now(timezone.utc)
     reader = csv.DictReader(io.StringIO(text))
     records: list[MacroIndicator] = []
+    fieldnames = [field for field in (reader.fieldnames or []) if field and field.upper() != "DATE"]
+    value_columns = ["VALUE"] if "VALUE" in fieldnames else fieldnames
     for row in reader:
         date_str = row.get("DATE", "")
-        val_str = row.get("VALUE", row.get(indicator_id, ""))
-        if not val_str or val_str.strip() == ".":
-            continue
-        try:
-            value = float(val_str)
-        except ValueError:
-            continue
-        records.append(
-            MacroIndicator(
-                provider="FRED",
-                source=source_url,
-                retrieved_at=retrieved_at,
-                country="US",
-                region="USA",
-                confidence_score=1.0,
-                indicator_id=indicator_id,
-                name=name,
-                value=value,
-                unit="%",
-                period=date_str,
-                frequency="monthly",
+        for column in value_columns:
+            val_str = row.get(column, "")
+            if not val_str or val_str.strip() == ".":
+                continue
+            try:
+                value = float(val_str)
+            except ValueError:
+                continue
+            series_id = indicator_id if column == "VALUE" else column
+            records.append(
+                MacroIndicator(
+                    provider="FRED",
+                    source=source_url,
+                    retrieved_at=retrieved_at,
+                    country="US",
+                    region="USA",
+                    confidence_score=1.0,
+                    indicator_id=series_id,
+                    name=name if column == "VALUE" else f"FRED {column}",
+                    value=value,
+                    unit="%",
+                    period=date_str,
+                    frequency="monthly",
+                )
             )
-        )
     return records[-n:]
 
 

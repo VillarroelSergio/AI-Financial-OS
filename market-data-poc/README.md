@@ -30,6 +30,19 @@ Providers without a required key run with no extra configuration.
 python run_poc.py --providers all --output json,csv,report --timeout 10 --workers 5
 ```
 
+Command aliases:
+
+```powershell
+python run_poc.py market:poc
+python run_poc.py market:health
+python run_poc.py market:coverage
+python run_poc.py market:providers
+python run_poc.py market:compare
+python run_poc.py market:report
+python run_poc.py market:cache:clear
+python run_poc.py market:test
+```
+
 Provider filters:
 
 - `all`
@@ -51,3 +64,12 @@ Generated artifacts are written under `output/`:
 In-scope providers include Spanish public sources, European macro APIs, US public data APIs, global market data sources, RSS feeds, and optional freemium APIs.
 
 Scrapy spiders are included only as fallback prototypes and are not part of the main runner.
+
+## Docs
+
+- `Architecture.md`
+- `Providers.md`
+- `Coverage.md`
+- `Scoring.md`
+- `Provider-Orchestrator.md`
+- `Scraping.md`
