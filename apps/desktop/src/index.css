@@ -57,3 +57,31 @@ body,
 ::-webkit-scrollbar-thumb:hover {
   background: var(--mute);
 }
+
+/* Market Watch animations */
+.flash-up {
+  animation: flash-up 300ms ease-out forwards;
+}
+
+.flash-down {
+  animation: flash-down 300ms ease-out forwards;
+}
+
+@keyframes flash-up {
+  0%   { background-color: rgba(0, 168, 126, 0.15); }
+  100% { background-color: transparent; }
+}
+
+@keyframes flash-down {
+  0%   { background-color: rgba(226, 59, 74, 0.15); }
+  100% { background-color: transparent; }
+}
+
+.live-dot {
+  animation: live-pulse 2s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}

@@ -1,4 +1,4 @@
-import type { Account, Category, Transaction, DashboardOverview, HoldingEnriched, InvestmentAsset, InvestmentSummary } from "@/lib/types";
+import type { Account, Category, Transaction, DashboardOverview, HoldingEnriched, InvestmentAsset, InvestmentSummary, MarketQuote } from "@/lib/types";
 import type { SpendingData, CategorySpending } from "./dashboard";
 import type { AppSetting } from "./settings";
 
@@ -224,6 +224,61 @@ const mockSettings: AppSetting[] = [
   { id: "set-3", key: "app.currency", value_json: '"EUR"', created_at: "2024-01-01T00:00:00", updated_at: "2024-01-01T00:00:00" },
 ];
 
+// Sparkline sintético: tendencia con ruido
+function makeSparkline(base: number, trend: number): number[] {
+  return Array.from({ length: 20 }, (_, i) => {
+    const noise = (Math.sin(i * 1.3) + Math.cos(i * 0.7)) * base * 0.003;
+    return parseFloat((base + trend * i * 0.1 + noise).toFixed(4));
+  });
+}
+
+export const mockMarketQuotes: MarketQuote[] = [
+  // Europa
+  { symbol: "^IBEX", name: "IBEX 35", category: "indices_eu", price: 12843.50, change_pct: 0.73, currency: "EUR", sparkline: makeSparkline(12750, 9.3), last_updated: "2026-06-23T10:00:00Z", market_open: true },
+  { symbol: "^STOXX50E", name: "Euro Stoxx 50", category: "indices_eu", price: 5312.80, change_pct: 0.45, currency: "EUR", sparkline: makeSparkline(5289, 2.4), last_updated: "2026-06-23T10:00:00Z", market_open: true },
+  { symbol: "^STOXX", name: "STOXX Europe 600", category: "indices_eu", price: 546.20, change_pct: 0.38, currency: "EUR", sparkline: makeSparkline(544, 0.2), last_updated: "2026-06-23T10:00:00Z", market_open: true },
+  { symbol: "^GDAXI", name: "DAX", category: "indices_eu", price: 23156.40, change_pct: 0.52, currency: "EUR", sparkline: makeSparkline(23036, 12.0), last_updated: "2026-06-23T10:00:00Z", market_open: true },
+  { symbol: "^FCHI", name: "CAC 40", category: "indices_eu", price: 7834.60, change_pct: 0.31, currency: "EUR", sparkline: makeSparkline(7810, 2.5), last_updated: "2026-06-23T10:00:00Z", market_open: true },
+  { symbol: "^FTSE", name: "FTSE 100", category: "indices_eu", price: 8642.30, change_pct: -0.12, currency: "GBP", sparkline: makeSparkline(8660, -1.8), last_updated: "2026-06-23T10:00:00Z", market_open: true },
+  // EEUU
+  { symbol: "^GSPC", name: "S&P 500", category: "indices_us", price: 5945.28, change_pct: 1.12, currency: "USD", sparkline: makeSparkline(5879, 6.6), last_updated: "2026-06-23T10:00:00Z", market_open: true },
+  { symbol: "^NDX", name: "Nasdaq 100", category: "indices_us", price: 21432.60, change_pct: 1.38, currency: "USD", sparkline: makeSparkline(21138, 29.4), last_updated: "2026-06-23T10:00:00Z", market_open: true },
+  { symbol: "^DJI", name: "Dow Jones", category: "indices_us", price: 43128.40, change_pct: 0.67, currency: "USD", sparkline: makeSparkline(42841, 28.7), last_updated: "2026-06-23T10:00:00Z", market_open: true },
+  { symbol: "^RUT", name: "Russell 2000", category: "indices_us", price: 2184.75, change_pct: 0.94, currency: "USD", sparkline: makeSparkline(2164, 2.1), last_updated: "2026-06-23T10:00:00Z", market_open: true },
+  // Asia
+  { symbol: "^N225", name: "Nikkei 225", category: "indices_asia", price: 38420.50, change_pct: -0.45, currency: "JPY", sparkline: makeSparkline(38595, -17.5), last_updated: "2026-06-23T06:00:00Z", market_open: false },
+  { symbol: "^HSI", name: "Hang Seng", category: "indices_asia", price: 23145.80, change_pct: 0.82, currency: "HKD", sparkline: makeSparkline(22957, 18.9), last_updated: "2026-06-23T08:00:00Z", market_open: false },
+  { symbol: "000001.SS", name: "Shanghai Composite", category: "indices_asia", price: 3421.60, change_pct: 0.23, currency: "CNY", sparkline: makeSparkline(3413, 0.8), last_updated: "2026-06-23T07:30:00Z", market_open: false },
+  { symbol: "^NSEI", name: "Nifty 50", category: "indices_asia", price: 24856.30, change_pct: 0.61, currency: "INR", sparkline: makeSparkline(24704, 15.2), last_updated: "2026-06-23T09:00:00Z", market_open: false },
+  // Cripto
+  { symbol: "BTC-USD", name: "Bitcoin", category: "crypto", price: 107234.50, change_pct: 2.14, currency: "USD", sparkline: makeSparkline(104980, 225.4), last_updated: "2026-06-23T10:00:00Z", market_open: true },
+  { symbol: "ETH-USD", name: "Ethereum", category: "crypto", price: 3842.60, change_pct: 1.87, currency: "USD", sparkline: makeSparkline(3771, 7.2), last_updated: "2026-06-23T10:00:00Z", market_open: true },
+  { symbol: "BNB-USD", name: "BNB", category: "crypto", price: 712.40, change_pct: 0.93, currency: "USD", sparkline: makeSparkline(705, 0.7), last_updated: "2026-06-23T10:00:00Z", market_open: true },
+  { symbol: "SOL-USD", name: "Solana", category: "crypto", price: 186.35, change_pct: 3.21, currency: "USD", sparkline: makeSparkline(180, 0.6), last_updated: "2026-06-23T10:00:00Z", market_open: true },
+  // Divisas
+  { symbol: "EURUSD=X", name: "EUR/USD", category: "fx", price: 1.1342, change_pct: 0.18, currency: "USD", sparkline: makeSparkline(1.1322, 0.001), last_updated: "2026-06-23T10:00:00Z", market_open: true },
+  { symbol: "EURGBP=X", name: "EUR/GBP", category: "fx", price: 0.8423, change_pct: -0.09, currency: "GBP", sparkline: makeSparkline(0.8431, -0.0001), last_updated: "2026-06-23T10:00:00Z", market_open: true },
+  { symbol: "EURJPY=X", name: "EUR/JPY", category: "fx", price: 163.48, change_pct: 0.32, currency: "JPY", sparkline: makeSparkline(162.96, 0.052), last_updated: "2026-06-23T10:00:00Z", market_open: true },
+  { symbol: "GBPUSD=X", name: "GBP/USD", category: "fx", price: 1.3467, change_pct: 0.27, currency: "USD", sparkline: makeSparkline(1.3431, 0.0036), last_updated: "2026-06-23T10:00:00Z", market_open: true },
+  { symbol: "JPY=X", name: "USD/JPY", category: "fx", price: 144.12, change_pct: -0.14, currency: "JPY", sparkline: makeSparkline(144.32, -0.02), last_updated: "2026-06-23T10:00:00Z", market_open: true },
+  { symbol: "CHF=X", name: "USD/CHF", category: "fx", price: 0.8934, change_pct: -0.21, currency: "CHF", sparkline: makeSparkline(0.8953, -0.0002), last_updated: "2026-06-23T10:00:00Z", market_open: true },
+  // Bonos 10Y
+  { symbol: "^TNX", name: "Treasury EEUU 10Y", category: "bonds", price: 4.32, change_pct: -0.46, currency: "USD", sparkline: makeSparkline(4.34, -0.002), last_updated: "2026-06-23T10:00:00Z", market_open: false },
+  { symbol: "^TMBMKDE-10Y", name: "Bund Alemania 10Y", category: "bonds", price: 2.56, change_pct: -0.78, currency: "EUR", sparkline: makeSparkline(2.58, -0.002), last_updated: "2026-06-23T10:00:00Z", market_open: true },
+  { symbol: "^TMBMKES-10Y", name: "Bono España 10Y", category: "bonds", price: 3.12, change_pct: -0.63, currency: "EUR", sparkline: makeSparkline(3.14, -0.002), last_updated: "2026-06-23T10:00:00Z", market_open: true },
+  { symbol: "^TMBMKGB-10Y", name: "Gilt UK 10Y", category: "bonds", price: 4.68, change_pct: -0.21, currency: "GBP", sparkline: makeSparkline(4.69, -0.001), last_updated: "2026-06-23T10:00:00Z", market_open: true },
+  { symbol: "^TMBMKIT-10Y", name: "BTP Italia 10Y", category: "bonds", price: 3.87, change_pct: -0.51, currency: "EUR", sparkline: makeSparkline(3.89, -0.002), last_updated: "2026-06-23T10:00:00Z", market_open: true },
+  // Materias primas
+  { symbol: "GC=F", name: "Oro", category: "commodities", price: 3324.80, change_pct: 0.54, currency: "USD", sparkline: makeSparkline(3307, 1.8), last_updated: "2026-06-23T10:00:00Z", market_open: true },
+  { symbol: "SI=F", name: "Plata", category: "commodities", price: 36.42, change_pct: 0.88, currency: "USD", sparkline: makeSparkline(36.10, 0.032), last_updated: "2026-06-23T10:00:00Z", market_open: true },
+  { symbol: "BZ=F", name: "Petróleo Brent", category: "commodities", price: 84.32, change_pct: -0.71, currency: "USD", sparkline: makeSparkline(84.92, -0.06), last_updated: "2026-06-23T10:00:00Z", market_open: true },
+  { symbol: "CL=F", name: "Petróleo WTI", category: "commodities", price: 81.15, change_pct: -0.83, currency: "USD", sparkline: makeSparkline(81.83, -0.068), last_updated: "2026-06-23T10:00:00Z", market_open: true },
+  { symbol: "NG=F", name: "Gas Natural", category: "commodities", price: 2.847, change_pct: 1.43, currency: "USD", sparkline: makeSparkline(2.807, 0.004), last_updated: "2026-06-23T10:00:00Z", market_open: true },
+  { symbol: "HG=F", name: "Cobre", category: "commodities", price: 4.732, change_pct: 0.66, currency: "USD", sparkline: makeSparkline(4.701, 0.0031), last_updated: "2026-06-23T10:00:00Z", market_open: true },
+  // Volatilidad
+  { symbol: "^VIX", name: "VIX", category: "volatility", price: 14.82, change_pct: -3.44, currency: "USD", sparkline: makeSparkline(15.35, -0.053), last_updated: "2026-06-23T10:00:00Z", market_open: false },
+];
+
 export function getMockResponse<T>(path: string): T {
   const clean = path.split("?")[0];
 
@@ -238,6 +293,15 @@ export function getMockResponse<T>(path: string): T {
   if (clean === "/api/investments/summary") return mockInvestmentSummary as T;
   if (clean === "/api/investments/prices/refresh")
     return { updated: 2, failed: [], needs_manual_nav: ["asset-vg500", "asset-ishares", "asset-cleome"] } as T;
+  if (path.startsWith("/api/markets/quotes")) {
+    const catParam = path.includes("?category=")
+      ? path.split("?category=")[1]
+      : null;
+    const quotes = catParam
+      ? mockMarketQuotes.filter((q) => q.category === catParam)
+      : mockMarketQuotes;
+    return quotes as unknown as T;
+  }
 
   throw new Error(`[mock] No mock defined for: ${path}`);
 }

@@ -7,8 +7,8 @@
 | 0 | Foundation | ✅ Completa | `e9f2fc9`..`ce21c51`, `20abbeb` |
 | 1 | Financial Core MVP | ✅ Completa | `8861adf` |
 | 2 | CSV Import Center | ✅ Completa | rama `feature/fase-2-import-center` |
-| 3 | Investments Basic | ✅ Completa | `feature/fase-3-investments` |
-| 4 | Market Watch | ⏳ Pendiente | — |
+| 3 | Investments Basic | ✅ Completa | rama `feature/fase-2-import-center` |
+| 4 | Market Watch | ✅ Completa | rama `main` |
 | 5 | Economic Intelligence | ⏳ Pendiente | — |
 | 6 | Local AI Assistant | ⏳ Pendiente | — |
 | 7 | Insights Engine | ⏳ Pendiente | — |
