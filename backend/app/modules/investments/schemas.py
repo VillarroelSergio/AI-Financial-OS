@@ -3,7 +3,6 @@ from decimal import Decimal
 
 from pydantic import BaseModel, field_serializer
 
-
 # ── Assets ────────────────────────────────────────────────────────────────────
 
 class InvestmentAssetCreate(BaseModel):

@@ -226,3 +226,54 @@ export interface MarketQuote {
   warning: string | null;
   confidence_score: number;
 }
+
+// ── Fase 5 — Economic Intelligence ───────────────────────────────────────────
+
+export type EconomicRegion = "ES" | "EA" | "US" | "GLOBAL";
+export type EconomicIndicatorType =
+  | "inflation" | "core_inflation" | "unemployment" | "gdp"
+  | "policy_rate" | "bond_10y" | "euribor" | "index" | "forex";
+export type ImpactInterpretation = "favorable" | "neutral" | "adverse" | "no_data";
+
+export interface EconomicIndicator {
+  series_id: string;
+  region: EconomicRegion;
+  indicator: EconomicIndicatorType;
+  name: string;
+  value: number | null;
+  prev_value: number | null;
+  change: number | null;
+  period: string;
+  unit: string;
+  source: string;
+  observation_date: string;
+  is_stale: boolean;
+}
+
+export interface RegionSnapshot {
+  region: EconomicRegion;
+  indicators: EconomicIndicator[];
+}
+
+export interface MacroSnapshot {
+  spain: RegionSnapshot;
+  eurozone: RegionSnapshot;
+  us: RegionSnapshot;
+  last_refreshed: string;
+}
+
+export interface ImpactItem {
+  title: string;
+  macro_value: number | null;
+  personal_value: number | null;
+  delta: number | null;
+  interpretation: ImpactInterpretation;
+  description: string;
+}
+
+export interface PersonalImpact {
+  inflation_vs_savings: ImpactItem;
+  rates_vs_liquidity: ImpactItem;
+  market_vs_portfolio: ImpactItem;
+  purchasing_power: ImpactItem;
+}

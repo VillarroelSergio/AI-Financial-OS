@@ -13,19 +13,19 @@ import json
 import logging
 import threading
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import Optional
 
 import duckdb
 import pandas as pd
 
-from app.core.config import settings
+from app.core.duckdb import get_duckdb
 from app.modules.investments.market_data.providers.base import MarketQuoteInternal
 
 logger = logging.getLogger(__name__)
 
 _conn: Optional[duckdb.DuckDBPyConnection] = None
 _conn_lock = threading.Lock()
+_ddl_initialized = False
 
 
 def _normalize_row(row: dict) -> dict:
@@ -128,21 +128,16 @@ _CREATE_SEQ = "CREATE SEQUENCE IF NOT EXISTS market_log_seq;"
 
 
 def _get_conn() -> duckdb.DuckDBPyConnection:
-    global _conn
-    if _conn is None:
+    global _conn, _ddl_initialized
+    if not _ddl_initialized:
         with _conn_lock:
-            if _conn is None:
-                db_path = Path(settings.DUCKDB_PATH)
-                db_path.parent.mkdir(parents=True, exist_ok=True)
-                try:
-                    _conn = duckdb.connect(str(db_path))
-                except Exception:
-                    # Another process holds the file lock — fall back to in-memory DB
-                    logger.warning("DuckDB file locked, falling back to in-memory cache")
-                    _conn = duckdb.connect(":memory:")
-                _conn.execute(_CREATE_SEQ)
-                _conn.execute(_DDL)
-    return _conn
+            if not _ddl_initialized:
+                conn = get_duckdb()
+                conn.execute(_CREATE_SEQ)
+                conn.execute(_DDL)
+                _conn = conn
+                _ddl_initialized = True
+    return _conn  # type: ignore[return-value]
 
 
 class MarketCache:

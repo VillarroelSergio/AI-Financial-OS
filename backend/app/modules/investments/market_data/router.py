@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import logging
 import threading
-from concurrent.futures import ThreadPoolExecutor, as_completed, TimeoutError as FuturesTimeout
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -22,7 +22,7 @@ from typing import Optional
 
 import yaml
 
-from app.modules.investments.market_data.budget import get_budget, RequestBudget
+from app.modules.investments.market_data.budget import RequestBudget, get_budget
 from app.modules.investments.market_data.cache import MarketCache
 from app.modules.investments.market_data.consensus import ConsensusEngine
 from app.modules.investments.market_data.providers import (
@@ -124,9 +124,9 @@ class ProviderRouter:
         return self._catalog
 
     def get_quote(
-        self, asset: AssetConfig, *, force_refresh: bool = False
+        self, asset: AssetConfig, *, force_refresh: bool = False, eod_only: bool = False
     ) -> MarketQuoteInternal:
-        ttl = _TTL.get(asset.asset_type, 900)
+        ttl = 86400 if eod_only else _TTL.get(asset.asset_type, 900)
 
         # 1. Cache check
         cached_row = self._cache.get_quote(asset.internal_symbol)
@@ -165,6 +165,9 @@ class ProviderRouter:
                 continue
             fetch_pool.append((pname, provider, sym))
 
+        if eod_only:
+            fetch_pool = [(p, prov, sym) for p, prov, sym in fetch_pool if p == "stooq"]
+
         # 3. Parallel fetch
         quotes: list[MarketQuoteInternal] = []
         if fetch_pool:
@@ -195,9 +198,9 @@ class ProviderRouter:
                     except Exception as exc:
                         logger.warning("Router: %s failed for %s: %s", pname, asset.internal_symbol, exc)
 
-        # 4. Yahoo last resort — only if no valid price found
+        # 4. Yahoo last resort — only if no valid price found AND not in EOD-only mode
         valid_count = sum(1 for q in quotes if q.price is not None and q.freshness_status != "error")
-        if valid_count == 0:
+        if valid_count == 0 and not eod_only:
             yahoo_provider = self._providers.get(last_resort)
             yahoo_sym = asset.provider_symbols.get(last_resort, "")
             if yahoo_provider and yahoo_provider.enabled and yahoo_sym:
@@ -308,6 +311,9 @@ class ProviderRouter:
             warning=warning_str,
             sparkline=sparkline,
         )
+
+        if eod_only and final_quote.freshness_status not in ("eod", "stale", "error"):
+            final_quote.freshness_status = "eod"
 
         self._cache.put_quote(final_quote)
         return final_quote

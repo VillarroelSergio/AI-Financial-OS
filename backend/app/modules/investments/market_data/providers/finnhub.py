@@ -92,7 +92,6 @@ class FinnhubProvider(MarketDataProvider):
             data = resp.json()
 
             price = data.get("c")  # current price
-            prev_close = data.get("pc")  # previous close
             change_absolute: Optional[float] = data.get("d")   # change
             change_percent: Optional[float] = data.get("dp")   # change percent
 

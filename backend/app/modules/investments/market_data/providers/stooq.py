@@ -5,12 +5,11 @@ import logging
 import threading
 import time
 from datetime import datetime, timedelta, timezone
-from io import StringIO
 from typing import Optional
 
 import requests
 
-from .base import AssetType, FreshnessStatus, MarketCandle, MarketDataProvider, MarketQuoteInternal
+from .base import FreshnessStatus, MarketCandle, MarketDataProvider, MarketQuoteInternal
 
 logger = logging.getLogger(__name__)
 

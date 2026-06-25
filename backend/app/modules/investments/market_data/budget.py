@@ -54,7 +54,7 @@ class RequestBudget:
 
     def _count_today(self, provider: str) -> int:
         """Count log entries for provider since midnight UTC today."""
-        from app.modules.investments.market_data.cache import _get_conn, _conn_lock
+        from app.modules.investments.market_data.cache import _conn_lock, _get_conn
         today_start = datetime.combine(date.today(), datetime.min.time()).replace(
             tzinfo=timezone.utc
         )
@@ -79,6 +79,7 @@ def get_budget() -> RequestBudget:
         with _budget_lock:
             if _budget is None:
                 from pathlib import Path
+
                 import yaml
                 config_path = Path(__file__).parent / "config" / "market_data_config.yaml"
                 cfg = yaml.safe_load(config_path.read_text(encoding="utf-8"))

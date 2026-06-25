@@ -44,6 +44,10 @@ async function startVite(): Promise<ChildProcess> {
     if (msg.includes("error") || msg.includes("Error")) process.stderr.write(msg);
   });
 
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  if (proc.exitCode !== null) {
+    throw new Error(`Vite no pudo iniciarse en el puerto ${SNAPSHOT_PORT}`);
+  }
   await waitForServer(BASE_URL);
   return proc;
 }
@@ -181,10 +185,27 @@ async function main(): Promise<void> {
       } catch {
         viteProc.kill();
       }
+      try {
+        const netstat = execSync("netstat -ano", { encoding: "utf8" });
+        const listener = netstat
+          .split(/\r?\n/)
+          .find((line) => line.includes(`:${SNAPSHOT_PORT}`) && line.includes("LISTENING"));
+        const listenerPid = listener?.trim().split(/\s+/).at(-1);
+        if (listenerPid && listenerPid !== "0") {
+          execSync(`taskkill /F /T /PID ${listenerPid}`, { stdio: "ignore" });
+        }
+      } catch {
+        // The listener already stopped.
+      }
     } else {
       viteProc.kill();
     }
-    await new Promise<void>((r) => viteProc.once("close", r));
+    if (viteProc.exitCode === null) {
+      await Promise.race([
+        new Promise<void>((r) => viteProc.once("close", () => r())),
+        new Promise<void>((r) => setTimeout(r, 2_000)),
+      ]);
+    }
     console.log("✓  Navegador y Vite cerrados");
   }
 

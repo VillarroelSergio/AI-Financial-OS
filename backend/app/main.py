@@ -1,5 +1,5 @@
-from contextlib import asynccontextmanager
 from collections.abc import AsyncGenerator
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,11 +13,12 @@ from app.modules.economic_data.routes import router as economic_data_router
 from app.modules.goals.routes import router as goals_router
 from app.modules.imports.routes import router as imports_router
 from app.modules.insights.routes import router as insights_router
-from app.modules.investments.routes import router as investments_router
 from app.modules.investments.market_data.routes import router as market_data_router
+from app.modules.investments.routes import router as investments_router
 from app.modules.rag.routes import router as rag_router
 from app.modules.settings.routes import router as settings_router
 from app.modules.transactions.routes import router as transactions_router
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
@@ -30,6 +31,11 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         seed_settings(db)
     finally:
         db.close()
+
+    import threading
+    from app.modules.investments.market_data.eod_service import get_eod_service
+    threading.Thread(target=get_eod_service().ensure_today, daemon=True, name="eod-market-fetch").start()
+
     yield
 
 

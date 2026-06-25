@@ -1,8 +1,4 @@
-export default function InsightsPage() {
-  return (
-    <div className="p-8">
-      <h1 className="text-display-lg text-on-dark">Insights</h1>
-      <p className="text-body-md text-stone mt-2">Motor de insights — Fase 7</p>
-    </div>
-  );
-}
+import { Lightbulb, Upload } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { EmptyState, PageHeader } from "@/components/ui/Dashboard";
+export default function InsightsPage(){const navigate=useNavigate();return <div className="p-8 max-w-[1500px] mx-auto space-y-6"><PageHeader eyebrow="Inteligencia financiera" title="Insights" description="Patrones, riesgos y oportunidades explicados con contexto"/><EmptyState icon={Lightbulb} title="Aún no hay suficientes datos para generar insights fiables" description="Importa movimientos y actualiza inversiones para que Financial OS pueda detectar patrones, riesgos y oportunidades." action={<button onClick={()=>navigate('/imports')} className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold"><Upload size={16}/>Importar movimientos</button>}/></div>}

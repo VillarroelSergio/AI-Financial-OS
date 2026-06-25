@@ -38,14 +38,13 @@ const navItems: NavItem[] = [
 
 export default function RootLayout() {
   return (
-    <div className="flex h-full" data-app-ready="true">
-      <aside className="w-60 flex-shrink-0 bg-surface-deep border-r border-hairline-dark flex flex-col">
-        <div className="h-14 flex items-center px-6 border-b border-hairline-dark">
-          <span className="text-heading-sm text-on-dark font-semibold tracking-tight">
-            Financial OS
-          </span>
+    <div className="flex h-full bg-canvas-dark" data-app-ready="true">
+      <aside className="w-[248px] flex-shrink-0 bg-surface-deep border-r border-hairline-dark flex flex-col">
+        <div className="h-[72px] flex items-center gap-3 px-5 border-b border-divider-soft">
+          <span className="grid h-9 w-9 place-items-center rounded-xl bg-primary text-sm font-bold">F</span>
+          <div><span className="block text-sm text-on-dark font-semibold">Financial OS</span><span className="block text-[10px] text-mute mt-0.5">Private wealth workspace</span></div>
         </div>
-        <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+        <nav aria-label="Navegación principal" className="flex-1 overflow-y-auto py-5 px-3 space-y-1">
           {navItems.map(({ to, icon: Icon, label, end }) => (
             <NavLink
               key={to}
@@ -53,20 +52,20 @@ export default function RootLayout() {
               end={end}
               className={({ isActive }) =>
                 [
-                  "flex items-center gap-3 px-3 py-2 rounded-md text-body-sm transition-colors duration-150",
+                  "relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-body-sm transition-all duration-150",
                   isActive
-                    ? "bg-surface-elevated text-on-dark"
-                    : "text-stone hover:text-on-dark hover:bg-surface-elevated/50",
+                    ? "bg-primary/10 text-on-dark shadow-[inset_0_0_0_1px_rgba(91,94,247,.15)] before:absolute before:left-0 before:h-5 before:w-0.5 before:rounded-full before:bg-primary-bright"
+                    : "text-stone hover:text-on-dark hover:bg-white/[.035]",
                 ].join(" ")
               }
             >
-              <Icon size={16} />
+              <Icon size={17} className="shrink-0" />
               <span>{label}</span>
             </NavLink>
           ))}
-        </nav>
+        </nav><div className="border-t border-divider-soft p-4"><div className="rounded-lg bg-white/[.025] px-3 py-2.5"><p className="text-[11px] font-medium text-on-dark">Datos protegidos</p><p className="text-[10px] text-mute mt-1">Procesamiento local-first</p></div></div>
       </aside>
-      <main className="flex-1 overflow-y-auto bg-canvas-dark">
+      <main className="flex-1 min-w-0 overflow-y-auto bg-[radial-gradient(circle_at_65%_-10%,rgba(91,94,247,.08),transparent_35%)]">
         <Outlet />
       </main>
     </div>
