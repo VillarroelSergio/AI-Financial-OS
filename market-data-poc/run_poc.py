@@ -83,6 +83,7 @@ _ADAPTER_MAP = {
     "openfigi": "adapters.global_.openfigi",
     "opencorporates": "adapters.global_.opencorporates",
     "polygon": "adapters.global_.polygon",
+    "frankfurter": "adapters.global_.frankfurter",
     "un_data": "adapters.global_.un_data",
     # RSS
     "rss": "adapters.rss.reader",
@@ -101,8 +102,24 @@ _EXTRA_PROVIDERS = [
     {"name": "OpenFIGI", "id": "openfigi", "category": "companies", "region": "Global", "capabilities": ["stocks", "etf", "funds", "isin"]},
     {"name": "OpenCorporates", "id": "opencorporates", "category": "companies", "region": "Global", "capabilities": ["companies", "corporate_actions"]},
     {"name": "Polygon", "id": "polygon", "category": "markets", "region": "Global", "capabilities": ["stocks", "etf", "forex", "crypto", "dividends", "earnings", "intraday", "realtime"]},
+    {"name": "Frankfurter", "id": "frankfurter", "category": "markets", "region": "Global", "capabilities": ["currency", "forex", "historical"], "priority": "primary"},
     {"name": "UN Data", "id": "un_data", "category": "macro", "region": "Global", "capabilities": ["macro", "historical"]},
 ]
+
+_COMMAND_PROVIDER_IDS = {
+    "market:currency": {"ecb", "polygon", "frankfurter"},
+    "market:bonds": {"treasury", "fred", "bde", "tesoro", "bis"},
+    "market:stabilize": {
+        "ecb", "polygon", "frankfurter", "treasury", "fred", "bde", "tesoro",
+        "cnmv", "eurostat", "agencia_tributaria", "bis", "opencorporates",
+    },
+}
+
+_CAPABILITY_MODELS = {
+    "currency": {"Currency", "CurrencyRate"},
+    "forex": {"Currency", "CurrencyRate"},
+    "bonds": {"YieldCurve", "YieldCurvePoint", "BondYield"},
+}
 
 
 def load_providers_yaml() -> list:
@@ -192,6 +209,68 @@ def build_coverage_report(
     )
 
 
+def _capability_status(report: CoverageReport) -> dict[str, dict[str, list[str]]]:
+    status: dict[str, dict[str, list[str]]] = {}
+    for ev in report.evaluations:
+        provider = ev.provider
+        capabilities = getattr(ev.adapter_result.metadata, "capabilities", ()) or ()
+        record_models = {record.__class__.__name__ for record in ev.adapter_result.records}
+        for capability in capabilities:
+            item = status.setdefault(
+                capability,
+                {"declared": [], "collected": [], "failed": [], "api_key": []},
+            )
+            item["declared"].append(provider)
+            expected_models = _CAPABILITY_MODELS.get(capability)
+            collected = ev.adapter_result.success and (
+                not expected_models or bool(record_models & expected_models)
+            )
+            if collected:
+                item["collected"].append(provider)
+            elif ev.adapter_result.metadata.requires_api_key:
+                item["api_key"].append(provider)
+            else:
+                item["failed"].append(provider)
+    return status
+
+
+def print_gap_table(report: CoverageReport, timestamp: str | None = None) -> Path:
+    expected = ("currency", "bonds")
+    status = _capability_status(report)
+    output_dir = Path(__file__).parent / "output" / "reports"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    path = output_dir / f"{timestamp or datetime.utcnow().strftime('%Y%m%dT%H%M%S')}_gap_report.md"
+    lines = [
+        "# Market Data POC - Gap Report",
+        "",
+        "| Gap | Estado | Proveedores candidatos | Proveedor principal recomendado | Fallback | Accion tecnica pendiente | Bloqueante para BBDD |",
+        "|-----|--------|-------------------------|--------------------------------|----------|--------------------------|----------------------|",
+    ]
+    table = Table(title="Real Capability Gaps", show_lines=True)
+    table.add_column("Gap")
+    table.add_column("Status")
+    table.add_column("Collected")
+    table.add_column("Failed/API key")
+    for gap in expected:
+        item = status.get(gap, {"declared": [], "collected": [], "failed": [], "api_key": []})
+        collected = sorted(set(item["collected"]))
+        failed = sorted(set(item["failed"]))
+        api_key = sorted(set(item["api_key"]))
+        state = "ok" if collected else ("api_key" if api_key and not failed else "failed")
+        recommended = collected[0] if collected else (api_key[0] if api_key else "")
+        fallback = ", ".join(collected[1:] or api_key or failed)
+        action = "Ninguna" if collected else "Corregir parser/endpoints o configurar API key opcional"
+        blocking = "no" if collected else "si"
+        table.add_row(gap, state, ", ".join(collected), ", ".join(failed + api_key))
+        lines.append(
+            f"| {gap} | {state} | {', '.join(sorted(set(item['declared'])))} | {recommended} | {fallback} | {action} | {blocking} |"
+        )
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    console.print(table)
+    console.print(f"[green]Gap report:[/green] {path}")
+    return path
+
+
 def print_summary_table(report: CoverageReport) -> None:
     table = Table(title="Provider Evaluation Summary", show_lines=True)
     table.add_column("#", style="dim", width=4)
@@ -268,6 +347,10 @@ def main():
             "market:report",
             "market:cache:clear",
             "market:test",
+            "market:currency",
+            "market:bonds",
+            "market:gaps",
+            "market:stabilize",
         ],
         help="POC command to run",
     )
@@ -287,6 +370,9 @@ def main():
     # 1. Load providers catalog
     all_providers = load_providers_yaml()
     selected_providers = filter_providers(all_providers, args.providers)
+    if args.command in _COMMAND_PROVIDER_IDS:
+        command_ids = _COMMAND_PROVIDER_IDS[args.command]
+        selected_providers = [p for p in selected_providers if p["id"] in command_ids]
     console.print(f"Providers in catalog: {len(selected_providers)}")
 
     # 2. Load adapters
@@ -324,9 +410,8 @@ def main():
         if adapter.is_available():
             available.append(adapter)
         else:
-            console.print(
-                f"[yellow]Skipping '{adapter.name}' — requires API key not found in environment[/yellow]"
-            )
+            reason = "requires optional API key" if adapter.requires_api_key else "availability check failed"
+            console.print(f"[yellow]Skipping '{adapter.name}' - {reason}[/yellow]")
             unavailable_count += 1
 
     console.print(f"Running {len(available)} adapters ({unavailable_count} skipped)...\n")
@@ -366,6 +451,11 @@ def main():
     # 7. Build coverage report
     coverage = build_coverage_report(evaluations, unavailable_count, total_time_ms)
 
+    if args.command in {"market:coverage", "market:gaps"}:
+        print_gap_table(coverage, timestamp)
+        if args.command == "market:gaps":
+            return
+
     if args.command == "market:compare":
         metrics = compare_equivalent_values(results)
         table = Table(title="Provider Comparison", show_lines=True)
@@ -398,6 +488,7 @@ def main():
         from exporters.report_generator import generate_report
         report_path = generate_report(coverage, timestamp)
         console.print(f"[green]Report:[/green] {report_path}")
+        print_gap_table(coverage, timestamp)
 
     if "catalog" in output_formats:
         from exporters.catalog_generator import generate_catalog

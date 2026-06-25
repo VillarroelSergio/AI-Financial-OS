@@ -82,6 +82,23 @@ class Currency:
     base: str = ""
     quote: str = ""
     rate: float = 0.0
+    date: Optional[date] = None
+    frequency: str = ""
+
+
+@dataclass
+class CurrencyRate:
+    provider: str
+    source: str
+    retrieved_at: datetime
+    country: str
+    region: str
+    confidence_score: float = 1.0
+    base_currency: str = ""
+    quote_currency: str = ""
+    rate: float = 0.0
+    date: Optional[date] = None
+    frequency: str = "daily"
 
 
 @dataclass
@@ -94,6 +111,26 @@ class YieldCurve:
     confidence_score: float = 1.0
     curve_date: Optional[date] = None
     yields: dict[str, float] = field(default_factory=dict)
+
+
+@dataclass
+class YieldCurvePoint:
+    provider: str
+    source: str
+    retrieved_at: datetime
+    country: str
+    region: str
+    confidence_score: float = 1.0
+    maturity: str = ""
+    yield_value: float = 0.0
+    date: Optional[date] = None
+    currency: str = ""
+
+
+@dataclass
+class BondYield(YieldCurvePoint):
+    issuer: str = ""
+    instrument_type: str = "government_bond"
 
 
 @dataclass

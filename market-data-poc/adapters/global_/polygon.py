@@ -6,6 +6,7 @@ import requests
 
 from adapters.base import BaseAdapter
 from config.settings import get_api_key
+from models.assets import CurrencyRate
 from models.base import AdapterResult
 from models.market import MarketQuote
 
@@ -59,10 +60,41 @@ class PolygonAdapter(BaseAdapter):
                 currency="USD",
                 market_status="previous_close",
             )
+            records = [record]
+            for ticker, base, quote in (
+                ("C:EURUSD", "EUR", "USD"),
+                ("C:USDJPY", "USD", "JPY"),
+                ("C:GBPUSD", "GBP", "USD"),
+            ):
+                fx_url = f"{_BASE_URL}/v2/aggs/ticker/{ticker}/prev"
+                fx_response = requests.get(
+                    fx_url,
+                    params={"adjusted": "true", "apiKey": api_key},
+                    timeout=10,
+                )
+                fx_response.raise_for_status()
+                fx_data = fx_response.json()
+                fx_result = (fx_data.get("results") or [None])[0]
+                if not fx_result:
+                    continue
+                records.append(
+                    CurrencyRate(
+                        provider=self.name,
+                        source=fx_url,
+                        retrieved_at=datetime.now(timezone.utc),
+                        country="GLOBAL",
+                        region=self.region,
+                        confidence_score=0.9,
+                        base_currency=base,
+                        quote_currency=quote,
+                        rate=float(fx_result["c"]),
+                        frequency="daily",
+                    )
+                )
             return AdapterResult(
                 provider=self.name,
                 success=True,
-                records=[record],
+                records=records,
                 error=None,
                 latency_ms=latency_ms,
                 raw_sample={"ticker": data.get("ticker"), "resultsCount": data.get("resultsCount")},

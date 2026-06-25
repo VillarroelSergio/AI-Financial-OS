@@ -6,6 +6,7 @@ import requests
 from datetime import datetime, timezone
 
 from adapters.base import BaseAdapter
+from models.assets import CurrencyRate
 from models.base import AdapterResult, ProviderMetadata
 from models.macro import MacroIndicator
 
@@ -15,10 +16,7 @@ _DFR_URL = (
     "https://data-api.ecb.europa.eu/service/data/FM/B.U2.EUR.4F.KR.DFR.LEV"
     "?format=csvdata&startPeriod=2024-01-01&detail=dataonly"
 )
-_EURUSD_URL = (
-    "https://data-api.ecb.europa.eu/service/data/EXR/D.USD.EUR.SP00.A"
-    "?format=csvdata&startPeriod=2024-01-01&detail=dataonly&lastNObservations=1"
-)
+_ECB_FX_QUOTES = ("USD", "GBP", "JPY", "CHF", "CAD", "AUD", "CNY")
 
 
 def _metadata() -> ProviderMetadata:
@@ -34,6 +32,8 @@ def _metadata() -> ProviderMetadata:
         declared_historical_depth_years=30,
         license="ECB Open Data",
         notes="ECB Statistical Data Warehouse (SDW) API",
+        capabilities=("macro", "currency", "forex", "historical"),
+        priority="primary",
     )
 
 
@@ -86,31 +86,37 @@ class ECBAdapter(BaseAdapter):
                         )
                     )
 
-            # --- EUR/USD exchange rate ---
-            r_fx = requests.get(_EURUSD_URL, headers=_HEADERS, timeout=10)
-            r_fx.raise_for_status()
-            fx_rows = _parse_csv_last_rows(r_fx.text, n=1)
-            if fx_rows:
+            # --- EUR FX reference rates ---
+            for quote in _ECB_FX_QUOTES:
+                fx_url = (
+                    f"https://data-api.ecb.europa.eu/service/data/EXR/D.{quote}.EUR.SP00.A"
+                    "?format=csvdata&detail=dataonly&lastNObservations=1"
+                )
+                r_fx = requests.get(fx_url, headers=_HEADERS, timeout=10)
+                r_fx.raise_for_status()
+                fx_rows = _parse_csv_last_rows(r_fx.text, n=1)
+                if not fx_rows:
+                    continue
                 row = fx_rows[-1]
                 period = row.get("TIME_PERIOD", "")
                 obs_val = row.get("OBS_VALUE", "")
-                if obs_val:
-                    records.append(
-                        MacroIndicator(
-                            provider=self.name,
-                            source=_EURUSD_URL,
-                            retrieved_at=retrieved_at,
-                            country="EA",
-                            region="Eurozone",
-                            confidence_score=1.0,
-                            indicator_id="ECB_EURUSD",
-                            name="EUR/USD Exchange Rate (ECB)",
-                            value=float(obs_val),
-                            unit="USD per EUR",
-                            period=period,
-                            frequency="daily",
-                        )
+                if not obs_val:
+                    continue
+                records.append(
+                    CurrencyRate(
+                        provider=self.name,
+                        source=fx_url,
+                        retrieved_at=retrieved_at,
+                        country="EA",
+                        region="Eurozone",
+                        confidence_score=1.0,
+                        base_currency="EUR",
+                        quote_currency=quote,
+                        rate=float(obs_val),
+                        date=datetime.fromisoformat(period).date() if period else None,
+                        frequency="daily",
                     )
+                )
 
         except Exception as exc:
             latency_ms = (time.time() - t0) * 1000
