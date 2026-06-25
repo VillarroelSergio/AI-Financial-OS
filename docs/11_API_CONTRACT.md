@@ -169,6 +169,9 @@ Revierte importación.
 
 Historial.
 
+La Fase 2 acepta `monefy` y `generic_csv`, procesa UTF-8 localmente (máximo 10 MB),
+omite filas inválidas o duplicadas al confirmar y conserva el lote tras un rollback.
+
 ## Investments
 
 ### GET `/api/investments/summary`

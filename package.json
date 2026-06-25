@@ -1,0 +1,8 @@
+{
+  "name": "ai-financial-os",
+  "private": true,
+  "scripts": {
+    "dev": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/dev.ps1",
+    "backend": "powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/backend.ps1"
+  }
+}

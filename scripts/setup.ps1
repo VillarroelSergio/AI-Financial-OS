@@ -18,7 +18,14 @@ if (-not (Test-Path "$root\.env")) {
 # Python
 Write-Host "Instalando dependencias Python..." -ForegroundColor Yellow
 Set-Location "$root\backend"
-uv sync
+$uv = Get-Command "uv" -ErrorAction SilentlyContinue
+if ($uv) {
+    & $uv.Source sync
+} elseif (Test-Path ".venv\Scripts\python.exe") {
+    & ".venv\Scripts\python.exe" -m pip install -e ".[dev]"
+} else {
+    throw "No se encontró uv. Instálalo desde https://docs.astral.sh/uv/ o crea backend\.venv."
+}
 Write-Host "  Backend OK" -ForegroundColor Green
 
 # Node

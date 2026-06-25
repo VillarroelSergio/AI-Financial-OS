@@ -17,6 +17,21 @@ Centro de control financiero personal. Local-first, dark premium, IA local.
 
 ## Desarrollo
 
+Para iniciar únicamente el backend en Windows:
+
+```powershell
+.\scripts\backend.ps1
+```
+
+El script usa `uv` cuando está disponible y, en caso contrario, reutiliza
+`backend\.venv\Scripts\python.exe`.
+
+Para iniciar backend y aplicación Tauri con un único comando desde la raíz:
+
+```powershell
+npm run dev
+```
+
 ```powershell
 .\scripts\dev.ps1
 ```
@@ -50,3 +65,11 @@ npx tsc --noEmit
 ## Documentación
 
 Ver `docs/` para arquitectura, modelo de datos, contrato API y roadmap.
+
+
+Para usar la herramienta de capturas desde apps/desktop/:
+
+
+npm run ux:snapshots        # captura 8 rutas en headless
+npm run ux:snapshots:headed # ídem con navegador visible
+npm run ux:report           # muestra resumen de la última capt

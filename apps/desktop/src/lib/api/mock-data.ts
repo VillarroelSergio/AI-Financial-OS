@@ -1,4 +1,4 @@
-import type { Account, Category, Transaction, DashboardOverview } from "@/lib/types";
+import type { Account, Category, Transaction, DashboardOverview, HoldingEnriched, InvestmentAsset, InvestmentSummary } from "@/lib/types";
 import type { SpendingData, CategorySpending } from "./dashboard";
 import type { AppSetting } from "./settings";
 
@@ -35,6 +35,39 @@ const mockAccounts: Account[] = [
     is_active: true,
     created_at: "2024-01-01T00:00:00",
     updated_at: "2024-01-01T00:00:00",
+  },
+  {
+    id: "mock-acc-tr",
+    name: "Trade Republic",
+    type: "broker",
+    institution: "Trade Republic",
+    currency: "EUR",
+    current_balance: "3515.61",
+    is_active: true,
+    created_at: "2024-01-01T00:00:00",
+    updated_at: "2026-06-23T10:00:00",
+  },
+  {
+    id: "mock-acc-finizens",
+    name: "Finizens Plan USA",
+    type: "investment",
+    institution: "Finizens",
+    currency: "EUR",
+    current_balance: "5569.69",
+    is_active: true,
+    created_at: "2024-01-01T00:00:00",
+    updated_at: "2026-06-23T10:00:00",
+  },
+  {
+    id: "mock-acc-tr-savings",
+    name: "Cuenta Remunerada TR",
+    type: "savings",
+    institution: "Trade Republic",
+    currency: "EUR",
+    current_balance: "5000.00",
+    is_active: true,
+    created_at: "2025-01-01T00:00:00",
+    updated_at: "2026-06-23T10:00:00",
   },
 ];
 
@@ -79,6 +112,112 @@ const mockSpending: SpendingData = {
   by_category: mockSpendingCategories,
 };
 
+const mockInvestmentAssets: InvestmentAsset[] = [
+  {
+    id: "asset-aapl", name: "Apple Inc.", ticker: "AAPL", isin: "US0378331005",
+    asset_type: "stock", currency: "USD", region: "US", sector: "Technology",
+    price_source: "yfinance", created_at: "2024-01-01T00:00:00", updated_at: "2026-06-23T10:00:00",
+  },
+  {
+    id: "asset-tef", name: "Telefónica", ticker: "TEF.MC", isin: "ES0178430E18",
+    asset_type: "stock", currency: "EUR", region: "ES", sector: "Telecom",
+    price_source: "yfinance", created_at: "2024-01-01T00:00:00", updated_at: "2026-06-23T10:00:00",
+  },
+  {
+    id: "asset-vg500", name: "Vanguard US 500 Index Inst Plus", ticker: null, isin: "IE00B5B3X895",
+    asset_type: "fund", currency: "EUR", region: "US", sector: null,
+    price_source: "manual", created_at: "2024-01-01T00:00:00", updated_at: "2026-06-23T10:00:00",
+  },
+  {
+    id: "asset-ishares", name: "iShares North America Index Inst", ticker: null, isin: "IE00B14X4S71",
+    asset_type: "fund", currency: "EUR", region: "US", sector: null,
+    price_source: "manual", created_at: "2024-01-01T00:00:00", updated_at: "2026-06-23T10:00:00",
+  },
+  {
+    id: "asset-cleome", name: "Cleome Index USA Equities", ticker: null, isin: "LU1045609586",
+    asset_type: "fund", currency: "EUR", region: "US", sector: null,
+    price_source: "manual", created_at: "2024-01-01T00:00:00", updated_at: "2026-06-23T10:00:00",
+  },
+  {
+    id: "asset-tr-savings", name: "Cuenta Remunerada Trade Republic", ticker: null, isin: null,
+    asset_type: "savings_account", currency: "EUR", region: null, sector: null,
+    price_source: "manual", created_at: "2024-01-01T00:00:00", updated_at: "2026-06-23T10:00:00",
+  },
+];
+
+const assetMap = Object.fromEntries(mockInvestmentAssets.map(a => [a.id, a]));
+
+const mockHoldings: HoldingEnriched[] = [
+  {
+    id: "h-aapl", account_id: "mock-acc-tr", asset_id: "asset-aapl",
+    quantity: "15", average_price: "150.0000", current_price: "192.5000",
+    current_price_currency: "USD", current_price_updated_at: "2026-06-23T10:00:00",
+    market_value: "2673.61", interest_rate: null, inception_date: null,
+    created_at: "2024-01-01T00:00:00", updated_at: "2026-06-23T10:00:00",
+    asset: assetMap["asset-aapl"],
+    cost_basis: "2250.0000", return_absolute: "423.61", return_percent: 18.83, accrued_interest: null,
+  },
+  {
+    id: "h-tef", account_id: "mock-acc-tr", asset_id: "asset-tef",
+    quantity: "200", average_price: "3.9500", current_price: "4.2100",
+    current_price_currency: "EUR", current_price_updated_at: "2026-06-23T10:00:00",
+    market_value: "842.00", interest_rate: null, inception_date: null,
+    created_at: "2024-01-01T00:00:00", updated_at: "2026-06-23T10:00:00",
+    asset: assetMap["asset-tef"],
+    cost_basis: "790.0000", return_absolute: "52.00", return_percent: 6.58, accrued_interest: null,
+  },
+  {
+    id: "h-vg500", account_id: "mock-acc-finizens", asset_id: "asset-vg500",
+    quantity: "4.59", average_price: "420.0000", current_price: "576.1900",
+    current_price_currency: "EUR", current_price_updated_at: "2026-06-23T10:00:00",
+    market_value: "2644.71", interest_rate: null, inception_date: null,
+    created_at: "2024-01-01T00:00:00", updated_at: "2026-06-23T10:00:00",
+    asset: assetMap["asset-vg500"],
+    cost_basis: "1927.8000", return_absolute: "716.91", return_percent: 37.19, accrued_interest: null,
+  },
+  {
+    id: "h-ishares", account_id: "mock-acc-finizens", asset_id: "asset-ishares",
+    quantity: "42.62", average_price: "28.0000", current_price: "39.1100",
+    current_price_currency: "EUR", current_price_updated_at: "2026-06-23T10:00:00",
+    market_value: "1667.04", interest_rate: null, inception_date: null,
+    created_at: "2024-01-01T00:00:00", updated_at: "2026-06-23T10:00:00",
+    asset: assetMap["asset-ishares"],
+    cost_basis: "1193.3600", return_absolute: "473.68", return_percent: 39.69, accrued_interest: null,
+  },
+  {
+    id: "h-cleome", account_id: "mock-acc-finizens", asset_id: "asset-cleome",
+    quantity: "0.44", average_price: "1800.0000", current_price: "2858.9500",
+    current_price_currency: "EUR", current_price_updated_at: "2026-06-23T10:00:00",
+    market_value: "1257.94", interest_rate: null, inception_date: null,
+    created_at: "2024-01-01T00:00:00", updated_at: "2026-06-23T10:00:00",
+    asset: assetMap["asset-cleome"],
+    cost_basis: "792.0000", return_absolute: "465.94", return_percent: 58.83, accrued_interest: null,
+  },
+  {
+    id: "h-savings", account_id: "mock-acc-tr-savings", asset_id: "asset-tr-savings",
+    quantity: "5000.00000000", average_price: "1.0000", current_price: null,
+    current_price_currency: "EUR", current_price_updated_at: null,
+    market_value: "5000.00", interest_rate: "0.0400", inception_date: "2025-01-01",
+    created_at: "2025-01-01T00:00:00", updated_at: "2026-06-23T10:00:00",
+    asset: assetMap["asset-tr-savings"],
+    cost_basis: "5000.00000000", return_absolute: null, return_percent: null, accrued_interest: "72.33",
+  },
+];
+
+const mockInvestmentSummary: InvestmentSummary = {
+  total_value: "14085.30",
+  total_invested: "11953.16",
+  return_absolute: "2132.14",
+  return_percent: 17.84,
+  currency: "EUR",
+  by_account: [
+    { account_id: "mock-acc-tr", value: "3515.61", invested: "3040.00" },
+    { account_id: "mock-acc-finizens", value: "5569.69", invested: "3913.16" },
+    { account_id: "mock-acc-tr-savings", value: "5000.00", invested: "5000.00" },
+  ],
+  last_updated: "2026-06-23T10:00:00",
+};
+
 const mockSettings: AppSetting[] = [
   { id: "set-1", key: "app.language", value_json: '"es"', created_at: "2024-01-01T00:00:00", updated_at: "2024-01-01T00:00:00" },
   { id: "set-2", key: "theme.mode", value_json: '"dark"', created_at: "2024-01-01T00:00:00", updated_at: "2024-01-01T00:00:00" },
@@ -94,6 +233,11 @@ export function getMockResponse<T>(path: string): T {
   if (clean === "/api/dashboard/overview") return mockOverview as T;
   if (clean === "/api/dashboard/spending") return mockSpending as T;
   if (clean === "/api/settings") return mockSettings as T;
+  if (clean === "/api/investments/assets") return mockInvestmentAssets as T;
+  if (clean === "/api/investments/holdings") return mockHoldings as T;
+  if (clean === "/api/investments/summary") return mockInvestmentSummary as T;
+  if (clean === "/api/investments/prices/refresh")
+    return { updated: 2, failed: [], needs_manual_nav: ["asset-vg500", "asset-ishares", "asset-cleome"] } as T;
 
   throw new Error(`[mock] No mock defined for: ${path}`);
 }

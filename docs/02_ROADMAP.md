@@ -1,10 +1,50 @@
 # 02 — Roadmap
 
+## Estado de implementación
+
+| Fase | Nombre | Estado | Commit(s) |
+|------|--------|--------|-----------|
+| 0 | Foundation | ✅ Completa | `e9f2fc9`..`ce21c51`, `20abbeb` |
+| 1 | Financial Core MVP | ✅ Completa | `8861adf` |
+| 2 | CSV Import Center | ✅ Completa | rama `feature/fase-2-import-center` |
+| 3 | Investments Basic | ✅ Completa | `feature/fase-3-investments` |
+| 4 | Market Watch | ⏳ Pendiente | — |
+| 5 | Economic Intelligence | ⏳ Pendiente | — |
+| 6 | Local AI Assistant | ⏳ Pendiente | — |
+| 7 | Insights Engine | ⏳ Pendiente | — |
+| 8 | Goals & Simulations | ⏳ Pendiente | — |
+| 9 | Document Intelligence / RAG | ⏳ Pendiente | — |
+| 10 | Hardening & Packaging | ⏳ Pendiente | — |
+
+---
+
+## Deudas técnicas
+
+### Fase 1 — Financial Core MVP
+
+| # | Deuda | Impacto | Bloquea |
+|---|-------|---------|---------|
+| TD-01 | `categories` sin `PATCH` ni `DELETE` — solo GET + POST implementados | Medio | Fase 2 (reimportación con categorías existentes) |
+| TD-02 | Sin tests de integración para los módulos de Fase 1 (accounts, categories, transactions, dashboard) — solo existe `test_health.py` | Alto | Calidad general, refactors seguros |
+| TD-03 | `ChartCard` no existe como componente independiente — Recharts se usa directamente en `SpendingPage` | Bajo | Consistencia del design system |
+
+> Estas deudas no bloquean Fase 2, pero TD-02 debería resolverse antes de Fase 3 para evitar regresiones silenciosas.
+
+### Fase 3 — Investments Portfolio Tracker
+
+| # | Deuda | Impacto | Bloquea |
+|---|-------|---------|---------|
+| TD-04 | Conversión de divisas solo USD→EUR via yfinance `EURUSD=X` — otras divisas no soportadas | Medio | Multi-divisa en Fase 3+ |
+| TD-05 | Sin histórico de precios — solo precio actual cacheado | Bajo | Gráfica histórica en Fase 4 |
+| TD-06 | NAV de fondos Finizens siempre manual — sin proveedor automático | Bajo | No bloquea nada |
+
+---
+
 ## Estrategia general
 
 El proyecto se implementa por fases cerradas. Cada fase debe entregar una aplicación funcional, aunque sea limitada. No se debe avanzar a IA avanzada, RAG o automatización hasta que el core financiero sea estable.
 
-## Fase 0 — Foundation
+## Fase 0 — Foundation ✅
 
 ### Objetivo
 
@@ -38,7 +78,7 @@ Aplicación de escritorio arrancando en local con navegación base, backend func
 
 ---
 
-## Fase 1 — Financial Core MVP
+## Fase 1 — Financial Core MVP ✅
 
 ### Objetivo
 
@@ -71,7 +111,7 @@ El usuario puede crear cuentas, añadir movimientos manuales y ver métricas fin
 
 ---
 
-## Fase 2 — CSV Import Center
+## Fase 2 — CSV Import Center ✅
 
 ### Objetivo
 
@@ -101,7 +141,7 @@ El usuario puede importar el CSV de Monefy, revisar los movimientos, confirmar l
 
 ---
 
-## Fase 3 — Investments Basic
+## Fase 3 — Investments Basic ✅
 
 ### Objetivo
 
@@ -130,7 +170,7 @@ El usuario puede registrar posiciones básicas y ver su patrimonio financiero co
 
 ---
 
-## Fase 4 — Market Watch
+## Fase 4 — Market Watch ⏳
 
 ### Objetivo
 
@@ -166,7 +206,7 @@ El usuario puede consultar contexto de mercado desde la app sin mezclarlo con su
 
 ---
 
-## Fase 5 — Economic Intelligence
+## Fase 5 — Economic Intelligence ⏳
 
 ### Objetivo
 
@@ -192,7 +232,7 @@ La app ofrece un snapshot económico limpio, actualizado y conectado conceptualm
 
 ---
 
-## Fase 6 — Local AI Assistant
+## Fase 6 — Local AI Assistant ⏳
 
 ### Objetivo
 
@@ -227,7 +267,7 @@ El usuario puede preguntar sobre sus datos y recibir explicaciones generadas loc
 
 ---
 
-## Fase 7 — Insights Engine
+## Fase 7 — Insights Engine ⏳
 
 ### Objetivo
 
@@ -249,7 +289,7 @@ La app empieza a avisar de cambios importantes sin que el usuario tenga que busc
 
 ---
 
-## Fase 8 — Goals & Simulations
+## Fase 8 — Goals & Simulations ⏳
 
 ### Objetivo
 
@@ -271,7 +311,7 @@ El usuario puede entender si está avanzando hacia sus objetivos y qué impacto 
 
 ---
 
-## Fase 9 — Document Intelligence / RAG
+## Fase 9 — Document Intelligence / RAG ⏳
 
 ### Objetivo
 
@@ -300,7 +340,7 @@ El usuario puede consultar documentos financieros sin subirlos a la nube.
 
 ---
 
-## Fase 10 — Hardening & Packaging
+## Fase 10 — Hardening & Packaging ⏳
 
 ### Objetivo
 
