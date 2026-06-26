@@ -66,6 +66,7 @@ _BDE_CSV_URLS = [
 
 class BDEAdapter(BaseAdapter):
     name = "Banco de España"
+    provider_id = "bde"
     category = "macro"
     region = "Spain"
     requires_api_key = False
