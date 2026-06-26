@@ -34,32 +34,40 @@ def export_records(results: List[AdapterResult], timestamp: str | None = None) -
     return path
 
 
-def export_catalog_results(results: List[CatalogFetchResult], timestamp: str | None = None) -> Path:
+def export_catalog_results(
+    results: list,
+    timestamp: str | None = None,
+    output_dir: Path | None = None,
+) -> Path:
     """
-    Export catalog fetch results to CSV.
+    Export catalog fetch results to CSV with catalog metadata fields.
 
     Returns the path of the written file.
     """
-    _OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    out_dir = output_dir or _OUTPUT_DIR
+    out_dir.mkdir(parents=True, exist_ok=True)
     ts = timestamp or datetime.utcnow().strftime("%Y%m%dT%H%M%S")
-    path = _OUTPUT_DIR / f"{ts}_catalog_results.csv"
+    path = out_dir / f"{ts}_catalog_records.csv"
 
     rows = []
     for cfr in results:
+        catalog_meta = {
+            "catalog_id": cfr.catalog_id,
+            "priority": cfr.indicator.priority,
+            "dashboard": cfr.indicator.dashboard,
+            "ai": cfr.indicator.ai,
+            "provider_used": cfr.provider_used,
+            "fallback_used": cfr.fallback_used,
+        }
         for record in cfr.adapter_result.records:
-            row = {}
             if dataclasses.is_dataclass(record) and not isinstance(record, type):
                 row = dataclasses.asdict(record)
+                row.update(catalog_meta)
+                rows.append(row)
             elif isinstance(record, dict):
-                row = record
-            else:
-                continue
-            # Add metadata
-            row["_catalog_id"] = cfr.catalog_id
-            row["_provider_used"] = cfr.provider_used
-            row["_fallback_used"] = cfr.fallback_used
-            row["_success"] = cfr.adapter_result.success
-            rows.append(row)
+                row = dict(record)
+                row.update(catalog_meta)
+                rows.append(row)
 
     df = pd.DataFrame(rows) if rows else pd.DataFrame()
     df.to_csv(path, index=False, encoding="utf-8")
