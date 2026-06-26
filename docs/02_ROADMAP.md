@@ -12,6 +12,7 @@
 | 4.5 | Multi-Provider Market Data | ✅ Completa | rama `feat/multi-provider-market-data` |
 | 4.7 | EOD Market Data | ✅ Completa | rama actual |
 | 5 | Economic Intelligence | ✅ Completa | rama `feature/fase-5-economic-intelligence` |
+| 5.5 | Market Intelligence Layer | ✅ Completa | rama `feature/fase-5.5-market-intelligence-layer` |
 | 6 | Local AI Assistant | ⏳ Pendiente | — |
 | 7 | Insights Engine | ⏳ Pendiente | — |
 | 8 | Goals & Simulations | ⏳ Pendiente | — |
@@ -359,6 +360,58 @@ Incorporar datos macroeconómicos reales para España, Eurozona y EEUU.
 ### Documentación
 
 - `docs/superpowers/specs/2026-06-24-economic-intelligence-design.md` — spec técnico.
+
+---
+
+---
+
+## Fase 5.5 — Market Intelligence Layer ✅
+
+### Objetivo
+
+Convertir el POC de datos de mercado (`market-data-poc/`) en un módulo de producción persistente que sirve como única fuente de verdad para la IA local.
+
+### Incluye
+
+- **Catálogo YAML** — 80+ indicadores declarativos organizados en 9 archivos (macro España, Europa, EEUU, divisas, bonos, commodities, mercados, energía, noticias). Define proveedor primario, secundario y fallback por indicador.
+- **Adapters migrados** — 41 adapters del POC (9 España, 6 Europa, 7 USA, 13 Global, 1 RSS + `PublicDatasetAdapter`) con imports remapeados a `app.modules.market_intelligence.*`.
+- **`ProviderOrchestrator`** — encadena primario → secundario → fallback por indicador, con traza del proveedor usado.
+- **`QualityEngine`** — 5 checks ponderados: freshness (0.30), completeness (0.20), validity (0.25), outlier (0.15), provider_reliability (0.10). Score final 0.0–1.0.
+- **DuckDB persistente** — 16 tablas `mi_*` (raw records, normalized records, market quotes, historical prices, macro observations, currency rates, bond yields, commodities, company profiles, news, provider health, quality checks, AI datasheets). Escrituras idempotentes con checksums MD5.
+- **`AiDatasheetGenerator`** — genera un JSON compacto diario desde DuckDB (nunca desde proveedores live) para consumo exclusivo de la IA local.
+- **API REST** — 6 endpoints bajo `/api/market-intelligence/*`: macro snapshot, quotes, forex, bonds, news, AI datasheet.
+- **CLI** — 7 comandos `market:intelligence:*`: `init-db`, `update`, `quality`, `snapshot`, `datasheet`, `catalog`, `catalog:validate`.
+- **48 tests** — migrations, modelos, catalog, adapter imports, orchestrator, quality engine, repository, API service, datasheet.
+
+### Arquitectura
+
+```txt
+Catalog (YAML)
+ └─ CatalogLoader → [CatalogIndicator ×80+]
+      └─ ProviderOrchestrator
+           └─ Adapter (primary → secondary → fallback)
+                └─ AdapterResult
+                     ├─ QualityEngine → QualityResult (score 0.0–1.0)
+                     └─ Repository (DuckDB)
+                          ├─ mi_raw_records (MD5 idempotency)
+                          ├─ mi_normalized_records (composite key)
+                          └─ mi_ai_datasheets
+                               └─ AiDatasheetGenerator → AiDatasheetOut
+                                    └─ /api/market-intelligence/ai-datasheet (Fase 6)
+```
+
+### Restricciones cumplidas
+
+- DuckDB siempre vía singleton `get_duckdb()` — nunca `duckdb.connect()` directo.
+- API keys desde `app.core.config.settings` — nunca `os.environ.get()`.
+- Endpoints `/api/economy/*` existentes intactos (backward compat).
+- Upserts con DELETE + INSERT (DuckDB no tiene `INSERT OR REPLACE`).
+- Latest reads con `QUALIFY ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ... DESC) = 1`.
+
+### Documentación
+
+- `docs/superpowers/specs/2026-06-26-market-intelligence-layer-design.md` — spec técnico completo.
+- `docs/superpowers/plans/2026-06-26-market-intelligence-fase55.md` — plan de implementación.
 
 ---
 

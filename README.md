@@ -62,6 +62,32 @@ cd apps/desktop
 npx tsc --noEmit
 ```
 
+## Market Intelligence CLI
+
+Comandos disponibles desde `market-data-poc/run_poc.py`:
+
+```powershell
+cd market-data-poc
+uv run python run_poc.py market:intelligence:init-db       # crea tablas mi_* en DuckDB
+uv run python run_poc.py market:intelligence:catalog       # lista indicadores del catálogo
+uv run python run_poc.py market:intelligence:catalog:validate  # valida YAMLs
+uv run python run_poc.py market:intelligence:update        # ingesta todos los indicadores
+uv run python run_poc.py market:intelligence:quality       # muestra scores de calidad
+uv run python run_poc.py market:intelligence:snapshot      # snapshot DuckDB → JSON
+uv run python run_poc.py market:intelligence:datasheet     # genera AI datasheet
+```
+
+API endpoints bajo `/api/market-intelligence/`:
+
+| Endpoint | Descripción |
+|---|---|
+| `GET /macro-snapshot` | Indicadores macro por región |
+| `GET /market-quotes` | Cotizaciones de índices/acciones |
+| `GET /forex-rates` | Tipos de cambio |
+| `GET /bond-yields` | Rendimientos de bonos |
+| `GET /news` | Noticias financieras |
+| `GET /ai-datasheet` | Datasheet compacto para IA local |
+
 ## Documentación
 
 Ver `docs/` para arquitectura, modelo de datos, contrato API y roadmap.

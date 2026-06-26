@@ -54,6 +54,7 @@ FastAPI Backend
  ├─ Investment Module
  ├─ Market Data Module (providers + ConsensusEngine + RequestBudget + DuckDB cache)
  ├─ Economic Intelligence Module
+ ├─ Market Intelligence Module (catalog + ingestion + quality + storage + AI datasheet)
  ├─ AI Service
  ├─ RAG Service future
  └─ Security / Settings
@@ -103,6 +104,7 @@ backend/app/modules/
   investments/
   market_data/          # providers/, consensus.py, budget.py, router.py, cache.py
   economic_data/
+  market_intelligence/  # catalog/, ingestion/, quality/, storage/, api/, ai/, cli/
   goals/
   insights/
   ai/
@@ -183,8 +185,13 @@ DuckDB se usará para:
 - Consultas temporales complejas.
 - Procesamiento de CSV.
 - Preparación de datasets para dashboards.
+- Persistencia de datos de mercado e inteligencia financiera (tablas `mi_*`).
 
-Regla: no duplicar lógica de negocio en DuckDB si ya existe en servicios deterministas.
+**Reglas DuckDB:**
+- Siempre acceder via el singleton `app.core.duckdb.get_duckdb()` — nunca `duckdb.connect()` directo en producción.
+- Upserts con DELETE + INSERT (DuckDB no soporta `INSERT OR REPLACE`).
+- Latest reads con `QUALIFY ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ... DESC) = 1` (no `DISTINCT ON`).
+- No duplicar lógica de negocio en DuckDB si ya existe en servicios deterministas.
 
 ## Uso de IA
 
