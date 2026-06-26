@@ -4,6 +4,7 @@ from typing import Iterable
 
 from adapters.base import BaseAdapter
 from models.base import AdapterResult, ProviderHealth, ProviderMetadata, ProviderPriority, ProviderStatus
+from models.catalog import CatalogIndicator, CatalogFetchResult
 from services.cache import LocalTTLCache
 
 logger = logging.getLogger("market_data_poc")
@@ -106,6 +107,52 @@ class ProviderOrchestrator:
                     license="internal",
                 )
             ),
+        )
+
+    def _get_adapter(self, provider_id: str) -> BaseAdapter | None:
+        return next(
+            (a for a in self.adapters if getattr(a, "_provider_id", None) == provider_id
+             or a.name.lower().replace(" ", "_") == provider_id
+             or getattr(a, "provider_id", None) == provider_id),
+            None,
+        )
+
+    def fetch_indicator(self, indicator: CatalogIndicator) -> CatalogFetchResult:
+        chain = [
+            indicator.provider_primary,
+            indicator.provider_secondary,
+            indicator.provider_fallback,
+        ]
+        for provider_id in [p for p in chain if p]:
+            adapter = self._get_adapter(provider_id)
+            if adapter is None or not adapter.supports(indicator.id):
+                continue
+            result = adapter.fetch(indicator.id)
+            if result.success:
+                return CatalogFetchResult(
+                    indicator=indicator,
+                    adapter_result=result,
+                    provider_used=provider_id,
+                    fallback_used=(provider_id != indicator.provider_primary),
+                    catalog_id=indicator.id,
+                )
+        metadata = ProviderMetadata(
+            name="Catalog Orchestrator", id="catalog_orchestrator",
+            category="orchestration", region="Global", method="internal",
+            base_url="", requires_api_key=False,
+            declared_update_frequency="unknown",
+            declared_historical_depth_years=0, license="internal",
+        )
+        return CatalogFetchResult(
+            indicator=indicator,
+            adapter_result=AdapterResult(
+                provider="Catalog Orchestrator", success=False, records=[],
+                error=f"No migrated provider supports '{indicator.id}'",
+                latency_ms=0.0, raw_sample=None, metadata=metadata,
+            ),
+            provider_used="none",
+            fallback_used=False,
+            catalog_id=indicator.id,
         )
 
     def health(self) -> list[ProviderHealth]:
