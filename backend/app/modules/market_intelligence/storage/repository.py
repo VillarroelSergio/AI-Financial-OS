@@ -88,6 +88,16 @@ def persist_fetch_result(
 
 def _persist_normalized(conn, catalog_item_id, provider_id, record, quality, now):
     model_type = type(record).__name__
+    observed_at = getattr(record, "retrieved_at", now)
+
+    # Idempotency: skip if same record already exists
+    existing = conn.execute(
+        "SELECT id FROM mi_normalized_records WHERE catalog_item_id = ? AND provider_id = ? AND model_type = ? AND observed_at = ? LIMIT 1",
+        [catalog_item_id, provider_id, model_type, observed_at],
+    ).fetchone()
+    if existing:
+        return
+
     value_numeric = (
         getattr(record, "value", None)
         or getattr(record, "rate", None)
@@ -103,7 +113,7 @@ def _persist_normalized(conn, catalog_item_id, provider_id, record, quality, now
         """,
         [
             _uid(), catalog_item_id, provider_id, model_type,
-            getattr(record, "retrieved_at", now),
+            observed_at,
             value_numeric,
             getattr(record, "unit", ""),
             getattr(record, "period", ""),
@@ -125,6 +135,8 @@ def _persist_normalized(conn, catalog_item_id, provider_id, record, quality, now
         _upsert_bond(conn, catalog_item_id, provider_id, record, quality)
     elif isinstance(record, MarketQuote):
         _upsert_quote(conn, catalog_item_id, provider_id, record, quality)
+    elif isinstance(record, HistoricalPrice):
+        _upsert_historical(conn, catalog_item_id, provider_id, record, quality)
     elif isinstance(record, Commodity):
         _upsert_commodity(conn, catalog_item_id, provider_id, record, quality)
     elif isinstance(record, NewsItem):
@@ -202,6 +214,21 @@ def _upsert_quote(conn, catalog_item_id, provider_id, record: MarketQuote, quali
     )
 
 
+def _upsert_historical(conn, catalog_item_id, provider_id, record: HistoricalPrice, quality):
+    conn.execute(
+        "DELETE FROM mi_historical_prices WHERE catalog_item_id = ? AND symbol = ? AND date = ?",
+        [catalog_item_id, record.symbol, record.date],
+    )
+    conn.execute(
+        """INSERT INTO mi_historical_prices
+            (id, catalog_item_id, symbol, date, open, high, low, close, volume, currency, provider_id, quality_score)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        [_uid(), catalog_item_id, record.symbol, record.date,
+         record.open, record.high, record.low, record.close, record.volume,
+         getattr(record, 'currency', 'USD'), provider_id, quality.final_score],
+    )
+
+
 def _upsert_commodity(conn, catalog_item_id, provider_id, record: Commodity, quality):
     conn.execute(
         "DELETE FROM mi_commodities WHERE catalog_item_id = ?",
@@ -269,19 +296,11 @@ def get_latest_macro(catalog_item_id: str) -> Optional[dict]:
 
 def get_latest_macro_all() -> list[dict]:
     conn = _conn()
-    # Use subquery to get latest per catalog_item_id (DISTINCT ON not universally supported)
-    rows = conn.execute(
-        """
-        SELECT m.catalog_item_id, m.indicator_id, m.country, m.period, m.value, m.unit,
-               m.provider_id, m.quality_score, m.retrieved_at
-        FROM mi_macro_observations m
-        INNER JOIN (
-            SELECT catalog_item_id, MAX(retrieved_at) AS max_at
-            FROM mi_macro_observations
-            GROUP BY catalog_item_id
-        ) latest ON m.catalog_item_id = latest.catalog_item_id AND m.retrieved_at = latest.max_at
-        """
-    ).fetchall()
+    rows = conn.execute("""
+        SELECT catalog_item_id, indicator_id, country, period, value, unit, provider_id, quality_score, retrieved_at
+        FROM mi_macro_observations
+        QUALIFY ROW_NUMBER() OVER (PARTITION BY catalog_item_id ORDER BY retrieved_at DESC) = 1
+    """).fetchall()
     cols = ["catalog_item_id", "indicator_id", "country", "period", "value", "unit",
             "provider_id", "quality_score", "retrieved_at"]
     return [dict(zip(cols, r)) for r in rows]
@@ -289,18 +308,11 @@ def get_latest_macro_all() -> list[dict]:
 
 def get_latest_quotes() -> list[dict]:
     conn = _conn()
-    rows = conn.execute(
-        """
-        SELECT q.catalog_item_id, q.symbol, q.asset_type, q.price, q.change_pct,
-               q.currency, q.observed_at, q.provider_id, q.quality_score
-        FROM mi_market_quotes q
-        INNER JOIN (
-            SELECT catalog_item_id, MAX(observed_at) AS max_at
-            FROM mi_market_quotes
-            GROUP BY catalog_item_id
-        ) latest ON q.catalog_item_id = latest.catalog_item_id AND q.observed_at = latest.max_at
-        """
-    ).fetchall()
+    rows = conn.execute("""
+        SELECT catalog_item_id, symbol, asset_type, price, change_pct, currency, observed_at, provider_id, quality_score
+        FROM mi_market_quotes
+        QUALIFY ROW_NUMBER() OVER (PARTITION BY catalog_item_id ORDER BY observed_at DESC) = 1
+    """).fetchall()
     cols = ["catalog_item_id", "symbol", "asset_type", "price", "change_pct",
             "currency", "observed_at", "provider_id", "quality_score"]
     return [dict(zip(cols, r)) for r in rows]
@@ -308,18 +320,11 @@ def get_latest_quotes() -> list[dict]:
 
 def get_latest_forex() -> list[dict]:
     conn = _conn()
-    rows = conn.execute(
-        """
-        SELECT r.catalog_item_id, r.base_currency, r.quote_currency, r.rate, r.date,
-               r.provider_id, r.quality_score
-        FROM mi_currency_rates r
-        INNER JOIN (
-            SELECT catalog_item_id, MAX(date) AS max_date
-            FROM mi_currency_rates
-            GROUP BY catalog_item_id
-        ) latest ON r.catalog_item_id = latest.catalog_item_id AND r.date = latest.max_date
-        """
-    ).fetchall()
+    rows = conn.execute("""
+        SELECT catalog_item_id, base_currency, quote_currency, rate, date, provider_id, quality_score
+        FROM mi_currency_rates
+        QUALIFY ROW_NUMBER() OVER (PARTITION BY catalog_item_id ORDER BY date DESC) = 1
+    """).fetchall()
     cols = ["catalog_item_id", "base_currency", "quote_currency", "rate", "date",
             "provider_id", "quality_score"]
     return [dict(zip(cols, r)) for r in rows]
@@ -327,18 +332,11 @@ def get_latest_forex() -> list[dict]:
 
 def get_latest_bonds() -> list[dict]:
     conn = _conn()
-    rows = conn.execute(
-        """
-        SELECT b.catalog_item_id, b.country, b.maturity, b.yield_value, b.date,
-               b.provider_id, b.quality_score
-        FROM mi_bond_yields b
-        INNER JOIN (
-            SELECT catalog_item_id, MAX(date) AS max_date
-            FROM mi_bond_yields
-            GROUP BY catalog_item_id
-        ) latest ON b.catalog_item_id = latest.catalog_item_id AND b.date = latest.max_date
-        """
-    ).fetchall()
+    rows = conn.execute("""
+        SELECT catalog_item_id, country, maturity, yield_value, date, provider_id, quality_score
+        FROM mi_bond_yields
+        QUALIFY ROW_NUMBER() OVER (PARTITION BY catalog_item_id ORDER BY date DESC) = 1
+    """).fetchall()
     cols = ["catalog_item_id", "country", "maturity", "yield_value", "date",
             "provider_id", "quality_score"]
     return [dict(zip(cols, r)) for r in rows]
