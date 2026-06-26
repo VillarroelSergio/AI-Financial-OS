@@ -1,10 +1,21 @@
 import dataclasses
+import shutil
 from pathlib import Path
 from models.catalog import CatalogIndicator, CatalogFetchResult
 from models.base import AdapterResult, ProviderMetadata
 from models.macro import MacroIndicator
 from datetime import datetime, timezone
 from exporters.csv_exporter import export_catalog_results
+import pytest
+
+_TEST_TMP = Path(__file__).parent.parent / ".pytest-catalog-csv-tmp"
+
+
+@pytest.fixture(autouse=True)
+def cleanup_tmp():
+    _TEST_TMP.mkdir(exist_ok=True)
+    yield
+    shutil.rmtree(_TEST_TMP, ignore_errors=True)
 
 
 def _make_metadata():
@@ -45,17 +56,17 @@ def _make_cfr(indicator_id="euribor_3m", success=True, n_records=2):
     )
 
 
-def test_export_catalog_results_creates_file(tmp_path):
+def test_export_catalog_results_creates_file():
     results = [_make_cfr("euribor_3m"), _make_cfr("eur_usd", n_records=1)]
-    path = export_catalog_results(results, timestamp="20260626T000000", output_dir=tmp_path)
+    path = export_catalog_results(results, timestamp="20260626T000000", output_dir=_TEST_TMP)
     assert path.exists()
     assert path.suffix == ".csv"
 
 
-def test_export_catalog_results_includes_catalog_fields(tmp_path):
+def test_export_catalog_results_includes_catalog_fields():
     import pandas as pd
     results = [_make_cfr("euribor_3m")]
-    path = export_catalog_results(results, timestamp="20260626T000001", output_dir=tmp_path)
+    path = export_catalog_results(results, timestamp="20260626T000001", output_dir=_TEST_TMP)
     df = pd.read_csv(path)
     assert "catalog_id" in df.columns
     assert "priority" in df.columns
@@ -68,9 +79,9 @@ def test_export_catalog_results_includes_catalog_fields(tmp_path):
     assert df["dashboard"].iloc[0] == True
 
 
-def test_export_catalog_results_row_count(tmp_path):
+def test_export_catalog_results_row_count():
     import pandas as pd
     results = [_make_cfr("euribor_3m", n_records=2), _make_cfr("eur_usd", n_records=1)]
-    path = export_catalog_results(results, timestamp="20260626T000002", output_dir=tmp_path)
+    path = export_catalog_results(results, timestamp="20260626T000002", output_dir=_TEST_TMP)
     df = pd.read_csv(path)
     assert len(df) == 3  # 2 + 1 records
