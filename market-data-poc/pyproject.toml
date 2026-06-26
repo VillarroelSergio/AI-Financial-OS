@@ -1,0 +1,21 @@
+[project]
+name = "market-data-poc"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "requests",
+    "httpx",
+    "pandas",
+    "feedparser",
+    "pyyaml",
+    "rich",
+    "python-dotenv",
+    "scrapy",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["adapters", "config", "models", "services", "validators", "exporters", "scrapers"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"

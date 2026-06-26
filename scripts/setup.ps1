@@ -9,16 +9,24 @@ if (-not (Test-Path "$root\data")) {
     Write-Host "  Creado: data/" -ForegroundColor Gray
 }
 
-# .env
-if (-not (Test-Path "$root\.env")) {
-    Copy-Item "$root\.env.example" "$root\.env"
-    Write-Host "  Creado: .env desde .env.example" -ForegroundColor Gray
+# Backend .env. The backend starts with backend/ as its working directory,
+# which is also where pydantic-settings resolves env_file=".env".
+if (-not (Test-Path "$root\backend\.env")) {
+    Copy-Item "$root\.env.example" "$root\backend\.env"
+    Write-Host "  Creado: backend/.env desde .env.example" -ForegroundColor Gray
 }
 
 # Python
 Write-Host "Instalando dependencias Python..." -ForegroundColor Yellow
 Set-Location "$root\backend"
-uv sync
+$uv = Get-Command "uv" -ErrorAction SilentlyContinue
+if ($uv) {
+    & $uv.Source sync
+} elseif (Test-Path ".venv\Scripts\python.exe") {
+    & ".venv\Scripts\python.exe" -m pip install -e ".[dev]"
+} else {
+    throw "No se encontró uv. Instálalo desde https://docs.astral.sh/uv/ o crea backend\.venv."
+}
 Write-Host "  Backend OK" -ForegroundColor Green
 
 # Node

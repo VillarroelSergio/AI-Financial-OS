@@ -6,7 +6,7 @@ Definir contratos iniciales entre frontend Tauri/React y backend FastAPI.
 
 ## Convenciones
 
-- Base URL local: `http://127.0.0.1:8000`.
+- Base URL local de desarrollo: `http://127.0.0.1:8010`.
 - JSON.
 - Fechas ISO.
 - Importes como string decimal en API si se requiere máxima precisión.
@@ -168,6 +168,9 @@ Revierte importación.
 ### GET `/api/imports`
 
 Historial.
+
+La Fase 2 acepta `monefy` y `generic_csv`, procesa UTF-8 localmente (máximo 10 MB),
+omite filas inválidas o duplicadas al confirmar y conserva el lote tras un rollback.
 
 ## Investments
 

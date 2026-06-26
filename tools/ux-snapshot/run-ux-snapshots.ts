@@ -44,6 +44,10 @@ async function startVite(): Promise<ChildProcess> {
     if (msg.includes("error") || msg.includes("Error")) process.stderr.write(msg);
   });
 
+  await new Promise((resolve) => setTimeout(resolve, 300));
+  if (proc.exitCode !== null) {
+    throw new Error(`Vite no pudo iniciarse en el puerto ${SNAPSHOT_PORT}`);
+  }
   await waitForServer(BASE_URL);
   return proc;
 }
@@ -108,6 +112,8 @@ ${skipped.length > 0 ? `## Capturas omitidas (requieren interacción manual)\n\n
 
 async function main(): Promise<void> {
   const headed = process.argv.includes("--headed");
+  const filterArg = process.argv.find((a) => a.startsWith("--filter="));
+  const filterPath = filterArg ? filterArg.split("=")[1] : null;
 
   // Read app version from desktop package.json
   const pkgRaw = await readFile(
@@ -128,9 +134,16 @@ async function main(): Promise<void> {
 
   const screenshots: ScreenshotMeta[] = [];
   const generatedAt = new Date().toISOString();
+  const activeRoutes = filterPath
+    ? snapshotRoutes.filter((r) => r.path.startsWith(filterPath))
+    : snapshotRoutes;
+
+  if (filterPath) {
+    console.log(`🔍 Filtrando rutas: ${filterPath} (${activeRoutes.length} capturas)`);
+  }
 
   try {
-    for (const route of snapshotRoutes) {
+    for (const route of activeRoutes) {
       if (route.requiresInteraction) {
         console.log(`⊘  Omitiendo ${route.filename} (requiere interacción manual)`);
         screenshots.push({
@@ -172,10 +185,27 @@ async function main(): Promise<void> {
       } catch {
         viteProc.kill();
       }
+      try {
+        const netstat = execSync("netstat -ano", { encoding: "utf8" });
+        const listener = netstat
+          .split(/\r?\n/)
+          .find((line) => line.includes(`:${SNAPSHOT_PORT}`) && line.includes("LISTENING"));
+        const listenerPid = listener?.trim().split(/\s+/).at(-1);
+        if (listenerPid && listenerPid !== "0") {
+          execSync(`taskkill /F /T /PID ${listenerPid}`, { stdio: "ignore" });
+        }
+      } catch {
+        // The listener already stopped.
+      }
     } else {
       viteProc.kill();
     }
-    await new Promise<void>((r) => viteProc.once("close", r));
+    if (viteProc.exitCode === null) {
+      await Promise.race([
+        new Promise<void>((r) => viteProc.once("close", () => r())),
+        new Promise<void>((r) => setTimeout(r, 2_000)),
+      ]);
+    }
     console.log("✓  Navegador y Vite cerrados");
   }
 
@@ -200,7 +230,7 @@ async function main(): Promise<void> {
   );
 
   const capturedCount = screenshots.filter((s) => s.captured).length;
-  console.log(`\n✅ ${capturedCount}/${snapshotRoutes.length} capturas generadas en ${OUTPUT_DIR}`);
+  console.log(`\n✅ ${capturedCount}/${activeRoutes.length} capturas generadas en ${OUTPUT_DIR}`);
 }
 
 main().catch((err) => {

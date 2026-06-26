@@ -1,10 +1,52 @@
 # 02 — Roadmap
 
+## Estado de implementación
+
+| Fase | Nombre | Estado | Commit(s) |
+|------|--------|--------|-----------|
+| 0 | Foundation | ✅ Completa | `e9f2fc9`..`ce21c51`, `20abbeb` |
+| 1 | Financial Core MVP | ✅ Completa | `8861adf` |
+| 2 | CSV Import Center | ✅ Completa | rama `feature/fase-2-import-center` |
+| 3 | Investments Basic | ✅ Completa | rama `feature/fase-2-import-center` |
+| 4 | Market Watch | ✅ Completa | rama `main` |
+| 4.5 | Multi-Provider Market Data | ✅ Completa | rama `feat/multi-provider-market-data` |
+| 4.7 | EOD Market Data | ✅ Completa | rama actual |
+| 5 | Economic Intelligence | ✅ Completa | rama `feature/fase-5-economic-intelligence` |
+| 6 | Local AI Assistant | ⏳ Pendiente | — |
+| 7 | Insights Engine | ⏳ Pendiente | — |
+| 8 | Goals & Simulations | ⏳ Pendiente | — |
+| 9 | Document Intelligence / RAG | ⏳ Pendiente | — |
+| 10 | Hardening & Packaging | ⏳ Pendiente | — |
+
+---
+
+## Deudas técnicas
+
+### Fase 1 — Financial Core MVP
+
+| # | Deuda | Impacto | Bloquea |
+|---|-------|---------|---------|
+| TD-01 | `categories` sin `PATCH` ni `DELETE` — solo GET + POST implementados | Medio | Fase 2 (reimportación con categorías existentes) |
+| TD-02 | Sin tests de integración para los módulos de Fase 1 (accounts, categories, transactions, dashboard) — solo existe `test_health.py` | Alto | Calidad general, refactors seguros |
+| TD-03 | `ChartCard` no existe como componente independiente — Recharts se usa directamente en `SpendingPage` | Bajo | Consistencia del design system |
+
+> Estas deudas no bloquean Fase 2, pero TD-02 debería resolverse antes de Fase 3 para evitar regresiones silenciosas.
+
+### Fase 3 — Investments Portfolio Tracker
+
+| # | Deuda | Impacto | Bloquea |
+|---|-------|---------|---------|
+| TD-04 | Conversión de divisas solo USD→EUR via yfinance `EURUSD=X` — otras divisas no soportadas | Medio | Multi-divisa en Fase 3+ |
+| TD-05 | Sin histórico de precios — solo precio actual cacheado | Bajo | Gráfica histórica en Fase 4 |
+| TD-06 | NAV de fondos Finizens siempre manual — sin proveedor automático | Bajo | No bloquea nada |
+
+---
+
 ## Estrategia general
 
 El proyecto se implementa por fases cerradas. Cada fase debe entregar una aplicación funcional, aunque sea limitada. No se debe avanzar a IA avanzada, RAG o automatización hasta que el core financiero sea estable.
 
-## Fase 0 — Foundation
+## Fase 0 — Foundation ✅
 
 ### Objetivo
 
@@ -38,7 +80,7 @@ Aplicación de escritorio arrancando en local con navegación base, backend func
 
 ---
 
-## Fase 1 — Financial Core MVP
+## Fase 1 — Financial Core MVP ✅
 
 ### Objetivo
 
@@ -71,7 +113,7 @@ El usuario puede crear cuentas, añadir movimientos manuales y ver métricas fin
 
 ---
 
-## Fase 2 — CSV Import Center
+## Fase 2 — CSV Import Center ✅
 
 ### Objetivo
 
@@ -101,7 +143,7 @@ El usuario puede importar el CSV de Monefy, revisar los movimientos, confirmar l
 
 ---
 
-## Fase 3 — Investments Basic
+## Fase 3 — Investments Basic ✅
 
 ### Objetivo
 
@@ -130,7 +172,7 @@ El usuario puede registrar posiciones básicas y ver su patrimonio financiero co
 
 ---
 
-## Fase 4 — Market Watch
+## Fase 4 — Market Watch ✅
 
 ### Objetivo
 
@@ -166,7 +208,122 @@ El usuario puede consultar contexto de mercado desde la app sin mezclarlo con su
 
 ---
 
-## Fase 5 — Economic Intelligence
+---
+
+## Fase 4.5 — Multi-Provider Market Data ✅
+
+### Objetivo
+
+Sustituir el proveedor único (yfinance) por una arquitectura multi-provider gratuita
+con máxima cobertura, caché DuckDB y señales de frescura de datos.
+
+### Incluye
+
+- **StooqProvider** — fuente primaria, sin API key, índices/forex/commodities/cripto/volatilidad.
+- **YahooFinanceProvider** — fallback general, sin API key, marcado como fuente no garantizada.
+- **AlphaVantageProvider** — opcional, API key gratuita (ALPHA_VANTAGE_API_KEY), acciones/forex/cripto.
+- **FinnhubProvider** — opcional, API key gratuita (FINNHUB_API_KEY), acciones USA/forex/cripto/fundamentales.
+- **FMPProvider** — opcional, API key gratuita (FMP_API_KEY), acciones/ETFs/perfiles/fundamentales.
+- **ProviderRouter** — routing por asset_type, TTL por categoría, cross-validation, fallback en cascada.
+- **DuckDB cache** — tablas `market_quotes_cache`, `market_candles_cache`, `market_provider_logs`, perfiles, fundamentales.
+- **Modelos normalizados** — `MarketQuoteInternal`, `MarketCandle`, `CompanyProfile`, `Fundamentals`.
+- **Freshness status** — live / fresh / delayed / eod / closed / stale / error / unknown.
+- **Rate limiters** — por proveedor, respetando free tier.
+- **UI actualizada** — `LiveIndicator` muestra estado real, `QuoteRow` muestra badge FB/CACHE, `change_absolute` desde servidor.
+- **35 tests unitarios** — cobertura de providers, routing, caché, rate limiting, freshness.
+- **`market_data_config.yaml`** — configuración declarativa de providers, routing, TTL y mappings de 36 activos.
+
+### Restricciones cumplidas
+
+- Ningún proveedor de pago.
+- API keys nunca hardcodeadas (variables de entorno).
+- No existe `ManualCsvProvider` ni importación CSV para mercados.
+- "En vivo" solo cuando `freshness_status == "live"` — nunca asumido.
+- App funciona sin API keys (Stooq + Yahoo).
+
+### Documentación
+
+- `docs/15_MARKET_PROVIDERS.md` — guía completa de proveedores.
+
+---
+
+## Fase 4.6 — Consensus Engine & TwelveData ✅
+
+### Objetivo
+
+Sustituir el fetch secuencial con fallback por un sistema de **fetch paralelo + motor de consenso**
+que cruza los datos de múltiples proveedores para maximizar precisión. Yahoo Finance queda
+relegado a último recurso. Se añade TwelveData como nuevo proveedor primario para forex y commodities.
+
+### Incluye
+
+- **TwelveDataProvider** — nuevo proveedor gratuito (800 req/día, 8 req/min). Primario para forex,
+  commodities y validador para índices y cripto. API key: `TWELVEDATA_API_KEY`.
+- **ConsensusEngine** (`consensus.py`) — motor de resolución de precio aislado y testeable:
+  - **Estrategia D**: proveedor primario por asset_type con validadores en paralelo.
+  - **Estrategia B**: mediana como precio de referencia cuando ≥3 proveedores disponibles.
+  - **Estrategia C**: ponderación por proveedor × frescura × bonus primario × penalización fallback.
+  - Detección y descarte de outliers con umbrales configurables por asset_type.
+  - `confidence_score` final refleja calidad del consenso (0.0–1.0).
+- **RequestBudget** (`budget.py`) — contador diario de peticiones por proveedor, backed en DuckDB.
+  Alpha Vantage (400/día), TwelveData (700/día), FMP (200/día). Falla en abierto.
+- **Fetch paralelo** — `ThreadPoolExecutor` en el router. Todos los providers se consultan
+  simultáneamente, no en cascada. Timeout: 5 segundos por proveedor.
+- **Yahoo como último recurso** — solo se invoca si `valid_provider_count == 0` tras el fetch paralelo.
+  Nunca actúa como fuente primaria ni validador.
+- **Routing declarativo** por `primary / validators / budget_aware / last_resort` en el YAML.
+- **Logs de decisión estructurados** — cada resolución emite `selected_source`, `consensus_method`,
+  `confidence_score`, `valid_provider_count`, `outliers`, `warnings`, `reason`.
+- **Warnings normalizados** — `rate_limited`, `budget_exhausted`, `provider_error`, `provider_timeout`,
+  `provider_mismatch`, `outlier_detected`, `unverified_single_provider`, `yahoo_last_resort`, `stale_cache_used`.
+- **55 tests** — cobertura de ConsensusEngine (8 casos), RequestBudget (5), TwelveData (5),
+  Router paralelo (2) y todos los tests anteriores (35).
+
+### Primario por tipo de activo
+
+| Tipo | Primario | Validadores | Último recurso |
+|---|---|---|---|
+| Índices | Stooq | TwelveData, Finnhub | Yahoo |
+| Acciones USA | Finnhub | TwelveData, FMP | Yahoo |
+| Acciones Europa | Stooq | TwelveData, FMP | Yahoo |
+| Forex | TwelveData | Finnhub, AV | Yahoo |
+| Cripto | Finnhub | TwelveData, AV | Yahoo |
+| Commodities | TwelveData | — | Yahoo |
+| Bonos | Stooq | — | Yahoo |
+| Volatilidad | Stooq | — | Yahoo |
+
+### Restricciones cumplidas
+
+- Yahoo Finance nunca es fuente primaria ni validador.
+- `TWELVEDATA_API_KEY` en `.env`, nunca en código.
+- Ningún proveedor de pago.
+- `MarketQuoteInternal` sin campos requeridos nuevos — contrato de API sin cambios.
+
+### Documentación
+
+- `docs/15_MARKET_PROVIDERS.md` — guía completa actualizada con TwelveData y ConsensusEngine.
+- `docs/superpowers/specs/2026-06-24-market-data-consensus-engine-design.md` — spec técnico.
+- `docs/superpowers/plans/2026-06-24-market-data-consensus-engine.md` — plan de implementación.
+
+---
+
+## Fase 4.7 — EOD Market Data ✅
+
+### Objetivo
+
+Simplificar el modelo de datos de mercado a cierre diario (EOD). Una única llamada al arranque, sin refresh manual, sin estados "live".
+
+### Incluye
+
+- `EodMarketService` — fetch secuencial Stooq al arrancar (background thread).
+- `eod_only` mode en `ProviderRouter` — TTL 24h, pool filtrado a Stooq.
+- `EodBadge` — sustituye `LiveIndicator`, muestra "Cierre DD/MM/YYYY".
+- Eliminación del botón "Actualizar" en Market Watch.
+- 6 tests unitarios cubriendo cache hit, cache miss, fallo, concurrencia y filtrado de providers.
+
+---
+
+## Fase 5 — Economic Intelligence ✅
 
 ### Objetivo
 
@@ -174,25 +331,38 @@ Incorporar datos macroeconómicos reales para España, Eurozona y EEUU.
 
 ### Incluye
 
-- Inflación.
-- Inflación subyacente.
-- Paro.
-- PIB.
-- Tipos BCE.
-- Tipos FED.
-- Euríbor.
-- Bonos 10 años.
-- Comparativas España / Eurozona / EEUU.
-- Gráficas históricas.
-- Vista de impacto personal inicial sin IA.
+- **FredProvider** — fuente principal de indicadores macro (inflación, subyacente, paro, PIB, tipos BCE/FED). API key gratuita: `FRED_API_KEY`.
+- **StooqMacroProvider** — bridge sobre el ProviderRouter de Fase 4.6 para euríbor, bonos 10Y, índices y divisas.
+- **DuckDB cache** — tabla `economic_indicators_cache` con TTL por categoría (4h para datos diarios, 24–48h para mensuales/trimestrales).
+- **Modelos normalizados** — `IndicatorOut`, `RegionSnapshotOut`, `MacroSnapshotOut`, `PersonalImpactOut`.
+- **4 endpoints REST** — `/snapshot`, `/indicators`, `/refresh`, `/impact`.
+- **Vista de impacto personal (determinista, sin IA)** — 4 comparativas calculadas: inflación vs tasa de ahorro, tipo BCE vs liquidez, mercado vs cartera, poder adquisitivo.
+- **EconomyPage** — snapshot global, tabs por región (España / Eurozona / EEUU), sección de impacto personal.
+- **23 tests** — cobertura de FredProvider, repositorio, endpoints y cálculos de impacto.
 
-### Resultado esperado
+### Proveedores
 
-La app ofrece un snapshot económico limpio, actualizado y conectado conceptualmente con ahorro, gastos e inversiones.
+| Indicador | Fuente |
+|-----------|--------|
+| Inflación, subyacente, paro, PIB | FRED |
+| Tipo BCE, Fed Funds | FRED |
+| Euríbor 3M, Bonos 10Y | Stooq (vía ProviderRouter) |
+| Índices, EUR/USD | Stooq (vía ProviderRouter) |
+
+### Restricciones cumplidas
+
+- `FRED_API_KEY` en `.env`, nunca en código.
+- App funciona sin API key (indicadores macro muestran "no disponible"; índices y bonos funcionan vía Stooq).
+- No se mezclan noticias ni calendarios macro.
+- Siempre se muestra fecha de observación y fuente.
+
+### Documentación
+
+- `docs/superpowers/specs/2026-06-24-economic-intelligence-design.md` — spec técnico.
 
 ---
 
-## Fase 6 — Local AI Assistant
+## Fase 6 — Local AI Assistant ⏳
 
 ### Objetivo
 
@@ -227,7 +397,7 @@ El usuario puede preguntar sobre sus datos y recibir explicaciones generadas loc
 
 ---
 
-## Fase 7 — Insights Engine
+## Fase 7 — Insights Engine ⏳
 
 ### Objetivo
 
@@ -249,7 +419,7 @@ La app empieza a avisar de cambios importantes sin que el usuario tenga que busc
 
 ---
 
-## Fase 8 — Goals & Simulations
+## Fase 8 — Goals & Simulations ⏳
 
 ### Objetivo
 
@@ -271,7 +441,7 @@ El usuario puede entender si está avanzando hacia sus objetivos y qué impacto 
 
 ---
 
-## Fase 9 — Document Intelligence / RAG
+## Fase 9 — Document Intelligence / RAG ⏳
 
 ### Objetivo
 
@@ -300,7 +470,7 @@ El usuario puede consultar documentos financieros sin subirlos a la nube.
 
 ---
 
-## Fase 10 — Hardening & Packaging
+## Fase 10 — Hardening & Packaging ⏳
 
 ### Objetivo
 

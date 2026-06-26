@@ -1,0 +1,222 @@
+- id: ipc_general
+  name: "IPC General España"
+  category: macro
+  subcategory: inflation
+  country: ES
+  region: Spain
+  frequency: monthly
+  priority: critical
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "%"
+  description: "Índice de Precios al Consumo general"
+  provider_primary: ine
+  provider_secondary: eurostat
+  provider_fallback: oecd
+
+- id: ipc_subyacente
+  name: "IPC Subyacente España"
+  category: macro
+  subcategory: inflation
+  country: ES
+  region: Spain
+  frequency: monthly
+  priority: high
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "%"
+  description: "IPC excluida energía y alimentos no elaborados"
+  provider_primary: ine
+  provider_secondary: eurostat
+
+- id: pib_spain
+  name: "PIB España"
+  category: macro
+  subcategory: gdp
+  country: ES
+  region: Spain
+  frequency: quarterly
+  priority: critical
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "EUR bn"
+  description: "Producto Interior Bruto España"
+  provider_primary: ine
+  provider_secondary: world_bank
+  provider_fallback: oecd
+
+- id: desempleo_spain
+  name: "Tasa de Desempleo España"
+  category: macro
+  subcategory: employment
+  country: ES
+  region: Spain
+  frequency: monthly
+  priority: critical
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "%"
+  description: "Tasa de paro EPA"
+  provider_primary: ine
+  provider_secondary: eurostat
+
+- id: euribor_3m
+  name: "Euribor 3 meses"
+  category: macro
+  subcategory: interest_rates
+  country: ES
+  region: Spain
+  frequency: daily
+  priority: critical
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "%"
+  description: "Tipo de referencia hipotecas variables"
+  provider_primary: bde
+  provider_secondary: ecb
+  provider_fallback: fred
+
+- id: euribor_12m
+  name: "Euribor 12 meses"
+  category: macro
+  subcategory: interest_rates
+  country: ES
+  region: Spain
+  frequency: daily
+  priority: critical
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "%"
+  description: "Tipo de referencia hipotecas anuales"
+  provider_primary: bde
+  provider_secondary: ecb
+  provider_fallback: fred
+
+- id: tipo_bce
+  name: "Tipo de interés BCE"
+  category: macro
+  subcategory: interest_rates
+  country: EA
+  region: Eurozone
+  frequency: monthly
+  priority: critical
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "%"
+  description: "Tipo de interés de referencia del BCE"
+  provider_primary: ecb
+  provider_secondary: fred
+
+- id: produccion_industrial_spain
+  name: "Producción Industrial España"
+  category: macro
+  subcategory: industrial
+  country: ES
+  region: Spain
+  frequency: monthly
+  priority: high
+  dashboard: true
+  ai: true
+  historical: 5y
+  retention: 3y
+  unit: "index"
+  description: "Índice de producción industrial"
+  provider_primary: ine
+  provider_secondary: eurostat
+
+- id: pmi_manufacturero_spain
+  name: "PMI Manufacturero España"
+  category: macro
+  subcategory: pmi
+  country: ES
+  region: Spain
+  frequency: monthly
+  priority: medium
+  dashboard: true
+  ai: true
+  historical: 5y
+  retention: 2y
+  unit: "index"
+  description: "Purchasing Managers Index manufacturero"
+  provider_primary: ine
+
+- id: pmi_servicios_spain
+  name: "PMI Servicios España"
+  category: macro
+  subcategory: pmi
+  country: ES
+  region: Spain
+  frequency: monthly
+  priority: medium
+  dashboard: true
+  ai: true
+  historical: 5y
+  retention: 2y
+  unit: "index"
+  description: "Purchasing Managers Index servicios"
+  provider_primary: ine
+
+- id: confianza_consumidor_spain
+  name: "Confianza del Consumidor España"
+  category: macro
+  subcategory: sentiment
+  country: ES
+  region: Spain
+  frequency: monthly
+  priority: medium
+  dashboard: true
+  ai: true
+  historical: 5y
+  retention: 2y
+  unit: "index"
+  description: "Índice de confianza del consumidor"
+  provider_primary: european_commission
+  provider_secondary: eurostat
+
+- id: deficit_spain
+  name: "Déficit Público España"
+  category: macro
+  subcategory: fiscal
+  country: ES
+  region: Spain
+  frequency: quarterly
+  priority: high
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "% PIB"
+  description: "Déficit de las AAPP en % del PIB"
+  provider_primary: eurostat
+  provider_secondary: oecd
+
+- id: deuda_publica_spain
+  name: "Deuda Pública España"
+  category: macro
+  subcategory: fiscal
+  country: ES
+  region: Spain
+  frequency: quarterly
+  priority: high
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "% PIB"
+  description: "Deuda pública en % del PIB"
+  provider_primary: eurostat
+  provider_secondary: oecd

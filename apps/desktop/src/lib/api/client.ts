@@ -1,6 +1,6 @@
 import { getMockResponse } from "./mock-data";
 
-const BASE_URL = "http://127.0.0.1:8000";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8010";
 const USE_MOCK = import.meta.env.VITE_USE_MOCK_DATA === "true";
 
 export class ApiError extends Error {
@@ -16,11 +16,12 @@ export class ApiError extends Error {
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   if (USE_MOCK) {
-    return Promise.resolve(getMockResponse<T>(path));
+    return Promise.resolve(getMockResponse<T>(path, init));
   }
 
+  const isFormData = init?.body instanceof FormData;
   const response = await fetch(`${BASE_URL}${path}`, {
-    headers: { "Content-Type": "application/json", ...init?.headers },
+    headers: { ...(isFormData ? {} : { "Content-Type": "application/json" }), ...init?.headers },
     ...init,
   });
 
@@ -28,20 +29,27 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     const body = await response
       .json()
       .catch(() => ({ error: { code: "UNKNOWN", message: response.statusText } }));
+    const error = body.error ?? body.detail?.error;
     throw new ApiError(
       response.status,
-      body.error?.code ?? "UNKNOWN",
-      body.error?.message ?? response.statusText,
+      error?.code ?? `HTTP_${response.status}`,
+      error?.message ?? body.detail ?? response.statusText,
     );
   }
 
-  return response.json() as Promise<T>;
+  if (response.status === 204 || response.headers.get("content-length") === "0") {
+    return undefined as T;
+  }
+
+  const text = await response.text();
+  return (text ? JSON.parse(text) : undefined) as T;
 }
 
 export const api = {
   get: <T>(path: string) => request<T>(path),
   post: <T>(path: string, body: unknown) =>
     request<T>(path, { method: "POST", body: JSON.stringify(body) }),
+  upload: <T>(path: string, body: FormData) => request<T>(path, { method: "POST", body }),
   patch: <T>(path: string, body: unknown) =>
     request<T>(path, { method: "PATCH", body: JSON.stringify(body) }),
   delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
