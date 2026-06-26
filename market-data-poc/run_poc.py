@@ -24,7 +24,9 @@ from rich.table import Table
 sys.path.insert(0, str(Path(__file__).parent))
 
 from adapters.base import BaseAdapter
+from catalog import CatalogLoader
 from models.base import AdapterResult
+from models.catalog import CatalogIndicator, CatalogFetchResult
 from models.evaluation import CoverageReport, ProviderEvaluation
 from services.runner import run_adapters
 from services.scorer import score_adapter
@@ -307,6 +309,144 @@ def print_summary_table(report: CoverageReport) -> None:
     )
 
 
+def cmd_catalog_show(loader: CatalogLoader) -> None:
+    table = Table(title="Market Data Catalog", show_lines=True)
+    table.add_column("ID", style="bold")
+    table.add_column("Name")
+    table.add_column("Priority")
+    table.add_column("Freq")
+    table.add_column("Dash")
+    table.add_column("AI")
+    table.add_column("Primary")
+    table.add_column("Secondary")
+    table.add_column("Fallback")
+    for ind in loader.load_all():
+        priority_color = {
+            "critical": "red", "high": "yellow",
+            "medium": "cyan", "low": "dim",
+        }.get(ind.priority, "white")
+        table.add_row(
+            ind.id, ind.name,
+            f"[{priority_color}]{ind.priority}[/{priority_color}]",
+            ind.frequency,
+            "Y" if ind.dashboard else "",
+            "Y" if ind.ai else "",
+            ind.provider_primary,
+            ind.provider_secondary or "",
+            ind.provider_fallback or "",
+        )
+    console.print(table)
+    indicators = loader.load_all()
+    console.print(f"\nTotal: {len(indicators)} indicators | "
+                  f"Critical: {sum(1 for i in indicators if i.priority=='critical')} | "
+                  f"High: {sum(1 for i in indicators if i.priority=='high')} | "
+                  f"Dashboard: {sum(1 for i in indicators if i.dashboard)} | "
+                  f"AI: {sum(1 for i in indicators if i.ai)}")
+
+
+def cmd_catalog_validate(loader: CatalogLoader) -> bool:
+    errors = loader.validate()
+    if not errors:
+        console.print("[green]OK Catalog valid — no errors found[/green]")
+        console.print(f"  {len(loader.load_all())} indicators loaded from catalog/")
+        return True
+    console.print(f"[red]ERROR Catalog has {len(errors)} error(s):[/red]")
+    for err in errors:
+        console.print(f"  [red]• {err}[/red]")
+    return False
+
+
+def cmd_catalog_list(loader: CatalogLoader, priority: str | None, category: str | None) -> None:
+    indicators = loader.load_all()
+    if priority:
+        indicators = [i for i in indicators if i.priority == priority]
+    if category:
+        indicators = [i for i in indicators if i.category == category]
+    table = Table(title=f"Catalog — priority={priority or 'all'} category={category or 'all'}", show_lines=True)
+    table.add_column("ID")
+    table.add_column("Name")
+    table.add_column("Priority")
+    table.add_column("Category")
+    table.add_column("Freq")
+    table.add_column("Provider")
+    for ind in indicators:
+        table.add_row(ind.id, ind.name, ind.priority, ind.category, ind.frequency, ind.provider_primary)
+    console.print(table)
+    console.print(f"Total: {len(indicators)}")
+
+
+def cmd_catalog_coverage(loader: CatalogLoader, adapters: list) -> None:
+    from services.orchestrator import ProviderOrchestrator
+    orch = ProviderOrchestrator(adapters)
+    indicators = loader.load_all()
+    table = Table(title="Catalog Coverage", show_lines=True)
+    table.add_column("ID")
+    table.add_column("Priority")
+    table.add_column("Primary")
+    table.add_column("Migrated?")
+    table.add_column("Secondary")
+    table.add_column("Fallback")
+    migrated = 0
+    for ind in indicators:
+        adapter = orch._get_adapter(ind.provider_primary)
+        is_migrated = adapter is not None and adapter.supports(ind.id)
+        if is_migrated:
+            migrated += 1
+        table.add_row(
+            ind.id, ind.priority, ind.provider_primary,
+            "[green]YES[/green]" if is_migrated else "[red]NO[/red]",
+            ind.provider_secondary or "",
+            ind.provider_fallback or "",
+        )
+    console.print(table)
+    console.print(f"\nMigrated: {migrated}/{len(indicators)} indicators have a migrated primary provider")
+
+
+def cmd_market_update(loader: CatalogLoader, adapters: list, timestamp: str, output_formats: set) -> None:
+    from services.orchestrator import ProviderOrchestrator
+    from exporters.csv_exporter import export_catalog_results
+    orch = ProviderOrchestrator(adapters)
+    indicators = loader.get_by_priority("critical", "high")
+    console.print(f"Fetching {len(indicators)} indicators (critical + high priority)...")
+    results: list[CatalogFetchResult] = []
+    for ind in indicators:
+        console.print(f"  [{ind.priority}] {ind.id} ...", end="")
+        cfr = orch.fetch_indicator(ind)
+        results.append(cfr)
+        status = "[green]OK[/green]" if cfr.adapter_result.success else "[red]FAIL[/red]"
+        provider = cfr.provider_used
+        console.print(f" {status} ({provider})")
+    successful = sum(1 for r in results if r.adapter_result.success)
+    console.print(f"\nDone: {successful}/{len(results)} successful")
+    if "csv" in output_formats:
+        path = export_catalog_results(results, timestamp)
+        console.print(f"[green]CSV:[/green] {path}")
+    _print_catalog_report(results)
+
+
+def _print_catalog_report(results: list) -> None:
+    total = len(results)
+    ok = sum(1 for r in results if r.adapter_result.success)
+    fallback_used = sum(1 for r in results if r.fallback_used)
+    table = Table(title="Market Catalog Report", show_lines=True)
+    table.add_column("Indicator")
+    table.add_column("Status")
+    table.add_column("Provider used")
+    table.add_column("Fallback?")
+    table.add_column("Records")
+    for r in results:
+        status_str = "[green]OK[/green]" if r.adapter_result.success else "[red]FAIL[/red]"
+        table.add_row(
+            r.catalog_id,
+            status_str,
+            r.provider_used,
+            "Y" if r.fallback_used else "N",
+            str(len(r.adapter_result.records)),
+        )
+    console.print(table)
+    console.print(f"Total: {ok}/{total} OK | Fallbacks used: {fallback_used}")
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Market Data POC — evaluate financial data providers"
@@ -351,6 +491,11 @@ def main():
             "market:bonds",
             "market:gaps",
             "market:stabilize",
+            "market:catalog",
+            "market:catalog:validate",
+            "market:catalog:list",
+            "market:catalog:coverage",
+            "market:update",
         ],
         help="POC command to run",
     )
@@ -359,6 +504,17 @@ def main():
         type=int,
         default=900,
         help="Local cache TTL in seconds (default: 900)",
+    )
+    parser.add_argument(
+        "--priority",
+        default=None,
+        choices=["critical", "high", "medium", "low"],
+        help="Filter catalog by priority (used with market:catalog:list and market:update)",
+    )
+    parser.add_argument(
+        "--category",
+        default=None,
+        help="Filter catalog by category (used with market:catalog:list)",
     )
     args = parser.parse_args()
 
@@ -403,6 +559,21 @@ def main():
         console.print(f"[green]Cleared {cleared} cache files[/green]")
         return
 
+    # Catalog commands that don't need adapters — ejecutar antes de cargar adapters cuando sea posible
+    catalog_loader = CatalogLoader()
+
+    if args.command == "market:catalog":
+        cmd_catalog_show(catalog_loader)
+        return
+
+    if args.command == "market:catalog:validate":
+        valid = cmd_catalog_validate(catalog_loader)
+        sys.exit(0 if valid else 1)
+
+    if args.command == "market:catalog:list":
+        cmd_catalog_list(catalog_loader, args.priority, args.category)
+        return
+
     # 3. Filter unavailable adapters (no API key)
     available: List[BaseAdapter] = []
     unavailable_count = 0
@@ -415,6 +586,15 @@ def main():
             unavailable_count += 1
 
     console.print(f"Running {len(available)} adapters ({unavailable_count} skipped)...\n")
+
+    # Catalog commands that need adapters
+    if args.command == "market:catalog:coverage":
+        cmd_catalog_coverage(catalog_loader, available)
+        return
+
+    if args.command == "market:update":
+        cmd_market_update(catalog_loader, available, timestamp, output_formats)
+        return
 
     orchestrator = ProviderOrchestrator(available, cache=cache)
     if args.command == "market:health":
