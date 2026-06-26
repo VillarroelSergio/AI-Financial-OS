@@ -1,0 +1,183 @@
+- id: cpi_usa
+  name: "CPI USA"
+  category: macro
+  subcategory: inflation
+  country: US
+  region: USA
+  frequency: monthly
+  priority: critical
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "%"
+  description: "Consumer Price Index USA"
+  provider_primary: bls
+  provider_secondary: fred
+
+- id: core_cpi_usa
+  name: "Core CPI USA"
+  category: macro
+  subcategory: inflation
+  country: US
+  region: USA
+  frequency: monthly
+  priority: critical
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "%"
+  description: "CPI excluida energía y alimentos"
+  provider_primary: bls
+  provider_secondary: fred
+
+- id: gdp_usa
+  name: "PIB USA"
+  category: macro
+  subcategory: gdp
+  country: US
+  region: USA
+  frequency: quarterly
+  priority: critical
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "USD bn"
+  description: "Gross Domestic Product USA"
+  provider_primary: bea
+  provider_secondary: fred
+  provider_fallback: world_bank
+
+- id: unemployment_usa
+  name: "Desempleo USA"
+  category: macro
+  subcategory: employment
+  country: US
+  region: USA
+  frequency: monthly
+  priority: critical
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "%"
+  description: "Unemployment rate USA"
+  provider_primary: bls
+  provider_secondary: fred
+
+- id: fed_funds_rate
+  name: "Fed Funds Rate"
+  category: macro
+  subcategory: interest_rates
+  country: US
+  region: USA
+  frequency: monthly
+  priority: critical
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "%"
+  description: "Tipo de interés de referencia de la Fed"
+  provider_primary: fred
+
+- id: nfp_usa
+  name: "Non-Farm Payrolls USA"
+  category: macro
+  subcategory: employment
+  country: US
+  region: USA
+  frequency: monthly
+  priority: high
+  dashboard: true
+  ai: true
+  historical: 5y
+  retention: 3y
+  unit: "thousands"
+  description: "Nóminas no agrícolas"
+  provider_primary: bls
+  provider_secondary: fred
+
+- id: retail_sales_usa
+  name: "Retail Sales USA"
+  category: macro
+  subcategory: consumption
+  country: US
+  region: USA
+  frequency: monthly
+  priority: high
+  dashboard: true
+  ai: true
+  historical: 5y
+  retention: 3y
+  unit: "USD mn"
+  description: "Ventas al por menor"
+  provider_primary: census
+  provider_secondary: fred
+
+- id: housing_starts_usa
+  name: "Housing Starts USA"
+  category: macro
+  subcategory: housing
+  country: US
+  region: USA
+  frequency: monthly
+  priority: high
+  dashboard: true
+  ai: true
+  historical: 5y
+  retention: 3y
+  unit: "thousands"
+  description: "Inicio de construcción de viviendas"
+  provider_primary: census
+  provider_secondary: fred
+
+- id: industrial_production_usa
+  name: "Producción Industrial USA"
+  category: macro
+  subcategory: industrial
+  country: US
+  region: USA
+  frequency: monthly
+  priority: high
+  dashboard: true
+  ai: true
+  historical: 5y
+  retention: 3y
+  unit: "index"
+  description: "Índice de producción industrial USA"
+  provider_primary: fred
+
+- id: consumer_sentiment_usa
+  name: "Consumer Sentiment USA"
+  category: macro
+  subcategory: sentiment
+  country: US
+  region: USA
+  frequency: monthly
+  priority: medium
+  dashboard: true
+  ai: true
+  historical: 5y
+  retention: 2y
+  unit: "index"
+  description: "University of Michigan Consumer Sentiment"
+  provider_primary: fred
+
+- id: m2_usa
+  name: "M2 Money Supply USA"
+  category: macro
+  subcategory: monetary
+  country: US
+  region: USA
+  frequency: monthly
+  priority: medium
+  dashboard: false
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "USD bn"
+  description: "Masa monetaria M2"
+  provider_primary: fred

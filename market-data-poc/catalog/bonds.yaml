@@ -1,0 +1,101 @@
+- id: us_2y
+  name: "US Treasury 2Y"
+  category: bonds
+  subcategory: government
+  country: US
+  region: USA
+  frequency: daily
+  priority: critical
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "%"
+  description: "Rendimiento bono del Tesoro USA 2 años"
+  provider_primary: treasury
+  provider_secondary: fred
+
+- id: us_5y
+  name: "US Treasury 5Y"
+  category: bonds
+  subcategory: government
+  country: US
+  region: USA
+  frequency: daily
+  priority: high
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "%"
+  description: "Rendimiento bono del Tesoro USA 5 años"
+  provider_primary: treasury
+  provider_secondary: fred
+
+- id: us_10y
+  name: "US Treasury 10Y"
+  category: bonds
+  subcategory: government
+  country: US
+  region: USA
+  frequency: daily
+  priority: critical
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "%"
+  description: "Rendimiento bono del Tesoro USA 10 años"
+  provider_primary: treasury
+  provider_secondary: fred
+
+- id: us_30y
+  name: "US Treasury 30Y"
+  category: bonds
+  subcategory: government
+  country: US
+  region: USA
+  frequency: daily
+  priority: high
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "%"
+  description: "Rendimiento bono del Tesoro USA 30 años"
+  provider_primary: treasury
+  provider_secondary: fred
+
+- id: germany_10y
+  name: "Bund Alemán 10Y"
+  category: bonds
+  subcategory: government
+  country: DE
+  region: Eurozone
+  frequency: daily
+  priority: critical
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "%"
+  description: "Rendimiento Bund alemán 10 años"
+  provider_primary: ecb
+  provider_secondary: fred
+
+- id: spain_10y
+  name: "Bono Español 10Y"
+  category: bonds
+  subcategory: government
+  country: ES
+  region: Spain
+  frequency: daily
+  priority: critical
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "%"
+  description: "Rendimiento bono del Estado español 10 años"
+  provider_primary: bde
+  provider_secondary: ecb

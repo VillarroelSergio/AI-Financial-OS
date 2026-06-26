@@ -1,0 +1,65 @@
+- id: bitcoin
+  name: "Bitcoin"
+  category: crypto
+  subcategory: major
+  country: GLOBAL
+  region: Global
+  frequency: daily
+  priority: high
+  dashboard: true
+  ai: true
+  historical: 5y
+  retention: 3y
+  unit: "USD"
+  description: "Bitcoin precio en USD"
+  provider_primary: coingecko
+  provider_secondary: polygon
+
+- id: ethereum
+  name: "Ethereum"
+  category: crypto
+  subcategory: major
+  country: GLOBAL
+  region: Global
+  frequency: daily
+  priority: high
+  dashboard: true
+  ai: true
+  historical: 5y
+  retention: 3y
+  unit: "USD"
+  description: "Ethereum precio en USD"
+  provider_primary: coingecko
+  provider_secondary: polygon
+
+- id: solana
+  name: "Solana"
+  category: crypto
+  subcategory: altcoin
+  country: GLOBAL
+  region: Global
+  frequency: daily
+  priority: low
+  dashboard: false
+  ai: false
+  historical: 2y
+  retention: 1y
+  unit: "USD"
+  description: "Solana precio en USD"
+  provider_primary: coingecko
+
+- id: xrp
+  name: "XRP"
+  category: crypto
+  subcategory: altcoin
+  country: GLOBAL
+  region: Global
+  frequency: daily
+  priority: low
+  dashboard: false
+  ai: false
+  historical: 2y
+  retention: 1y
+  unit: "USD"
+  description: "XRP precio en USD"
+  provider_primary: coingecko

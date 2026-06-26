@@ -1,0 +1,136 @@
+- id: eur_usd
+  name: "EUR/USD"
+  category: forex
+  subcategory: major_pairs
+  country: GLOBAL
+  region: Global
+  frequency: daily
+  priority: critical
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "rate"
+  description: "Par Euro / Dólar estadounidense"
+  provider_primary: frankfurter
+  provider_secondary: ecb
+  provider_fallback: polygon
+
+- id: eur_gbp
+  name: "EUR/GBP"
+  category: forex
+  subcategory: major_pairs
+  country: GLOBAL
+  region: Global
+  frequency: daily
+  priority: high
+  dashboard: true
+  ai: true
+  historical: 5y
+  retention: 3y
+  unit: "rate"
+  description: "Par Euro / Libra esterlina"
+  provider_primary: frankfurter
+  provider_secondary: ecb
+
+- id: eur_jpy
+  name: "EUR/JPY"
+  category: forex
+  subcategory: major_pairs
+  country: GLOBAL
+  region: Global
+  frequency: daily
+  priority: high
+  dashboard: true
+  ai: true
+  historical: 5y
+  retention: 3y
+  unit: "rate"
+  description: "Par Euro / Yen japonés"
+  provider_primary: frankfurter
+  provider_secondary: ecb
+
+- id: eur_chf
+  name: "EUR/CHF"
+  category: forex
+  subcategory: major_pairs
+  country: GLOBAL
+  region: Global
+  frequency: daily
+  priority: high
+  dashboard: true
+  ai: true
+  historical: 5y
+  retention: 3y
+  unit: "rate"
+  description: "Par Euro / Franco suizo"
+  provider_primary: frankfurter
+  provider_secondary: ecb
+
+- id: eur_cad
+  name: "EUR/CAD"
+  category: forex
+  subcategory: major_pairs
+  country: GLOBAL
+  region: Global
+  frequency: daily
+  priority: medium
+  dashboard: true
+  ai: false
+  historical: 5y
+  retention: 2y
+  unit: "rate"
+  description: "Par Euro / Dólar canadiense"
+  provider_primary: frankfurter
+  provider_secondary: ecb
+
+- id: eur_aud
+  name: "EUR/AUD"
+  category: forex
+  subcategory: major_pairs
+  country: GLOBAL
+  region: Global
+  frequency: daily
+  priority: medium
+  dashboard: true
+  ai: false
+  historical: 5y
+  retention: 2y
+  unit: "rate"
+  description: "Par Euro / Dólar australiano"
+  provider_primary: frankfurter
+  provider_secondary: ecb
+
+- id: usd_jpy
+  name: "USD/JPY"
+  category: forex
+  subcategory: major_pairs
+  country: GLOBAL
+  region: Global
+  frequency: daily
+  priority: high
+  dashboard: true
+  ai: true
+  historical: 5y
+  retention: 3y
+  unit: "rate"
+  description: "Par Dólar estadounidense / Yen japonés"
+  provider_primary: frankfurter
+  provider_secondary: ecb
+
+- id: gbp_usd
+  name: "GBP/USD"
+  category: forex
+  subcategory: major_pairs
+  country: GLOBAL
+  region: Global
+  frequency: daily
+  priority: high
+  dashboard: true
+  ai: true
+  historical: 5y
+  retention: 3y
+  unit: "rate"
+  description: "Par Libra esterlina / Dólar estadounidense"
+  provider_primary: frankfurter
+  provider_secondary: ecb
