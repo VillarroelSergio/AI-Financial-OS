@@ -1,0 +1,98 @@
+- id: inflation_eurozone
+  name: "Inflación Eurozona"
+  category: macro
+  subcategory: inflation
+  country: EA
+  region: Eurozone
+  frequency: monthly
+  priority: critical
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "%"
+  description: "HICP inflación Eurozona"
+  provider_primary: ecb
+  provider_secondary: eurostat
+
+- id: gdp_eurozone
+  name: "PIB Eurozona"
+  category: macro
+  subcategory: gdp
+  country: EA
+  region: Eurozone
+  frequency: quarterly
+  priority: critical
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "EUR bn"
+  description: "Producto Interior Bruto Eurozona"
+  provider_primary: eurostat
+  provider_secondary: oecd
+
+- id: unemployment_eurozone
+  name: "Desempleo Eurozona"
+  category: macro
+  subcategory: employment
+  country: EA
+  region: Eurozone
+  frequency: monthly
+  priority: high
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "%"
+  description: "Tasa de desempleo Eurozona"
+  provider_primary: eurostat
+
+- id: industrial_production_eurozone
+  name: "Producción Industrial Eurozona"
+  category: macro
+  subcategory: industrial
+  country: EA
+  region: Eurozone
+  frequency: monthly
+  priority: high
+  dashboard: true
+  ai: true
+  historical: 5y
+  retention: 3y
+  unit: "index"
+  description: "Índice producción industrial Eurozona"
+  provider_primary: eurostat
+
+- id: pmi_eurozone
+  name: "PMI Compuesto Eurozona"
+  category: macro
+  subcategory: pmi
+  country: EA
+  region: Eurozone
+  frequency: monthly
+  priority: medium
+  dashboard: true
+  ai: true
+  historical: 5y
+  retention: 2y
+  unit: "index"
+  description: "PMI compuesto manufacturero + servicios"
+  provider_primary: eurostat
+
+- id: consumer_confidence_eurozone
+  name: "Confianza Consumidor Eurozona"
+  category: macro
+  subcategory: sentiment
+  country: EA
+  region: Eurozone
+  frequency: monthly
+  priority: medium
+  dashboard: true
+  ai: true
+  historical: 5y
+  retention: 2y
+  unit: "index"
+  description: "Índice de confianza del consumidor europeo"
+  provider_primary: european_commission
+  provider_secondary: eurostat
