@@ -14,9 +14,10 @@ class BaseAdapter(ABC):
     api_key_names: tuple[str, ...] = ()
     capabilities: tuple[str, ...] = ()
     priority: str = "fallback"
+    supported_indicators: dict[str, dict] = {}
 
     @abstractmethod
-    def fetch(self) -> AdapterResult:
+    def fetch(self, indicator_id: str | None = None) -> AdapterResult:
         ...
 
     def is_available(self) -> bool:
@@ -24,6 +25,9 @@ class BaseAdapter(ABC):
             key_names = self.api_key_names or (self.name,)
             return any(get_api_key(name) is not None for name in key_names)
         return True
+
+    def supports(self, indicator_id: str) -> bool:
+        return indicator_id in self.supported_indicators
 
     def _make_metadata(self, **kwargs) -> ProviderMetadata:
         return ProviderMetadata(
