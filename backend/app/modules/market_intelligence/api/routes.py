@@ -1,5 +1,8 @@
 """Market Intelligence API routes."""
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.orm import Session
+
+from app.core.database import get_db
 from app.modules.market_intelligence.api import service
 from app.modules.market_intelligence.api.schemas import (
     AiDatasheetOut, BondSnapshotOut, ForexSnapshotOut,
@@ -7,6 +10,12 @@ from app.modules.market_intelligence.api.schemas import (
 )
 
 router = APIRouter()
+
+
+@router.get("/ingest-status")
+def ingest_status() -> dict:
+    from app.modules.market_intelligence.ingestion.startup import get_ingest_status
+    return get_ingest_status()
 
 
 @router.get("/snapshot/macro", response_model=MacroSnapshotOut)

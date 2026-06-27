@@ -33,9 +33,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     finally:
         db.close()
 
-    import threading
-    from app.modules.investments.market_data.eod_service import get_eod_service
-    threading.Thread(target=get_eod_service().ensure_today, daemon=True, name="eod-market-fetch").start()
+    from app.modules.market_intelligence.ingestion.startup import launch_startup_ingest
+    launch_startup_ingest()
 
     yield
 
