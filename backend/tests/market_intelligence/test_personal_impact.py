@@ -24,20 +24,6 @@ def test_compute_signal_neutral_within_5pct():
     assert compute_signal(personal=5.1, threshold=5.0, higher_is_better=True) == "neutral"
 
 
-def _make_db_stub(
-    total_balance: float = 5000.0,
-    monthly_income: float = 3000.0,
-    monthly_expense: float = 2000.0,
-    portfolio_return: float | None = 8.0,
-    total_debt: float = 0.0,
-    usd_monthly: float = 0.0,
-    transport_monthly: float = 200.0,
-    food_monthly: float = 500.0,
-) -> MagicMock:
-    """Returns a mock DB session with stubbed scalar queries."""
-    db = MagicMock()
-    return db
-
 
 def test_build_comparatives_returns_11():
     """_build_comparatives returns exactly 11 ImpactComparative objects."""

@@ -3,7 +3,7 @@
 from __future__ import annotations
 from datetime import date, timedelta, timezone, datetime
 
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from app.core.duckdb import get_duckdb
@@ -22,7 +22,8 @@ def compute_signal(personal: float | None, threshold: float, higher_is_better: b
     if personal is None:
         return "neutral"
     delta = personal - threshold
-    if abs(delta) < abs(threshold) * 0.05:
+    dead_band = max(abs(threshold) * 0.05, 0.01)
+    if abs(delta) < dead_band:
         return "neutral"
     return "positive" if (delta > 0) == higher_is_better else "negative"
 
@@ -84,13 +85,14 @@ def _get_personal_data(db: Session) -> dict:
 
     def _cat_monthly(keywords: list[str]) -> float:
         """Average monthly expense for transactions in categories matching any keyword."""
+        keyword_filters = [func.lower(Category.name).contains(k.lower()) for k in keywords]
         txns = (
             db.query(func.sum(Transaction.amount))
             .join(Category, Transaction.category_id == Category.id, isouter=True)
             .filter(
                 Transaction.amount < 0,
                 Transaction.date >= cutoff,
-                func.lower(Category.name).contains(keywords[0].lower()),
+                or_(*keyword_filters),
             )
             .scalar()
         )
@@ -373,7 +375,6 @@ def _build_comparatives(personal: dict, mi: dict) -> list[ImpactComparative]:
 # ──────────────────────────────────────────────────────────────
 
 def compute_personal_impact(db: Session) -> PersonalImpactOut:
-    from datetime import datetime, timezone
     now = datetime.now(timezone.utc).isoformat()
     warnings: list[str] = []
 
