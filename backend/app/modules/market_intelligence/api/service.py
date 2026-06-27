@@ -8,15 +8,27 @@ from app.modules.market_intelligence.api.schemas import (
     MacroDataPoint, MacroSnapshotOut, MarketSnapshotOut, NewsItemOut, NewsSnapshotOut,
     QuoteOut,
 )
+from app.modules.market_intelligence.catalog.loader import CatalogLoader
 from app.modules.market_intelligence.storage import repository
 
 logger = logging.getLogger("market_intelligence.api")
 
-_SPAIN_CATALOG_IDS = {"ipc_general", "ipc_subyacente", "pib_spain", "desempleo_spain", "euribor_12m", "euribor_3m"}
-_EUROZONE_CATALOG_IDS = {"tipo_bce", "ipc_eurozona", "pib_eurozona", "desempleo_eurozona"}
-_USA_CATALOG_IDS = {"ipc_usa", "gdp_usa", "desempleo_usa", "fed_funds_rate"}
+_catalog = CatalogLoader()
 _INDEX_CATALOG_IDS = {"sp500", "nasdaq100", "ibex35", "eurostoxx50", "dax", "nikkei225"}
 _CRYPTO_CATALOG_IDS = {"btc", "eth", "sol", "xrp"}
+
+
+def _region_for(catalog_item_id: str) -> str | None:
+    item = _catalog.get_by_id(catalog_item_id)
+    if item is None:
+        return None
+    if item.country in ("ES",):
+        return "spain"
+    if item.region in ("Eurozone", "EU"):
+        return "eurozone"
+    if item.country in ("US",):
+        return "usa"
+    return None
 
 
 def _now() -> str:
@@ -36,12 +48,12 @@ def get_macro_snapshot() -> MacroSnapshotOut:
     spain, eurozone, usa = [], [], []
     for r in rows:
         point = MacroDataPoint(**{k: v for k, v in r.items() if k in MacroDataPoint.model_fields})
-        cid = r.get("catalog_item_id", "")
-        if cid in _SPAIN_CATALOG_IDS:
+        region = _region_for(r.get("catalog_item_id", ""))
+        if region == "spain":
             spain.append(point)
-        elif cid in _EUROZONE_CATALOG_IDS:
+        elif region == "eurozone":
             eurozone.append(point)
-        elif cid in _USA_CATALOG_IDS:
+        elif region == "usa":
             usa.append(point)
     return MacroSnapshotOut(spain=spain, eurozone=eurozone, usa=usa, generated_at=_now(), warnings=_warn(rows))
 
@@ -57,33 +69,29 @@ def get_market_snapshot() -> MarketSnapshotOut:
 
 def get_forex_snapshot() -> ForexSnapshotOut:
     rows = repository.get_latest_forex()
-    rates = []
-    for r in rows:
-        rates.append(ForexRateOut(
-            catalog_item_id=r["catalog_item_id"],
-            base_currency=r.get("base_currency"),
-            quote_currency=r.get("quote_currency"),
-            rate=r.get("rate"),
-            date=str(r.get("date", "")),
-            provider_id=r.get("provider_id"),
-            quality_score=r.get("quality_score", 1.0),
-        ))
+    rates = [ForexRateOut(
+        catalog_item_id=r["catalog_item_id"],
+        base_currency=r.get("base_currency"),
+        quote_currency=r.get("quote_currency"),
+        rate=r.get("rate"),
+        date=str(r.get("date", "")),
+        provider_id=r.get("provider_id"),
+        quality_score=r.get("quality_score", 1.0),
+    ) for r in rows]
     return ForexSnapshotOut(rates=rates, generated_at=_now(), warnings=_warn(rows))
 
 
 def get_bond_snapshot() -> BondSnapshotOut:
     rows = repository.get_latest_bonds()
-    yields = []
-    for r in rows:
-        yields.append(BondYieldOut(
-            catalog_item_id=r["catalog_item_id"],
-            country=r.get("country"),
-            maturity=r.get("maturity"),
-            yield_value=r.get("yield_value"),
-            date=str(r.get("date", "")),
-            provider_id=r.get("provider_id"),
-            quality_score=r.get("quality_score", 1.0),
-        ))
+    yields = [BondYieldOut(
+        catalog_item_id=r["catalog_item_id"],
+        country=r.get("country"),
+        maturity=r.get("maturity"),
+        yield_value=r.get("yield_value"),
+        date=str(r.get("date", "")),
+        provider_id=r.get("provider_id"),
+        quality_score=r.get("quality_score", 1.0),
+    ) for r in rows]
     return BondSnapshotOut(yields=yields, generated_at=_now(), warnings=_warn(rows))
 
 
@@ -98,7 +106,6 @@ def get_news_snapshot(limit: int = 20) -> NewsSnapshotOut:
 
 
 def get_ai_datasheet(scope: str = "daily") -> AiDatasheetOut:
-    """Genera el AI Datasheet. La IA local SOLO llama a esta función."""
     try:
         from app.modules.market_intelligence.ai.datasheet import generate_ai_datasheet
         return generate_ai_datasheet(scope=scope)
