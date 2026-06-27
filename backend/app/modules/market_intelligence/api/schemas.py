@@ -109,3 +109,22 @@ class MarketIntelligenceSnapshotOut(BaseModel):
     forex: ForexSnapshotOut
     bonds: BondSnapshotOut
     news: NewsSnapshotOut
+
+
+class ImpactComparative(BaseModel):
+    id: str
+    title: str
+    description: str
+    market_value: Optional[float] = None
+    market_label: str
+    personal_value: Optional[float] = None
+    personal_label: str
+    signal: str  # "positive" | "negative" | "neutral" | "warning"
+    signal_text: str
+    source_ids: list[str] = []
+
+
+class PersonalImpactOut(BaseModel):
+    generated_at: str
+    comparatives: list[ImpactComparative] = []
+    warnings: list[str] = []

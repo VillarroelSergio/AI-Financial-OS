@@ -6,10 +6,16 @@ from app.core.database import get_db
 from app.modules.market_intelligence.api import service
 from app.modules.market_intelligence.api.schemas import (
     AiDatasheetOut, BondSnapshotOut, ForexSnapshotOut,
-    MacroSnapshotOut, MarketSnapshotOut, NewsSnapshotOut,
+    MacroSnapshotOut, MarketSnapshotOut, NewsSnapshotOut, PersonalImpactOut,
 )
 
 router = APIRouter()
+
+
+@router.get("/personal-impact", response_model=PersonalImpactOut)
+def get_personal_impact(db: Session = Depends(get_db)):
+    from app.modules.market_intelligence.api.impact import compute_personal_impact
+    return compute_personal_impact(db)
 
 
 @router.get("/ingest-status")
