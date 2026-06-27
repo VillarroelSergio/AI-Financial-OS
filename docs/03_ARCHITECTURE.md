@@ -52,8 +52,6 @@ FastAPI Backend
  ├─ Import Center
  ├─ Analytics Engine
  ├─ Investment Module
- ├─ Market Data Module (providers + ConsensusEngine + RequestBudget + DuckDB cache)
- ├─ Economic Intelligence Module
  ├─ Market Intelligence Module (catalog + ingestion + quality + storage + AI datasheet)
  ├─ AI Service
  ├─ RAG Service future
@@ -102,8 +100,6 @@ backend/app/modules/
   imports/
   dashboard/
   investments/
-  market_data/          # providers/, consensus.py, budget.py, router.py, cache.py
-  economic_data/
   market_intelligence/  # catalog/, ingestion/, quality/, storage/, api/, ai/, cli/
   goals/
   insights/
@@ -185,13 +181,32 @@ DuckDB se usará para:
 - Consultas temporales complejas.
 - Procesamiento de CSV.
 - Preparación de datasets para dashboards.
-- Persistencia de datos de mercado e inteligencia financiera (tablas `mi_*`).
+- Persistencia de datos de mercado, macro y noticias en Market Intelligence (tablas `mi_*`).
 
 **Reglas DuckDB:**
 - Siempre acceder via el singleton `app.core.duckdb.get_duckdb()` — nunca `duckdb.connect()` directo en producción.
 - Upserts con DELETE + INSERT (DuckDB no soporta `INSERT OR REPLACE`).
 - Latest reads con `QUALIFY ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ... DESC) = 1` (no `DISTINCT ON`).
 - No duplicar lógica de negocio en DuckDB si ya existe en servicios deterministas.
+
+## Market Intelligence
+
+`backend/app/modules/market_intelligence/` es la fuente vigente para contexto macro,
+mercados, divisas, bonos, noticias y datasheets para IA local.
+
+```txt
+Catalog YAML
+ → CatalogLoader
+ → ProviderOrchestrator
+ → AdapterResult
+ → QualityEngine
+ → Repository DuckDB (`mi_*`)
+ → API `/api/market-intelligence/*`
+ → React UI / AI datasheet
+```
+
+El POC `market-data-poc/` se conserva como referencia tecnica y banco de pruebas, pero
+no debe documentarse como ruta operativa principal.
 
 ## Uso de IA
 

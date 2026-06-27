@@ -18,7 +18,7 @@ def launch_startup_ingest() -> None:
         _status["status"] = "running"
         try:
             summary = run_ingestion(priority="critical")
-            _status["count"] = summary.total_fetched
+            _status["count"] = summary.success
             _status["status"] = "done"
         except Exception:
             _status["status"] = "error"

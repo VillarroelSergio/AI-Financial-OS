@@ -88,7 +88,7 @@ export default function MarketsPage() {
         </div>
       )}
 
-      {!loading && !error && activeTab === "indices" && (
+      {!loading && activeTab === "indices" && (
         <div className="rounded-lg border border-hairline-dark bg-surface-elevated overflow-hidden">
           {market && market.indices.length > 0 && (
             <>
@@ -118,7 +118,7 @@ export default function MarketsPage() {
         </div>
       )}
 
-      {!loading && !error && activeTab === "forex" && (
+      {!loading && activeTab === "forex" && (
         <div className="rounded-lg border border-hairline-dark bg-surface-elevated overflow-hidden">
           {forex && forex.rates.length > 0 ? (
             <div className="divide-y divide-divider-soft">
@@ -143,7 +143,7 @@ export default function MarketsPage() {
         </div>
       )}
 
-      {!loading && !error && activeTab === "bonds" && (
+      {!loading && activeTab === "bonds" && (
         <div className="rounded-lg border border-hairline-dark bg-surface-elevated overflow-hidden">
           {bonds && bonds.yields.length > 0 ? (
             <div className="divide-y divide-divider-soft">

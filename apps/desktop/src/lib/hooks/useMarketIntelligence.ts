@@ -48,6 +48,9 @@ export function useEconomyMI() {
         if (status.status === "running" || status.status === "idle") {
           pollRef.current = setTimeout(poll, 3000);
         } else {
+          if (status.status === "error") {
+            setError("La ingesta de datos falló; mostrando datos disponibles en caché.");
+          }
           await load();
         }
       } catch {
@@ -80,6 +83,9 @@ export function useMarketsMI() {
         if (status.status === "running" || status.status === "idle") {
           pollRef.current = setTimeout(poll, 3000);
         } else {
+          if (status.status === "error") {
+            setError("La ingesta de datos falló; mostrando datos disponibles en caché.");
+          }
           try {
             const [marketData, forexData, bondsData] = await Promise.all([
               getMarketSnapshot(),
