@@ -11,7 +11,19 @@ class Settings(BaseSettings):
     APP_ENV: str = "development"
     DATABASE_URL: str = "sqlite:///./data/financial.db"
     DUCKDB_PATH: str = "./data/analytics.duckdb"
+
+    # ── AI Assistant ──────────────────────────────────────────────────────────
+    AI_ASSISTANT_ENABLED: bool = True
+    AI_DEFAULT_PROVIDER: str = "ollama"
+    AI_DEFAULT_MODEL: str = "qwen3-coder:30b"
     OLLAMA_BASE_URL: str = "http://localhost:11434"
+    LMSTUDIO_BASE_URL: str = "http://localhost:1234/v1"
+    AI_REMOTE_PROVIDERS_ENABLED: bool = False
+    AI_MAX_CONTEXT_TOKENS: int = 32768
+    AI_MAX_OUTPUT_TOKENS: int = 4096
+    AI_ENABLE_STREAMING: bool = True
+    AI_ENABLE_TOOL_TRACE: bool = True
+    # Legacy keys kept for backwards compat
     LM_STUDIO_BASE_URL: str = "http://localhost:1234/v1"
     DEFAULT_AI_MODEL: str = "qwen"
 

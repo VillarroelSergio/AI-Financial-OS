@@ -1,4 +1,5 @@
 from app.models.account import Account
+from app.models.ai import AIConversation, AIMessage, AIToolCall
 from app.models.category import Category
 from app.models.goal import Goal
 from app.models.import_batch import ImportBatch, ImportRow
@@ -10,4 +11,5 @@ __all__ = [
     "Account", "Category", "Goal", "ImportBatch", "ImportRow",
     "InvestmentAsset", "Holding", "InvestmentOperation",
     "Transaction", "AppSetting",
+    "AIConversation", "AIMessage", "AIToolCall",
 ]

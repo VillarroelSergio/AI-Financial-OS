@@ -2,9 +2,21 @@
 
 ## Estado actual
 
-AI Financial OS ya tiene una base funcional local-first con backend FastAPI,
-desktop Tauri/React, core financiero, importacion CSV, inversiones, objetivos,
-dashboard y una capa unificada de Market Intelligence.
+| Fase | Nombre | Estado | Commit(s) |
+|------|--------|--------|-----------|
+| 0 | Foundation | ✅ Completa | `e9f2fc9`..`ce21c51`, `20abbeb` |
+| 1 | Financial Core MVP | ✅ Completa | `8861adf` |
+| 2 | CSV Import Center | ✅ Completa | rama `feature/fase-2-import-center` |
+| 3 | Investments Basic | ✅ Completa | rama `feature/fase-2-import-center` |
+| 4 | Market Watch | ✅ Completa | rama `main` |
+| 4.5 | Multi-Provider Market Data | ✅ Completa | rama `feat/multi-provider-market-data` |
+| 4.7 | EOD Market Data | ✅ Completa | rama actual |
+| 5 | Economic Intelligence | ✅ Completa | rama `feature/fase-5-economic-intelligence` |
+| 6 | Local AI Assistant | ✅ Completa | rama `feat/phase-6-local-ai-assistant` |
+| 7 | Insights Engine | ⏳ Pendiente | — |
+| 8 | Goals & Simulations | ⏳ Pendiente | — |
+| 9 | Document Intelligence / RAG | ⏳ Pendiente | — |
+| 10 | Hardening & Packaging | ⏳ Pendiente | — |
 
 | Area | Estado | Ruta principal |
 |---|---|---|
