@@ -5,6 +5,7 @@ $uv = Get-Command "uv" -ErrorAction SilentlyContinue
 $venvPython = Join-Path $backendDir ".venv\Scripts\python.exe"
 $backendPort = 8010
 $backendUrl = "http://127.0.0.1:$backendPort"
+$env:UV_CACHE_DIR = Join-Path $root ".uv-cache"
 
 Write-Host "Iniciando backend en $backendUrl..." -ForegroundColor Cyan
 

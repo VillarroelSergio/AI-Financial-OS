@@ -28,7 +28,9 @@ export default function QuoteRow({ quote }: Props) {
         <p className="text-body-sm text-on-dark truncate">
           {quote.symbol ?? quote.catalog_item_id}
         </p>
-        <p className="text-caption text-stone">{quote.catalog_item_id.replace(/_/g, " ")}</p>
+        <p className="text-caption text-stone">
+          {quote.catalog_item_id.replace(/_/g, " ")} · {quote.provider_id ?? "provider desconocido"}
+        </p>
       </div>
 
       <div className="text-right">

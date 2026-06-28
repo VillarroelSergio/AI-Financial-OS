@@ -7,11 +7,8 @@ from app.modules.market_intelligence.ingestion.models import AdapterResult, Prov
 from app.modules.market_intelligence.ingestion.models import MarketQuote
 from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter
 
-_URL = (
-    "https://api.coingecko.com/api/v3/coins/markets"
-    "?vs_currency=usd&ids=bitcoin,ethereum,solana"
-    "&order=market_cap_desc&per_page=3&page=1"
-)
+_COINS = {"bitcoin": "bitcoin", "ethereum": "ethereum", "solana": "solana", "xrp": "ripple"}
+_BASE_URL = "https://api.coingecko.com/api/v3/coins/markets"
 
 
 class CoinGeckoAdapter(BaseAdapter):
@@ -19,12 +16,18 @@ class CoinGeckoAdapter(BaseAdapter):
     category = "markets"
     region = "Global"
     requires_api_key = False
+    supported_indicators = {key: {} for key in _COINS}
 
-    def fetch(self) -> AdapterResult:
-        metadata = self._make_metadata(base_url=_URL, method="api", license="CoinGecko Public")
+    def fetch(self, indicator_id: str | None = None) -> AdapterResult:
+        ids = [_COINS[indicator_id]] if indicator_id in _COINS else list(_COINS.values())
+        url = (
+            f"{_BASE_URL}?vs_currency=usd&ids={','.join(ids)}"
+            f"&order=market_cap_desc&per_page={len(ids)}&page=1"
+        )
+        metadata = self._make_metadata(base_url=_BASE_URL, method="api", license="CoinGecko Public")
         t0 = time.time()
         try:
-            r = requests.get(_URL, timeout=10)
+            r = requests.get(url, timeout=10)
             latency_ms = (time.time() - t0) * 1000
             r.raise_for_status()
             data = r.json()
@@ -47,7 +50,7 @@ class CoinGeckoAdapter(BaseAdapter):
                 records.append(
                     MarketQuote(
                         provider=self.name,
-                        source=_URL,
+                        source=url,
                         retrieved_at=retrieved_at,
                         country="GLOBAL",
                         region=self.region,

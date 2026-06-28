@@ -105,8 +105,8 @@ export interface ImportBatch {
   rows_total: number; rows_imported: number; rows_failed: number; created_at: string; completed_at: string | null;
 }
 
-export type AssetType = "stock" | "etf" | "fund" | "savings_account";
-export type PriceSource = "yfinance" | "manual";
+export type AssetType = "stock" | "etf" | "fund" | "crypto" | "bond" | "cash" | "unknown" | "savings_account";
+export type PriceSource = "yfinance" | "manual" | "mock" | "demo" | "seed";
 export type OperationType =
   | "buy" | "sell" | "deposit" | "withdrawal"
   | "dividend" | "interest" | "fee";
@@ -147,6 +147,17 @@ export interface HoldingEnriched extends Holding {
   return_absolute: string | null;
   return_percent: number | null;
   accrued_interest: string | null;
+  display_name: string;
+  symbol: string | null;
+  asset_type: AssetType;
+  broker: string;
+  invested_amount: string;
+  unrealized_pnl: string;
+  unrealized_pnl_pct: number;
+  currency: string;
+  is_mock: boolean;
+  quality_score: number;
+  warnings: string[];
 }
 
 export interface InvestmentOperation {
@@ -181,9 +192,33 @@ export interface InvestmentSummary {
 }
 
 export interface PriceRefreshResult {
+  ok: boolean;
   updated: number;
   failed: string[];
   needs_manual_nav: string[];
+  updated_items: {
+    holding_id: string;
+    name: string;
+    symbol: string | null;
+    old_price: string | null;
+    new_price: string;
+    currency: string;
+    source: string;
+  }[];
+  manual_required: {
+    holding_id: string;
+    name: string;
+    symbol: string | null;
+    asset_type: AssetType;
+    reason: string;
+  }[];
+  skipped: {
+    holding_id: string;
+    name: string;
+    asset_type: AssetType;
+    reason: string;
+  }[];
+  errors: string[];
 }
 
 // Market Watch

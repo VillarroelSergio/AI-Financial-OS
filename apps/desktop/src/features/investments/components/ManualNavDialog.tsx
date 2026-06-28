@@ -10,14 +10,15 @@ interface ManualNavDialogProps {
 }
 
 export default function ManualNavDialog({ open, holdings, onClose, onSuccess }: ManualNavDialogProps) {
-  const [navValues, setNavValues] = useState<Record<string, string>>({});
+  const investableHoldings = holdings.filter((h) => !["cash", "savings_account"].includes(h.asset_type));
+  const [priceValues, setPriceValues] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (!open || holdings.length === 0) return null;
+  if (!open || investableHoldings.length === 0) return null;
 
   const handleClose = () => {
-    setNavValues({});
+    setPriceValues({});
     setError(null);
     onClose();
   };
@@ -28,10 +29,10 @@ export default function ManualNavDialog({ open, holdings, onClose, onSuccess }: 
     setError(null);
     try {
       await Promise.all(
-        holdings.map(h => {
-          const nav = navValues[h.id];
-          return nav ? updateHolding(h.id, { current_price: nav }) : Promise.resolve(h);
-        })
+        investableHoldings.map((holding) => {
+          const price = priceValues[holding.id];
+          return price ? updateHolding(holding.id, { current_price: price }) : Promise.resolve(holding);
+        }),
       );
       onSuccess();
       onClose();
@@ -44,41 +45,46 @@ export default function ManualNavDialog({ open, holdings, onClose, onSuccess }: 
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-      <div className="bg-surface-elevated border border-hairline-dark rounded-xl p-2xl w-full max-w-md">
-        <h2 className="text-heading-sm text-on-dark mb-xs">Actualizar NAV</h2>
-        <p className="text-body-sm text-stone mb-xl">
-          Introduce el valor liquidativo actual de cada fondo. Consúltalo en tu portal de Finizens.
+      <div className="w-full max-w-lg rounded-xl border border-hairline-dark bg-surface-elevated p-2xl">
+        <h2 className="mb-xs text-heading-sm text-on-dark">Completar precios faltantes</h2>
+        <p className="mb-md text-body-sm text-stone">
+          Algunos activos no tienen proveedor de precios automatico. Introduce un precio manual si quieres actualizar su valoracion.
+        </p>
+        <p className="mb-xl text-caption text-mute">
+          Precio actual: valor usado para calcular la posicion. NAV solo aplica a fondos; no se pide para cuentas remuneradas o efectivo.
         </p>
         <form onSubmit={handleSubmit} className="space-y-md">
-          {holdings.map(h => (
-            <div key={h.id}>
-              <label className="text-caption text-stone block mb-xs">{h.asset.name}</label>
+          {investableHoldings.map((holding) => (
+            <div key={holding.id}>
+              <label className="mb-xs block text-caption text-stone">
+                {holding.display_name} · {holding.asset_type} · {holding.currency}
+              </label>
               <input
                 type="number"
                 step="0.01"
                 min="0"
-                className="w-full bg-canvas-dark border border-hairline-dark rounded-md px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary"
-                value={navValues[h.id] ?? ""}
-                onChange={e => setNavValues(prev => ({ ...prev, [h.id]: e.target.value }))}
-                placeholder={h.current_price ?? "0.00"}
+                className="w-full rounded-md border border-hairline-dark bg-canvas-dark px-md py-sm text-body-sm text-on-dark focus:border-primary focus:outline-none"
+                value={priceValues[holding.id] ?? ""}
+                onChange={(e) => setPriceValues((prev) => ({ ...prev, [holding.id]: e.target.value }))}
+                placeholder={holding.current_price ?? "0.00"}
               />
             </div>
           ))}
           {error && <p className="text-caption text-accent-danger">{error}</p>}
-          <div className="flex gap-md justify-end pt-sm">
+          <div className="flex justify-end gap-md pt-sm">
             <button
               type="button"
               onClick={handleClose}
-              className="px-lg py-sm rounded-md text-body-sm text-stone hover:text-on-dark transition-colors"
+              className="rounded-md px-lg py-sm text-body-sm text-stone transition-colors hover:text-on-dark"
             >
               Ahora no
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="px-lg py-sm rounded-md text-body-sm bg-primary text-on-primary hover:bg-primary/90 disabled:opacity-50 transition-colors"
+              className="rounded-md bg-primary px-lg py-sm text-body-sm text-on-primary transition-colors hover:bg-primary/90 disabled:opacity-50"
             >
-              {saving ? "Guardando..." : "Guardar NAV"}
+              {saving ? "Guardando..." : "Guardar precios"}
             </button>
           </div>
         </form>

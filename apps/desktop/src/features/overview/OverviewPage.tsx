@@ -1,29 +1,85 @@
-import { ArrowLeftRight, Landmark, PiggyBank, TrendingUp, WalletCards } from "lucide-react";
+import { AlertTriangle, ArrowLeftRight, Landmark, PiggyBank, ShieldCheck, TrendingDown, TrendingUp, WalletCards } from "lucide-react";
 import { ChartCard, EmptyState, KpiCard, LoadingState, PageHeader } from "@/components/ui/Dashboard";
 import { useOverview } from "@/lib/hooks/useDashboard";
 import { formatCurrency, formatPercent } from "@/lib/formatters/currency";
 
 export default function OverviewPage() {
   const { data, loading } = useOverview();
-  if (loading) return <LoadingState label="Calculando tu posición financiera" />;
-  const d = data ?? { net_worth:"0", liquidity:"0", investments:"0", monthly_income:"0", monthly_expense:"0", monthly_savings:"0", savings_rate:0, currency:"EUR" };
+  if (loading) return <LoadingState label="Calculando tu posicion financiera" />;
+
+  const d = data ?? { net_worth: "0", liquidity: "0", investments: "0", monthly_income: "0", monthly_expense: "0", monthly_savings: "0", savings_rate: 0, currency: "EUR" };
+  const netWorth = Number(d.net_worth);
   const savings = Number(d.monthly_savings);
-  const allocation = [{name:"Liquidez",value:Number(d.liquidity),color:"#38bdf8"},{name:"Inversiones",value:Number(d.investments),color:"#5b5ef7"}];
-  return <div className="p-8 max-w-[1500px] mx-auto space-y-6">
-    <PageHeader eyebrow="Panel financiero" title="Resumen" description="Tu situación financiera actual" actions={<span className="text-xs text-stone">Actualizado hoy</span>}/>
-    <div className="dashboard-grid">
-      <div className="col-span-4"><KpiCard label="Patrimonio neto" value={formatCurrency(d.net_worth)} hint="Activos consolidados" icon={Landmark}/></div>
-      <div className="col-span-4"><KpiCard label="Liquidez" value={formatCurrency(d.liquidity)} hint="Disponible en cuentas" icon={WalletCards}/></div>
-      <div className="col-span-4"><KpiCard label="Inversiones" value={formatCurrency(d.investments)} hint="Valor de mercado" icon={TrendingUp}/></div>
-      <div className="col-span-4"><KpiCard label="Ingresos del mes" value={formatCurrency(d.monthly_income)} hint="Periodo actual" icon={ArrowLeftRight}/></div>
-      <div className="col-span-4"><KpiCard label="Gastos del mes" value={formatCurrency(d.monthly_expense)} hint="Periodo actual" positive={false} icon={ArrowLeftRight}/></div>
-      <div className="col-span-4"><KpiCard label="Ahorro del mes" value={formatCurrency(d.monthly_savings)} delta={formatPercent(d.savings_rate)} hint="tasa de ahorro" positive={savings >= 0} icon={PiggyBank}/></div>
-      <ChartCard className="col-span-8" title="Evolución del patrimonio" description="Histórico mensual consolidado">
-        <EmptyState compact title="Aún no hay histórico suficiente" description="Necesitamos al menos dos cierres mensuales para mostrar una evolución fiable."/>
-      </ChartCard>
-      <ChartCard className="col-span-4" title="Distribución patrimonial" description="Composición actual">
-        <div className="space-y-5">{allocation.map(x => <div key={x.name}><div className="flex justify-between gap-3 text-sm"><span className="text-stone">{x.name}</span><span className="financial-number text-on-dark">{formatCurrency(x.value)}</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-white/5"><div className="h-full rounded-full" style={{width:`${Math.min(100,x.value/Math.max(1,Number(d.net_worth))*100)}%`,background:x.color}}/></div></div>)}</div>
-      </ChartCard>
+  const debt = 0;
+  const allocation = [
+    { name: "Liquidez", value: Number(d.liquidity), color: "#38bdf8" },
+    { name: "Inversiones", value: Number(d.investments), color: "#5b5ef7" },
+    { name: "Deuda", value: debt, color: "#ff4d63" },
+  ];
+
+  return (
+    <div className="p-8 max-w-[1500px] mx-auto space-y-6">
+      <PageHeader eyebrow="Panel financiero" title="Resumen" description="Vision ejecutiva de patrimonio, liquidez, flujo mensual y proximas acciones." actions={<span className="text-xs text-stone">Actualizado hoy</span>} />
+
+      <div className="dashboard-grid">
+        <div className="col-span-3"><KpiCard label="Patrimonio neto" value={formatCurrency(d.net_worth)} hint="Activos consolidados" icon={Landmark} /></div>
+        <div className="col-span-3"><KpiCard label="Liquidez" value={formatCurrency(d.liquidity)} hint="Disponible en cuentas" icon={WalletCards} /></div>
+        <div className="col-span-3"><KpiCard label="Inversiones" value={formatCurrency(d.investments)} hint="Valor de mercado" icon={TrendingUp} /></div>
+        <div className="col-span-3"><KpiCard label="Deuda" value={formatCurrency(debt)} hint="Sin deuda registrada" positive={false} icon={TrendingDown} /></div>
+        <div className="col-span-3"><KpiCard label="Ingresos del mes" value={formatCurrency(d.monthly_income)} hint="Periodo actual" icon={ArrowLeftRight} /></div>
+        <div className="col-span-3"><KpiCard label="Gastos del mes" value={formatCurrency(d.monthly_expense)} hint="Periodo actual" positive={false} icon={ArrowLeftRight} /></div>
+        <div className="col-span-3"><KpiCard label="Ahorro neto" value={formatCurrency(d.monthly_savings)} delta={formatPercent(d.savings_rate)} hint="tasa de ahorro" positive={savings >= 0} icon={PiggyBank} /></div>
+        <div className="col-span-3"><KpiCard label="Rentabilidad cartera" value="Sin dato" hint="Requiere precios de inversiones" icon={TrendingUp} /></div>
+
+        <ChartCard className="col-span-4" title="Salud financiera" description="Lectura rapida">
+          <div className="space-y-4">
+            <div className="rounded-xl bg-accent-teal/10 p-4">
+              <p className="text-xs text-accent-teal">Tasa de ahorro</p>
+              <p className="mt-2 text-lg font-semibold text-on-dark">{savings >= 0 ? "Positiva" : "Negativa"}</p>
+              <p className="mt-1 text-sm text-stone">Tu ahorro neto del mes es {formatCurrency(savings)}.</p>
+            </div>
+            <div className="rounded-xl bg-white/5 p-4">
+              <p className="text-xs text-stone">Cambio patrimonio vs mes anterior</p>
+              <p className="mt-2 font-semibold text-on-dark">Sin historico suficiente</p>
+            </div>
+          </div>
+        </ChartCard>
+
+        <ChartCard className="col-span-4" title="Patrimonio" description="Composicion actual">
+          <div className="space-y-5">
+            {allocation.map((x) => (
+              <div key={x.name}>
+                <div className="flex justify-between gap-3 text-sm">
+                  <span className="text-stone">{x.name}</span>
+                  <span className="financial-number text-on-dark">{formatCurrency(x.value)}</span>
+                </div>
+                <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/5">
+                  <div className="h-full rounded-full" style={{ width: `${Math.min(100, x.value / Math.max(1, netWorth) * 100)}%`, background: x.color }} />
+                </div>
+              </div>
+            ))}
+          </div>
+        </ChartCard>
+
+        <ChartCard className="col-span-4" title="Proximas acciones" description="Insights no agresivos">
+          <div className="space-y-3">
+            <div className="flex gap-3 rounded-xl bg-white/5 p-4"><ShieldCheck className="mt-0.5 text-accent-teal" size={18} /><p className="text-sm text-stone">Revisa que las cuentas incluidas en patrimonio esten actualizadas.</p></div>
+            <div className="flex gap-3 rounded-xl bg-white/5 p-4"><AlertTriangle className="mt-0.5 text-amber-300" size={18} /><p className="text-sm text-stone">Hay datos de mercado limitados; no se calcula impacto sobre cartera.</p></div>
+          </div>
+        </ChartCard>
+
+        <ChartCard className="col-span-6" title="Flujo mensual" description="Ingresos, gastos y ahorro neto">
+          <div className="grid grid-cols-3 gap-4">
+            <div className="rounded-xl bg-white/5 p-4"><p className="text-xs text-stone">Ingresos</p><p className="financial-number mt-2 text-on-dark">{formatCurrency(d.monthly_income)}</p></div>
+            <div className="rounded-xl bg-white/5 p-4"><p className="text-xs text-stone">Gastos</p><p className="financial-number mt-2 text-on-dark">{formatCurrency(d.monthly_expense)}</p></div>
+            <div className="rounded-xl bg-white/5 p-4"><p className="text-xs text-stone">Ahorro</p><p className="financial-number mt-2 text-on-dark">{formatCurrency(d.monthly_savings)}</p></div>
+          </div>
+        </ChartCard>
+
+        <ChartCard className="col-span-6" title="Gastos principales" description="Pendiente de categorias del periodo">
+          <EmptyState compact title="Sin desglose en resumen" description="Abre Gastos para ver categoria principal, porcentajes y filtros por periodo." />
+        </ChartCard>
+      </div>
     </div>
-  </div>;
+  );
 }

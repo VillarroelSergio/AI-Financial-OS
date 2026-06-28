@@ -7,38 +7,24 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from app.modules.ai.tools.registry import ToolDefinition, tool_registry
-from app.modules.economic_data import service as econ_service
-from app.modules.economic_data import repository as econ_repo
+from app.modules.market_intelligence.api import service as mi_service
+from app.modules.market_intelligence.api.impact import compute_personal_impact
 
 
 async def _get_macro_snapshot(db: Session, **_: Any) -> dict[str, Any]:
     try:
-        snapshot = econ_service.get_snapshot()
-        regions: dict[str, Any] = {}
-        for region_name in ("spain", "eurozone", "us"):
-            region = getattr(snapshot, region_name, None)
-            if region:
-                regions[region_name] = {
-                    "region": region.region,
-                    "indicators": [
-                        {
-                            "name": ind.name,
-                            "indicator": ind.indicator,
-                            "value": ind.value,
-                            "unit": ind.unit,
-                            "period": ind.period,
-                            "change": ind.change,
-                            "source": ind.source,
-                            "is_stale": ind.is_stale,
-                        }
-                        for ind in (region.indicators or [])
-                    ],
-                }
+        snapshot = mi_service.get_macro_snapshot()
+        regions: dict[str, Any] = {
+            "spain": {"region": "spain", "indicators": [point.model_dump() for point in snapshot.spain]},
+            "eurozone": {"region": "eurozone", "indicators": [point.model_dump() for point in snapshot.eurozone]},
+            "usa": {"region": "usa", "indicators": [point.model_dump() for point in snapshot.usa]},
+        }
         return {
             "regions": regions,
-            "observed_at": datetime.now(timezone.utc).isoformat(),
+            "observed_at": snapshot.generated_at,
+            "warnings": snapshot.warnings,
             "quality_score": 0.9,
-            "sources": [{"type": "macro_indicators", "provider": "FRED/Stooq"}],
+            "sources": [{"type": "macro_indicators", "provider": "market_intelligence"}],
         }
     except Exception as exc:
         return {"status": "not_available", "error": str(exc), "quality_score": 0.0}
@@ -46,26 +32,14 @@ async def _get_macro_snapshot(db: Session, **_: Any) -> dict[str, Any]:
 
 async def _get_personal_impact(db: Session, **_: Any) -> dict[str, Any]:
     try:
-        impact_obj = econ_service.get_personal_impact(db=db)
-        items = []
-        for cat, item in {
-            "inflation_vs_savings": impact_obj.inflation_vs_savings,
-            "rates_vs_liquidity": impact_obj.rates_vs_liquidity,
-            "market_vs_portfolio": impact_obj.market_vs_portfolio,
-            "purchasing_power": impact_obj.purchasing_power,
-        }.items():
-            items.append({
-                "category": cat,
-                "title": getattr(item, "title", ""),
-                "impact_level": getattr(item, "impact_level", ""),
-                "summary": getattr(item, "summary", ""),
-                "recommendation": getattr(item, "recommendation", ""),
-            })
+        impact_obj = compute_personal_impact(db=db)
+        items = [item.model_dump() for item in impact_obj.comparatives]
         return {
             "impacts": items,
-            "observed_at": datetime.now(timezone.utc).isoformat(),
+            "observed_at": impact_obj.generated_at,
+            "warnings": impact_obj.warnings,
             "quality_score": 0.85,
-            "sources": [{"type": "personal_impact", "provider": "local_analysis"}],
+            "sources": [{"type": "personal_impact", "provider": "market_intelligence"}],
         }
     except Exception as exc:
         return {"status": "not_available", "error": str(exc), "quality_score": 0.0}
@@ -74,7 +48,12 @@ async def _get_personal_impact(db: Session, **_: Any) -> dict[str, Any]:
 async def _get_financial_signals(db: Session, **_: Any) -> dict[str, Any]:
     """Aggregated financial signals derived from economic data."""
     try:
-        indicators = econ_repo.get_all_latest()
+        snapshot = mi_service.get_macro_snapshot()
+        indicators = [
+            *[point.model_dump() | {"region": "spain", "indicator": point.indicator_id} for point in snapshot.spain],
+            *[point.model_dump() | {"region": "eurozone", "indicator": point.indicator_id} for point in snapshot.eurozone],
+            *[point.model_dump() | {"region": "usa", "indicator": point.indicator_id} for point in snapshot.usa],
+        ]
         signals = []
         for row in indicators:
             value = row.get("value")

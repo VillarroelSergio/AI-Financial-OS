@@ -122,6 +122,16 @@ class BMEAdapter(BaseAdapter):
                 price = float(match.group(1).replace(",", "."))
             except ValueError:
                 price = None
+        if price is None:
+            return AdapterResult(
+                provider=self.name,
+                success=False,
+                records=[],
+                error="BME HTML response did not expose an index price",
+                latency_ms=latency_ms,
+                raw_sample={"html_length": len(html), "url": url},
+                metadata=metadata,
+            )
 
         record = MarketQuote(
             provider=self.name,

@@ -1,5 +1,6 @@
 from datetime import date, datetime, timezone
 from decimal import Decimal
+import re
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -21,6 +22,16 @@ from app.modules.investments.schemas import (
 )
 
 router = APIRouter()
+UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.I)
+ASSET_TYPE_MAP = {
+    "stock": "stock",
+    "etf": "etf",
+    "fund": "fund",
+    "crypto": "crypto",
+    "bond": "bond",
+    "cash": "cash",
+    "savings_account": "cash",
+}
 
 
 # ── Assets ────────────────────────────────────────────────────────────────────
@@ -93,6 +104,30 @@ def _enrich_holding(h: Holding, asset: InvestmentAsset) -> HoldingOut:
         days = (date.today() - h.inception_date).days
         accrued_interest = h.quantity * h.interest_rate * Decimal(days) / Decimal("365")
 
+    warnings: list[str] = []
+    raw_name = (asset.name or "").strip()
+    raw_symbol = (asset.ticker or "").strip()
+    safe_name = raw_name if raw_name and not UUID_RE.match(raw_name) else ""
+    safe_symbol = raw_symbol if raw_symbol and not UUID_RE.match(raw_symbol) else None
+    display_name = safe_name or safe_symbol or "Activo sin identificar"
+    if display_name == "Activo sin identificar":
+        warnings.append("Faltan nombre y simbolo normalizados.")
+    if UUID_RE.match(raw_name) or UUID_RE.match(raw_symbol):
+        warnings.append("Se oculto un identificador interno como etiqueta visible.")
+    if asset.price_source in {"mock", "demo", "seed"}:
+        warnings.append("Dato demo o semilla; no tratar como dato real.")
+
+    invested_amount = cost_basis.quantize(Decimal("0.01"))
+    current_value = h.market_value if h.market_value is not None else Decimal("0")
+    unrealized_pnl = (current_value - invested_amount).quantize(Decimal("0.01"))
+    unrealized_pnl_pct = float(unrealized_pnl / invested_amount * 100) if invested_amount > 0 else 0.0
+    quality_score = 1.0
+    if display_name == "Activo sin identificar":
+        quality_score -= 0.4
+    if h.current_price is None:
+        quality_score -= 0.2
+        warnings.append("Precio actual no disponible; puede editarse manualmente.")
+
     return HoldingOut(
         id=h.id,
         account_id=h.account_id,
@@ -112,6 +147,17 @@ def _enrich_holding(h: Holding, asset: InvestmentAsset) -> HoldingOut:
         return_absolute=return_absolute,
         return_percent=return_percent,
         accrued_interest=accrued_interest,
+        display_name=display_name,
+        symbol=safe_symbol,
+        asset_type=ASSET_TYPE_MAP.get(asset.asset_type, "unknown"),
+        broker=h.account_id,
+        invested_amount=invested_amount,
+        unrealized_pnl=unrealized_pnl,
+        unrealized_pnl_pct=round(unrealized_pnl_pct, 2),
+        currency=asset.currency or h.current_price_currency or "EUR",
+        is_mock=asset.price_source in {"mock", "demo", "seed"},
+        quality_score=max(0.0, round(quality_score, 2)),
+        warnings=warnings,
     )
 
 
@@ -159,7 +205,7 @@ def update_holding(holding_id: str, payload: HoldingUpdate, db: Session = Depend
         )
     for field, value in payload.model_dump(exclude_none=True).items():
         setattr(holding, field, value)
-    if payload.current_price is not None:
+    if holding.current_price is not None:
         holding.market_value = (holding.quantity * holding.current_price).quantize(Decimal("0.01"))
         holding.current_price_updated_at = datetime.now(timezone.utc)
     db.commit()
@@ -249,7 +295,17 @@ def refresh_prices(db: Session = Depends(get_db)):
     from app.modules.investments.price_service import PriceService
     result = PriceService.refresh_prices(db)
     return PriceRefreshResultOut(
+        ok=not result.errors,
         updated=result.updated,
         failed=result.failed,
         needs_manual_nav=result.needs_manual_nav,
+        updated_items=result.updated_items,
+        manual_required=result.manual_required,
+        skipped=result.skipped,
+        errors=result.errors,
     )
+
+
+@router.post("/refresh-prices", response_model=PriceRefreshResultOut)
+def refresh_prices_alias(db: Session = Depends(get_db)):
+    return refresh_prices(db)

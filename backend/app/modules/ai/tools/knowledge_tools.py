@@ -7,8 +7,8 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from app.modules.ai.tools.registry import ToolDefinition, tool_registry
-from app.modules.economic_data import service as econ_service
-from app.modules.economic_data import repository as econ_repo
+from app.modules.market_intelligence.api import service as mi_service
+from app.modules.market_intelligence.api.impact import compute_personal_impact
 
 
 def _compute_market_regime(indicators: list[dict]) -> dict[str, Any]:
@@ -57,7 +57,7 @@ def _compute_market_regime(indicators: list[dict]) -> dict[str, Any]:
 
 async def _get_market_regime(db: Session, **_: Any) -> dict[str, Any]:
     try:
-        indicators = econ_repo.get_all_latest()
+        indicators = _latest_macro_points()
         regime_data = _compute_market_regime(indicators)
         return {
             **regime_data,
@@ -76,26 +76,12 @@ async def _get_ai_datasheet(db: Session, **_: Any) -> dict[str, Any]:
         # Macro snapshot
         macro_result = await _get_macro_snapshot_simple()
         # Regime
-        indicators = econ_repo.get_all_latest()
+        indicators = _latest_macro_points()
         regime = _compute_market_regime(indicators)
         # Personal impacts
         try:
-            impact_obj = econ_service.get_personal_impact(db=db)
-            impact_items = [
-                {
-                    "category": cat,
-                    "title": getattr(item, "title", ""),
-                    "impact_level": getattr(item, "impact_level", ""),
-                    "summary": getattr(item, "summary", ""),
-                    "recommendation": getattr(item, "recommendation", ""),
-                }
-                for cat, item in {
-                    "inflation_vs_savings": impact_obj.inflation_vs_savings,
-                    "rates_vs_liquidity": impact_obj.rates_vs_liquidity,
-                    "market_vs_portfolio": impact_obj.market_vs_portfolio,
-                    "purchasing_power": impact_obj.purchasing_power,
-                }.items()
-            ]
+            impact_obj = compute_personal_impact(db=db)
+            impact_items = [item.model_dump() for item in impact_obj.comparatives]
         except Exception:
             impact_items = []
 
@@ -121,7 +107,7 @@ async def _get_ai_datasheet(db: Session, **_: Any) -> dict[str, Any]:
 
 async def _get_macro_snapshot_simple() -> dict[str, Any]:
     try:
-        indicators = econ_repo.get_all_latest()
+        indicators = _latest_macro_points()
         by_region: dict[str, list] = {}
         for row in indicators:
             region = row.get("region", "")
@@ -136,6 +122,15 @@ async def _get_macro_snapshot_simple() -> dict[str, Any]:
         return by_region
     except Exception:
         return {}
+
+
+def _latest_macro_points() -> list[dict[str, Any]]:
+    snapshot = mi_service.get_macro_snapshot()
+    return [
+        *[point.model_dump() | {"region": "spain", "indicator": point.indicator_id} for point in snapshot.spain],
+        *[point.model_dump() | {"region": "eurozone", "indicator": point.indicator_id} for point in snapshot.eurozone],
+        *[point.model_dump() | {"region": "usa", "indicator": point.indicator_id} for point in snapshot.usa],
+    ]
 
 
 # ── Registration ──────────────────────────────────────────────────────────────

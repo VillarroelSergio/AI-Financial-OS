@@ -14,8 +14,12 @@ from app.modules.market_intelligence.storage import repository
 logger = logging.getLogger("market_intelligence.api")
 
 _catalog = CatalogLoader()
-_INDEX_CATALOG_IDS = {"sp500", "nasdaq100", "ibex35", "eurostoxx50", "dax", "nikkei225"}
-_CRYPTO_CATALOG_IDS = {"btc", "eth", "sol", "xrp"}
+_INDEX_CATALOG_IDS = {
+    "sp500", "nasdaq", "nasdaq100", "dow_jones", "russell_2000",
+    "ibex35", "eurostoxx50", "dax", "cac40", "ftse100", "nikkei225",
+}
+_CRYPTO_CATALOG_IDS = {"bitcoin", "ethereum", "solana", "xrp", "btc", "eth", "sol"}
+_COMMODITY_CATALOG_IDS = {"wti", "brent", "gold", "silver", "natural_gas", "copper", "uranium", "lithium", "xau", "cl", "bz"}
 
 
 def _region_for(catalog_item_id: str) -> str | None:
@@ -61,10 +65,27 @@ def get_macro_snapshot() -> MacroSnapshotOut:
 def get_market_snapshot() -> MarketSnapshotOut:
     quotes = repository.get_latest_quotes()
     indices = [QuoteOut(**{k: v for k, v in q.items() if k in QuoteOut.model_fields})
-               for q in quotes if q.get("catalog_item_id") in _INDEX_CATALOG_IDS]
+               for q in quotes if str(q.get("catalog_item_id", "")).lower() in _INDEX_CATALOG_IDS]
     crypto = [QuoteOut(**{k: v for k, v in q.items() if k in QuoteOut.model_fields})
-              for q in quotes if q.get("catalog_item_id") in _CRYPTO_CATALOG_IDS]
-    return MarketSnapshotOut(indices=indices, crypto=crypto, commodities=[], generated_at=_now(), warnings=_warn(quotes))
+              for q in quotes if str(q.get("catalog_item_id", "")).lower() in _CRYPTO_CATALOG_IDS]
+    commodities = [QuoteOut(**{k: v for k, v in q.items() if k in QuoteOut.model_fields})
+                   for q in quotes if str(q.get("catalog_item_id", "")).lower() in _COMMODITY_CATALOG_IDS]
+    sections = [indices, crypto, commodities]
+    all_items = [item for section in sections for item in section]
+    quality = sum(item.quality_score for item in all_items) / len(all_items) if all_items else 0.0
+    status = "ok" if indices and crypto and commodities else "partial" if all_items else "empty"
+    warnings = _warn(quotes)
+    if commodities and not indices and not crypto:
+        warnings.append("Solo hay commodities disponibles.")
+    return MarketSnapshotOut(
+        status=status,
+        indices=indices,
+        crypto=crypto,
+        commodities=commodities,
+        generated_at=_now(),
+        warnings=warnings,
+        quality_score=round(quality, 2),
+    )
 
 
 def get_forex_snapshot() -> ForexSnapshotOut:

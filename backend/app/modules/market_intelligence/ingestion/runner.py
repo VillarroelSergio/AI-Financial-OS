@@ -98,6 +98,7 @@ def build_adapters(provider_ids: list[str] | None = None) -> list[BaseAdapter]:
 def run_ingestion(
     category: str | None = None,
     priority: str | None = None,
+    dashboard: bool = False,
     dry_run: bool = False,
 ) -> IngestionSummary:
     """Ejecuta la ingesta completa o filtrada y persiste en DuckDB."""
@@ -121,6 +122,8 @@ def run_ingestion(
     indicators = loader.load_all()
     if category:
         indicators = [i for i in indicators if i.category == category]
+    if dashboard:
+        indicators = [i for i in indicators if i.dashboard]
     if priority:
         indicators = [i for i in indicators if i.priority == priority]
 

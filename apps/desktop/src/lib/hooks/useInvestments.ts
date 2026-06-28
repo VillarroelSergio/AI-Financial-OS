@@ -69,13 +69,15 @@ export function useHoldings(accountId?: string) {
 
 export function useRefreshPrices(onRefresh: () => void) {
   const [refreshing, setRefreshing] = useState(false);
+  const [result, setResult] = useState<PriceRefreshResult | null>(null);
   const [needsManualNav, setNeedsManualNav] = useState<string[]>([]);
 
   const refresh = async () => {
     setRefreshing(true);
     try {
       const result: PriceRefreshResult = await refreshPrices();
-      setNeedsManualNav(result.needs_manual_nav);
+      setResult(result);
+      setNeedsManualNav(result.manual_required.map((item) => item.holding_id));
       onRefresh();
     } catch {
       // keep previous prices on failure
@@ -85,6 +87,7 @@ export function useRefreshPrices(onRefresh: () => void) {
   };
 
   const clearNeedsManualNav = () => setNeedsManualNav([]);
+  const clearResult = () => setResult(null);
 
-  return { refresh, refreshing, needsManualNav, clearNeedsManualNav };
+  return { refresh, refreshing, result, needsManualNav, clearNeedsManualNav, clearResult };
 }

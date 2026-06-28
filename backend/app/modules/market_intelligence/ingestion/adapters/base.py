@@ -34,7 +34,7 @@ class BaseAdapter(ABC):
         return True
 
     def supports(self, indicator_id: str) -> bool:
-        return indicator_id in self.supported_indicators
+        return not self.supported_indicators or indicator_id in self.supported_indicators
 
     def _make_metadata(self, **kwargs) -> ProviderMetadata:
         return ProviderMetadata(
