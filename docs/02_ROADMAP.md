@@ -14,7 +14,7 @@
 | 5 | Economic Intelligence | ✅ Completa | rama `feature/fase-5-economic-intelligence` |
 | 6 | Local AI Assistant | ✅ Completa | rama `feat/phase-6-local-ai-assistant` |
 | 6.4 | Data Integrity & Core UX Repair | En curso | rama `fix/phase-6-4-data-integrity-core-ux` |
-| 7 | Insights Engine | ⏳ Pendiente | — |
+| 7 | Insights Engine | ✅ Completa | rama `main` |
 | 8 | Goals & Simulations | ⏳ Pendiente | — |
 | 9 | Document Intelligence / RAG | ⏳ Pendiente | — |
 | 10 | Hardening & Packaging | ⏳ Pendiente | — |
@@ -28,7 +28,7 @@
 | Goals | Completa | `backend/app/modules/goals` |
 | Market Intelligence | Completa / evolucionando | `backend/app/modules/market_intelligence` |
 | Local AI Assistant | Pendiente | `backend/app/modules/ai`, `backend/app/modules/rag` |
-| Insights Engine | Pendiente | `backend/app/modules/insights` |
+| Insights Engine | ✅ Completa | `backend/app/modules/insights` |
 | Packaging | Pendiente | Tauri build/release |
 
 ## Capa vigente de mercado y macro
