@@ -29,7 +29,7 @@ export function useEconomyMI() {
     try {
       const [macroData, impactData] = await Promise.all([
         getMacroSnapshot(),
-        getPersonalImpact(),
+        getPersonalImpact().catch(() => null),
       ]);
       setMacro(macroData);
       setImpact(impactData);
@@ -102,6 +102,18 @@ export function useMarketsMI() {
           }
         }
       } catch {
+        try {
+          const [marketData, forexData, bondsData] = await Promise.all([
+            getMarketSnapshot(),
+            getForexSnapshot(),
+            getBondSnapshot(),
+          ]);
+          setMarket(marketData);
+          setForex(forexData);
+          setBonds(bondsData);
+        } catch (e) {
+          setError(e instanceof Error ? e.message : "Error al cargar datos de mercado");
+        }
         setLoading(false);
       }
     };

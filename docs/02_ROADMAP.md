@@ -13,6 +13,7 @@
 | 4.7 | EOD Market Data | ✅ Completa | rama actual |
 | 5 | Economic Intelligence | ✅ Completa | rama `feature/fase-5-economic-intelligence` |
 | 6 | Local AI Assistant | ✅ Completa | rama `feat/phase-6-local-ai-assistant` |
+| 6.4 | Data Integrity & Core UX Repair | En curso | rama `fix/phase-6-4-data-integrity-core-ux` |
 | 7 | Insights Engine | ⏳ Pendiente | — |
 | 8 | Goals & Simulations | ⏳ Pendiente | — |
 | 9 | Document Intelligence / RAG | ⏳ Pendiente | — |
@@ -46,6 +47,31 @@ Componentes actuales:
 - Datasheet compacto para IA local.
 
 ## Proximas fases
+
+### Fase 6.4 - Data Integrity & Core UX Repair
+
+Objetivo: estabilizar la app base antes de Fase 7, evitando datos enganosos y mejorando las pantallas principales.
+
+Incluye:
+
+- Politica de datos mock/demo: deben marcarse como demo o excluirse de totales reales.
+- Holdings normalizados: los UUID solo se usan como claves internas; si falta nombre se usa ticker y, si ambos faltan, "Activo sin identificar".
+- CRUD basico de holdings con precio manual, cuenta/broker, divisa, sector y region.
+- Market snapshot con secciones claras: indices, crypto, commodities, forex y bonds, con estado partial/empty/error y quality score.
+- Estados empty/partial/error visibles en mercados, inversiones, cuentas, gastos y resumen.
+- Porcentajes de gastos calculados como `importe_categoria / gasto_total * 100`.
+- UX principal reforzada en Cuentas, Gastos, Inversiones y Resumen.
+
+### Fase 6.4.1 - Expense Drilldown & Investment Price Refresh UX Fix
+
+Incluye:
+
+- Drill-down de gastos por categoria desde donut, barras y lista de gasto.
+- Contrato `GET /api/dashboard/spending/category-detail` con total, porcentaje, media y movimientos.
+- Detalle compatible con vista mensual y anual.
+- Flujo de actualizacion de precios con resultado explicito: actualizados, manuales, omitidos y errores.
+- Las cuentas remuneradas, efectivo y `savings_account` se omiten del precio manual porque usan saldo/balance.
+- NAV queda reservado a fondos cuando exista un campo especifico; el copy general usa precio manual.
 
 ### Fase 6 - Local AI Assistant
 

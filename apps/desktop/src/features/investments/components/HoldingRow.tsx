@@ -3,9 +3,11 @@ import type { HoldingEnriched } from "@/lib/types";
 
 interface HoldingRowProps {
   holding: HoldingEnriched;
+  onEdit?: (holding: HoldingEnriched) => void;
+  onDelete?: (holding: HoldingEnriched) => void;
 }
 
-export default function HoldingRow({ holding }: HoldingRowProps) {
+export default function HoldingRow({ holding, onEdit, onDelete }: HoldingRowProps) {
   const pct = holding.return_percent;
   const isPositive = pct !== null && pct >= 0;
   const updated = holding.current_price_updated_at
@@ -16,12 +18,16 @@ export default function HoldingRow({ holding }: HoldingRowProps) {
     : null;
 
   return (
-    <div className="flex items-center justify-between py-sm">
+    <div className="flex items-center justify-between py-sm gap-md">
       <div className="min-w-0">
-        <p className="text-body-sm text-on-dark truncate">{holding.asset.name}</p>
-        {holding.asset.ticker && (
-          <p className="text-caption text-stone">{holding.asset.ticker}</p>
-        )}
+        <div className="flex items-center gap-sm">
+          <p className="text-body-sm text-on-dark truncate">{holding.display_name}</p>
+          {holding.is_mock && <span className="rounded-full bg-amber-400/15 px-2 py-0.5 text-[10px] text-amber-300">Demo</span>}
+        </div>
+        <p className="text-caption text-stone">
+          {[holding.symbol, holding.asset_type, holding.currency].filter(Boolean).join(" · ")}
+        </p>
+        {holding.warnings.length > 0 && <p className="text-[11px] text-amber-300 truncate">{holding.warnings[0]}</p>}
       </div>
       <div className="flex items-center gap-md flex-shrink-0 ml-md">
         <div className="text-right">
@@ -42,6 +48,10 @@ export default function HoldingRow({ holding }: HoldingRowProps) {
             {pct.toFixed(1)}%
           </span>
         )}
+        <div className="flex flex-col gap-xs">
+          {onEdit && <button onClick={() => onEdit(holding)} className="text-caption text-stone hover:text-on-dark">Editar</button>}
+          {onDelete && <button onClick={() => onDelete(holding)} className="text-caption text-stone hover:text-accent-danger">Eliminar</button>}
+        </div>
       </div>
     </div>
   );

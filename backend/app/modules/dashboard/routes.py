@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from decimal import Decimal
+import calendar
 
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
@@ -8,9 +9,26 @@ from app.core.database import get_db
 from app.models.account import Account
 from app.models.category import Category
 from app.models.transaction import Transaction
-from app.modules.dashboard.schemas import CategorySpending, OverviewOut, SpendingOut
+from app.modules.dashboard.schemas import (
+    CategorySpending,
+    CategorySpendingDetailOut,
+    CategoryTransaction,
+    OverviewOut,
+    SpendingOut,
+    SpendingYearsOut,
+)
 
 router = APIRouter()
+
+
+def _period_filter(month: str | None, year: int | None) -> tuple[str, str, int]:
+    if year is not None:
+        period_prefix = str(year)
+        days = 366 if calendar.isleap(year) else 365
+        return period_prefix, "year", days
+    period_prefix = month or datetime.now(timezone.utc).strftime("%Y-%m")
+    year_number, month_number = (int(part) for part in period_prefix.split("-"))
+    return period_prefix, "month", calendar.monthrange(year_number, month_number)[1]
 
 
 @router.get("/overview", response_model=OverviewOut)
@@ -47,9 +65,22 @@ def get_overview(db: Session = Depends(get_db)) -> OverviewOut:
     )
 
 
+@router.get("/spending/years", response_model=SpendingYearsOut)
+def get_spending_years(db: Session = Depends(get_db)) -> SpendingYearsOut:
+    rows = db.query(Transaction.date).all()
+    years = sorted({int(str(row[0])[:4]) for row in rows if row[0] and len(str(row[0])) >= 4}, reverse=True)
+    return SpendingYearsOut(years=years)
+
+
 @router.get("/spending", response_model=SpendingOut)
-def get_spending(month: str = Query(..., description="YYYY-MM"), db: Session = Depends(get_db)) -> SpendingOut:
-    txs = db.query(Transaction).filter(Transaction.date.like(f"{month}%")).all()
+def get_spending(
+    month: str | None = Query(None, description="YYYY-MM"),
+    year: int | None = Query(None, description="YYYY"),
+    db: Session = Depends(get_db),
+) -> SpendingOut:
+    period_prefix, period_type, days_in_period = _period_filter(month, year)
+
+    txs = db.query(Transaction).filter(Transaction.date.like(f"{period_prefix}%")).all()
 
     total_income = sum((t.amount for t in txs if t.type == "income"), Decimal("0"))
     expense_txs = [t for t in txs if t.type == "expense"]
@@ -63,19 +94,74 @@ def get_spending(month: str = Query(..., description="YYYY-MM"), db: Session = D
     result: list[CategorySpending] = []
     for cat_id, amount in sorted(by_cat.items(), key=lambda x: x[1], reverse=True):
         cat_name = categories[cat_id].name if cat_id and cat_id in categories else "Sin categoría"
-        pct = float(amount / total_expense) if total_expense > 0 else 0.0
+        pct = float(amount / total_expense * 100) if total_expense > 0 else 0.0
         result.append(
             CategorySpending(
                 category_id=cat_id,
                 category=cat_name,
                 amount=str(amount),
-                percentage=round(pct, 3),
+                percentage=round(pct, 1),
             )
         )
 
+    net_savings = total_income - total_expense
+    savings_rate = float(net_savings / total_income * 100) if total_income > 0 else 0.0
+
     return SpendingOut(
-        month=month,
+        month=period_prefix,
+        period_type=period_type,
         total_expense=str(total_expense),
         total_income=str(total_income),
+        net_savings=str(net_savings),
+        savings_rate=round(savings_rate, 1),
+        transaction_count=len(txs),
+        average_daily_expense=str((total_expense / Decimal(days_in_period)).quantize(Decimal("0.01"))),
         by_category=result,
+    )
+
+
+@router.get("/spending/category-detail", response_model=CategorySpendingDetailOut)
+def get_spending_category_detail(
+    category_id: str | None = Query(None),
+    month: str | None = Query(None, description="YYYY-MM"),
+    year: int | None = Query(None, description="YYYY"),
+    db: Session = Depends(get_db),
+) -> CategorySpendingDetailOut:
+    period_prefix, period_type, _days_in_period = _period_filter(month, year)
+    period_txs = db.query(Transaction).filter(Transaction.date.like(f"{period_prefix}%")).all()
+    expense_txs = [t for t in period_txs if t.type == "expense"]
+    total_expense = abs(sum((t.amount for t in expense_txs), Decimal("0")))
+
+    detail_txs = [t for t in expense_txs if t.category_id == category_id]
+    total = abs(sum((t.amount for t in detail_txs), Decimal("0")))
+    percentage = float(total / total_expense * 100) if total_expense > 0 else 0.0
+    average = total / Decimal(len(detail_txs)) if detail_txs else Decimal("0")
+
+    categories = {c.id: c for c in db.query(Category).all()}
+    accounts = {a.id: a for a in db.query(Account).all()}
+    category_name = categories[category_id].name if category_id and category_id in categories else "Sin categoria"
+
+    return CategorySpendingDetailOut(
+        category_id=category_id,
+        category=category_name,
+        period=period_prefix,
+        period_type=period_type,
+        total=str(total.quantize(Decimal("0.01"))),
+        percentage=round(percentage, 1),
+        transaction_count=len(detail_txs),
+        average_transaction=str(average.quantize(Decimal("0.01"))),
+        transactions=[
+            CategoryTransaction(
+                id=t.id,
+                date=t.date,
+                description=t.description,
+                account_name=accounts[t.account_id].name if t.account_id in accounts else "Cuenta desconocida",
+                amount=str(t.amount),
+                currency=t.currency,
+                category=category_name,
+                type=t.type,
+                notes=t.notes,
+            )
+            for t in sorted(detail_txs, key=lambda tx: tx.date, reverse=True)
+        ],
     )

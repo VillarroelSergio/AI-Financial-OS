@@ -35,11 +35,13 @@ class QuoteOut(BaseModel):
 
 
 class MarketSnapshotOut(BaseModel):
+    status: str = "empty"
     indices: list[QuoteOut] = []
     crypto: list[QuoteOut] = []
-    commodities: list[dict] = []
+    commodities: list[QuoteOut] = []
     generated_at: str
     warnings: list[str] = []
+    quality_score: float = 0.0
 
 
 class ForexRateOut(BaseModel):

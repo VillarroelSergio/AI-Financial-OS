@@ -19,6 +19,8 @@ interface PositionsTabsProps {
   onAddStock: () => void;
   onAddFund: () => void;
   onAddSavings: () => void;
+  onEdit: (holding: HoldingEnriched) => void;
+  onDelete: (holding: HoldingEnriched) => void;
 }
 
 export default function PositionsTabs({
@@ -29,6 +31,8 @@ export default function PositionsTabs({
   onAddStock,
   onAddFund,
   onAddSavings,
+  onEdit,
+  onDelete,
 }: PositionsTabsProps) {
   const [active, setActive] = useState<TabKey>("tr");
 
@@ -75,9 +79,9 @@ export default function PositionsTabs({
         ) : (
           filteredHoldings.map((h) =>
             h.asset.asset_type === "savings_account" ? (
-              <SavingsAccountCard key={h.id} holding={h} />
+              <SavingsAccountCard key={h.id} holding={h} onEdit={onEdit} onDelete={onDelete} />
             ) : (
-              <HoldingRow key={h.id} holding={h} />
+              <HoldingRow key={h.id} holding={h} onEdit={onEdit} onDelete={onDelete} />
             ),
           )
         )}

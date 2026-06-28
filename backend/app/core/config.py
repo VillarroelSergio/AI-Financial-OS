@@ -6,6 +6,7 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
+        extra="ignore",
     )
 
     APP_ENV: str = "development"
@@ -33,6 +34,10 @@ class Settings(BaseSettings):
     FINNHUB_API_KEY: str = ""
     FMP_API_KEY: str = ""
     TWELVEDATA_API_KEY: str = ""
+    POLYGON_API_KEY: str = ""
+    EIA_API_KEY: str = ""
+    AEMET_API_KEY: str = ""
+    OPENFIGI_API_KEY: str = ""
 
     # ── Economic data providers ───────────────────────────────────────────────
     FRED_API_KEY: str = ""

@@ -13,14 +13,15 @@ def get_ingest_status() -> dict:
 
 
 def launch_startup_ingest() -> None:
-    """Lanza run_ingestion(priority='critical') en un daemon thread."""
+    """Lanza la ingesta de indicadores visibles en dashboard en un daemon thread."""
     def _run() -> None:
         _status["status"] = "running"
         try:
-            summary = run_ingestion(priority="critical")
+            summary = run_ingestion(dashboard=True)
             _status["count"] = summary.success
             _status["status"] = "done"
-        except Exception:
+        except Exception as exc:
+            _status["error"] = str(exc)
             _status["status"] = "error"
         _status["last_run"] = datetime.now(timezone.utc).isoformat()
 

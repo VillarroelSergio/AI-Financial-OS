@@ -3,12 +3,27 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from decimal import Decimal
+import re
 from typing import Any
 
 from sqlalchemy.orm import Session
 
 from app.models.investment import Holding, InvestmentAsset
 from app.modules.ai.tools.registry import ToolDefinition, tool_registry
+
+UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.I)
+
+
+def _safe_asset_name(asset: InvestmentAsset | None) -> str:
+    if not asset:
+        return "Activo sin identificar"
+    name = (asset.name or "").strip()
+    ticker = (asset.ticker or "").strip()
+    if name and not UUID_RE.match(name):
+        return name
+    if ticker and not UUID_RE.match(ticker):
+        return ticker
+    return "Activo sin identificar"
 
 
 async def _get_portfolio_summary(db: Session, **_: Any) -> dict[str, Any]:
@@ -27,7 +42,7 @@ async def _get_portfolio_summary(db: Session, **_: Any) -> dict[str, Any]:
         asset = assets.get(h.asset_id)
         mv = float(h.market_value or h.quantity * h.average_price)
         items.append({
-            "name": asset.name if asset else h.asset_id,
+            "name": _safe_asset_name(asset),
             "ticker": asset.ticker if asset else None,
             "asset_type": asset.asset_type if asset else "unknown",
             "currency": h.current_price_currency or "EUR",

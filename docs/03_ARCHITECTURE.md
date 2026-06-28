@@ -208,6 +208,17 @@ Catalog YAML
 El POC `market-data-poc/` se conserva como referencia tecnica y banco de pruebas, pero
 no debe documentarse como ruta operativa principal.
 
+## Fase 6.4 - Integridad de datos y UX core
+
+Reglas vigentes:
+
+- Los IDs internos y UUID no son labels de usuario. En inversiones, el backend entrega `display_name`, `symbol`, `is_mock`, `quality_score` y `warnings`.
+- Un holding sin nombre ni simbolo se presenta como "Activo sin identificar".
+- Los datos `mock`, `demo` o `seed` deben marcarse en UI y no mezclarse con totales reales sin accion explicita del usuario.
+- Market Intelligence expone snapshots honestos por seccion: indices, crypto, commodities, forex y bonds. La UI muestra provider, quality score, ultima actualizacion y estado parcial cuando aplique.
+- Gastos calcula porcentajes contra gasto total del periodo: `categoryAmount / totalExpense * 100`.
+- Cada pantalla core debe tener loading, empty, partial/error state y copy que no prometa tiempo real cuando el dato sea baseline, stale o seed.
+
 ## Uso de IA
 
 La IA no puede consultar SQL directamente. Debe usar tools expuestas por el backend.

@@ -31,11 +31,13 @@ export interface QuoteMI {
 }
 
 export interface MarketSnapshotMI {
+  status: "ok" | "partial" | "empty" | "error";
   indices: QuoteMI[];
   crypto: QuoteMI[];
-  commodities: Record<string, unknown>[];
+  commodities: QuoteMI[];
   generated_at: string;
   warnings: string[];
+  quality_score: number;
 }
 
 export interface ForexRateMI {

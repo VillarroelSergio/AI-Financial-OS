@@ -20,6 +20,7 @@ class InvestmentAssetUpdate(BaseModel):
     name: str | None = None
     ticker: str | None = None
     isin: str | None = None
+    asset_type: str | None = None
     currency: str | None = None
     region: str | None = None
     sector: str | None = None
@@ -84,6 +85,17 @@ class HoldingOut(BaseModel):
     return_absolute: Decimal | None
     return_percent: float | None
     accrued_interest: Decimal | None
+    display_name: str
+    symbol: str | None
+    asset_type: str
+    broker: str
+    invested_amount: Decimal
+    unrealized_pnl: Decimal
+    unrealized_pnl_pct: float
+    currency: str
+    is_mock: bool
+    quality_score: float
+    warnings: list[str]
 
     model_config = {"from_attributes": True}
 
@@ -91,7 +103,15 @@ class HoldingOut(BaseModel):
     def serialize_decimal_required(self, v: Decimal) -> str:
         return str(v)
 
-    @field_serializer("current_price", "interest_rate", "return_absolute", "accrued_interest", "market_value")
+    @field_serializer(
+        "current_price",
+        "interest_rate",
+        "return_absolute",
+        "accrued_interest",
+        "market_value",
+        "invested_amount",
+        "unrealized_pnl",
+    )
     def serialize_decimal_optional(self, v: Decimal | None) -> str | None:
         return str(v) if v is not None else None
 
@@ -163,7 +183,41 @@ class InvestmentSummaryOut(BaseModel):
 
 # ── Price refresh ─────────────────────────────────────────────────────────────
 
+class PriceRefreshUpdatedOut(BaseModel):
+    holding_id: str
+    name: str
+    symbol: str | None
+    old_price: Decimal | None
+    new_price: Decimal
+    currency: str
+    source: str
+
+    @field_serializer("old_price", "new_price")
+    def serialize_decimal_optional(self, v: Decimal | None) -> str | None:
+        return str(v) if v is not None else None
+
+
+class PriceRefreshManualRequiredOut(BaseModel):
+    holding_id: str
+    name: str
+    symbol: str | None
+    asset_type: str
+    reason: str
+
+
+class PriceRefreshSkippedOut(BaseModel):
+    holding_id: str
+    name: str
+    asset_type: str
+    reason: str
+
+
 class PriceRefreshResultOut(BaseModel):
+    ok: bool = True
     updated: int
     failed: list[str]
     needs_manual_nav: list[str]
+    updated_items: list[PriceRefreshUpdatedOut] = []
+    manual_required: list[PriceRefreshManualRequiredOut] = []
+    skipped: list[PriceRefreshSkippedOut] = []
+    errors: list[str] = []

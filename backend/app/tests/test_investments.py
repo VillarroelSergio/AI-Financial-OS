@@ -157,12 +157,74 @@ def test_price_refresh_marks_manual_assets(client, monkeypatch):
         "name": "Vanguard US 500", "asset_type": "fund",
         "currency": "EUR", "price_source": "manual",
     }).json()
-    client.post("/api/investments/holdings", json={
+    holding = client.post("/api/investments/holdings", json={
         "account_id": account["id"], "asset_id": asset["id"],
         "quantity": "4.59", "average_price": "420.00",
-    })
+    }).json()
 
     r = client.post("/api/investments/prices/refresh")
     assert r.status_code == 200
     data = r.json()
-    assert asset["id"] in data["needs_manual_nav"]
+    assert holding["id"] in data["needs_manual_nav"]
+    assert data["manual_required"][0]["holding_id"] == holding["id"]
+    assert data["manual_required"][0]["reason"] == "missing_price_provider"
+
+
+def test_refresh_prices_skips_savings_accounts(client):
+    account = client.post("/api/accounts", json={
+        "name": "TR Ahorro", "type": "savings", "currency": "EUR",
+    }).json()
+    asset = client.post("/api/investments/assets", json={
+        "name": "Cuenta Remunerada TR", "asset_type": "savings_account",
+        "currency": "EUR", "price_source": "manual",
+    }).json()
+    holding = client.post("/api/investments/holdings", json={
+        "account_id": account["id"], "asset_id": asset["id"],
+        "quantity": "5000", "average_price": "1", "market_value": "5000",
+    }).json()
+
+    r = client.post("/api/investments/prices/refresh")
+    assert r.status_code == 200
+    data = r.json()
+    assert holding["id"] not in data["needs_manual_nav"]
+    assert data["manual_required"] == []
+    assert data["skipped"][0]["holding_id"] == holding["id"]
+    assert data["skipped"][0]["reason"] == "cash_uses_account_balance"
+
+
+def test_refresh_prices_does_not_request_nav_for_cash(client):
+    account = client.post("/api/accounts", json={
+        "name": "Efectivo", "type": "cash", "currency": "EUR",
+    }).json()
+    asset = client.post("/api/investments/assets", json={
+        "name": "Efectivo cartera", "asset_type": "cash",
+        "currency": "EUR", "price_source": "manual",
+    }).json()
+    client.post("/api/investments/holdings", json={
+        "account_id": account["id"], "asset_id": asset["id"],
+        "quantity": "1000", "average_price": "1", "market_value": "1000",
+    })
+
+    data = client.post("/api/investments/prices/refresh").json()
+    assert data["needs_manual_nav"] == []
+    assert data["manual_required"] == []
+    assert len(data["skipped"]) == 1
+
+
+def test_no_duplicate_cash_holdings_in_refresh_modal(client):
+    account = client.post("/api/accounts", json={
+        "name": "TR Ahorro", "type": "savings", "currency": "EUR",
+    }).json()
+    asset = client.post("/api/investments/assets", json={
+        "name": "Cuenta Remunerada TR", "asset_type": "savings_account",
+        "currency": "EUR", "price_source": "manual",
+    }).json()
+    for _ in range(2):
+        client.post("/api/investments/holdings", json={
+            "account_id": account["id"], "asset_id": asset["id"],
+            "quantity": "1000", "average_price": "1", "market_value": "1000",
+        })
+
+    data = client.post("/api/investments/prices/refresh").json()
+    assert data["manual_required"] == []
+    assert data["needs_manual_nav"] == []

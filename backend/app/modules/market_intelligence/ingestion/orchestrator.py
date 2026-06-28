@@ -59,7 +59,10 @@ class ProviderOrchestrator:
                 logger.debug("Provider '%s' does not support indicator '%s'", provider_id, indicator.id)
                 continue
             try:
-                result = adapter.fetch(indicator.id)
+                try:
+                    result = adapter.fetch(indicator.id)
+                except TypeError:
+                    result = adapter.fetch()
             except Exception as exc:
                 logger.warning("Adapter '%s' raised exception: %s", provider_id, exc)
                 continue

@@ -4,7 +4,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.core.database import SessionLocal, create_tables
+from app.core import database as db_module
+from app.core.database import create_tables
 from app.modules.accounts.routes import router as accounts_router
 from app.modules.ai.routes import router as ai_router
 from app.modules.categories.routes import router as categories_router
@@ -23,7 +24,7 @@ from app.modules.transactions.routes import router as transactions_router
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     create_tables()
-    db = SessionLocal()
+    db = db_module.SessionLocal()
     try:
         from app.seeds.categories import seed_categories
         from app.seeds.settings import seed_settings
