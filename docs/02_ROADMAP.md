@@ -12,7 +12,7 @@
 | 4.5 | Multi-Provider Market Data | ✅ Completa | rama `feat/multi-provider-market-data` |
 | 4.7 | EOD Market Data | ✅ Completa | rama actual |
 | 5 | Economic Intelligence | ✅ Completa | rama `feature/fase-5-economic-intelligence` |
-| 6 | Local AI Assistant | ⏳ Pendiente | — |
+| 6 | Local AI Assistant | ✅ Completa | rama `feat/phase-6-local-ai-assistant` |
 | 7 | Insights Engine | ⏳ Pendiente | — |
 | 8 | Goals & Simulations | ⏳ Pendiente | — |
 | 9 | Document Intelligence / RAG | ⏳ Pendiente | — |
