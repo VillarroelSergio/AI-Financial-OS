@@ -1,0 +1,83 @@
+- id: news_macro
+  name: "Noticias Macro"
+  category: news
+  subcategory: macro
+  country: GLOBAL
+  region: Global
+  frequency: realtime
+  priority: high
+  dashboard: true
+  ai: true
+  historical: 30d
+  retention: 90d
+  unit: "text"
+  description: "Noticias macroeconómicas"
+  provider_primary: rss
+  provider_secondary: finnhub
+
+- id: news_markets
+  name: "Noticias Mercados"
+  category: news
+  subcategory: markets
+  country: GLOBAL
+  region: Global
+  frequency: realtime
+  priority: high
+  dashboard: true
+  ai: true
+  historical: 30d
+  retention: 90d
+  unit: "text"
+  description: "Noticias de mercados financieros"
+  provider_primary: rss
+  provider_secondary: finnhub
+
+- id: news_companies
+  name: "Noticias Empresas"
+  category: news
+  subcategory: companies
+  country: GLOBAL
+  region: Global
+  frequency: realtime
+  priority: medium
+  dashboard: true
+  ai: true
+  historical: 30d
+  retention: 90d
+  unit: "text"
+  description: "Noticias corporativas"
+  provider_primary: finnhub
+  provider_secondary: rss
+
+- id: news_technology
+  name: "Noticias Tecnología"
+  category: news
+  subcategory: technology
+  country: GLOBAL
+  region: Global
+  frequency: realtime
+  priority: medium
+  dashboard: false
+  ai: true
+  historical: 30d
+  retention: 30d
+  unit: "text"
+  description: "Noticias de tecnología"
+  provider_primary: rss
+
+- id: news_central_banks
+  name: "Bancos Centrales"
+  category: news
+  subcategory: central_banks
+  country: GLOBAL
+  region: Global
+  frequency: realtime
+  priority: high
+  dashboard: true
+  ai: true
+  historical: 30d
+  retention: 90d
+  unit: "text"
+  description: "Comunicados y noticias de bancos centrales"
+  provider_primary: rss
+  provider_secondary: ecb

@@ -62,6 +62,25 @@ cd apps/desktop
 npx tsc --noEmit
 ```
 
+## Market Intelligence
+
+La capa vigente de mercados y macro vive en `backend/app/modules/market_intelligence`.
+El antiguo `market-data-poc/` queda como banco de pruebas legado y no debe usarse como
+fuente principal de documentacion ni de comandos operativos.
+
+API endpoints bajo `/api/market-intelligence/`:
+
+| Endpoint | Descripción |
+|---|---|
+| `GET /snapshot/macro` | Indicadores macro por región |
+| `GET /snapshot/market` | Cotizaciones de índices, cripto y commodities |
+| `GET /snapshot/forex` | Tipos de cambio |
+| `GET /snapshot/bonds` | Rendimientos de bonos |
+| `GET /snapshot/news` | Noticias financieras |
+| `GET /personal-impact` | Comparativas entre contexto macro/mercado y datos personales |
+| `GET /ingest-status` | Estado de la ingesta automática de arranque |
+| `GET /ai-datasheet` | Datasheet compacto para IA local |
+
 ## Documentación
 
 Ver `docs/` para arquitectura, modelo de datos, contrato API y roadmap.

@@ -1,0 +1,171 @@
+inflation_above_target:
+  id: inflation_above_target
+  category: macro
+  description: "Inflación por encima del objetivo"
+  direction: negative
+  affected_assets:
+    - cash
+    - bonds
+    - equities
+  affected_user_domains:
+    - cash
+    - savings
+    - portfolio
+
+inflation_accelerating:
+  id: inflation_accelerating
+  category: macro
+  description: "Inflación acelerándose"
+  direction: negative
+  affected_assets:
+    - cash
+    - bonds
+  affected_user_domains:
+    - cash
+    - savings
+
+inflation_decelerating:
+  id: inflation_decelerating
+  category: macro
+  description: "Inflación desacelerándose"
+  direction: positive
+  affected_assets:
+    - bonds
+    - equities
+  affected_user_domains:
+    - portfolio
+
+rates_high:
+  id: rates_high
+  category: macro
+  description: "Tipos de interés elevados"
+  direction: mixed
+  affected_assets:
+    - bonds
+    - real_estate
+  affected_user_domains:
+    - mortgage
+    - loans
+    - savings
+
+rates_rising:
+  id: rates_rising
+  category: macro
+  description: "Tipos en tendencia alcista"
+  direction: negative
+  affected_assets:
+    - bonds
+    - real_estate
+  affected_user_domains:
+    - mortgage
+    - loans
+
+rates_falling:
+  id: rates_falling
+  category: macro
+  description: "Tipos en tendencia bajista"
+  direction: positive
+  affected_assets:
+    - bonds
+    - equities
+    - real_estate
+  affected_user_domains:
+    - mortgage
+    - portfolio
+
+yield_curve_inverted:
+  id: yield_curve_inverted
+  category: macro
+  description: "Curva de tipos invertida (señal de recesión)"
+  direction: negative
+  affected_assets:
+    - bonds
+    - equities
+  affected_user_domains:
+    - portfolio
+
+oil_spike:
+  id: oil_spike
+  category: commodities
+  description: "Subida brusca del petróleo"
+  direction: negative
+  affected_assets:
+    - commodities
+    - equities
+  affected_user_domains:
+    - expenses
+    - transport
+
+usd_strength:
+  id: usd_strength
+  category: forex
+  description: "Dólar fuerte frente al euro"
+  direction: mixed
+  affected_assets:
+    - forex
+    - international_equities
+  affected_user_domains:
+    - portfolio
+
+eur_weakness:
+  id: eur_weakness
+  category: forex
+  description: "Euro débil"
+  direction: negative
+  affected_assets:
+    - forex
+    - imports
+  affected_user_domains:
+    - portfolio
+    - expenses
+
+equity_market_positive:
+  id: equity_market_positive
+  category: market
+  description: "Mercados de renta variable en positivo"
+  direction: positive
+  affected_assets:
+    - equities
+  affected_user_domains:
+    - portfolio
+
+equity_market_drawdown:
+  id: equity_market_drawdown
+  category: market
+  description: "Caída en mercados de renta variable"
+  direction: negative
+  affected_assets:
+    - equities
+  affected_user_domains:
+    - portfolio
+
+crypto_volatility_high:
+  id: crypto_volatility_high
+  category: market
+  description: "Alta volatilidad en criptomonedas"
+  direction: mixed
+  affected_assets:
+    - crypto
+  affected_user_domains:
+    - portfolio
+
+employment_weakening:
+  id: employment_weakening
+  category: macro
+  description: "Mercado laboral deteriorándose"
+  direction: negative
+  affected_assets:
+    - equities
+  affected_user_domains:
+    - income
+
+electricity_price_spike:
+  id: electricity_price_spike
+  category: commodities
+  description: "Subida del precio de la electricidad"
+  direction: negative
+  affected_assets:
+    - commodities
+  affected_user_domains:
+    - expenses
+    - energy

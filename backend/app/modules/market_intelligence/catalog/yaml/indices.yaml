@@ -1,0 +1,170 @@
+- id: sp500
+  name: "S&P 500"
+  category: indices
+  subcategory: usa
+  country: US
+  region: USA
+  frequency: daily
+  priority: critical
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "index"
+  description: "Standard & Poor's 500"
+  provider_primary: stooq
+  provider_secondary: alpha_vantage
+  provider_fallback: polygon
+
+- id: nasdaq
+  name: "Nasdaq Composite"
+  category: indices
+  subcategory: usa
+  country: US
+  region: USA
+  frequency: daily
+  priority: critical
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "index"
+  description: "Nasdaq Composite Index"
+  provider_primary: stooq
+  provider_secondary: alpha_vantage
+
+- id: dow_jones
+  name: "Dow Jones Industrial"
+  category: indices
+  subcategory: usa
+  country: US
+  region: USA
+  frequency: daily
+  priority: high
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "index"
+  description: "Dow Jones Industrial Average"
+  provider_primary: stooq
+  provider_secondary: alpha_vantage
+
+- id: russell_2000
+  name: "Russell 2000"
+  category: indices
+  subcategory: usa
+  country: US
+  region: USA
+  frequency: daily
+  priority: medium
+  dashboard: true
+  ai: true
+  historical: 5y
+  retention: 3y
+  unit: "index"
+  description: "Russell 2000 small cap index"
+  provider_primary: stooq
+  provider_secondary: polygon
+
+- id: ibex35
+  name: "IBEX 35"
+  category: indices
+  subcategory: spain
+  country: ES
+  region: Spain
+  frequency: daily
+  priority: critical
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "index"
+  description: "Índice bursátil español IBEX 35"
+  provider_primary: bme
+  provider_secondary: stooq
+
+- id: eurostoxx50
+  name: "EuroStoxx 50"
+  category: indices
+  subcategory: europe
+  country: EA
+  region: Eurozone
+  frequency: daily
+  priority: critical
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "index"
+  description: "Índice paneuropeo EuroStoxx 50"
+  provider_primary: stooq
+  provider_secondary: ecb
+
+- id: dax
+  name: "DAX"
+  category: indices
+  subcategory: europe
+  country: DE
+  region: Eurozone
+  frequency: daily
+  priority: high
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "index"
+  description: "Índice bursátil alemán DAX"
+  provider_primary: stooq
+  provider_secondary: alpha_vantage
+
+- id: cac40
+  name: "CAC 40"
+  category: indices
+  subcategory: europe
+  country: FR
+  region: Eurozone
+  frequency: daily
+  priority: high
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "index"
+  description: "Índice bursátil francés CAC 40"
+  provider_primary: stooq
+  provider_secondary: alpha_vantage
+
+- id: ftse100
+  name: "FTSE 100"
+  category: indices
+  subcategory: europe
+  country: GB
+  region: Global
+  frequency: daily
+  priority: high
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "index"
+  description: "Índice bursátil británico FTSE 100"
+  provider_primary: stooq
+  provider_secondary: alpha_vantage
+
+- id: nikkei225
+  name: "Nikkei 225"
+  category: indices
+  subcategory: asia
+  country: JP
+  region: Global
+  frequency: daily
+  priority: high
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "index"
+  description: "Índice bursátil japonés Nikkei 225"
+  provider_primary: stooq
+  provider_secondary: alpha_vantage
