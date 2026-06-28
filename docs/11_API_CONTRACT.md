@@ -180,19 +180,43 @@ omite filas inválidas o duplicadas al confirmar y conserva el lote tras un roll
 
 ### POST `/api/investments/holdings`
 
-## Market Data
+## Market Intelligence
 
-### GET `/api/markets/snapshot`
+La API vigente para mercado, macro, divisas, bonos, noticias e impacto personal esta
+bajo `/api/market-intelligence`. Los endpoints legacy `/api/markets/*` y `/api/economy/*`
+no estan registrados en `backend/app/main.py`.
 
-### POST `/api/markets/refresh`
+### GET `/api/market-intelligence/snapshot/macro`
 
-## Economic Data
+Devuelve indicadores macro agrupados por region.
 
-### GET `/api/economy/snapshot`
+### GET `/api/market-intelligence/snapshot/market`
 
-### GET `/api/economy/indicators/{code}`
+Devuelve indices, cripto y commodities con `provider_id` y `quality_score`.
 
-### POST `/api/economy/refresh`
+### GET `/api/market-intelligence/snapshot/forex`
+
+Devuelve tipos de cambio normalizados.
+
+### GET `/api/market-intelligence/snapshot/bonds`
+
+Devuelve rendimientos de bonos.
+
+### GET `/api/market-intelligence/snapshot/news?limit=20`
+
+Devuelve noticias financieras.
+
+### GET `/api/market-intelligence/personal-impact`
+
+Devuelve comparativas deterministas entre datos personales y contexto macro/mercado.
+
+### GET `/api/market-intelligence/ingest-status`
+
+Devuelve el estado de la ingesta automatica lanzada al arrancar FastAPI.
+
+### GET `/api/market-intelligence/ai-datasheet?scope=daily`
+
+Devuelve un datasheet compacto para consumo de IA local.
 
 ## AI
 

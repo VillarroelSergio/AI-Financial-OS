@@ -1,0 +1,49 @@
+risk_off:
+  description: "Entorno de aversión al riesgo"
+  required_signals:
+    - equity_market_drawdown
+    - yield_curve_inverted
+  optional_signals:
+    - usd_strength
+    - oil_spike
+  confidence: 0.75
+
+risk_on:
+  description: "Entorno de apetito por riesgo"
+  required_signals:
+    - equity_market_positive
+  confidence: 0.65
+
+inflationary:
+  description: "Régimen inflacionario"
+  required_signals:
+    - inflation_above_target
+  optional_signals:
+    - oil_spike
+    - electricity_price_spike
+  confidence: 0.70
+
+disinflationary:
+  description: "Régimen desinflacionario"
+  required_signals:
+    - inflation_decelerating
+  confidence: 0.65
+
+high_rates:
+  description: "Entorno de tipos altos"
+  required_signals:
+    - rates_high
+  confidence: 0.80
+
+cutting_cycle:
+  description: "Ciclo de bajadas de tipos"
+  required_signals:
+    - rates_falling
+  confidence: 0.75
+
+recession_risk:
+  description: "Riesgo de recesión"
+  required_signals:
+    - gdp_slowdown
+    - yield_curve_inverted
+  confidence: 0.60

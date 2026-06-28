@@ -1,0 +1,50 @@
+cash_drag:
+  description: "La inflación erosiona el valor del efectivo"
+  requires_signals:
+    - inflation_above_target
+  user_data_needed:
+    - cash_balance
+  severity_multiplier: 1.0
+
+mortgage_pressure:
+  description: "Tipos altos o Euríbor elevado aumenta coste hipoteca variable"
+  requires_signals:
+    - rates_high
+  optional_signals:
+    - euribor_rising
+  user_data_needed:
+    - mortgage_variable_outstanding
+  severity_multiplier: 1.2
+
+fx_exposure_loss:
+  description: "Debilidad del euro impacta activos en USD para inversores EUR"
+  requires_signals:
+    - eur_weakness
+  user_data_needed:
+    - portfolio_usd_exposure
+  severity_multiplier: 1.0
+
+equity_drawdown_impact:
+  description: "Caída de mercado impacta cartera de renta variable"
+  requires_signals:
+    - equity_market_drawdown
+  user_data_needed:
+    - equity_holdings_value
+  severity_multiplier: 1.0
+
+energy_cost_pressure:
+  description: "Subida de electricidad impacta gasto energético mensual"
+  requires_signals:
+    - electricity_price_spike
+  user_data_needed:
+    - monthly_electricity_spend
+  severity_multiplier: 0.8
+
+goal_delay_risk:
+  description: "Entorno macro adverso puede retrasar objetivos financieros"
+  requires_signals:
+    - equity_market_drawdown
+    - inflation_above_target
+  user_data_needed:
+    - financial_goals
+  severity_multiplier: 0.5
