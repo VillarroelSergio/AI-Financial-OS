@@ -20,7 +20,7 @@ Available tools:
 """
 
 
-def _parse_tool_call(text: str) -> ToolCallResult | None:
+def parse_tool_call(text: str) -> ToolCallResult | None:
     """Extract tool_call from model output — handles JSON, markdown blocks, and inline."""
     text = text.strip()
     # Strip markdown code fences
@@ -54,6 +54,9 @@ def _parse_tool_call(text: str) -> ToolCallResult | None:
                     except (json.JSONDecodeError, KeyError):
                         break
     return None
+
+
+_parse_tool_call = parse_tool_call
 
 
 def _build_tool_system_suffix(tools: list[dict[str, Any]]) -> str:
@@ -122,7 +125,7 @@ class OllamaProvider(AIProvider):
                         args = {}
                 tool_calls.append(ToolCallResult(name=fn.get("name", ""), arguments=args))
         elif tools and content:
-            parsed = _parse_tool_call(content)
+            parsed = parse_tool_call(content)
             if parsed:
                 tool_calls.append(parsed)
                 content = None  # content replaced by tool call

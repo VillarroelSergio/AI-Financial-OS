@@ -9,6 +9,7 @@ from typing import Any, AsyncIterator
 import httpx
 
 from app.modules.ai.providers.base import AIProvider, AIResponse, ProviderHealth, ToolCallResult
+from app.modules.ai.providers.ollama_provider import _build_tool_system_suffix, parse_tool_call
 
 logger = logging.getLogger(__name__)
 
@@ -17,15 +18,37 @@ class LMStudioProvider(AIProvider):
     """OpenAI-compatible provider targeting LM Studio (or any /v1 endpoint)."""
 
     def __init__(self, base_url: str, default_model: str) -> None:
-        self._base_url = base_url.rstrip("/")
+        self._base_url = self._normalize_base_url(base_url)
         self._default_model = default_model
+        self._models_cache: list[str] | None = None
 
     @property
     def name(self) -> str:
         return "lmstudio"
 
-    def _model(self, model: str | None) -> str:
-        return model or self._default_model
+    @staticmethod
+    def _normalize_base_url(base_url: str) -> str:
+        clean = base_url.rstrip("/")
+        return clean if clean.endswith("/v1") else f"{clean}/v1"
+
+    async def _models(self) -> list[str]:
+        if self._models_cache is not None:
+            return self._models_cache
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            resp = await client.get(f"{self._base_url}/models")
+            resp.raise_for_status()
+            self._models_cache = [m["id"] for m in resp.json().get("data", []) if m.get("id")]
+            return self._models_cache
+
+    async def _model(self, model: str | None) -> str:
+        if model:
+            return model
+        models = await self._models()
+        if self._default_model in models:
+            return self._default_model
+        if models:
+            return models[0]
+        return self._default_model
 
     def _openai_tools(self, tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
         return [
@@ -47,8 +70,9 @@ class LMStudioProvider(AIProvider):
         model: str | None = None,
         max_tokens: int = 4096,
     ) -> AIResponse:
+        resolved_model = await self._model(model)
         payload: dict[str, Any] = {
-            "model": self._model(model),
+            "model": resolved_model,
             "messages": messages,
             "max_tokens": max_tokens,
             "stream": False,
@@ -58,7 +82,16 @@ class LMStudioProvider(AIProvider):
             payload["tool_choice"] = "auto"
 
         async with httpx.AsyncClient(timeout=120.0) as client:
-            resp = await client.post(f"{self._base_url}/chat/completions", json=payload)
+            try:
+                resp = await client.post(f"{self._base_url}/chat/completions", json=payload)
+            except httpx.HTTPError:
+                raise
+            if resp.status_code >= 400 and tools:
+                fallback = dict(payload)
+                fallback.pop("tools", None)
+                fallback.pop("tool_choice", None)
+                fallback["messages"] = self._messages_with_manual_tools(messages, tools)
+                resp = await client.post(f"{self._base_url}/chat/completions", json=fallback)
             resp.raise_for_status()
             data = resp.json()
 
@@ -76,15 +109,26 @@ class LMStudioProvider(AIProvider):
                 except json.JSONDecodeError:
                     args = {}
             tool_calls.append(ToolCallResult(name=fn.get("name", ""), arguments=args))
+        if tools and not tool_calls and content:
+            parsed = parse_tool_call(content)
+            if parsed:
+                tool_calls.append(parsed)
+                content = ""
+        finish_reason = choice.get("finish_reason", "stop")
+        if not content and not tool_calls and finish_reason == "length":
+            content = (
+                "LM Studio devolvio solo razonamiento interno y agoto el limite de tokens "
+                "antes de generar respuesta. Aumenta AI_MAX_OUTPUT_TOKENS o usa un modelo sin reasoning."
+            )
 
         usage = data.get("usage", {})
         return AIResponse(
             content=content or None,
             tool_calls=tool_calls,
-            model=self._model(model),
+            model=resolved_model,
             input_tokens=usage.get("prompt_tokens", 0),
             output_tokens=usage.get("completion_tokens", 0),
-            finish_reason=choice.get("finish_reason", "stop"),
+            finish_reason=finish_reason,
         )
 
     async def stream_chat(
@@ -94,8 +138,9 @@ class LMStudioProvider(AIProvider):
         model: str | None = None,
         max_tokens: int = 4096,
     ) -> AsyncIterator[str]:
+        resolved_model = await self._model(model)
         payload: dict[str, Any] = {
-            "model": self._model(model),
+            "model": resolved_model,
             "messages": messages,
             "max_tokens": max_tokens,
             "stream": True,
@@ -121,25 +166,34 @@ class LMStudioProvider(AIProvider):
     async def health(self) -> ProviderHealth:
         start = time.monotonic()
         try:
-            async with httpx.AsyncClient(timeout=5.0) as client:
-                resp = await client.get(f"{self._base_url}/models")
-                resp.raise_for_status()
-                latency = int((time.monotonic() - start) * 1000)
-                models = [m["id"] for m in resp.json().get("data", [])]
-                return ProviderHealth(
-                    available=True,
-                    provider=self.name,
-                    model=models[0] if models else None,
-                    latency_ms=latency,
-                )
+            models = await self._models()
+            latency = int((time.monotonic() - start) * 1000)
+            selected = self._default_model if self._default_model in models else (models[0] if models else None)
+            return ProviderHealth(
+                available=bool(selected),
+                provider=self.name,
+                model=selected,
+                latency_ms=latency,
+                error=None if selected else "No models loaded in LM Studio",
+            )
         except Exception as exc:
             return ProviderHealth(available=False, provider=self.name, error=str(exc))
 
     async def list_models(self) -> list[str]:
         try:
-            async with httpx.AsyncClient(timeout=5.0) as client:
-                resp = await client.get(f"{self._base_url}/models")
-                resp.raise_for_status()
-                return [m["id"] for m in resp.json().get("data", [])]
+            return await self._models()
         except Exception:
             return []
+
+    def _messages_with_manual_tools(
+        self,
+        messages: list[dict[str, Any]],
+        tools: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        suffix = _build_tool_system_suffix(tools)
+        msgs = list(messages)
+        if msgs and msgs[0]["role"] == "system":
+            msgs[0] = {**msgs[0], "content": msgs[0]["content"] + "\n\n" + suffix}
+        else:
+            msgs.insert(0, {"role": "system", "content": suffix})
+        return msgs

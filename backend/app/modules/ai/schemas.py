@@ -30,9 +30,14 @@ class ToolCallOut(BaseModel):
 
 class SourceOut(BaseModel):
     type: str
+    id: str | None = None
     provider: str | None = None
+    source_url: str | None = None
     observed_at: str | None = None
+    retrieved_at: str | None = None
     quality_score: float | None = None
+    catalog_item_id: str | None = None
+    model_type: str | None = None
 
 
 class ChatResponse(BaseModel):

@@ -26,7 +26,7 @@
 | Investments | Completa | `backend/app/modules/investments` |
 | Goals | Completa | `backend/app/modules/goals` |
 | Market Intelligence | Completa / evolucionando | `backend/app/modules/market_intelligence` |
-| Local AI Assistant | Pendiente | `backend/app/modules/ai`, `backend/app/modules/rag` |
+| Local AI Assistant | Completa / estabilizada | `backend/app/modules/ai`, `apps/desktop/src/features/assistant` |
 | Insights Engine | Pendiente | `backend/app/modules/insights` |
 | Packaging | Pendiente | Tauri build/release |
 
@@ -58,6 +58,20 @@ Incluye:
 - Tools financieras y de Market Intelligence.
 - Respuestas con datos usados y periodo de referencia.
 - Sin SQL libre generado por el modelo contra datos personales.
+
+### Fase 6.1 - AI Assistant Stabilization
+
+Objetivo: estabilizar el asistente local antes de Fase 7.
+
+Incluye:
+
+- Tools de IA migradas a `market_intelligence`, `financial_knowledge` y servicios controlados de finanzas personales.
+- Eliminacion de dependencias legacy `economic_data` y `market_data` dentro de `backend/app/modules/ai/tools`.
+- Envelope homogeneo de tools: `ok`, `tool`, `data`, `sources`, `quality_score`, `warnings` y `error` cuando aplique.
+- Propagacion de `sources` y `quality_score` a conversacion, tool trace y respuesta API.
+- Estado claro cuando Ollama o LM Studio estan offline.
+- Parser manual robusto para JSON limpio, JSON en markdown, `tool_call` embebido y texto normal.
+- Router de intencion simple para precargar tools relevantes: `personal_finance`, `portfolio`, `market`, `macro`, `financial_knowledge`, `goal` y `general`.
 
 ### Fase 7 - Insights Engine
 

@@ -81,6 +81,37 @@ API endpoints bajo `/api/market-intelligence/`:
 | `GET /ingest-status` | Estado de la ingesta automática de arranque |
 | `GET /ai-datasheet` | Datasheet compacto para IA local |
 
+## Local AI Assistant
+
+La Fase 6 esta implementada y la Fase 6.1 estabiliza el asistente antes de Fase 7.
+La IA local usa Ollama o LM Studio, no consulta Internet y no ejecuta SQL libre.
+
+Las tools del asistente consumen solamente:
+
+- `market_intelligence` para macro, mercados, forex, bonos y calidad de proveedores.
+- `financial_knowledge` para regimen de mercado, senales, impacto personal y AI datasheet.
+- Servicios controlados de finanzas personales para patrimonio, ahorro, gastos y objetivos.
+
+Endpoints principales:
+
+| Endpoint | Descripcion |
+|---|---|
+| `GET /api/ai/status` | Estado de IA, provider por defecto y healthchecks |
+| `GET /api/ai/providers` | Providers locales disponibles |
+| `GET /api/ai/tools` | Tools registradas |
+| `POST /api/ai/chat` | Chat con tool-calling |
+| `GET /api/ai/conversations` | Conversaciones |
+
+Para probar Ollama:
+
+```powershell
+ollama serve
+ollama pull qwen3-coder:30b
+```
+
+Para probar LM Studio, inicia el servidor OpenAI-compatible y configura `LMSTUDIO_BASE_URL`.
+Las respuestas del chat conservan `tool_calls`, `sources` y `quality_score`; el frontend puede abrir "Ver datos usados".
+
 ## Documentación
 
 Ver `docs/` para arquitectura, modelo de datos, contrato API y roadmap.

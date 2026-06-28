@@ -192,3 +192,36 @@ La UI puede mostrarlo como “Datos usados”.
 
 - RAG documental.
 - Preguntas sobre PDFs.
+
+## Fase 6.1 - Estabilizacion
+
+La IA local no consulta Internet, no accede directamente a SQLite y no ejecuta SQL libre.
+Las tools consumen solo capas vigentes:
+
+- Market Intelligence: `get_market_snapshot`, `get_macro_snapshot`, `get_forex_snapshot`, `get_bond_snapshot`, `get_provider_quality`.
+- Financial Knowledge: `get_market_regime`, `get_financial_signals`, `get_personal_impact_summary`, `get_ai_datasheet`.
+- Finanzas personales: `get_net_worth`, `get_monthly_summary`, `get_spending_by_category`, `compare_periods`, `get_savings_rate`, `get_goal_progress`.
+
+No se permite que `backend/app/modules/ai/tools` dependa de `economic_data` ni `market_data` legacy.
+
+Todas las tools devuelven:
+
+```json
+{
+  "ok": true,
+  "tool": "get_macro_snapshot",
+  "data": {},
+  "sources": [],
+  "quality_score": 0.94,
+  "warnings": []
+}
+```
+
+En error, `ok=false`, `data=null`, `quality_score=0` y `error` contiene el detalle tecnico.
+La respuesta del chat conserva `tool_calls`, `sources` y `quality_score`; el frontend puede mostrarlo como "Ver datos usados".
+
+Pruebas locales:
+
+- Ollama: iniciar `ollama serve`, descargar el modelo configurado y consultar `GET /api/ai/status`.
+- LM Studio: arrancar el servidor OpenAI-compatible y consultar `GET /api/ai/providers`.
+- Chat: usar `POST /api/ai/chat` con preguntas macro, mercado, finanzas personales y "Que datos has usado?".

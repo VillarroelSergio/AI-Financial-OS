@@ -11,6 +11,7 @@ from app.models.account import Account
 from app.models.category import Category
 from app.models.goal import Goal
 from app.models.transaction import Transaction
+from app.modules.ai.tools.envelope import fail, ok, source, utc_now
 from app.modules.ai.tools.registry import ToolDefinition, tool_registry
 
 
@@ -19,32 +20,34 @@ def _now_month() -> str:
 
 
 async def _get_net_worth(db: Session, **_: Any) -> dict[str, Any]:
-    accounts = db.query(Account).filter(Account.is_active == True).all()  # noqa: E712
-    net_worth = sum(float(a.current_balance) for a in accounts)
-    by_type: dict[str, float] = {}
-    for a in accounts:
-        by_type[a.type] = by_type.get(a.type, 0.0) + float(a.current_balance)
-    return {
-        "net_worth": round(net_worth, 2),
-        "currency": "EUR",
-        "by_type": by_type,
-        "accounts_count": len(accounts),
-        "observed_at": datetime.now(timezone.utc).isoformat(),
-        "quality_score": 1.0,
-        "sources": [{"type": "personal_accounts", "provider": "local_db"}],
-    }
+    try:
+        accounts = db.query(Account).filter(Account.is_active == True).all()  # noqa: E712
+        net_worth = sum(float(a.current_balance) for a in accounts)
+        by_type: dict[str, float] = {}
+        for a in accounts:
+            by_type[a.type] = by_type.get(a.type, 0.0) + float(a.current_balance)
+        data = {
+            "net_worth": round(net_worth, 2),
+            "currency": "EUR",
+            "by_type": by_type,
+            "accounts_count": len(accounts),
+            "observed_at": utc_now(),
+        }
+        return ok("get_net_worth", data, sources=[source(source_type="personal_accounts", provider="local_db", quality_score=1.0)])
+    except Exception as exc:
+        return fail("get_net_worth", "net worth not available", str(exc))
 
 
 async def _get_monthly_summary(db: Session, month: str | None = None, **_: Any) -> dict[str, Any]:
     month = month or _now_month()
     if len(month) != 7 or "-" not in month:
-        return {"error": "month must be YYYY-MM", "status": "error"}
+        return fail("get_monthly_summary", "month must be YYYY-MM")
     txs = db.query(Transaction).filter(Transaction.date.like(f"{month}%")).all()
     income = sum(float(t.amount) for t in txs if t.type == "income")
     expense = abs(sum(float(t.amount) for t in txs if t.type == "expense"))
     savings = income - expense
     savings_rate = round(savings / income, 3) if income > 0 else 0.0
-    return {
+    data = {
         "month": month,
         "income": round(income, 2),
         "expense": round(expense, 2),
@@ -52,15 +55,14 @@ async def _get_monthly_summary(db: Session, month: str | None = None, **_: Any) 
         "savings_rate": savings_rate,
         "transaction_count": len(txs),
         "currency": "EUR",
-        "quality_score": 1.0,
-        "sources": [{"type": "transactions", "provider": "local_db", "period": month}],
     }
+    return ok("get_monthly_summary", data, sources=[source(source_type="transactions", provider="local_db", observed_at=month, quality_score=1.0)])
 
 
 async def _get_spending_by_category(db: Session, month: str | None = None, **_: Any) -> dict[str, Any]:
     month = month or _now_month()
     if len(month) != 7 or "-" not in month:
-        return {"error": "month must be YYYY-MM", "status": "error"}
+        return fail("get_spending_by_category", "month must be YYYY-MM")
     txs = db.query(Transaction).filter(
         Transaction.date.like(f"{month}%"), Transaction.type == "expense"
     ).all()
@@ -70,14 +72,13 @@ async def _get_spending_by_category(db: Session, month: str | None = None, **_: 
         cat_name = categories.get(t.category_id or "", "Sin categoría")
         by_cat[cat_name] = by_cat.get(cat_name, 0.0) + abs(float(t.amount))
     sorted_cats = sorted(by_cat.items(), key=lambda x: x[1], reverse=True)
-    return {
+    data = {
         "month": month,
         "categories": [{"name": k, "amount": round(v, 2)} for k, v in sorted_cats],
         "total": round(sum(by_cat.values()), 2),
         "currency": "EUR",
-        "quality_score": 1.0,
-        "sources": [{"type": "transactions", "provider": "local_db", "period": month}],
     }
+    return ok("get_spending_by_category", data, sources=[source(source_type="transactions", provider="local_db", observed_at=month, quality_score=1.0)])
 
 
 async def _compare_periods(
@@ -100,38 +101,38 @@ async def _compare_periods(
 
     a = await _summary(month_a)
     b = await _summary(month_b)
-    if "error" in a or "error" in b:
-        return {"error": "Invalid months", "status": "error"}
+    if not a.get("ok") or not b.get("ok"):
+        return fail("compare_periods", "Invalid months")
+    a_data = a["data"]
+    b_data = b["data"]
 
-    return {
-        "period_a": a,
-        "period_b": b,
-        "delta_income": round(float(a["income"]) - float(b["income"]), 2),
-        "delta_expense": round(float(a["expense"]) - float(b["expense"]), 2),
-        "delta_savings": round(float(a["savings"]) - float(b["savings"]), 2),
-        "quality_score": 1.0,
-        "sources": [{"type": "transactions", "provider": "local_db"}],
+    data = {
+        "period_a": a_data,
+        "period_b": b_data,
+        "delta_income": round(float(a_data["income"]) - float(b_data["income"]), 2),
+        "delta_expense": round(float(a_data["expense"]) - float(b_data["expense"]), 2),
+        "delta_savings": round(float(a_data["savings"]) - float(b_data["savings"]), 2),
     }
+    return ok("compare_periods", data, sources=(a.get("sources") or []) + (b.get("sources") or []), quality_score=1.0)
 
 
 async def _get_savings_rate(db: Session, month: str | None = None, **_: Any) -> dict[str, Any]:
     summary = await _get_monthly_summary(db=db, month=month)
-    if "error" in summary:
+    if not summary.get("ok"):
         return summary
-    return {
-        "month": summary["month"],
-        "savings_rate": summary["savings_rate"],
-        "savings": summary["savings"],
-        "income": summary["income"],
-        "quality_score": 1.0,
-        "sources": summary["sources"],
-    }
+    data = summary["data"]
+    return ok("get_savings_rate", {
+        "month": data["month"],
+        "savings_rate": data["savings_rate"],
+        "savings": data["savings"],
+        "income": data["income"],
+    }, sources=summary.get("sources") or [], quality_score=summary.get("quality_score"))
 
 
 async def _get_goal_progress(db: Session, **_: Any) -> dict[str, Any]:
     goals = db.query(Goal).all()
     if not goals:
-        return {"status": "not_available", "message": "No goals configured", "goals": []}
+        return ok("get_goal_progress", {"goals": [], "message": "No goals configured"}, warnings=["No goals configured"])
     result = []
     for g in goals:
         target = float(g.target_amount)
@@ -143,14 +144,13 @@ async def _get_goal_progress(db: Session, **_: Any) -> dict[str, Any]:
             "target_amount": target,
             "current_amount": current,
             "progress": progress,
-            "currency": g.currency or "EUR",
-            "deadline": str(g.deadline) if g.deadline else None,
+            "currency": "EUR",
+            "target_date": str(g.target_date) if g.target_date else None,
+            "monthly_contribution": float(g.monthly_contribution) if g.monthly_contribution else None,
+            "priority": g.priority,
+            "status": g.status,
         })
-    return {
-        "goals": result,
-        "quality_score": 1.0,
-        "sources": [{"type": "goals", "provider": "local_db"}],
-    }
+    return ok("get_goal_progress", {"goals": result}, sources=[source(source_type="goals", provider="local_db", quality_score=1.0)])
 
 
 # ── Registration ──────────────────────────────────────────────────────────────

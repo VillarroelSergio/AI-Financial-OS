@@ -1,6 +1,8 @@
 """Pydantic output schemas para la Market Intelligence API."""
 from __future__ import annotations
+
 from typing import Optional
+
 from pydantic import BaseModel
 
 
@@ -37,7 +39,7 @@ class QuoteOut(BaseModel):
 class MarketSnapshotOut(BaseModel):
     indices: list[QuoteOut] = []
     crypto: list[QuoteOut] = []
-    commodities: list[dict] = []
+    commodities: list[QuoteOut] = []
     generated_at: str
     warnings: list[str] = []
 

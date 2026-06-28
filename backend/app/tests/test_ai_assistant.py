@@ -4,12 +4,10 @@ from __future__ import annotations
 import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 from fastapi.testclient import TestClient
 
-from app.modules.ai.providers.base import AIResponse, ProviderHealth, ToolCallResult
+from app.modules.ai.providers.base import AIResponse
 from app.modules.ai.tools.registry import ToolDefinition, ToolRegistry
-
 
 # ── Tool Registry ─────────────────────────────────────────────────────────────
 
@@ -66,14 +64,32 @@ class TestToolRegistry:
 
         registry.register(ToolDefinition("my_tool", "desc", {}, handler))
         result = asyncio.run(registry.execute("my_tool", {}))
-        assert result["value"] == 42
+        assert result["ok"] is True
+        assert result["tool"] == "my_tool"
+        assert result["data"]["value"] == 42
+        assert result["quality_score"] == 1.0
 
     def test_execute_unknown_tool(self):
         import asyncio
         registry = ToolRegistry()
         result = asyncio.run(registry.execute("nonexistent", {}))
+        assert result["ok"] is False
         assert "error" in result
-        assert result["status"] == "error"
+        assert result["quality_score"] == 0
+
+    def test_execute_exception_returns_envelope(self):
+        import asyncio
+        registry = ToolRegistry()
+
+        async def handler(db=None, **kwargs):
+            raise RuntimeError("boom")
+
+        registry.register(ToolDefinition("bad_tool", "desc", {}, handler))
+        result = asyncio.run(registry.execute("bad_tool", {}))
+        assert result["ok"] is False
+        assert result["tool"] == "bad_tool"
+        assert result["data"] is None
+        assert result["sources"] == []
 
 
 # ── Provider Health ───────────────────────────────────────────────────────────
@@ -81,6 +97,7 @@ class TestToolRegistry:
 class TestOllamaProvider:
     def test_health_offline(self):
         import asyncio
+
         from app.modules.ai.providers.ollama_provider import OllamaProvider
 
         provider = OllamaProvider("http://localhost:19999", "test-model")
@@ -90,6 +107,7 @@ class TestOllamaProvider:
 
     def test_list_models_offline(self):
         import asyncio
+
         from app.modules.ai.providers.ollama_provider import OllamaProvider
 
         provider = OllamaProvider("http://localhost:19999", "test-model")
@@ -98,6 +116,7 @@ class TestOllamaProvider:
 
     def test_chat_with_mock(self):
         import asyncio
+
         from app.modules.ai.providers.ollama_provider import OllamaProvider
 
         provider = OllamaProvider("http://localhost:11434", "test-model")
@@ -122,11 +141,34 @@ class TestOllamaProvider:
 class TestLMStudioProvider:
     def test_health_offline(self):
         import asyncio
+
         from app.modules.ai.providers.lmstudio_provider import LMStudioProvider
 
-        provider = LMStudioProvider("http://localhost:19999/v1", "test-model")
+        provider = LMStudioProvider("http://localhost:19999", "test-model")
         health = asyncio.run(provider.health())
         assert health.available is False
+
+    def test_bare_base_url_normalizes_to_v1(self):
+        from app.modules.ai.providers.lmstudio_provider import LMStudioProvider
+
+        provider = LMStudioProvider("http://127.0.0.1:1234", "test-model")
+        assert provider._base_url == "http://127.0.0.1:1234/v1"
+
+    def test_default_model_falls_back_to_loaded_model(self):
+        import asyncio
+
+        from app.modules.ai.providers.lmstudio_provider import LMStudioProvider
+
+        provider = LMStudioProvider("http://localhost:1234", "missing-model")
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.raise_for_status = MagicMock()
+        mock_response.json.return_value = {"data": [{"id": "qwen/qwen3.5-9b"}]}
+
+        with patch("httpx.AsyncClient.get", new_callable=AsyncMock, return_value=mock_response):
+            selected = asyncio.run(provider._model(None))
+
+        assert selected == "qwen/qwen3.5-9b"
 
 
 # ── Tool Call Parser ──────────────────────────────────────────────────────────
@@ -161,6 +203,79 @@ class TestToolCallParser:
 
         result = _parse_tool_call("This is a plain text response.")
         assert result is None
+
+    def test_lmstudio_manual_tool_call_parser(self):
+        import asyncio
+
+        from app.modules.ai.providers.lmstudio_provider import LMStudioProvider
+
+        provider = LMStudioProvider("http://localhost:1234", "test-model")
+        models_response = MagicMock()
+        models_response.raise_for_status = MagicMock()
+        models_response.json.return_value = {"data": [{"id": "test-model"}]}
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.raise_for_status = MagicMock()
+        mock_response.json.return_value = {
+            "choices": [{
+                "message": {
+                    "content": '```json\n{"tool_call": {"name": "get_macro_snapshot", "arguments": {}}}\n```',
+                },
+                "finish_reason": "stop",
+            }],
+            "usage": {"prompt_tokens": 5, "completion_tokens": 6},
+        }
+
+        with (
+            patch("httpx.AsyncClient.get", new_callable=AsyncMock, return_value=models_response),
+            patch("httpx.AsyncClient.post", new_callable=AsyncMock, return_value=mock_response),
+        ):
+            response = asyncio.run(provider.chat(
+                messages=[{"role": "user", "content": "macro"}],
+                tools=[{"name": "get_macro_snapshot", "description": "macro", "input_schema": {"type": "object", "properties": {}}}],
+            ))
+
+        assert response.tool_calls[0].name == "get_macro_snapshot"
+        assert response.content is None
+
+
+class TestAiToolsContracts:
+    def test_no_legacy_imports_in_ai_tools(self):
+        from pathlib import Path
+
+        tools_dir = Path(__file__).resolve().parents[1] / "modules" / "ai" / "tools"
+        source = "\n".join(path.read_text(encoding="utf-8") for path in tools_dir.glob("*.py"))
+        assert "app.modules.economic_data" not in source
+        assert "app.modules.investments.market_data" not in source
+
+    def test_market_tools_registered_with_current_layers(self):
+        import app.modules.ai.tools.knowledge_tools  # noqa: F401
+        import app.modules.ai.tools.market_tools  # noqa: F401
+        from app.modules.ai.tools.registry import tool_registry
+
+        by_name = {tool.name: tool for tool in tool_registry.list_all()}
+        assert by_name["get_macro_snapshot"].source_type == "market_intelligence"
+        assert by_name["get_market_snapshot"].source_type == "market_intelligence"
+        assert by_name["get_forex_snapshot"].source_type == "market_intelligence"
+        assert by_name["get_bond_snapshot"].source_type == "market_intelligence"
+        assert by_name["get_provider_quality"].source_type == "market_intelligence"
+        assert by_name["get_market_regime"].source_type == "financial_knowledge"
+        assert by_name["get_ai_datasheet"].source_type == "financial_knowledge"
+
+    def test_envelope_helper_shape(self):
+        from app.modules.ai.tools.envelope import ok, source
+
+        result = ok(
+            "get_macro_snapshot",
+            {"value": 1},
+            sources=[source(source_type="market_indicator", provider="FRED", quality_score=0.94)],
+        )
+        assert result["ok"] is True
+        assert result["tool"] == "get_macro_snapshot"
+        assert result["data"] == {"value": 1}
+        assert result["sources"][0]["provider"] == "FRED"
+        assert result["quality_score"] == 0.94
+        assert result["warnings"] == []
 
 
 # ── Conversation Repository ───────────────────────────────────────────────────

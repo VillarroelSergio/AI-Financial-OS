@@ -3,13 +3,16 @@
 Adaptado de market-data-poc/services/orchestrator.py.
 """
 from __future__ import annotations
+
+import inspect
 import logging
 from dataclasses import dataclass
 
 from app.modules.market_intelligence.catalog.schemas import CatalogIndicator
 from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter
 from app.modules.market_intelligence.ingestion.models import (
-    AdapterResult, ProviderMetadata,
+    AdapterResult,
+    ProviderMetadata,
 )
 
 logger = logging.getLogger("market_intelligence.orchestrator")
@@ -59,7 +62,8 @@ class ProviderOrchestrator:
                 logger.debug("Provider '%s' does not support indicator '%s'", provider_id, indicator.id)
                 continue
             try:
-                result = adapter.fetch(indicator.id)
+                signature = inspect.signature(adapter.fetch)
+                result = adapter.fetch(indicator.id) if signature.parameters else adapter.fetch()
             except Exception as exc:
                 logger.warning("Adapter '%s' raised exception: %s", provider_id, exc)
                 continue

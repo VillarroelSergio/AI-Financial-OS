@@ -231,3 +231,15 @@ Usuario pregunta
 - Cloud obligatorio.
 - Cálculos financieros críticos hechos solo por el LLM.
 - SQL generado libremente por el modelo contra datos personales.
+
+## AI Assistant Stabilization
+
+La Fase 6.1 deja el asistente local conectado solo a capas vigentes:
+
+- `backend/app/modules/market_intelligence` para snapshots macro, mercado, forex, bonos y calidad de providers.
+- `backend/app/modules/financial_knowledge` para regimen de mercado, senales financieras, impacto personal y AI datasheet.
+- Servicios controlados de finanzas personales para patrimonio, resumen mensual, categorias, comparativas, tasa de ahorro y objetivos.
+
+El modulo `backend/app/modules/ai/tools` no debe importar `economic_data` ni `investments.market_data`.
+El modelo local recibe resultados estructurados, no acceso SQL ni nombres de tabla como input.
+Cada tool devuelve `sources` y `quality_score`; la UI puede mostrarlos como "Ver datos usados".

@@ -3,14 +3,18 @@
 Adaptado de market-data-poc/adapters/base.py con imports actualizados.
 """
 from __future__ import annotations
+
+import time
 from abc import ABC, abstractmethod
 from datetime import datetime
-import time
 
-from app.modules.market_intelligence.ingestion.models import (
-    AdapterResult, ProviderHealth, ProviderMetadata, ProviderStatus,
-)
 from app.modules.market_intelligence.ingestion.config import get_api_key
+from app.modules.market_intelligence.ingestion.models import (
+    AdapterResult,
+    ProviderHealth,
+    ProviderMetadata,
+    ProviderStatus,
+)
 
 
 class BaseAdapter(ABC):
@@ -34,6 +38,8 @@ class BaseAdapter(ABC):
         return True
 
     def supports(self, indicator_id: str) -> bool:
+        if not self.supported_indicators:
+            return True
         return indicator_id in self.supported_indicators
 
     def _make_metadata(self, **kwargs) -> ProviderMetadata:

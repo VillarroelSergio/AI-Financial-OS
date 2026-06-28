@@ -1,3 +1,4 @@
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -6,6 +7,7 @@ class Settings(BaseSettings):
         env_file=".env",
         env_file_encoding="utf-8",
         case_sensitive=False,
+        extra="ignore",
     )
 
     APP_ENV: str = "development"
@@ -15,9 +17,15 @@ class Settings(BaseSettings):
     # ── AI Assistant ──────────────────────────────────────────────────────────
     AI_ASSISTANT_ENABLED: bool = True
     AI_DEFAULT_PROVIDER: str = "ollama"
-    AI_DEFAULT_MODEL: str = "qwen3-coder:30b"
+    AI_DEFAULT_MODEL: str = Field(
+        default="google/gemma-4-e4b",
+        validation_alias=AliasChoices("AI_DEFAULT_MODEL", "DEFAULT_AI_MODEL"),
+    )
     OLLAMA_BASE_URL: str = "http://localhost:11434"
-    LMSTUDIO_BASE_URL: str = "http://localhost:1234/v1"
+    LMSTUDIO_BASE_URL: str = Field(
+        default="http://127.0.0.1:1234",
+        validation_alias=AliasChoices("LMSTUDIO_BASE_URL", "LM_STUDIO_BASE_URL"),
+    )
     AI_REMOTE_PROVIDERS_ENABLED: bool = False
     AI_MAX_CONTEXT_TOKENS: int = 32768
     AI_MAX_OUTPUT_TOKENS: int = 4096

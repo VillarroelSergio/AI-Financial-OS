@@ -1,7 +1,8 @@
 # backend/app/modules/market_intelligence/api/impact.py
 """Cómputo de los 11 comparativos de impacto personal — 100% determinista, sin LLM."""
 from __future__ import annotations
-from datetime import date, timedelta, timezone, datetime
+
+from datetime import date, datetime, timedelta, timezone
 
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
@@ -12,7 +13,6 @@ from app.models.category import Category
 from app.models.investment import Holding
 from app.models.transaction import Transaction
 from app.modules.market_intelligence.api.schemas import ImpactComparative, PersonalImpactOut
-
 
 # ──────────────────────────────────────────────────────────────
 # Signal helper
@@ -130,13 +130,16 @@ def _get_personal_data(db: Session) -> dict:
 # ──────────────────────────────────────────────────────────────
 
 def _get_mi_data() -> dict:
+    from app.modules.market_intelligence.storage import repository as mi_repo
+
+    mi_repo.ensure_baseline_market_data()
     duck = get_duckdb()
 
-    def _scalar(table: str, val_col: str, cid: str) -> float | None:
+    def _scalar(table: str, val_col: str, cid: str, order_col: str) -> float | None:
         try:
             row = duck.execute(
                 f"SELECT {val_col} FROM {table} WHERE catalog_item_id = ? "
-                f"ORDER BY ingested_at DESC LIMIT 1",
+                f"ORDER BY {order_col} DESC LIMIT 1",
                 [cid],
             ).fetchone()
             return float(row[0]) if row and row[0] is not None else None
@@ -144,27 +147,28 @@ def _get_mi_data() -> dict:
             return None
 
     def _quote(cid: str) -> float | None:
-        return _scalar("mi_quotes", "change_pct", cid)
+        return _scalar("mi_market_quotes", "change_pct", cid, "observed_at")
 
     index_changes = [_quote(cid) for cid in ("sp500", "ibex35", "eurostoxx50") ]
     valid = [v for v in index_changes if v is not None]
     index_avg = sum(valid) / len(valid) if valid else None
 
-    bono_spain = _scalar("mi_bonds", "yield_value", "bono_spain_10y")
-    bund = _scalar("mi_bonds", "yield_value", "bund_10y")
+    bono_spain = _scalar("mi_bond_yields", "yield_value", "spain_10y", "date")
+    bund = _scalar("mi_bond_yields", "yield_value", "germany_10y", "date")
     spread = (bono_spain - bund) * 100 if bono_spain is not None and bund is not None else None
 
     return {
-        "ipc_general": _scalar("mi_macro", "value", "ipc_general"),
-        "tipo_bce": _scalar("mi_macro", "value", "tipo_bce"),
-        "euribor_12m": _scalar("mi_macro", "value", "euribor_12m"),
-        "eur_usd": _scalar("mi_forex", "rate", "eur_usd"),
-        "brent_crude": _scalar("mi_quotes", "price", "brent_crude"),
+        "ipc_general": _scalar("mi_macro_observations", "value", "ipc_general", "retrieved_at"),
+        "tipo_bce": _scalar("mi_macro_observations", "value", "tipo_bce", "retrieved_at"),
+        "euribor_12m": _scalar("mi_macro_observations", "value", "euribor_12m", "retrieved_at"),
+        "eur_usd": _scalar("mi_currency_rates", "rate", "eur_usd", "date"),
+        "brent_crude": _scalar("mi_commodities", "price", "brent", "observed_at")
+        or _scalar("mi_market_quotes", "price", "brent", "observed_at"),
         "bono_spain_10y": bono_spain,
         "bund_10y": bund,
         "risk_premium_bps": spread,
-        "ipc_subyacente": _scalar("mi_macro", "value", "ipc_subyacente"),
-        "confianza_consumidor_spain": _scalar("mi_macro", "value", "confianza_consumidor_spain"),
+        "ipc_subyacente": _scalar("mi_macro_observations", "value", "ipc_subyacente", "retrieved_at"),
+        "confianza_consumidor_spain": _scalar("mi_macro_observations", "value", "confianza_consumidor_spain", "retrieved_at"),
         "index_avg_change_pct": index_avg,
     }
 
@@ -311,7 +315,7 @@ def _build_comparatives(personal: dict, mi: dict) -> list[ImpactComparative]:
         personal_label="Indicador macro",
         signal=signal8,
         signal_text="Prima de riesgo controlada" if signal8 == "positive" else "Prima de riesgo elevada",
-        source_ids=["bono_spain_10y", "bund_10y"],
+        source_ids=["spain_10y", "germany_10y"],
     ))
 
     # 9. Rentabilidad real de la cartera

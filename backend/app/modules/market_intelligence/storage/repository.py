@@ -1,16 +1,22 @@
 """Repository DuckDB para el Market Intelligence Layer."""
 from __future__ import annotations
+
 import hashlib
 import json
 import logging
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import Optional
 
 from app.core.duckdb import get_duckdb
 from app.modules.market_intelligence.ingestion.models import (
-    MacroIndicator, CurrencyRate, BondYield, MarketQuote,
-    HistoricalPrice, Commodity, NewsItem,
+    BondYield,
+    Commodity,
+    CurrencyRate,
+    HistoricalPrice,
+    MacroIndicator,
+    MarketQuote,
+    NewsItem,
 )
 from app.modules.market_intelligence.ingestion.orchestrator import CatalogFetchResult
 from app.modules.market_intelligence.quality.schemas import QualityResult
@@ -40,6 +46,224 @@ def _uid() -> str:
 
 def _checksum(payload: str) -> str:
     return hashlib.md5(payload.encode()).hexdigest()
+
+
+def _table_count(conn, table: str) -> int:
+    try:
+        return int(conn.execute(f"SELECT count(*) FROM {table}").fetchone()[0])
+    except Exception:
+        return 0
+
+
+def _has_catalog_item(conn, table: str, catalog_item_id: str) -> bool:
+    try:
+        row = conn.execute(
+            f"SELECT 1 FROM {table} WHERE catalog_item_id = ? LIMIT 1",
+            [catalog_item_id],
+        ).fetchone()
+        return row is not None
+    except Exception:
+        return False
+
+
+def _has_valid_symbol_item(conn, table: str, catalog_item_id: str) -> bool:
+    try:
+        rows = conn.execute(
+            f"SELECT catalog_item_id, symbol FROM {table} WHERE catalog_item_id = ?",
+            [catalog_item_id],
+        ).fetchall()
+        return any(_valid_quote_row({"catalog_item_id": row[0], "symbol": row[1]}) for row in rows)
+    except Exception:
+        return False
+
+
+_EXPECTED_SYMBOLS = {
+    "sp500": {"^GSPC", "^SPX", "SPX", "GSPC"},
+    "nasdaq": {"^IXIC", "^NDX", "IXIC", "NDX"},
+    "nasdaq100": {"^NDX", "NDX"},
+    "ibex35": {"^IBEX", "IBEX"},
+    "eurostoxx50": {"^STOXX50E", "STOXX50E", "SX5E"},
+    "dax": {"^GDAXI", "GDAXI", "DAX"},
+    "nikkei225": {"^N225", "N225"},
+    "bitcoin": {"BTC", "BTC-USD"},
+    "ethereum": {"ETH", "ETH-USD"},
+    "solana": {"SOL", "SOL-USD"},
+    "xrp": {"XRP", "XRP-USD"},
+    "gold": {"XAU", "GC=F", "GOLD"},
+    "brent": {"BZ", "BZ=F", "BRENT"},
+    "wti": {"CL", "CL=F", "WTI"},
+}
+
+_FX_PAIRS = {
+    "eur_usd": ("EUR", "USD"),
+    "eur_gbp": ("EUR", "GBP"),
+    "eur_jpy": ("EUR", "JPY"),
+    "eur_chf": ("EUR", "CHF"),
+    "eur_cad": ("EUR", "CAD"),
+    "eur_aud": ("EUR", "AUD"),
+    "usd_jpy": ("USD", "JPY"),
+    "gbp_usd": ("GBP", "USD"),
+}
+
+_BOND_MATCH = {
+    "us_2y": ("US", "2Y"),
+    "us_5y": ("US", "5Y"),
+    "us_10y": ("US", "10Y"),
+    "us_30y": ("US", "30Y"),
+    "germany_10y": ("DE", "10Y"),
+    "spain_10y": ("ES", "10Y"),
+}
+
+
+def _symbol(value: str | None) -> str:
+    return (value or "").upper().strip()
+
+
+def _record_matches_catalog(catalog_item_id: str, record: object) -> bool:
+    if isinstance(record, MarketQuote | HistoricalPrice | Commodity):
+        expected = _EXPECTED_SYMBOLS.get(catalog_item_id)
+        if expected is None:
+            return True
+        symbol = _symbol(getattr(record, "symbol", None))
+        name = _symbol(getattr(record, "name", None))
+        return symbol in expected or any(token in name for token in expected)
+
+    if isinstance(record, CurrencyRate):
+        expected_pair = _FX_PAIRS.get(catalog_item_id)
+        if expected_pair is None:
+            return True
+        return (record.base_currency, record.quote_currency) == expected_pair
+
+    if isinstance(record, BondYield):
+        expected_bond = _BOND_MATCH.get(catalog_item_id)
+        if expected_bond is None:
+            return True
+        country, maturity = expected_bond
+        return record.country == country and record.maturity == maturity
+
+    return True
+
+
+def _valid_quote_row(row: dict) -> bool:
+    expected = _EXPECTED_SYMBOLS.get(row.get("catalog_item_id", ""))
+    if expected is None:
+        return True
+    return _symbol(row.get("symbol")) in expected
+
+
+def ensure_baseline_market_data() -> bool:
+    """Seed minimal dashboard data when ingestion has not produced any rows yet."""
+    conn = _conn()
+
+    now = _now()
+    today = date.today()
+    period = today.strftime("%Y-%m")
+    provider = "baseline_seed"
+    quality = 0.45
+    inserted = False
+
+    macro_rows = [
+        ("ipc_general", "inflation", "ES", period, 3.2, "%"),
+        ("ipc_subyacente", "inflation_core", "ES", period, 2.9, "%"),
+        ("tipo_bce", "policy_rate", "EA", period, 4.0, "%"),
+        ("euribor_12m", "euribor", "ES", today.isoformat(), 3.7, "%"),
+        ("inflation_eurozone", "hicp", "EA", period, 2.6, "%"),
+        ("desempleo_spain", "unemployment", "ES", period, 11.8, "%"),
+        ("confianza_consumidor_spain", "consumer_confidence", "ES", period, 86.0, "index"),
+    ]
+    for catalog_item_id, indicator_id, country, obs_period, value, unit in macro_rows:
+        if not _has_catalog_item(conn, "mi_macro_observations", catalog_item_id):
+            conn.execute(
+                """
+                INSERT INTO mi_macro_observations
+                    (id, catalog_item_id, indicator_id, country, period, frequency,
+                     value, unit, provider_id, quality_score, source_url, retrieved_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                [_uid(), catalog_item_id, indicator_id, country, obs_period, "monthly",
+                 value, unit, provider, quality, "internal://baseline-market-data", now],
+            )
+            inserted = True
+
+    quote_rows = [
+        ("sp500", "^GSPC", "index", 5450.0, 0.0, "USD"),
+        ("nasdaq", "^IXIC", "index", 17800.0, 0.0, "USD"),
+        ("ibex35", "^IBEX", "index", 11200.0, 0.0, "EUR"),
+        ("eurostoxx50", "^STOXX50E", "index", 4950.0, 0.0, "EUR"),
+        ("bitcoin", "BTC", "crypto", 62000.0, 0.0, "USD"),
+        ("ethereum", "ETH", "crypto", 3400.0, 0.0, "USD"),
+    ]
+    for catalog_item_id, symbol, asset_type, price, change_pct, currency in quote_rows:
+        if not _has_valid_symbol_item(conn, "mi_market_quotes", catalog_item_id):
+            conn.execute(
+                """
+                INSERT INTO mi_market_quotes
+                    (id, catalog_item_id, symbol, asset_type, price, change_pct, currency,
+                     market_status, observed_at, provider_id, quality_score)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                [_uid(), catalog_item_id, symbol, asset_type, price, change_pct, currency,
+                 "baseline", now, provider, quality],
+            )
+            inserted = True
+
+    fx_rows = [
+        ("eur_usd", "EUR", "USD", 1.08),
+        ("eur_gbp", "EUR", "GBP", 0.85),
+        ("eur_jpy", "EUR", "JPY", 170.0),
+    ]
+    for catalog_item_id, base, quote, rate in fx_rows:
+        if not _has_catalog_item(conn, "mi_currency_rates", catalog_item_id):
+            conn.execute(
+                """
+                INSERT INTO mi_currency_rates
+                    (id, catalog_item_id, base_currency, quote_currency, rate, date, provider_id, quality_score)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                [_uid(), catalog_item_id, base, quote, rate, today, provider, quality],
+            )
+            inserted = True
+
+    bond_rows = [
+        ("us_2y", "US", "2Y", 4.7, "USD", "US Treasury"),
+        ("us_5y", "US", "5Y", 4.3, "USD", "US Treasury"),
+        ("us_10y", "US", "10Y", 4.2, "USD", "US Treasury"),
+        ("us_30y", "US", "30Y", 4.4, "USD", "US Treasury"),
+        ("germany_10y", "DE", "10Y", 2.5, "EUR", "Bund"),
+        ("spain_10y", "ES", "10Y", 3.2, "EUR", "Tesoro"),
+    ]
+    for catalog_item_id, country, maturity, value, currency, issuer in bond_rows:
+        if not _has_catalog_item(conn, "mi_bond_yields", catalog_item_id):
+            conn.execute(
+                """
+                INSERT INTO mi_bond_yields
+                    (id, catalog_item_id, country, maturity, yield_value, date, currency,
+                     issuer, instrument_type, provider_id, quality_score)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                [_uid(), catalog_item_id, country, maturity, value, today, currency,
+                 issuer, "government_bond", provider, quality],
+            )
+            inserted = True
+
+    commodity_rows = [
+        ("gold", "XAU", "Oro", 2320.0, "USD/oz", "USD"),
+        ("brent", "BZ", "Brent Crude Oil", 84.0, "USD/bbl", "USD"),
+        ("wti", "CL", "WTI Crude Oil", 80.0, "USD/bbl", "USD"),
+    ]
+    for catalog_item_id, symbol, name, price, unit, currency in commodity_rows:
+        if not _has_valid_symbol_item(conn, "mi_commodities", catalog_item_id):
+            conn.execute(
+                """
+                INSERT INTO mi_commodities
+                    (id, catalog_item_id, symbol, name, price, unit, currency, observed_at, provider_id, quality_score)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                [_uid(), catalog_item_id, symbol, name, price, unit, currency, now, provider, quality],
+            )
+            inserted = True
+
+    return inserted
 
 
 # ── Persist fetch result ──────────────────────────────────────────────────────
@@ -74,7 +298,11 @@ def persist_fetch_result(
         )
 
     # Normalized records por tipo de modelo
-    for record in result.adapter_result.records:
+    matching_records = [record for record in result.adapter_result.records if _record_matches_catalog(catalog_item_id, record)]
+    if result.adapter_result.records and not matching_records:
+        logger.info("No matching records for catalog_item_id=%s provider=%s", catalog_item_id, provider_id)
+
+    for record in matching_records:
         _persist_normalized(conn, catalog_item_id, provider_id, record, quality, now)
 
     # Health log
@@ -315,7 +543,38 @@ def get_latest_quotes() -> list[dict]:
     """).fetchall()
     cols = ["catalog_item_id", "symbol", "asset_type", "price", "change_pct",
             "currency", "observed_at", "provider_id", "quality_score"]
-    return [dict(zip(cols, r)) for r in rows]
+    return [row for row in (dict(zip(cols, r)) for r in rows) if _valid_quote_row(row)]
+
+
+def get_latest_historical_as_quotes() -> list[dict]:
+    conn = _conn()
+    rows = conn.execute("""
+        WITH ranked AS (
+            SELECT catalog_item_id, symbol, close, date, currency, provider_id, quality_score,
+                   ROW_NUMBER() OVER (PARTITION BY catalog_item_id ORDER BY date DESC) AS rn
+            FROM mi_historical_prices
+        )
+        SELECT catalog_item_id, symbol, 'index' AS asset_type, close AS price,
+               NULL AS change_pct, currency, date AS observed_at, provider_id, quality_score
+        FROM ranked
+        WHERE rn = 1
+    """).fetchall()
+    cols = ["catalog_item_id", "symbol", "asset_type", "price", "change_pct",
+            "currency", "observed_at", "provider_id", "quality_score"]
+    return [row for row in (dict(zip(cols, r)) for r in rows) if _valid_quote_row(row)]
+
+
+def get_latest_commodities() -> list[dict]:
+    conn = _conn()
+    rows = conn.execute("""
+        SELECT catalog_item_id, symbol, 'commodity' AS asset_type, price, NULL AS change_pct,
+               currency, observed_at, provider_id, quality_score
+        FROM mi_commodities
+        QUALIFY ROW_NUMBER() OVER (PARTITION BY catalog_item_id ORDER BY observed_at DESC) = 1
+    """).fetchall()
+    cols = ["catalog_item_id", "symbol", "asset_type", "price", "change_pct",
+            "currency", "observed_at", "provider_id", "quality_score"]
+    return [row for row in (dict(zip(cols, r)) for r in rows) if _valid_quote_row(row)]
 
 
 def get_latest_forex() -> list[dict]:

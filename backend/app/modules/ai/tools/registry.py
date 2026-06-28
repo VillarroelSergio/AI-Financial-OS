@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import Any, Callable, Awaitable
+from typing import Any, Awaitable, Callable
 
 logger = logging.getLogger(__name__)
 
@@ -50,13 +50,43 @@ class ToolRegistry:
     ) -> dict[str, Any]:
         tool = self.get(name)
         if tool is None:
-            return {"error": f"Unknown tool: {name}", "status": "error"}
+            return _error_envelope(name, f"Unknown tool: {name}")
         try:
             result = await tool.handler(db=db, **arguments)
-            return result
+            return _normalize_result(name, result)
         except Exception as exc:
             logger.exception("Tool %s failed: %s", name, exc)
-            return {"error": str(exc), "status": "error"}
+            return _error_envelope(name, str(exc))
 
 
 tool_registry = ToolRegistry()
+
+
+def _error_envelope(name: str, error: str) -> dict[str, Any]:
+    return {
+        "ok": False,
+        "tool": name,
+        "data": None,
+        "sources": [],
+        "quality_score": 0,
+        "warnings": [error],
+        "error": error,
+    }
+
+
+def _normalize_result(name: str, result: dict[str, Any]) -> dict[str, Any]:
+    if {"ok", "tool", "data", "sources", "quality_score", "warnings"}.issubset(result):
+        return result
+    if "error" in result or result.get("status") == "error":
+        return _error_envelope(name, str(result.get("error") or "tool failed"))
+    sources = result.get("sources", []) or []
+    quality = result.get("quality_score", 1.0)
+    data = {k: v for k, v in result.items() if k not in {"sources", "quality_score", "warnings"}}
+    return {
+        "ok": True,
+        "tool": name,
+        "data": data,
+        "sources": sources,
+        "quality_score": quality,
+        "warnings": result.get("warnings", []) or [],
+    }

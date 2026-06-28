@@ -8,9 +8,14 @@ export interface AiToolCall {
 
 export interface AiSource {
   type: string;
+  id?: string;
   provider?: string;
+  source_url?: string;
   observed_at?: string;
+  retrieved_at?: string;
   quality_score?: number;
+  catalog_item_id?: string;
+  model_type?: string;
 }
 
 export interface AiMessage {

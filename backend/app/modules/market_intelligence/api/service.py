@@ -1,11 +1,20 @@
 """Market Intelligence API service — lee desde DuckDB, nunca llama providers."""
 from __future__ import annotations
+
 import logging
 from datetime import datetime, timezone
 
 from app.modules.market_intelligence.api.schemas import (
-    AiDatasheetOut, BondSnapshotOut, BondYieldOut, ForexRateOut, ForexSnapshotOut,
-    MacroDataPoint, MacroSnapshotOut, MarketSnapshotOut, NewsItemOut, NewsSnapshotOut,
+    AiDatasheetOut,
+    BondSnapshotOut,
+    BondYieldOut,
+    ForexRateOut,
+    ForexSnapshotOut,
+    MacroDataPoint,
+    MacroSnapshotOut,
+    MarketSnapshotOut,
+    NewsItemOut,
+    NewsSnapshotOut,
     QuoteOut,
 )
 from app.modules.market_intelligence.catalog.loader import CatalogLoader
@@ -14,8 +23,9 @@ from app.modules.market_intelligence.storage import repository
 logger = logging.getLogger("market_intelligence.api")
 
 _catalog = CatalogLoader()
-_INDEX_CATALOG_IDS = {"sp500", "nasdaq100", "ibex35", "eurostoxx50", "dax", "nikkei225"}
-_CRYPTO_CATALOG_IDS = {"btc", "eth", "sol", "xrp"}
+_INDEX_CATALOG_IDS = {"sp500", "nasdaq", "nasdaq100", "ibex35", "eurostoxx50", "dax", "nikkei225"}
+_CRYPTO_CATALOG_IDS = {"bitcoin", "ethereum", "solana", "xrp", "btc", "eth", "sol"}
+_COMMODITY_CATALOG_IDS = {"gold", "silver", "brent", "wti", "natural_gas"}
 
 
 def _region_for(catalog_item_id: str) -> str | None:
@@ -44,6 +54,7 @@ def _warn(rows: list[dict], threshold: float = 0.5) -> list[str]:
 
 
 def get_macro_snapshot() -> MacroSnapshotOut:
+    repository.ensure_baseline_market_data()
     rows = repository.get_latest_macro_all()
     spain, eurozone, usa = [], [], []
     for r in rows:
@@ -59,15 +70,23 @@ def get_macro_snapshot() -> MacroSnapshotOut:
 
 
 def get_market_snapshot() -> MarketSnapshotOut:
-    quotes = repository.get_latest_quotes()
+    repository.ensure_baseline_market_data()
+    quotes = repository.get_latest_quotes() + repository.get_latest_historical_as_quotes()
+    commodities_rows = repository.get_latest_commodities()
     indices = [QuoteOut(**{k: v for k, v in q.items() if k in QuoteOut.model_fields})
                for q in quotes if q.get("catalog_item_id") in _INDEX_CATALOG_IDS]
     crypto = [QuoteOut(**{k: v for k, v in q.items() if k in QuoteOut.model_fields})
               for q in quotes if q.get("catalog_item_id") in _CRYPTO_CATALOG_IDS]
-    return MarketSnapshotOut(indices=indices, crypto=crypto, commodities=[], generated_at=_now(), warnings=_warn(quotes))
+    commodities = [
+        QuoteOut(**{k: v for k, v in q.items() if k in QuoteOut.model_fields})
+        for q in [*commodities_rows, *quotes]
+        if q.get("catalog_item_id") in _COMMODITY_CATALOG_IDS
+    ]
+    return MarketSnapshotOut(indices=indices, crypto=crypto, commodities=commodities, generated_at=_now(), warnings=_warn(quotes + commodities_rows))
 
 
 def get_forex_snapshot() -> ForexSnapshotOut:
+    repository.ensure_baseline_market_data()
     rows = repository.get_latest_forex()
     rates = [ForexRateOut(
         catalog_item_id=r["catalog_item_id"],
@@ -82,6 +101,7 @@ def get_forex_snapshot() -> ForexSnapshotOut:
 
 
 def get_bond_snapshot() -> BondSnapshotOut:
+    repository.ensure_baseline_market_data()
     rows = repository.get_latest_bonds()
     yields = [BondYieldOut(
         catalog_item_id=r["catalog_item_id"],
