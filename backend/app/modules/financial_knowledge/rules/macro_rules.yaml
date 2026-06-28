@@ -1,0 +1,42 @@
+inflation_above_target:
+  indicator_subcategory: inflation
+  target: 2.0
+  warning_threshold: 2.5
+  critical_threshold: 5.0
+  unit: percent
+  description: "Inflación por encima del objetivo del banco central"
+
+inflation_accelerating:
+  indicator_subcategory: inflation
+  consecutive_periods: 2
+  direction: rising
+  description: "Inflación acelerándose durante varios períodos consecutivos"
+
+unemployment_rising:
+  indicator_subcategory: unemployment
+  consecutive_periods: 3
+  direction: rising
+  description: "Desempleo en ascenso durante 3+ períodos"
+
+gdp_slowdown:
+  indicator_subcategory: gdp
+  consecutive_periods: 2
+  direction: falling
+  description: "Crecimiento del PIB decelerando"
+
+rates_high:
+  indicator_subcategory: interest_rates
+  warning_threshold: 3.0
+  critical_threshold: 5.0
+  description: "Tipos de interés en niveles históricamente altos"
+
+euribor_rising:
+  indicator_subcategory: euribor
+  direction: rising
+  consecutive_periods: 2
+  description: "Euríbor en tendencia alcista"
+
+yield_curve_inverted:
+  indicator_subcategory: yield_curve
+  description: "Curva de tipos invertida: bono 2Y > bono 10Y"
+  signal: recession_warning
