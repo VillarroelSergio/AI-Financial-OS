@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Plus, RefreshCw } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import EmptyState from "@/components/ui/EmptyState";
 import MetricCard from "@/components/ui/MetricCard";
 import Spinner from "@/components/ui/Spinner";
@@ -35,6 +36,7 @@ export default function InvestmentsPage() {
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingHolding, setEditingHolding] = useState<HoldingEnriched | null>(null);
 
+  const navigate = useNavigate();
   const trAccounts = accounts.filter((a) => a.type === "broker");
   const finizensAccounts = accounts.filter((a) => a.type === "investment");
   const ahorroAccounts = accounts.filter((a) => a.type === "savings");
@@ -107,6 +109,12 @@ export default function InvestmentsPage() {
           >
             <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
             {refreshing ? "Actualizando..." : "Actualizar precios"}
+          </button>
+          <button
+            onClick={() => navigate("/investments/price-coverage")}
+            className="flex items-center gap-sm px-md py-sm rounded-full border border-hairline-dark text-body-sm text-stone hover:text-on-dark hover:border-on-dark transition-colors"
+          >
+            Cobertura de precios
           </button>
         </div>
       </div>
