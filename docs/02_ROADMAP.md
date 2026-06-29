@@ -18,7 +18,7 @@
 | 7.5 | Portfolio Import Assistant | ✅ Completa | rama `main` |
 | 8 | Goals & Simulations | ✅ Completa | rama `main` |
 | 8.5 | Portfolio Reconciliation & Investment Analytics | ✅ Completa | rama `feature/fase-8-5-portfolio-reconciliation` |
-| 8.6 | Budgets, Recurring Transactions & Cashflow Planning | ⏳ Pendiente | — |
+| 8.6 | Budgets, Recurring Transactions & Cashflow Planning | ✅ Completa | rama `feature/fase-8-6-budgets-cashflow` |
 | 9 | Document Intelligence / RAG | ⏳ Pendiente | — |
 | 10 | Hardening, Security & Backups | ⏳ Pendiente | — |
 | 11 | Packaging & Release | ⏳ Pendiente | — |

@@ -412,6 +412,160 @@ Response: {
 }
 ```
 
+## Budgets
+
+### GET `/api/budgets`
+
+Devuelve lista de presupuestos activos.
+
+Response: `Budget[]`
+
+### POST `/api/budgets`
+
+Crea nuevo presupuesto.
+
+```json
+{
+  "category_id": "uuid",
+  "period": "monthly",
+  "amount": 500.0,
+  "alert_threshold_pct": 80
+}
+```
+
+Response: `Budget` (201)
+
+### PUT `/api/budgets/{id}`
+
+Actualiza presupuesto.
+
+```json
+{
+  "amount": 600.0,
+  "alert_threshold_pct": 75,
+  "active": true
+}
+```
+
+### DELETE `/api/budgets/{id}`
+
+Elimina presupuesto. Response: 204
+
+### GET `/api/budgets/comparison?month=YYYY-MM`
+
+Compara gasto real vs presupuesto para un mes específico.
+
+Response:
+
+```json
+[
+  {
+    "budget_id": "uuid",
+    "category_id": "uuid",
+    "category_name": "Restaurante",
+    "budget_amount": 500.0,
+    "actual_amount": 420.5,
+    "remaining": 79.5,
+    "consumption_pct": 84.1,
+    "alert": true,
+    "over_budget": false,
+    "period": "monthly"
+  }
+]
+```
+
+## Recurring Transactions
+
+### GET `/api/recurring`
+
+Devuelve lista de transacciones recurrentes ordenadas por fecha próxima.
+
+Response: `RecurringTransaction[]`
+
+### POST `/api/recurring`
+
+Crea nueva transacción recurrente.
+
+```json
+{
+  "name": "Netflix",
+  "category_id": "uuid",
+  "amount": 15.99,
+  "currency": "EUR",
+  "type": "expense",
+  "frequency": "monthly",
+  "day_of_month": 8,
+  "next_date": "2026-07-08"
+}
+```
+
+Response: `RecurringTransaction` (201)
+
+### PUT `/api/recurring/{id}`
+
+Actualiza recurrente.
+
+```json
+{
+  "name": "Netflix Premium",
+  "amount": 17.99,
+  "active": true
+}
+```
+
+### DELETE `/api/recurring/{id}`
+
+Elimina recurrente. Response: 204
+
+### GET `/api/recurring/calendar?days=60`
+
+Genera calendario con ocurrencias futuras de transacciones recurrentes.
+
+Response:
+
+```json
+[
+  {
+    "recurring_id": "uuid",
+    "name": "Netflix",
+    "amount": 15.99,
+    "type": "expense",
+    "date": "2026-07-08",
+    "category_name": "Entretenimiento"
+  }
+]
+```
+
+Los eventos están ordenados por fecha. Máximo período consultable: 365 días.
+
+## Cashflow
+
+### GET `/api/cashflow/forecast?months=3`
+
+Proyecta cashflow mensual combinando histórico (últimos 3 meses) y transacciones recurrentes activas.
+
+Response:
+
+```json
+{
+  "generated_at": "2026-06-29T12:00:00Z",
+  "months": [
+    {
+      "month": "2026-07",
+      "projected_income": 2500.0,
+      "projected_expenses": 1480.0,
+      "projected_balance": 1020.0,
+      "historical_avg_income": 2100.0,
+      "historical_avg_expenses": 1200.0,
+      "recurring_income": 2500.0,
+      "recurring_expenses": 850.0
+    }
+  ]
+}
+```
+
+La proyección usa `max(histórico, recurrentes)` para ser conservadora. Máximo: 12 meses.
+
 ## Goals
 
 ### GET `/api/goals`
