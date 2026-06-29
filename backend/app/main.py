@@ -24,6 +24,7 @@ from app.modules.settings.routes import router as settings_router
 from app.modules.transactions.routes import router as transactions_router
 from app.modules.budgets.routes import router as budgets_router
 from app.modules.recurring.routes import router as recurring_router
+from app.modules.cashflow.routes import router as cashflow_router
 
 
 @asynccontextmanager
@@ -82,3 +83,4 @@ app.include_router(market_intelligence_router, prefix="/api/market-intelligence"
 app.include_router(financial_knowledge_router, prefix="/api/financial-knowledge", tags=["financial_knowledge"])
 app.include_router(budgets_router, prefix="/api/budgets", tags=["budgets"])
 app.include_router(recurring_router, prefix="/api/recurring", tags=["recurring"])
+app.include_router(cashflow_router, prefix="/api/cashflow", tags=["cashflow"])
