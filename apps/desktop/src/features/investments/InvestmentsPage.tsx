@@ -111,6 +111,12 @@ export default function InvestmentsPage() {
             {refreshing ? "Actualizando..." : "Actualizar precios"}
           </button>
           <button
+            onClick={() => navigate("/investments/import")}
+            className="flex items-center gap-sm px-md py-sm rounded-full border border-hairline-dark text-body-sm text-stone hover:text-on-dark hover:border-on-dark transition-colors"
+          >
+            Importar cartera
+          </button>
+          <button
             onClick={() => navigate("/investments/price-coverage")}
             className="flex items-center gap-sm px-md py-sm rounded-full border border-hairline-dark text-body-sm text-stone hover:text-on-dark hover:border-on-dark transition-colors"
           >

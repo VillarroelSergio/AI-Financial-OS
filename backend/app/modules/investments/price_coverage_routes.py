@@ -50,12 +50,18 @@ class CoverageAssetOut(BaseModel):
     status: str
     confidence: float
     notes: list[str]
+    # FX / EUR valuation
+    fx_rate: Optional[float] = None
+    fx_currency_pair: Optional[str] = None
+    eur_price: Optional[float] = None
+    fx_updated_at: Optional[datetime] = None
 
 
 class AuditSummaryOut(BaseModel):
     total: int
-    ok: int
-    partial: int
+    with_price: int
+    eur_valued: int
+    fx_pending: int
     ambiguous: int
     manual: int
     unavailable: int

@@ -1,6 +1,6 @@
 export type CoverageStatus =
   | "OK"
-  | "PARTIAL"
+  | "FX_PENDING"
   | "AMBIGUOUS"
   | "UNAVAILABLE"
   | "MANUAL"
@@ -38,12 +38,18 @@ export interface CoverageAsset {
   status: CoverageStatus;
   confidence: number;
   notes: string[];
+  // FX / EUR valuation
+  fx_rate: number | null;
+  fx_currency_pair: string | null;
+  eur_price: number | null;
+  fx_updated_at: string | null;
 }
 
 export interface AuditSummary {
   total: number;
-  ok: number;
-  partial: number;
+  with_price: number;
+  eur_valued: number;
+  fx_pending: number;
   ambiguous: number;
   manual: number;
   unavailable: number;

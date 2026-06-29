@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from decimal import Decimal
-from typing import Literal
+from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, field_serializer
 
@@ -48,3 +48,51 @@ class GoalOut(BaseModel):
     @field_serializer("target_amount", "current_amount", "monthly_contribution")
     def serialize_amount(self, value: Decimal | None) -> str | None:
         return str(value) if value is not None else None
+
+
+# ── Simulation schemas ────────────────────────────────────────────────────────
+
+class SimulationRequest(BaseModel):
+    inflation_rate: float = Field(default=0.03, ge=0.0, le=0.5)
+    max_months: int = Field(default=360, ge=12, le=360)
+
+
+class MonthlyDataPointOut(BaseModel):
+    month: int
+    label: str
+    conservative: float
+    base: float
+    optimistic: float
+
+
+class ScenarioProjectionOut(BaseModel):
+    scenario: str
+    label: str
+    color: str
+    annual_growth_rate: float
+    months_to_target: Optional[int]
+    projected_date: Optional[str]
+    achievable_by_target_date: Optional[bool]
+    final_amount: float
+
+
+class SimulationResultOut(BaseModel):
+    goal_id: str
+    current_amount: float
+    target_amount: float
+    monthly_contribution: float
+    inflation_rate: float
+    inflation_adjusted_target: float
+    monthly_data: list[MonthlyDataPointOut]
+    scenarios: list[ScenarioProjectionOut]
+    target_date: Optional[str]
+    generated_at: str
+
+
+class GoalProgressOut(BaseModel):
+    goal_id: str
+    progress_pct: float          # 0–100
+    remaining: float             # target - current
+    on_track: Optional[bool]     # None when no target_date
+    base_months_to_target: Optional[int]
+    base_projected_date: Optional[str]

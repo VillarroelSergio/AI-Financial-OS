@@ -247,6 +247,167 @@ Respuesta:
 }
 ```
 
+## Portfolio Import
+
+### POST `/api/investments/import/parse-text`
+
+Extrae posiciones de texto pegado por el usuario (local, sin red externa).
+
+```json
+Body: { "text": "Apple\nx 0,564555\n140,15 €\n+38,76 %\n\nMicrosoft\nx 1,234\n280,50 €" }
+
+Response: [
+  {
+    "raw_name": "Apple",
+    "quantity": 0.564555,
+    "current_value": 140.15,
+    "currency": "EUR",
+    "return_pct": 38.76,
+    "estimated_cost": 100.99
+  }
+]
+```
+
+### POST `/api/investments/import/validate`
+
+Resuelve instrumentos + cobertura de precios para un batch de posiciones raw.
+
+```json
+Body: { "positions": [ { "raw_name": "Apple", "quantity": 0.564, ... } ] }
+
+Response: [
+  {
+    "raw_name": "Apple",
+    "ticker": "AAPL",
+    "name": "Apple Inc.",
+    "market": "NASDAQ",
+    "currency": "USD",
+    "quantity": 0.564,
+    "current_value": 140.15,
+    "return_pct": 38.76,
+    "estimated_cost": 100.99,
+    "current_price": null,
+    "eur_value": null,
+    "resolution_status": "found",
+    "coverage_status": "OK",
+    "import_status": "READY",
+    "requires_confirmation": false,
+    "confirmation_reason": null
+  }
+]
+```
+
+### POST `/api/investments/import/check-duplicates`
+
+```json
+Body: { "ticker": "AAPL", "account_id": "uuid" }
+
+Response: {
+  "ticker": "AAPL",
+  "account_id": "uuid",
+  "has_duplicate": false,
+  "existing_holding_id": null
+}
+```
+
+### POST `/api/investments/import/confirm`
+
+Crea holdings confirmados por el usuario. Requiere llamada explícita.
+
+```json
+Body: {
+  "positions": [
+    {
+      "ticker": "AAPL",
+      "name": "Apple Inc.",
+      "market": "NASDAQ",
+      "currency": "USD",
+      "quantity": 0.564,
+      "average_price": 179.0,
+      "price_source": "auto",
+      "account_id": "uuid"
+    }
+  ]
+}
+
+Response: {
+  "created": 1,
+  "skipped": 0,
+  "errors": [],
+  "holding_ids": ["uuid"]
+}
+```
+
+## Goals
+
+### GET `/api/goals`
+
+### POST `/api/goals`
+
+```json
+{
+  "name": "Fondo de emergencia",
+  "type": "emergency_fund",
+  "target_amount": "10000",
+  "current_amount": "2000",
+  "monthly_contribution": "300",
+  "priority": "high",
+  "target_date": "2028-01-01"
+}
+```
+
+### GET `/api/goals/{id}`
+
+### PATCH `/api/goals/{id}`
+
+### DELETE `/api/goals/{id}`
+
+### POST `/api/goals/{id}/simulate`
+
+Calcula proyección con tres escenarios de crecimiento nominal.
+
+```json
+Body: { "inflation_rate": 0.03, "max_months": 360 }
+
+Response: {
+  "goal_id": "uuid",
+  "current_amount": 2000.0,
+  "target_amount": 10000.0,
+  "monthly_contribution": 300.0,
+  "inflation_rate": 0.03,
+  "inflation_adjusted_target": 10927.0,
+  "monthly_data": [
+    { "month": 0, "label": "Jun 2026", "conservative": 2000, "base": 2000, "optimistic": 2000 }
+  ],
+  "scenarios": [
+    {
+      "scenario": "base",
+      "label": "Base",
+      "color": "#10b981",
+      "annual_growth_rate": 0.06,
+      "months_to_target": 24,
+      "projected_date": "2028-06-29",
+      "achievable_by_target_date": true,
+      "final_amount": 10000.0
+    }
+  ],
+  "target_date": "2029-01-01",
+  "generated_at": "2026-06-29T..."
+}
+```
+
+### GET `/api/goals/{id}/progress`
+
+```json
+{
+  "goal_id": "uuid",
+  "progress_pct": 20.0,
+  "remaining": 8000.0,
+  "on_track": true,
+  "base_projected_date": "2028-06-29"
+}
+```
+
 ## Error format
 
 ```json

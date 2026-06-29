@@ -1,4 +1,23 @@
-"""Maps asset names to canonical tickers for the 19 known portfolio assets."""
+"""Maps asset names to canonical tickers for the 19 known portfolio assets.
+
+Field semantics:
+  ticker          – display ticker and symbol sent to Finnhub / Alpha Vantage.
+                    For European-exchange assets this is the exchange-qualified
+                    symbol (e.g. BBVA.MC, ASML.AS) so that the displayed ticker,
+                    the exchange, and the currency are always consistent.
+                    Finnhub will typically not find exchange-qualified symbols and
+                    falls through to yfinance, which is the correct behaviour.
+  yfinance_symbol – symbol passed to yfinance. Usually identical to ticker for
+                    European assets; may differ for ADRs or instruments where
+                    yfinance uses a different suffix.
+  exchange        – primary exchange where the asset trades (BME, AMS, NASDAQ…).
+  currency        – denomination of prices on that exchange.
+  requires_confirmation – True when the ticker found is ambiguous or does not
+                    correspond directly to the real-world asset (e.g. SpaceX is
+                    private; SPCX is an unrelated ETF).  The resolver returns
+                    status="ambiguous" and selected=None so the user must confirm.
+  confirmation_note – human-readable explanation shown in the "Revisar" state.
+"""
 from __future__ import annotations
 
 from dataclasses import dataclass, field
@@ -14,6 +33,8 @@ class TickerCandidate:
     currency: str
     asset_type: str = "equity"
     confidence: float = 1.0
+    requires_confirmation: bool = False
+    confirmation_note: str = ""
 
 
 @dataclass
@@ -24,37 +45,86 @@ class AssetResolution:
     status: str  # resolved | ambiguous | manual | unavailable
 
 
-# Known asset registry — tickers hardcoded for resolution only, never prices
+# Known asset registry — tickers hardcoded for resolution only, never prices.
+#
+# Naming convention for ticker:
+#   – US exchange assets  : plain symbol    (AAPL, MSFT, V…)
+#   – BME assets          : <SYMBOL>.MC     (BBVA.MC, IBE.MC)
+#   – Euronext Amsterdam  : <SYMBOL>.AS     (ASML.AS)
+#   – ASX assets          : <SYMBOL>.AX     (DRO.AX)
 _KNOWN: dict[str, TickerCandidate] = {
+    # ── Spain / BME (EUR) ────────────────────────────────────────────────────
     "banco bilbao vizcaya argentaria": TickerCandidate(
-        ticker="BBVA", yfinance_symbol="BBVA.MC",
+        ticker="BBVA.MC", yfinance_symbol="BBVA.MC",
         name="Banco Bilbao Vizcaya Argentaria SA",
         exchange="BME", currency="EUR",
     ),
     "bbva": TickerCandidate(
-        ticker="BBVA", yfinance_symbol="BBVA.MC",
+        ticker="BBVA.MC", yfinance_symbol="BBVA.MC",
         name="Banco Bilbao Vizcaya Argentaria SA",
         exchange="BME", currency="EUR",
-    ),
-    "apple": TickerCandidate(
-        ticker="AAPL", yfinance_symbol="AAPL",
-        name="Apple Inc.", exchange="NASDAQ", currency="USD",
     ),
     "iberdrola": TickerCandidate(
         ticker="IBE.MC", yfinance_symbol="IBE.MC",
         name="Iberdrola SA", exchange="BME", currency="EUR",
     ),
+
+    # ── Euronext Amsterdam (EUR) ──────────────────────────────────────────────
     "asml": TickerCandidate(
-        ticker="ASML", yfinance_symbol="ASML.AS",
+        ticker="ASML.AS", yfinance_symbol="ASML.AS",
         name="ASML Holding NV", exchange="AMS", currency="EUR",
     ),
-    "caterpillar": TickerCandidate(
-        ticker="CAT", yfinance_symbol="CAT",
-        name="Caterpillar Inc.", exchange="NYSE", currency="USD",
+
+    # ── NASDAQ (USD) ──────────────────────────────────────────────────────────
+    "apple": TickerCandidate(
+        ticker="AAPL", yfinance_symbol="AAPL",
+        name="Apple Inc.", exchange="NASDAQ", currency="USD",
     ),
     "alphabet": TickerCandidate(
         ticker="GOOGL", yfinance_symbol="GOOGL",
         name="Alphabet Inc. (A)", exchange="NASDAQ", currency="USD",
+    ),
+    "nvidia": TickerCandidate(
+        ticker="NVDA", yfinance_symbol="NVDA",
+        name="NVIDIA Corp.", exchange="NASDAQ", currency="USD",
+    ),
+    "amazon": TickerCandidate(
+        ticker="AMZN", yfinance_symbol="AMZN",
+        name="Amazon.com Inc.", exchange="NASDAQ", currency="USD",
+    ),
+    "amazon.com": TickerCandidate(
+        ticker="AMZN", yfinance_symbol="AMZN",
+        name="Amazon.com Inc.", exchange="NASDAQ", currency="USD",
+    ),
+    "rocket lab": TickerCandidate(
+        ticker="RKLB", yfinance_symbol="RKLB",
+        name="Rocket Lab USA Inc.", exchange="NASDAQ", currency="USD",
+    ),
+    "microsoft": TickerCandidate(
+        ticker="MSFT", yfinance_symbol="MSFT",
+        name="Microsoft Corp.", exchange="NASDAQ", currency="USD",
+    ),
+    # SpaceX is a private company; SPCX is the "SPDR Kensho Final Frontiers ETF",
+    # an unrelated instrument.  Mark as requires_confirmation so the audit returns
+    # AMBIGUOUS and the user must explicitly confirm the mapping.
+    "spacex": TickerCandidate(
+        ticker="SPCX", yfinance_symbol="SPCX",
+        name="SPDR Kensho Final Frontiers ETF",
+        exchange="NASDAQ", currency="USD",
+        asset_type="etf",
+        confidence=0.3,
+        requires_confirmation=True,
+        confirmation_note=(
+            "SpaceX es una empresa privada sin cotización pública. "
+            "SPCX es el ETF 'SPDR Kensho Final Frontiers', no las acciones de SpaceX. "
+            "Confirma el instrumento correcto antes de usar este precio."
+        ),
+    ),
+
+    # ── NYSE (USD) ────────────────────────────────────────────────────────────
+    "caterpillar": TickerCandidate(
+        ticker="CAT", yfinance_symbol="CAT",
+        name="Caterpillar Inc.", exchange="NYSE", currency="USD",
     ),
     "waste management": TickerCandidate(
         ticker="WM", yfinance_symbol="WM",
@@ -77,26 +147,6 @@ _KNOWN: dict[str, TickerCandidate] = {
         ticker="LMT", yfinance_symbol="LMT",
         name="Lockheed Martin Corp.", exchange="NYSE", currency="USD",
     ),
-    "nvidia": TickerCandidate(
-        ticker="NVDA", yfinance_symbol="NVDA",
-        name="NVIDIA Corp.", exchange="NASDAQ", currency="USD",
-    ),
-    "spacex": TickerCandidate(
-        ticker="SPCX", yfinance_symbol="SPCX",
-        name="SpaceX", exchange="NASDAQ", currency="USD",
-    ),
-    "amazon": TickerCandidate(
-        ticker="AMZN", yfinance_symbol="AMZN",
-        name="Amazon.com Inc.", exchange="NASDAQ", currency="USD",
-    ),
-    "amazon.com": TickerCandidate(
-        ticker="AMZN", yfinance_symbol="AMZN",
-        name="Amazon.com Inc.", exchange="NASDAQ", currency="USD",
-    ),
-    "rocket lab": TickerCandidate(
-        ticker="RKLB", yfinance_symbol="RKLB",
-        name="Rocket Lab USA Inc.", exchange="NASDAQ", currency="USD",
-    ),
     "rtx": TickerCandidate(
         ticker="RTX", yfinance_symbol="RTX",
         name="RTX Corporation", exchange="NYSE", currency="USD",
@@ -113,10 +163,8 @@ _KNOWN: dict[str, TickerCandidate] = {
         ticker="V", yfinance_symbol="V",
         name="Visa Inc.", exchange="NYSE", currency="USD",
     ),
-    "microsoft": TickerCandidate(
-        ticker="MSFT", yfinance_symbol="MSFT",
-        name="Microsoft Corp.", exchange="NASDAQ", currency="USD",
-    ),
+
+    # ── ASX (AUD) ─────────────────────────────────────────────────────────────
     "droneshield": TickerCandidate(
         ticker="DRO.AX", yfinance_symbol="DRO.AX",
         name="DroneShield Ltd.", exchange="ASX", currency="AUD",
@@ -135,6 +183,13 @@ def resolve_asset(asset_name: str) -> AssetResolution:
     # Exact match
     if key in _KNOWN:
         candidate = _KNOWN[key]
+        if candidate.requires_confirmation:
+            return AssetResolution(
+                asset_name=asset_name,
+                candidates=[candidate],
+                selected=None,
+                status="ambiguous",
+            )
         return AssetResolution(
             asset_name=asset_name,
             candidates=[candidate],
@@ -151,6 +206,14 @@ def resolve_asset(asset_name: str) -> AssetResolution:
             matches.append(c)
 
     if len(matches) == 1:
+        candidate = matches[0]
+        if candidate.requires_confirmation:
+            return AssetResolution(
+                asset_name=asset_name,
+                candidates=[candidate],
+                selected=None,
+                status="ambiguous",
+            )
         return AssetResolution(
             asset_name=asset_name,
             candidates=matches,

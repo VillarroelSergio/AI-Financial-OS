@@ -2,15 +2,15 @@ import type { CoverageStatus } from "@/lib/types/price-coverage";
 
 const CONFIG: Record<CoverageStatus, { label: string; className: string }> = {
   OK: {
-    label: "OK",
+    label: "Valorado en EUR",
     className: "bg-emerald-500/15 text-emerald-400 border border-emerald-500/25",
   },
-  PARTIAL: {
-    label: "Parcial",
+  FX_PENDING: {
+    label: "Precio OK · FX pendiente",
     className: "bg-amber-500/15 text-amber-400 border border-amber-500/25",
   },
   AMBIGUOUS: {
-    label: "Ambiguo",
+    label: "Ticker ambiguo",
     className: "bg-blue-500/15 text-blue-400 border border-blue-500/25",
   },
   UNAVAILABLE: {

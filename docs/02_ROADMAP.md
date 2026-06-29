@@ -15,9 +15,13 @@
 | 6 | Local AI Assistant | ✅ Completa | rama `feat/phase-6-local-ai-assistant` |
 | 6.4 | Data Integrity & Core UX Repair | En curso | rama `fix/phase-6-4-data-integrity-core-ux` |
 | 7 | Insights Engine | ✅ Completa | rama `main` |
-| 8 | Goals & Simulations | ⏳ Pendiente | — |
+| 7.5 | Portfolio Import Assistant | ✅ Completa | rama `main` |
+| 8 | Goals & Simulations | ✅ Completa | rama `main` |
+| 8.5 | Portfolio Reconciliation & Investment Analytics | ⏳ Pendiente | — |
+| 8.6 | Budgets, Recurring Transactions & Cashflow Planning | ⏳ Pendiente | — |
 | 9 | Document Intelligence / RAG | ⏳ Pendiente | — |
-| 10 | Hardening & Packaging | ⏳ Pendiente | — |
+| 10 | Hardening, Security & Backups | ⏳ Pendiente | — |
+| 11 | Packaging & Release | ⏳ Pendiente | — |
 
 | Area | Estado | Ruta principal |
 |---|---|---|
@@ -27,9 +31,13 @@
 | Investments | Completa | `backend/app/modules/investments` |
 | Goals | Completa | `backend/app/modules/goals` |
 | Market Intelligence | Completa / evolucionando | `backend/app/modules/market_intelligence` |
-| Local AI Assistant | Pendiente | `backend/app/modules/ai`, `backend/app/modules/rag` |
+| Local AI Assistant | Completa | `backend/app/modules/ai`, `backend/app/modules/rag` |
 | Insights Engine | ✅ Completa | `backend/app/modules/insights` |
-| Packaging | Pendiente | Tauri build/release |
+| Portfolio Reconciliation | Pendiente | `backend/app/modules/investments` |
+| Budgets & Cashflow Planning | Pendiente | `backend/app/modules/budgets`, `backend/app/modules/transactions` |
+| Document Intelligence / RAG | Pendiente | `backend/app/modules/rag`, `backend/app/modules/documents` |
+| Hardening, Security & Backups | Pendiente | base de datos, logs, migraciones, backups |
+| Packaging & Release | Pendiente | Tauri build/release |
 
 ## Capa vigente de mercado y macro
 
@@ -97,16 +105,83 @@ Incluye:
 - Resumen mensual.
 - IA como redactora/explicadora, no como unica fuente de calculo.
 
+### Fase 7.5 - Portfolio Import Assistant
+
+Objetivo: permitir al usuario crear su cartera inicial desde capturas de pantalla o entrada manual.
+
+Incluye:
+
+- Parser local de texto pegado desde broker (Trade Republic, Degiro, etc.).
+- Extracción de nombre, cantidad, valor actual, rentabilidad y divisa.
+- Validación de identidad de instrumento (`resolve_asset()`).
+- Cobertura de precios y FX (`audit_asset()`).
+- Coste estimado desde rentabilidad: `valor / (1 + rentab/100)`.
+- Tabla editable de revisión con estados: READY, REQUIRES_CONFIRMATION, NO_PRICE, MANUAL, REVIEW.
+- Confirmación explícita obligatoria antes de crear holdings.
+- Entrada rápida manual como fallback.
+- Gestión de activos ambiguos (SpaceX/SPCX) y manuales.
+- Sin envío de imágenes a servicios externos.
+
+Documentación: `docs/20_PORTFOLIO_IMPORT_ASSISTANT.md`.
+
 ### Fase 8 - Simulaciones y objetivos avanzados
 
 Objetivo: ayudar al usuario a proyectar ahorro, inversion y objetivos.
 
+**✅ Implementado:**
+
+- Escenarios conservador (2%)/base (6%)/optimista (10%) de crecimiento nominal anual.
+- Ajuste por inflacion (configurable, defecto 3% anual).
+- Progreso estimado por objetivo con fecha proyectada de consecucion.
+- Simulacion de aportaciones recurrentes (capital inicial + aportacion mensual).
+- Grafico de area con tres curvas solapadas y linea de referencia en objetivo.
+- Panel expandible por objetivo con control deslizante de inflacion.
+- Endpoints: `POST /api/goals/{id}/simulate` y `GET /api/goals/{id}/progress`.
+
+Documentación: `docs/21_GOALS_SIMULATIONS.md`.
+
+### Fase 8.5 - Portfolio Reconciliation & Investment Analytics
+
+Objetivo: consolidar la cartera importada y asegurar que las posiciones, precios, divisas, costes estimados y valoraciones son fiables antes de usarlas en patrimonio, insights y simulaciones.
+
 Incluye:
 
-- Escenarios conservador/base/optimista.
-- Ajuste por inflacion.
-- Progreso estimado por objetivo.
-- Simulacion de aportaciones recurrentes.
+- Reconciliacion entre valor capturado, precio de mercado actualizado y valor calculado en EUR.
+- Estado de calidad por holding: confirmado, estimado, manual, ambiguo, sin precio, FX pendiente o requiere revision.
+- Separacion clara entre coste estimado desde captura, coste manual y coste confirmado.
+- Rentabilidad no realizada por posicion y total de cartera.
+- Peso por activo, divisa, region, sector, broker y tipo de activo.
+- Deteccion de concentracion excesiva por activo o divisa.
+- Control de activos manuales/no cotizados y su impacto sobre la valoracion total.
+- Comparacion entre valor declarado/importado y valor calculado por mercado.
+- Resumen de completitud de cartera: porcentaje valorado automaticamente, porcentaje manual y porcentaje pendiente de revision.
+- Preparacion de datos de cartera para Insights Engine, Goals & Simulations e IA local.
+
+Resultado esperado: el usuario sabe que parte de su cartera esta completamente validada, que parte usa datos estimados y que posiciones requieren accion manual.
+
+Documentacion sugerida: `docs/22_PORTFOLIO_RECONCILIATION_ANALYTICS.md`.
+
+### Fase 8.6 - Budgets, Recurring Transactions & Cashflow Planning
+
+Objetivo: pasar del analisis historico a la planificacion mensual, permitiendo anticipar gastos, ingresos recurrentes, presupuestos y saldo esperado.
+
+Incluye:
+
+- Presupuestos por categoria y periodo.
+- Gastos e ingresos recurrentes.
+- Deteccion o alta manual de suscripciones.
+- Calendario financiero simple con proximos cargos e ingresos.
+- Prevision de cashflow mensual.
+- Proyeccion de saldo a final de mes.
+- Comparativa gasto real vs presupuesto.
+- Alertas suaves por categorias cercanas al limite.
+- Reglas para gastos fijos, variables, extraordinarios e inversiones recurrentes.
+- Integracion con Insights Engine para avisos accionables.
+- Integracion futura con IA local para explicaciones sobre presupuesto y cashflow.
+
+Resultado esperado: el usuario puede responder cuanto puede gastar durante el mes, que cargos vienen proximamente y si mantiene su plan de ahorro.
+
+Documentacion sugerida: `docs/23_BUDGETS_RECURRING_CASHFLOW.md`.
 
 ### Fase 9 - Document Intelligence / RAG
 
@@ -120,18 +195,36 @@ Incluye:
 - Preguntas sobre documentos.
 - Vinculo entre documentos y entidades financieras.
 
-### Fase 10 - Hardening & Packaging
+### Fase 10 - Hardening, Security & Backups
 
-Objetivo: preparar la app para uso diario instalable.
+Objetivo: estabilizar la aplicacion para uso diario antes de empaquetarla, reforzando seguridad local, recuperacion de datos y calidad tecnica.
 
 Incluye:
 
-- Empaquetado Windows.
-- Backups/exportacion.
-- Cifrado opcional.
-- Logs seguros.
-- Migraciones robustas.
-- Tests de regresion.
+- Backups y exportacion de datos.
+- Cifrado opcional o preparacion para cifrado local.
+- Logs seguros sin informacion financiera sensible.
+- Migraciones robustas y recuperables.
+- Validacion de integridad de base de datos.
+- Tests de regresion de core financiero, inversiones, importaciones, insights e IA local.
+- Modo de recuperacion ante fallos de base de datos o migraciones.
+- Revision de permisos locales y rutas de datos.
+- Politica clara de datos demo/mock frente a datos reales.
+
+### Fase 11 - Packaging & Release
+
+Objetivo: preparar la aplicacion como producto instalable para Windows.
+
+Incluye:
+
+- Empaquetado Windows con Tauri.
+- Instalador y desinstalador.
+- Configuracion de entorno de produccion.
+- Arranque coordinado de frontend y backend local.
+- Verificacion post-build.
+- Documentacion de instalacion y uso local.
+- Preparacion para actualizaciones futuras.
+- Revision de tamano final, rendimiento y experiencia de primer arranque.
 
 ## Deudas tecnicas
 
@@ -142,6 +235,8 @@ Incluye:
 | TD-03 | Consolidar docs de Market Intelligence con ejemplos de catalogo reales | Medio |
 | TD-04 | Eliminar o archivar codigo POC cuando deje de aportar comparacion tecnica | Bajo |
 | TD-05 | Definir CLI estable para comandos de Market Intelligence fuera del POC | Medio |
+| TD-06 | Unificar estados del roadmap y areas funcionales cuando una fase cambie de estado | Medio |
+| TD-07 | Consolidar modelo de holdings tras Portfolio Import Assistant: coste estimado, coste confirmado, instrumento validado, FX, precio actual y modo manual/automatico | Alto |
 
 ## Regla documental
 
