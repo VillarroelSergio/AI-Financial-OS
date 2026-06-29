@@ -12,6 +12,7 @@ import PortfolioImportPage from "@/features/investments/import/PortfolioImportPa
 import MarketsPage from "@/features/markets/MarketsPage";
 import OverviewPage from "@/features/overview/OverviewPage";
 import SettingsPage from "@/features/settings/SettingsPage";
+import PlanificacionPage from "@/pages/PlanificacionPage";
 import SpendingPage from "@/features/spending/SpendingPage";
 import TransactionsPage from "@/features/transactions/TransactionsPage";
 
@@ -30,6 +31,7 @@ export default function App() {
         <Route path="economy" element={<EconomyPage />} />
         <Route path="markets" element={<MarketsPage />} />
         <Route path="goals" element={<GoalsPage />} />
+        <Route path="planificacion" element={<PlanificacionPage />} />
         <Route path="insights" element={<InsightsPage />} />
         <Route path="assistant" element={<AssistantPage />} />
         <Route path="settings" element={<SettingsPage />} />
