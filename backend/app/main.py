@@ -16,6 +16,7 @@ from app.modules.insights.routes import router as insights_router
 from app.modules.investments.routes import router as investments_router
 from app.modules.investments.price_coverage_routes import router as price_coverage_router
 from app.modules.investments.portfolio_import_routes import router as portfolio_import_router
+from app.modules.investments.reconciliation_routes import router as reconciliation_router
 from app.modules.market_intelligence.api.routes import router as market_intelligence_router
 from app.modules.financial_knowledge.router import router as financial_knowledge_router
 from app.modules.rag.routes import router as rag_router
@@ -68,6 +69,7 @@ app.include_router(imports_router, prefix="/api/imports", tags=["imports"])
 app.include_router(dashboard_router, prefix="/api/dashboard", tags=["dashboard"])
 app.include_router(investments_router, prefix="/api/investments", tags=["investments"])
 app.include_router(price_coverage_router, prefix="/api/investments/price-coverage", tags=["investments"])
+app.include_router(reconciliation_router, prefix="/api/investments", tags=["investments"])
 app.include_router(portfolio_import_router, prefix="/api/investments/import", tags=["investments"])
 app.include_router(goals_router, prefix="/api/goals", tags=["goals"])
 app.include_router(insights_router, prefix="/api/insights", tags=["insights"])
