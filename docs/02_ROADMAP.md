@@ -17,7 +17,7 @@
 | 7 | Insights Engine | ✅ Completa | rama `main` |
 | 7.5 | Portfolio Import Assistant | ✅ Completa | rama `main` |
 | 8 | Goals & Simulations | ✅ Completa | rama `main` |
-| 8.5 | Portfolio Reconciliation & Investment Analytics | ⏳ Pendiente | — |
+| 8.5 | Portfolio Reconciliation & Investment Analytics | ✅ Completa | rama `feature/fase-8-5-portfolio-reconciliation` |
 | 8.6 | Budgets, Recurring Transactions & Cashflow Planning | ⏳ Pendiente | — |
 | 9 | Document Intelligence / RAG | ⏳ Pendiente | — |
 | 10 | Hardening, Security & Backups | ⏳ Pendiente | — |
@@ -33,7 +33,7 @@
 | Market Intelligence | Completa / evolucionando | `backend/app/modules/market_intelligence` |
 | Local AI Assistant | Completa | `backend/app/modules/ai`, `backend/app/modules/rag` |
 | Insights Engine | ✅ Completa | `backend/app/modules/insights` |
-| Portfolio Reconciliation | Pendiente | `backend/app/modules/investments` |
+| Portfolio Reconciliation | Completa | `backend/app/modules/investments` |
 | Budgets & Cashflow Planning | Pendiente | `backend/app/modules/budgets`, `backend/app/modules/transactions` |
 | Document Intelligence / RAG | Pendiente | `backend/app/modules/rag`, `backend/app/modules/documents` |
 | Hardening, Security & Backups | Pendiente | base de datos, logs, migraciones, backups |

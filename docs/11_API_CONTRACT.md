@@ -180,6 +180,76 @@ omite filas inválidas o duplicadas al confirmar y conserva el lote tras un roll
 
 ### POST `/api/investments/holdings`
 
+### GET `/api/investments/reconciliation`
+
+Returns on-demand portfolio reconciliation report with quality states, allocation weights, and concentration alerts.
+
+**Response:**
+
+```json
+{
+  "generated_at": "2026-06-29T12:00:00Z",
+  "portfolio_value_eur": 15000.00,
+  "completeness": {
+    "confirmed_pct": 60.0,
+    "estimated_pct": 20.0,
+    "manual_pct": 10.0,
+    "no_price_pct": 10.0,
+    "fx_pending_pct": 0.0,
+    "requires_review_pct": 0.0
+  },
+  "holdings": [
+    {
+      "holding_id": "uuid",
+      "name": "Apple Inc.",
+      "ticker": "AAPL",
+      "quantity": 0.564555,
+      "current_price": 230.45,
+      "current_value": 129.99,
+      "cost_estimated": 100.99,
+      "unrealized_pnl": 29.00,
+      "weight_pct": 0.87,
+      "currency": "USD",
+      "sector": "Technology",
+      "asset_type": "stock",
+      "broker": "Trade Republic",
+      "region": "North America",
+      "quality_state": "confirmed",
+      "price_freshness_hours": 2
+    }
+  ],
+  "weights_by": {
+    "currency": [
+      { "key": "EUR", "weight_pct": 40.0 },
+      { "key": "USD", "weight_pct": 60.0 }
+    ],
+    "asset_type": [
+      { "key": "stock", "weight_pct": 70.0 },
+      { "key": "etf", "weight_pct": 30.0 }
+    ],
+    "sector": [
+      { "key": "Technology", "weight_pct": 45.0 },
+      { "key": "Healthcare", "weight_pct": 55.0 }
+    ],
+    "broker": [
+      { "key": "Trade Republic", "weight_pct": 100.0 }
+    ],
+    "region": [
+      { "key": "North America", "weight_pct": 60.0 },
+      { "key": "Europe", "weight_pct": 40.0 }
+    ]
+  },
+  "concentration_alerts": [
+    {
+      "type": "asset",
+      "key": "Apple",
+      "weight_pct": 25.0,
+      "threshold_pct": 20.0
+    }
+  ]
+}
+```
+
 ## Market Intelligence
 
 La API vigente para mercado, macro, divisas, bonos, noticias e impacto personal esta
