@@ -104,14 +104,14 @@ export interface CashflowForecast {
 
 export const fetchBudgets = (): Promise<Budget[]> => api.get<Budget[]>("/api/budgets");
 export const createBudget = (body: BudgetCreate): Promise<Budget> => api.post<Budget>("/api/budgets", body);
-export const updateBudget = (id: string, body: BudgetUpdate): Promise<Budget> => api.patch<Budget>(`/api/budgets/${id}`, body);
+export const updateBudget = (id: string, body: BudgetUpdate): Promise<Budget> => api.put<Budget>(`/api/budgets/${id}`, body);
 export const deleteBudget = (id: string): Promise<void> => api.delete<void>(`/api/budgets/${id}`);
 export const fetchBudgetComparison = (month?: string): Promise<BudgetComparisonItem[]> =>
   api.get<BudgetComparisonItem[]>(`/api/budgets/comparison${month ? `?month=${month}` : ""}`);
 
 export const fetchRecurring = (): Promise<RecurringTransaction[]> => api.get<RecurringTransaction[]>("/api/recurring");
 export const createRecurring = (body: RecurringCreate): Promise<RecurringTransaction> => api.post<RecurringTransaction>("/api/recurring", body);
-export const updateRecurring = (id: string, body: Partial<RecurringCreate>): Promise<RecurringTransaction> => api.patch<RecurringTransaction>(`/api/recurring/${id}`, body);
+export const updateRecurring = (id: string, body: Partial<RecurringCreate>): Promise<RecurringTransaction> => api.put<RecurringTransaction>(`/api/recurring/${id}`, body);
 export const deleteRecurring = (id: string): Promise<void> => api.delete<void>(`/api/recurring/${id}`);
 export const fetchCalendar = (days?: number): Promise<CalendarEvent[]> =>
   api.get<CalendarEvent[]>(`/api/recurring/calendar${days ? `?days=${days}` : ""}`);

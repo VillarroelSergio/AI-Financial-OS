@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import calendar
 import uuid
 from datetime import date, datetime, timedelta, timezone
 
@@ -33,11 +34,12 @@ def _advance(rt: RecurringTransaction, current: date) -> date:
     if rt.frequency == "weekly":
         return current + timedelta(weeks=1)
     elif rt.frequency == "monthly":
+        target_day = rt.day_of_month or current.day
         m = current.month + 1
         y = current.year + (m - 1) // 12
         m = ((m - 1) % 12) + 1
-        d = min(rt.day_of_month or current.day, 28)
-        return date(y, m, d)
+        max_day = calendar.monthrange(y, m)[1]
+        return date(y, m, min(target_day, max_day))
     elif rt.frequency == "yearly":
         return date(current.year + 1, current.month, current.day)
     return current + timedelta(days=30)

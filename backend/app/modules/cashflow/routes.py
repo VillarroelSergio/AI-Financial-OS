@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any
 
 from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
@@ -13,6 +14,22 @@ from app.models.recurring_transaction import RecurringTransaction
 from app.models.transaction import Transaction
 
 router = APIRouter()
+
+
+class MonthForecast(BaseModel):
+    month: str
+    projected_income: float
+    projected_expenses: float
+    projected_balance: float
+    historical_avg_income: float
+    historical_avg_expenses: float
+    recurring_income: float
+    recurring_expenses: float
+
+
+class CashflowForecast(BaseModel):
+    generated_at: datetime
+    months: list[MonthForecast]
 
 
 def _monthly_avg(db: Session, tx_type: str, months: int = 3) -> Decimal:
@@ -92,11 +109,11 @@ def _next_occurrences(rt: RecurringTransaction, from_date: date, months: int) ->
     return occurrences
 
 
-@router.get("/forecast")
+@router.get("/forecast", response_model=CashflowForecast)
 def get_cashflow_forecast(
     months: int = Query(default=3, ge=1, le=12),
     db: Session = Depends(get_db),
-) -> list[dict[str, Any]]:
+) -> CashflowForecast:
     """
     Return a month-by-month cashflow forecast for the next `months` months.
 
@@ -104,7 +121,11 @@ def get_cashflow_forecast(
     - month: "YYYY-MM"
     - projected_income: sum of recurring income occurrences + historical avg if no recurring
     - projected_expenses: sum of recurring expense occurrences + historical avg if no recurring
-    - net: projected_income - projected_expenses
+    - projected_balance: projected_income - projected_expenses
+    - historical_avg_income: 3-month historical average income
+    - historical_avg_expenses: 3-month historical average expenses
+    - recurring_income: sum of recurring income for the month
+    - recurring_expenses: sum of recurring expenses for the month
     """
     today = date.today()
 
@@ -117,7 +138,7 @@ def get_cashflow_forecast(
         RecurringTransaction.active == True  # noqa: E712
     ).all()
 
-    result: list[dict[str, Any]] = []
+    month_forecasts: list[MonthForecast] = []
     for i in range(months):
         m = today.month + i
         y = today.year
@@ -143,11 +164,18 @@ def get_cashflow_forecast(
         projected_income = float(rec_income if has_recurring else avg_income)
         projected_expenses = float(rec_expense if has_recurring else avg_expense)
 
-        result.append({
-            "month": month_label,
-            "projected_income": projected_income,
-            "projected_expenses": projected_expenses,
-            "net": projected_income - projected_expenses,
-        })
+        month_forecasts.append(MonthForecast(
+            month=month_label,
+            projected_income=projected_income,
+            projected_expenses=projected_expenses,
+            projected_balance=projected_income - projected_expenses,
+            historical_avg_income=float(avg_income),
+            historical_avg_expenses=float(avg_expense),
+            recurring_income=float(rec_income),
+            recurring_expenses=float(rec_expense),
+        ))
 
-    return result
+    return CashflowForecast(
+        generated_at=datetime.now(timezone.utc),
+        months=month_forecasts,
+    )
