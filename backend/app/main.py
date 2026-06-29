@@ -22,6 +22,7 @@ from app.modules.financial_knowledge.router import router as financial_knowledge
 from app.modules.rag.routes import router as rag_router
 from app.modules.settings.routes import router as settings_router
 from app.modules.transactions.routes import router as transactions_router
+from app.modules.budgets.routes import router as budgets_router
 
 
 @asynccontextmanager
@@ -78,3 +79,4 @@ app.include_router(rag_router, prefix="/api/rag", tags=["rag"])
 app.include_router(settings_router, prefix="/api/settings", tags=["settings"])
 app.include_router(market_intelligence_router, prefix="/api/market-intelligence", tags=["market_intelligence"])
 app.include_router(financial_knowledge_router, prefix="/api/financial-knowledge", tags=["financial_knowledge"])
+app.include_router(budgets_router, prefix="/api/budgets", tags=["budgets"])
