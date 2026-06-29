@@ -1,16 +1,15 @@
-# Graph Report - AI-Financial-OS  (2026-06-29)
+# Graph Report - .  (2026-06-29)
 
 ## Corpus Check
-- 927 files · ~604,827 words
-- Verdict: corpus is large enough that graph structure adds value.
+- cluster-only mode — file stats not available
 
 ## Summary
-- 11885 nodes · 21858 edges · 624 communities (539 shown, 85 thin omitted)
+- 11885 nodes · 21858 edges · 627 communities (540 shown, 87 thin omitted)
 - Extraction: 91% EXTRACTED · 9% INFERRED · 0% AMBIGUOUS · INFERRED: 1984 edges (avg confidence: 0.61)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `f74adeb5`
+- Built from commit: `0422a451`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -485,6 +484,8 @@
 - [[_COMMUNITY_Community 537|Community 537]]
 - [[_COMMUNITY_Community 538|Community 538]]
 - [[_COMMUNITY_Community 539|Community 539]]
+- [[_COMMUNITY_Community 540|Community 540]]
+- [[_COMMUNITY_Community 541|Community 541]]
 - [[_COMMUNITY_Community 542|Community 542]]
 - [[_COMMUNITY_Community 543|Community 543]]
 - [[_COMMUNITY_Community 544|Community 544]]
@@ -512,6 +513,7 @@
 - [[_COMMUNITY_Community 570|Community 570]]
 - [[_COMMUNITY_Community 571|Community 571]]
 - [[_COMMUNITY_Community 573|Community 573]]
+- [[_COMMUNITY_Community 626|Community 626]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `Distribution` - 110 edges
@@ -547,16 +549,16 @@
 - 1-file cycle: `.uv-cache/archive-v0/zWpUDpVM0NZGwL7j/setuptools/_vendor/wheel/metadata.py -> .uv-cache/archive-v0/zWpUDpVM0NZGwL7j/setuptools/_vendor/wheel/metadata.py`
 - 1-file cycle: `.uv-cache/archive-v0/zWpUDpVM0NZGwL7j/setuptools/config/__init__.py -> .uv-cache/archive-v0/zWpUDpVM0NZGwL7j/setuptools/config/__init__.py`
 - 1-file cycle: `.uv-cache/archive-v0/zWpUDpVM0NZGwL7j/setuptools/config/_validate_pyproject/__init__.py -> .uv-cache/archive-v0/zWpUDpVM0NZGwL7j/setuptools/config/_validate_pyproject/__init__.py`
-- 3-file cycle: `apps/desktop/src/lib/api/client.ts -> apps/desktop/src/lib/api/mock-data.ts -> apps/desktop/src/lib/api/settings.ts -> apps/desktop/src/lib/api/client.ts`
 - 3-file cycle: `apps/desktop/src/lib/api/client.ts -> apps/desktop/src/lib/api/mock-data.ts -> apps/desktop/src/lib/api/dashboard.ts -> apps/desktop/src/lib/api/client.ts`
 - 3-file cycle: `apps/desktop/src/lib/api/client.ts -> apps/desktop/src/lib/api/mock-data.ts -> apps/desktop/src/lib/api/goals.ts -> apps/desktop/src/lib/api/client.ts`
+- 3-file cycle: `apps/desktop/src/lib/api/client.ts -> apps/desktop/src/lib/api/mock-data.ts -> apps/desktop/src/lib/api/settings.ts -> apps/desktop/src/lib/api/client.ts`
 - 3-file cycle: `.uv-cache/archive-v0/zWpUDpVM0NZGwL7j/setuptools/__init__.py -> .uv-cache/archive-v0/zWpUDpVM0NZGwL7j/setuptools/monkey.py -> .uv-cache/archive-v0/zWpUDpVM0NZGwL7j/setuptools/_core_metadata.py -> .uv-cache/archive-v0/zWpUDpVM0NZGwL7j/setuptools/__init__.py`
 - 4-file cycle: `.uv-cache/archive-v0/zWpUDpVM0NZGwL7j/setuptools/__init__.py -> .uv-cache/archive-v0/zWpUDpVM0NZGwL7j/setuptools/dist.py -> .uv-cache/archive-v0/zWpUDpVM0NZGwL7j/setuptools/monkey.py -> .uv-cache/archive-v0/zWpUDpVM0NZGwL7j/setuptools/_core_metadata.py -> .uv-cache/archive-v0/zWpUDpVM0NZGwL7j/setuptools/__init__.py`
 - 4-file cycle: `.uv-cache/archive-v0/zWpUDpVM0NZGwL7j/setuptools/__init__.py -> .uv-cache/archive-v0/zWpUDpVM0NZGwL7j/setuptools/extension.py -> .uv-cache/archive-v0/zWpUDpVM0NZGwL7j/setuptools/monkey.py -> .uv-cache/archive-v0/zWpUDpVM0NZGwL7j/setuptools/_core_metadata.py -> .uv-cache/archive-v0/zWpUDpVM0NZGwL7j/setuptools/__init__.py`
 - 4-file cycle: `.uv-cache/archive-v0/zWpUDpVM0NZGwL7j/setuptools/__init__.py -> .uv-cache/archive-v0/zWpUDpVM0NZGwL7j/setuptools/logging.py -> .uv-cache/archive-v0/zWpUDpVM0NZGwL7j/setuptools/monkey.py -> .uv-cache/archive-v0/zWpUDpVM0NZGwL7j/setuptools/_core_metadata.py -> .uv-cache/archive-v0/zWpUDpVM0NZGwL7j/setuptools/__init__.py`
 - 4-file cycle: `.uv-cache/archive-v0/kpA2R8W-amqBJCFk/feedparser/__init__.py -> .uv-cache/archive-v0/kpA2R8W-amqBJCFk/feedparser/api.py -> .uv-cache/archive-v0/kpA2R8W-amqBJCFk/feedparser/mixin.py -> .uv-cache/archive-v0/kpA2R8W-amqBJCFk/feedparser/namespaces/psc.py -> .uv-cache/archive-v0/kpA2R8W-amqBJCFk/feedparser/__init__.py`
 
-## Communities (624 total, 85 thin omitted)
+## Communities (627 total, 87 thin omitted)
 
 ### Community 0 - "Community 0"
 Cohesion: 0.05
@@ -564,7 +566,7 @@ Nodes (58): _conn(), _now(), Repository DuckDB para el Market Intelligence Layer
 
 ### Community 1 - "Community 1"
 Cohesion: 0.04
-Nodes (53): BaseAdapter para el Market Intelligence Layer.  Adaptado de market-data-poc/ad, PublicDatasetAdapter — adapter para datasets públicos.  Adaptado de market-dat, Alpha Vantage adapter — IBM global quote., CoinGecko adapter — top crypto market quotes (no API key required)., Finnhub adapter — AAPL real-time quote., Financial Modeling Prep adapter — AAPL company profile., Frankfurter adapter - free ECB-backed FX rates., IMF adapter — GDP growth forecasts via DataMapper API. (+45 more)
+Nodes (54): BaseAdapter para el Market Intelligence Layer.  Adaptado de market-data-poc/ad, PublicDatasetAdapter — adapter para datasets públicos.  Adaptado de market-dat, Alpha Vantage adapter — IBM global quote., CoinGecko adapter — top crypto market quotes (no API key required)., Finnhub adapter — AAPL real-time quote., Financial Modeling Prep adapter — AAPL company profile., Frankfurter adapter - free ECB-backed FX rates., IMF adapter — GDP growth forecasts via DataMapper API. (+46 more)
 
 ### Community 2 - "Community 2"
 Cohesion: 0.07
@@ -588,7 +590,7 @@ Nodes (29): export_catalog_results(), export_records(), Flatten all ProviderReco
 
 ### Community 7 - "Community 7"
 Cohesion: 0.05
-Nodes (20): ingest_status(), Market Intelligence API routes., lifespan(), AppSetting, create_category(), list_categories(), Category, CategoryCreate (+12 more)
+Nodes (19): ingest_status(), Market Intelligence API routes., lifespan(), create_category(), list_categories(), Category, CategoryCreate, create_tables() (+11 more)
 
 ### Community 8 - "Community 8"
 Cohesion: 0.07
@@ -612,19 +614,19 @@ Nodes (126): all_unique(), always_iterable(), always_reversible(), argmax(), arg
 
 ### Community 13 - "Community 13"
 Cohesion: 0.03
-Nodes (36): ABC, Context, BuildMetadata, HatchMetadata, HatchMetadataSettings, HatchVersionConfig, load_toml(), # TODO: remove in the first minor release after Jan 1, 2024 (+28 more)
+Nodes (34): ABC, BuildMetadata, HatchMetadata, HatchMetadataSettings, HatchVersionConfig, # TODO: remove in the first minor release after Jan 1, 2024, https://peps.python.org/pep-0517/, _resolve_optional_dependencies() (+26 more)
 
 ### Community 14 - "Community 14"
-Cohesion: 0.10
-Nodes (22): EIAAdapter, EIA adapter - WTI spot price from the v2 API., _redact_api_key(), FREDAdapter, _metadata(), _parse_fred_csv(), _parse_yield_csv(), FRED adapter - macro indicators plus Treasury yield fallback series. (+14 more)
+Cohesion: 0.12
+Nodes (17): EIAAdapter, EIA adapter - WTI spot price from the v2 API., _redact_api_key(), TreasuryAdapter, BondYield, Commodity, CorporateAction, Currency (+9 more)
 
 ### Community 15 - "Community 15"
 Cohesion: 0.05
 Nodes (57): AccountCreate, AccountOut, AccountUpdate, chat(), create_conversation(), delete_conversation(), get_conversation(), get_status() (+49 more)
 
 ### Community 16 - "Community 16"
-Cohesion: 0.03
-Nodes (72): gen_lib_options(), get_default_compiler(), new_compiler(), distutils.ccompiler  Contains Compiler, an abstract base class that defines the, Determine the default compiler to use for the given platform.      osname should, Print list of available compilers (used by the "--help-compiler"     options to, Generate an instance of some CCompiler subclass for the supplied     platform/co, Generate linker options for searching library directories and     linking with s (+64 more)
+Cohesion: 0.04
+Nodes (68): gen_lib_options(), get_default_compiler(), new_compiler(), distutils.ccompiler  Contains Compiler, an abstract base class that defines the, Determine the default compiler to use for the given platform.      osname should, Print list of available compilers (used by the "--help-compiler"     options to, Generate an instance of some CCompiler subclass for the supplied     platform/co, Generate linker options for searching library directories and     linking with s (+60 more)
 
 ### Community 17 - "Community 17"
 Cohesion: 0.08
@@ -640,27 +642,27 @@ Nodes (20): AdapterResult, _redact_api_key(), _redact_api_key(), _redact_api_key
 
 ### Community 20 - "Community 20"
 Cohesion: 0.03
-Nodes (56): bdist_dumb, distutils.command.bdist_dumb  Implements the Distutils 'bdist_dumb' command (cre, clean, distutils.command.clean  Implements the Distutils 'clean' command., distutils.command.install_egg_info  Implements the Distutils 'install_egg_info', Install an .egg-info file for the package, Allow basename to be overridden by child class.         Ref pypa/distutils#2., Convert an arbitrary string to a standard distribution name      Any runs of non (+48 more)
+Nodes (58): bdist_dumb, distutils.command.bdist_dumb  Implements the Distutils 'bdist_dumb' command (cre, clean, distutils.command.clean  Implements the Distutils 'clean' command., distutils.command.install_egg_info  Implements the Distutils 'install_egg_info', Install an .egg-info file for the package, Allow basename to be overridden by child class.         Ref pypa/distutils#2., Convert an arbitrary string to a standard distribution name      Any runs of non (+50 more)
 
 ### Community 21 - "Community 21"
-Cohesion: 0.07
-Nodes (53): PublicDatasetAdapter, ECBAdapter, EurostatAdapter, OECDAdapter, AlphaVantageAdapter, CoinGeckoAdapter, FinnhubAdapter, FMPAdapter (+45 more)
+Cohesion: 0.06
+Nodes (55): PublicDatasetAdapter, ECBAdapter, EurostatAdapter, OECDAdapter, AlphaVantageAdapter, CoinGeckoAdapter, FinnhubAdapter, FMPAdapter (+47 more)
 
 ### Community 22 - "Community 22"
 Cohesion: 0.10
 Nodes (24): Bonds Catalog, European Macro Indicators, Spanish Macro Indicators, US Macro Indicators, Provider Configuration, Tasa de Desempleo España, Euribor 3 meses, Euribor 12 months (+16 more)
 
 ### Community 23 - "Community 23"
-Cohesion: 0.06
-Nodes (35): get_api_key(), get_timeout(), get_workers(), Return the API key for the given provider, or None if not set., Return the HTTP timeout in seconds (default 10)., Return the number of concurrent worker threads (default 5)., AlphaVantageAdapter, Alpha Vantage adapter — IBM global quote. (+27 more)
+Cohesion: 0.05
+Nodes (37): get_api_key(), get_timeout(), get_workers(), Return the API key for the given provider, or None if not set., Return the HTTP timeout in seconds (default 10)., Return the number of concurrent worker threads (default 5)., export_results(), Write each AdapterResult to output/json/{timestamp}_{provider}.json.      Return (+29 more)
 
 ### Community 24 - "Community 24"
 Cohesion: 0.08
 Nodes (26): CategoryCreate, fetchCategories(), api, ApiError, request(), assetMap, getMockResponse(), mockAccounts (+18 more)
 
 ### Community 25 - "Community 25"
-Cohesion: 0.07
-Nodes (21): _metadata(), _parse_csv_last_rows(), European Central Bank adapter — key interest rate and EUR/USD exchange rate., Parse ECB csvdata format and return last n data rows as dicts., _fetch_stooq_csv(), _fetch_yahoo_fallback(), Stooq adapter - daily close quotes for major indices from CSV., _metadata() (+13 more)
+Cohesion: 0.24
+Nodes (10): _fetch_stooq_csv(), _fetch_yahoo_fallback(), Stooq adapter - daily close quotes for major indices from CSV., _quote(), HistoricalPrice, _fetch_stooq_csv(), _fetch_yahoo_fallback(), Stooq adapter - IBEX35 and S&P500 historical prices from CSV. (+2 more)
 
 ### Community 26 - "Community 26"
 Cohesion: 0.03
@@ -675,8 +677,8 @@ Cohesion: 0.06
 Nodes (45): Marker, Get a list value from the dictionary and verify it's the expected items type., Get a value from the dictionary, verify it's the expected type,     and convert, Get a required value from the dict, verify it's the expected type,     and conve, Get list value from dictionary and verify expected items type., Get a list value from the dictionary and convert its items to a dataclass., Validate that a string is a NormalizedName., Raised when when input data is not spec-compliant. (+37 more)
 
 ### Community 29 - "Community 29"
-Cohesion: 0.15
-Nodes (19): _build_comparatives(), compute_personal_impact(), compute_signal(), _fmt(), _get_mi_data(), _get_personal_data(), get_personal_impact(), PersonalImpactOut (+11 more)
+Cohesion: 0.11
+Nodes (24): _build_comparatives(), compute_personal_impact(), compute_signal(), _fmt(), _get_mi_data(), _get_personal_data(), get_personal_impact(), PersonalImpactOut (+16 more)
 
 ### Community 30 - "Community 30"
 Cohesion: 0.11
@@ -687,8 +689,8 @@ Cohesion: 0.09
 Nodes (30): ACCOUNT_TYPE_LABELS, AccountsPage(), EMPTY_FORM, AccountCreate, AccountUpdate, createAccount(), deleteAccount(), fetchAccounts() (+22 more)
 
 ### Community 32 - "Community 32"
-Cohesion: 0.07
-Nodes (45): CatalogLoader, export_results(), Write each AdapterResult to output/json/{timestamp}_{provider}.json.      Return, generate_report(), Generate a Markdown report at output/reports/{timestamp}_report.md.      Returns, build_coverage_report(), _capability_status(), cmd_catalog_coverage() (+37 more)
+Cohesion: 0.06
+Nodes (53): CatalogLoader, _entry_from_evaluation(), _format_fields(), _gaps(), generate_catalog(), _json_default(), _record_fields(), _record_model() (+45 more)
 
 ### Community 33 - "Community 33"
 Cohesion: 0.09
@@ -703,8 +705,8 @@ Cohesion: 0.23
 Nodes (14): BarchartSpider, CompaniesMarketCapSpider, DividendSpider, ETFSpider, JustETFSpider, MacrotrendsSpider, MarketBeatSpider, MarketScreenerSpider (+6 more)
 
 ### Community 36 - "Community 36"
-Cohesion: 0.06
-Nodes (26): _metadata(), _metadata(), ECBAdapter, _metadata(), _parse_csv_last_rows(), European Central Bank adapter — key interest rate and EUR/USD exchange rate., Parse ECB csvdata format and return last n data rows as dicts., _metadata() (+18 more)
+Cohesion: 0.04
+Nodes (38): _metadata(), _parse_csv_last_rows(), European Central Bank adapter — key interest rate and EUR/USD exchange rate., Parse ECB csvdata format and return last n data rows as dicts., _metadata(), _metadata(), IO, ECBAdapter (+30 more)
 
 ### Community 37 - "Community 37"
 Cohesion: 0.10
@@ -731,16 +733,16 @@ Cohesion: 0.20
 Nodes (12): DESKTOP_DIR, __dirname, generateMarkdown(), main(), OUTPUT_DIR, PROJECT_ROOT, ScreenshotMeta, startVite() (+4 more)
 
 ### Community 43 - "Community 43"
-Cohesion: 0.04
-Nodes (62): develop, DevelopDeprecationWarning, Set up package for development, easy_install, Stubbed command for temporary pbr compatibility., For backward compatibility, expose main functions from ``setuptools.config.setup, _AmbiguousMarker, _DeprecatedConfig (+54 more)
+Cohesion: 0.03
+Nodes (73): develop, DevelopDeprecationWarning, Set up package for development, easy_install, Stubbed command for temporary pbr compatibility., EggInfoDeprecationWarning, overwrite_arg(), setuptools.command.egg_info  Create a distribution's .egg-info directory and con (+65 more)
 
 ### Community 44 - "Community 44"
 Cohesion: 0.27
 Nodes (11): ImportBatch, confirm(), fail(), history(), preview(), rollback(), decode_csv(), dumps() (+3 more)
 
 ### Community 45 - "Community 45"
-Cohesion: 0.35
-Nodes (10): _entry_from_evaluation(), _format_fields(), _gaps(), generate_catalog(), _json_default(), _record_fields(), _record_model(), _record_sample() (+2 more)
+Cohesion: 0.11
+Nodes (19): build_editable(), build_wheel(), get_requires_for_build_editable(), get_requires_for_build_wheel(), prepare_metadata_for_build_editable(), prepare_metadata_for_build_wheel(), https://peps.python.org/pep-0517/#prepare-metadata-for-build-wheel, https://peps.python.org/pep-0660/#prepare-metadata-for-build-editable (+11 more)
 
 ### Community 47 - "Community 47"
 Cohesion: 0.07
@@ -795,8 +797,8 @@ Cohesion: 0.12
 Nodes (38): check_duplicates(), CheckDuplicatesOut, CheckDuplicatesRequest, confirm_import(), ConfirmBatchOut, ConfirmBatchRequest, ConfirmPositionIn, ImportedHoldingOut (+30 more)
 
 ### Community 63 - "Community 63"
-Cohesion: 0.05
-Nodes (44): Any, Application, _display(), The verbosity level of the application, with 0 as the default., Meant to be used for messages conveying basic information., Meant to be used for messages shown before potentially time consuming operations, Meant to be used for messages indicating some positive outcome., Meant to be used for messages conveying important information. (+36 more)
+Cohesion: 0.06
+Nodes (33): Any, Application, _display(), The verbosity level of the application, with 0 as the default., Meant to be used for messages conveying basic information., Meant to be used for messages shown before potentially time consuming operations, Meant to be used for messages indicating some positive outcome., Meant to be used for messages conveying important information. (+25 more)
 
 ### Community 64 - "Community 64"
 Cohesion: 0.10
@@ -863,16 +865,16 @@ Cohesion: 0.08
 Nodes (17): distutils.command.build_clib  Implements the Distutils 'build_clib' command, to, Override the default build_clib behaviour to do the following:      1. Implement, Ensure that the list of libraries is valid.          `library` is presumably pro, DistutilsSetupError, For errors that can be definitely blamed on the setup script,     such as invali, _OrderedStrSequence, assert_bool(), check_entry_points() (+9 more)
 
 ### Community 81 - "Community 81"
-Cohesion: 0.04
-Nodes (46): Return a list of all files that are used by the command to create the expected, Return a list of files intended for distribution as they would have been, Return a mapping between destination files as they would be produced by the, In order to support editable installations (see :pep:`660`) all     build subcom, (Required by the original :class:`setuptools.Command` interface), (Required by the original :class:`setuptools.Command` interface), (Required by the original :class:`setuptools.Command` interface), SubCommand (+38 more)
+Cohesion: 0.03
+Nodes (64): Return a list of all files that are used by the command to create the expected, Return a list of files intended for distribution as they would have been, Return a mapping between destination files as they would be produced by the, In order to support editable installations (see :pep:`660`) all     build subcom, (Required by the original :class:`setuptools.Command` interface), (Required by the original :class:`setuptools.Command` interface), (Required by the original :class:`setuptools.Command` interface), SubCommand (+56 more)
 
 ### Community 82 - "Community 82"
 Cohesion: 0.05
 Nodes (38): ExtractError, Return True if it is a directory., Return True if it is a symbolic link., Return True if it is a hard link., Return True if it is a character device., Return True if it is a block device., The TarFile Class provides an interface to tar archives., Return a TarInfo object for member 'name'. If 'name' can not be            found (+30 more)
 
 ### Community 83 - "Community 83"
-Cohesion: 0.05
-Nodes (23): Base, create_tables(), get_duckdb(), Decimal, DeclarativeBase, GoalCreate, GoalOut, GoalUpdate (+15 more)
+Cohesion: 0.06
+Nodes (21): Base, Decimal, DeclarativeBase, GoalCreate, GoalOut, GoalUpdate, PriceRefreshResult, PriceService (+13 more)
 
 ### Community 84 - "Community 84"
 Cohesion: 0.43
@@ -991,8 +993,8 @@ Cohesion: 0.15
 Nodes (12): AI Financial OS Application, 00 — Project Brief, Alcance inicial, Decisiones cerradas, Fuentes de mercado previstas, Fuentes económicas previstas, Fuentes personales previstas, Nombre del proyecto (+4 more)
 
 ### Community 147 - "Community 147"
-Cohesion: 0.04
-Nodes (88): Account, AccountCreate, create_account(), delete_account(), list_accounts(), update_account(), AccountUpdate, AIConversation (+80 more)
+Cohesion: 0.05
+Nodes (75): Account, AccountCreate, create_account(), delete_account(), list_accounts(), update_account(), AccountUpdate, AIConversation (+67 more)
 
 ### Community 148 - "Community 148"
 Cohesion: 0.06
@@ -1052,7 +1054,7 @@ Nodes (4): FinancialSignal, Tests para PersonalImpactEngine., _signal(), TestPer
 
 ### Community 210 - "Community 210"
 Cohesion: 0.03
-Nodes (49): Meta test to ensure tests can run from sdist, TestDeprecatedFields, TestExtModules, TestInteropCommandLineParsing, TestMeta, TestPyModules, TestStaticConfig, Test that if PEP 621 was loosened to allow mixing of dynamic and static     conf (+41 more)
+Nodes (54): write_entries(), Meta test to ensure tests can run from sdist, TestDeprecatedFields, TestExtModules, TestInteropCommandLineParsing, TestMeta, TestPyModules, TestStaticConfig (+46 more)
 
 ### Community 211 - "Community 211"
 Cohesion: 0.18
@@ -1099,8 +1101,8 @@ Cohesion: 0.25
 Nodes (7): 07 - Economic Intelligence, Cobertura, Endpoints relacionados, Estado actual, Implementacion vigente, Objetivo de producto, Reglas
 
 ### Community 222 - "Community 222"
-Cohesion: 0.09
-Nodes (15): ConfigDiscovery, _find_packages_within(), Fill-in metadata and options that can be automatically derived     (from other m, Internal API to disable automatic discovery, Internal API to disregard ext_modules.          Normally auto-discovery would no, Automatically discover missing configuration fields         and modifies the giv, ``True`` if the user has specified some form of package/module listing, The user can explicitly give a package layout via ``package_dir`` (+7 more)
+Cohesion: 0.07
+Nodes (20): BaseError, ConfigDiscovery, _find_packages_within(), Fill-in metadata and options that can be automatically derived     (from other m, Internal API to disable automatic discovery, Internal API to disregard ext_modules.          Normally auto-discovery would no, Automatically discover missing configuration fields         and modifies the giv, ``True`` if the user has specified some form of package/module listing (+12 more)
 
 ### Community 223 - "Community 223"
 Cohesion: 0.38
@@ -1144,15 +1146,15 @@ Nodes (7): _get_dist(), _populate_project_dir(), Make sure discovered values for
 
 ### Community 247 - "Community 247"
 Cohesion: 0.05
-Nodes (29): calc_chksums(), itn(), Return a tar header as a string of 512 byte blocks., Return the object as a ustar header block., Return the object as a GNU header block sequence., Return the object as a ustar header block. If it cannot be            represente, Return the object as a pax global header block sequence., Split a name longer than 100 chars into a prefix            and a name part. (+21 more)
+Nodes (27): calc_chksums(), itn(), Return a tar header as a string of 512 byte blocks., Return the object as a ustar header block., Return the object as a GNU header block sequence., Return the object as a ustar header block. If it cannot be            represente, Return the object as a pax global header block sequence., Split a name longer than 100 chars into a prefix            and a name part. (+19 more)
 
 ### Community 248 - "Community 248"
 Cohesion: 0.09
 Nodes (18): decompose(), posix(), quiet(), Regression test for pull request #4: ensures that files listed in         packag, Ensure package_data and include_package_data work         together., Ensure that the files listed in Extension.sources and Extension.depends, Similar to test_extension_sources_in_sdist but the referenced files don't exist., Similar to test_extension_sources_in_sdist but the referenced files are (+10 more)
 
 ### Community 249 - "Community 249"
-Cohesion: 0.02
-Nodes (52): _BytesPathT, Compiler, gen_preprocess_options(), r"""         >>> exts = {'.c': '.o'}         >>> Compiler._make_out_path_exts('., Generate C pre-processor options (-D, -U, -I) as used by at least     two types, Define the executables (and options for them) that will be run         to perfor, Ensure that every element of 'definitions' is valid., Raise a TypeError if defn is not valid.          A valid definition is either a (+44 more)
+Cohesion: 0.03
+Nodes (44): _BytesPathT, Compiler, gen_preprocess_options(), r"""         >>> exts = {'.c': '.o'}         >>> Compiler._make_out_path_exts('., Generate C pre-processor options (-D, -U, -I) as used by at least     two types, Define the executables (and options for them) that will be run         to perfor, Ensure that every element of 'definitions' is valid., Raise a TypeError if defn is not valid.          A valid definition is either a (+36 more)
 
 ### Community 250 - "Community 250"
 Cohesion: 0.04
@@ -1175,12 +1177,12 @@ Cohesion: 0.10
 Nodes (25): A name was attempted to be used that does not exist inside of the     environmen, Raised when attempting to create a :class:`Marker` from invalid input.      This, Raised when evaluating an unsupported marker comparison.      This can happen wh, Raised when evaluating a marker that references a missing environment key., A dictionary that represents a Python environment as captured by     :func:`defa, marker_atom = WS? LEFT_PARENTHESIS WS? marker WS? RIGHT_PARENTHESIS WS?, marker_item = WS? marker_var WS? marker_op WS? marker_var WS?, marker_var = VARIABLE | QUOTED_STRING (+17 more)
 
 ### Community 255 - "Community 255"
-Cohesion: 0.05
-Nodes (30): apply(), Apply configuration dict read with :func:`read_configuration`, apply_configuration(), _ConfigExpander, _EnsurePackagesDiscovered, _ignore_errors(), load_file(), _parse_requirements_list() (+22 more)
+Cohesion: 0.03
+Nodes (75): _adjust_ext_attrs(), apply(), _apply_project_table(), _apply_tool_table(), _attrgetter(), _copy_command_options(), _ext_modules(), _get_previous_entrypoints() (+67 more)
 
 ### Community 256 - "Community 256"
-Cohesion: 0.04
-Nodes (61): BaseError, Attempt to detect whether run() was called from setup() or by another         co, _adjust_ext_attrs(), _apply_project_table(), _apply_tool_table(), _attrgetter(), _copy_command_options(), _dependencies() (+53 more)
+Cohesion: 0.20
+Nodes (4): EditableException, EditableProject, is_valid(), normalize()
 
 ### Community 257 - "Community 257"
 Cohesion: 0.10
@@ -1195,20 +1197,20 @@ Cohesion: 0.05
 Nodes (31): Android, _android_documents_folder(), _android_downloads_folder(), _android_folder(), _android_music_folder(), _android_pictures_folder(), _android_videos_folder(), :return: runtime directory tied to the user, same as `user_cache_dir` if not opi (+23 more)
 
 ### Community 260 - "Community 260"
-Cohesion: 0.06
-Nodes (33): _MissingDynamic, _ExperimentalConfiguration, _ToolsTypoInMetadata, CommandSpec, _first_line_re(), get_win_launcher(), is_64bit(), isascii() (+25 more)
+Cohesion: 0.04
+Nodes (44): Attempt to detect whether run() was called from setup() or by another         co, _dependencies(), _MissingDynamic, _optional_dependencies(), _ExperimentalConfiguration, _ToolsTypoInMetadata, date, _DueDate (+36 more)
 
 ### Community 261 - "Community 261"
 Cohesion: 0.06
 Nodes (20): BuildEnvVars, get_relative_path(), safe_walk(), _WheelZipFile, hatch_register_builder(), BuilderInterface, IncludedFile, Returns a consistently generated series of file objects for every file that shou (+12 more)
 
 ### Community 262 - "Community 262"
-Cohesion: 0.09
-Nodes (26): Collection, OSError, PathSpec, Returns a debug representation of this path-spec., Tests the equality of this path-spec with *other* (:class:`PathSpec`) by 		compa, Adds the :attr:`self.patterns <.PathSpec.patterns>` from *other* 		(:class:`Path, Returns the number of :attr:`self.patterns <.PathSpec.patterns>` this 		path-spe, Check the files against this path-spec.  		*file* (:class:`str` or :class:`os.Pa (+18 more)
+Cohesion: 0.06
+Nodes (37): Collection, OSError, PathSpec, Returns a debug representation of this path-spec., Tests the equality of this path-spec with *other* (:class:`PathSpec`) by 		compa, Adds the :attr:`self.patterns <.PathSpec.patterns>` from *other* 		(:class:`Path, Returns the number of :attr:`self.patterns <.PathSpec.patterns>` this 		path-spe, Check the files against this path-spec.  		*file* (:class:`str` or :class:`os.Pa (+29 more)
 
 ### Community 263 - "Community 263"
 Cohesion: 0.05
-Nodes (25): _CommandT, Command, Set default values for all the options that this command         supports.  Note, Set final values for all the options that this command supports.         This is, A command's raison d'etre: carry out the action it exists to         perform, co, Print 'msg' to stdout if the global DEBUG (taken from the         DISTUTILS_DEBU, Ensure that 'option' is a string; if not defined, set it to         'default'., r"""Ensure that 'option' is a list of strings.  If 'option' is         currently (+17 more)
+Nodes (27): _CommandT, Command, Set default values for all the options that this command         supports.  Note, Set final values for all the options that this command supports.         This is, A command's raison d'etre: carry out the action it exists to         perform, co, Print 'msg' to stdout if the global DEBUG (taken from the         DISTUTILS_DEBU, Ensure that 'option' is a string; if not defined, set it to         'default'., r"""Ensure that 'option' is a list of strings.  If 'option' is         currently (+19 more)
 
 ### Community 264 - "Community 264"
 Cohesion: 0.07
@@ -1231,8 +1233,8 @@ Cohesion: 0.07
 Nodes (21): assert_relative(), _IncludePackageDataAbuse, make_writable(), Generate list of ``(package,src_dir,build_dir,filenames)`` tuples,         but w, See :class:`setuptools.commands.build.SubCommand`, See :class:`setuptools.commands.build.SubCommand`, Iterate over all modules producing (dest, src) pairs., Iterate over package data producing (dest, src) pairs. (+13 more)
 
 ### Community 269 - "Community 269"
-Cohesion: 0.05
-Nodes (32): Create a dist_info directory As defined in the wheel specification, # TODO: if bdist_wheel if merged into setuptools, just add "keep_egg_info" there, egg_info, EggInfoDeprecationWarning, InfoCommon, overwrite_arg(), setuptools.command.egg_info  Create a distribution's .egg-info directory and con, egg_info may be called more than once for a distribution,         in which case (+24 more)
+Cohesion: 0.15
+Nodes (7): bdist, ListCompat, distutils.command.bdist  Implements the Distutils 'bdist' command (create a buil, Print list of available formats (arguments to "--format" option)., show_formats(), Tests for distutils.command.bdist., TestBuild
 
 ### Community 270 - "Community 270"
 Cohesion: 0.08
@@ -1240,7 +1242,7 @@ Nodes (38): ArgumentParser, autoasync(), # NOTE: A future release will probably 
 
 ### Community 271 - "Community 271"
 Cohesion: 0.07
-Nodes (22): append_dir_sep(), iter_tree_entries(), _iter_tree_entries_next(), _iter_tree_files_next(), Walks the specified directory for all files and directories.  	*root* (:class:`s, Scan the directory for all descendant files.  	*root_full* (:class:`str`) the ab, Scan the directory for all descendant files.  	*root_full* (:class:`str`) the ab, Initializes the :exc:`AlreadyRegisteredError` instance.  		*name* (:class:`str`) (+14 more)
+Nodes (18): AlreadyRegisteredError, Registers the specified pattern factory.  	*name* (:class:`str`) is the name to, The :exc:`AlreadyRegisteredError` exception is raised when a pattern factory 	is, Initializes the :exc:`AlreadyRegisteredError` instance.  		*name* (:class:`str`), *message* (:class:`str`) is the error message., *name* (:class:`str`) is the name of the registered pattern., *pattern_factory* (:class:`~collections.abc.Callable`) is the registered 		patte, The :exc:`RecursionError` exception is raised when recursion is detected. (+10 more)
 
 ### Community 272 - "Community 272"
 Cohesion: 0.16
@@ -1259,8 +1261,8 @@ Cohesion: 0.05
 Nodes (21): This class abstracts handling of a project's versions.      A :class:`Version` i, A representation of the Version that shows all internal state.          >>> Vers, A string representation of the version that can be round-tripped.          >>> s, Internal property for match_args, The epoch of the version.          >>> Version("2.0.0").epoch         0, The components of the "release" segment of the version.          >>> Version("1., The pre-release segment of the version.          >>> print(Version("1.2.3").pre), The post-release number of the version.          >>> print(Version("1.2.3").post (+13 more)
 
 ### Community 276 - "Community 276"
-Cohesion: 0.06
-Nodes (20): copyfileobj(), _LowLevelFile, Close the TarFile. In write-mode, two finishing zero blocks are            appen, Add the TarInfo object 'tarinfo' to the archive. If 'tarinfo' represents, Copy length bytes from fileobj src to fileobj dst.        If length is None, cop, Low-level file object. Supports reading and writing.        It is used instead o, Class that serves as an adapter between TarFile and        a stream-like object., Construct a _Stream object. (+12 more)
+Cohesion: 0.09
+Nodes (14): copyfileobj(), Add the TarInfo object 'tarinfo' to the archive. If 'tarinfo' represents, Copy length bytes from fileobj src to fileobj dst.        If length is None, cop, Class that serves as an adapter between TarFile and        a stream-like object., Initialize for writing with gzip compression., Write string s to the stream., Write string s to the stream if a whole new block            is ready to be writ, Close the _Stream object. No operation should be            done on it afterward (+6 more)
 
 ### Community 277 - "Community 277"
 Cohesion: 0.10
@@ -1271,8 +1273,8 @@ Cohesion: 0.12
 Nodes (11): check_archive_formats(), _get_gid(), _get_uid(), make_tarball(), Returns the first format from the 'format' list that is unknown.      If all for, Returns a gid, given a group name., Returns an uid, given a user name., Create a (possibly compressed) tar file from all the files under     'base_dir'. (+3 more)
 
 ### Community 279 - "Community 279"
-Cohesion: 0.07
-Nodes (21): pass_none(), Wrap func so it's not called if its first param is None      >>> print_text = pa, Distribution, Get the ``Distribution`` instance for the named package.      :param distributio, Get the version string for the named package.      :param distribution_name: The, Return a list of requirements for the named package.      :return: An iterable o, An abstract Python distribution package.      Custom providers may derive from t, Attempt to load metadata file given by the name.          Python distribution me (+13 more)
+Cohesion: 0.08
+Nodes (17): pass_none(), Wrap func so it's not called if its first param is None      >>> print_text = pa, Distribution, Get the ``Distribution`` instance for the named package.      :param distributio, Get the version string for the named package.      :param distribution_name: The, Return a list of requirements for the named package.      :return: An iterable o, An abstract Python distribution package.      Custom providers may derive from t, Attempt to load metadata file given by the name.          Python distribution me (+9 more)
 
 ### Community 280 - "Community 280"
 Cohesion: 0.07
@@ -1332,7 +1334,7 @@ Nodes (22): Log, A simple log mechanism styled after PEP 282.  Retained for comp
 
 ### Community 294 - "Community 294"
 Cohesion: 0.09
-Nodes (16): Register a date handler function (takes string, returns 9-tuple date in GMT), registerDateHandler(), _open_resource(), parse(), Parse a feed from a URL, file, stream, or string.      :param url_file_stream_or, URL, filename, or string --> stream      This function lets you define parsers t, Strips and replaces the DOCTYPE, returns (rss_version, stripped_data)      rss_v, replace_doctype() (+8 more)
+Nodes (19): _parse_date(), Register a date handler function (takes string, returns 9-tuple date in GMT), Parses a variety of date formats into a 9-tuple in GMT, registerDateHandler(), _open_resource(), parse(), Parse a feed from a URL, file, stream, or string.      :param url_file_stream_or, URL, filename, or string --> stream      This function lets you define parsers t (+11 more)
 
 ### Community 295 - "Community 295"
 Cohesion: 0.08
@@ -1345,6 +1347,10 @@ Nodes (36): BuildTag, _batched(), Batch data into tuples of length *n*. If the n
 ### Community 297 - "Community 297"
 Cohesion: 0.08
 Nodes (21): _ConfigSettings, _BuildMetaBackend, _BuildMetaLegacyBackend, _ConfigSettingsTranslator, Distribution, _file_with_extension(), _IncompatibleBdistWheel, no_install_setup_requires() (+13 more)
+
+### Community 298 - "Community 298"
+Cohesion: 0.10
+Nodes (3): _FeedParserMixin, :type s: str         :rtype: bool, _sanitize_html()
 
 ### Community 299 - "Community 299"
 Cohesion: 0.07
@@ -1363,20 +1369,20 @@ Cohesion: 0.07
 Nodes (14): BuilderConfigBound, CustomBuildHook, hatch_register_build_hook(), BuildHookInterface, The plugin name of the build target., A list of extra [dependencies](../../config/dependency.md) that must be installe, This occurs before the build process if the `-c`/`--clean` flag was passed to, Example usage:      ```python tab="plugin.py"     from hatchling.builders.hooks. (+6 more)
 
 ### Community 303 - "Community 303"
-Cohesion: 0.10
-Nodes (15): FMPAdapter, Financial Modeling Prep adapter — AAPL company profile., _redact_api_key(), OpenFIGIAdapter, OpenFIGI adapter - map a ticker to FIGI metadata., _redact_api_key(), CNMVAdapter, CNMV (Comisión Nacional del Mercado de Valores) adapter — registered entities / (+7 more)
+Cohesion: 0.14
+Nodes (12): FMPAdapter, Financial Modeling Prep adapter — AAPL company profile., _redact_api_key(), OpenFIGIAdapter, OpenFIGI adapter - map a ticker to FIGI metadata., _redact_api_key(), EDGARAdapter, _metadata() (+4 more)
 
 ### Community 304 - "Community 304"
 Cohesion: 0.08
-Nodes (17): LiteralString, PlatformInfo, Microsoft Visual Studio related registry information.      Parameters     ------, Microsoft Visual Studio root registry key.          Return         ------, Microsoft Visual Studio SxS registry key.          Return         ------, Microsoft Visual C++ VC7 registry key.          Return         ------         st, Microsoft Visual Studio VS7 registry key.          Return         ------, Microsoft Visual C++ for Python registry key.          Return         ------ (+9 more)
+Nodes (18): LiteralString, PlatformInfo, Microsoft Visual Studio related registry information.      Parameters     ------, Microsoft Visual Studio root registry key.          Return         ------, Microsoft Visual Studio SxS registry key.          Return         ------, Microsoft Visual C++ VC7 registry key.          Return         ------         st, Microsoft Visual Studio VS7 registry key.          Return         ------, Microsoft Visual C++ for Python registry key.          Return         ------ (+10 more)
 
 ### Community 305 - "Community 305"
-Cohesion: 0.10
-Nodes (21): The *pathspec* package provides pattern matching for file paths. So far this onl, This module contains the project meta-data., check_match_file(), CheckResult, _filter_check_patterns(), iter_tree(), iter_tree_files(), match_file() (+13 more)
+Cohesion: 0.09
+Nodes (21): The *pathspec* package provides pattern matching for file paths. So far this onl, This module contains the project meta-data., append_dir_sep(), check_match_file(), CheckResult, _filter_check_patterns(), iter_tree(), match_file() (+13 more)
 
 ### Community 306 - "Community 306"
-Cohesion: 0.13
-Nodes (10): entry_points(), EntryPoints, Return EntryPoint objects for all installed packages.      Pass selection parame, An immutable collection of selectable EntryPoint objects., Get the EntryPoint in self matching name., Repr with classname and tuple constructor to         signal that we deviate from, Select entry points from self that match the         given parameters (typically, Return the set of all names of all entry points. (+2 more)
+Cohesion: 0.14
+Nodes (8): EntryPoints, An immutable collection of selectable EntryPoint objects., Get the EntryPoint in self matching name., Repr with classname and tuple constructor to         signal that we deviate from, Select entry points from self that match the         given parameters (typically, Return the set of all names of all entry points., Return the set of all groups of all entry points., Return EntryPoints for this distribution.          Custom providers may provide
 
 ### Community 307 - "Community 307"
 Cohesion: 0.07
@@ -1392,7 +1398,7 @@ Nodes (16): enumerate_patterns(), This module provides private utility functions
 
 ### Community 310 - "Community 310"
 Cohesion: 0.11
-Nodes (20): Compatibility layer with Python 3.8/3.9, method_cache(), noop(), passthrough(), A no-operation function that does nothing.      >>> noop(1, 2, three=3), Wrap the function to always return the first parameter.      >>> passthrough(pri, Wrap lru_cache to support storing the cache data in the object instances.      A, _clear_after_fork() (+12 more)
+Nodes (22): Compatibility layer with Python 3.8/3.9, method_cache(), noop(), passthrough(), A no-operation function that does nothing.      >>> noop(1, 2, three=3), Wrap the function to always return the first parameter.      >>> passthrough(pri, Wrap lru_cache to support storing the cache data in the object instances.      A, _clear_after_fork() (+14 more)
 
 ### Community 311 - "Community 311"
 Cohesion: 0.06
@@ -1487,8 +1493,8 @@ Cohesion: 0.06
 Nodes (41): Return the first "truth-y" attribute or None     >>> from types import SimpleNam, _some_attrgetter(), core_metadata(), makedist(), _mock_expand_patterns(), _pep621_example_project(), Make sure that applying the configuration from pyproject.toml is equivalent to a, Make sure the example in PEP 621 works (+33 more)
 
 ### Community 335 - "Community 335"
-Cohesion: 0.07
-Nodes (26): _debug(), find_executable(), _inject_macos_ver(), distutils.spawn  Provides the 'spawn()' function, a front-end to various platfor, Render a subprocess command differently depending on DEBUG., Run another program, specified as a command list 'cmd', in a new process.      ', Tries to find 'executable' in the directories listed in 'path'.      A string li, _resolve() (+18 more)
+Cohesion: 0.05
+Nodes (30): Compiler, Remove standard library path from rpath, macOS users can specify an alternate SDK using'-isysroot'.         Calculate the, Second-guess the linker with not much hard         data to go on: GCC seems to p, _debug(), find_executable(), _inject_macos_ver(), distutils.spawn  Provides the 'spawn()' function, a front-end to various platfor (+22 more)
 
 ### Community 336 - "Community 336"
 Cohesion: 0.08
@@ -1508,7 +1514,7 @@ Nodes (7): Generate list of '(package,src_dir,build_dir,filenames)' tuples, Copy
 
 ### Community 340 - "Community 340"
 Cohesion: 0.06
-Nodes (33): Install an .egg-info directory for the package, Don't add compiled flags to filenames of non-Python files, Return a collections.Sized collections.Container of paths to be         excluded, Given a package name and exclusion path within that package,         compute the, >>> list(install_lib._all_packages('foo.bar.baz'))         ['foo.bar.baz', 'foo., Get namespace packages (list) but only for         single_version_externally_man, # TODO: is it necessary to short-circuit here? i.e. what's the cost, Generate file paths to be excluded for namespace packages (bytecode         cach (+25 more)
+Nodes (31): Install an .egg-info directory for the package, Don't add compiled flags to filenames of non-Python files, Return a collections.Sized collections.Container of paths to be         excluded, Given a package name and exclusion path within that package,         compute the, >>> list(install_lib._all_packages('foo.bar.baz'))         ['foo.bar.baz', 'foo., Get namespace packages (list) but only for         single_version_externally_man, # TODO: is it necessary to short-circuit here? i.e. what's the cost, Generate file paths to be excluded for namespace packages (bytecode         cach (+23 more)
 
 ### Community 341 - "Community 341"
 Cohesion: 0.15
@@ -1679,8 +1685,8 @@ Cohesion: 0.11
 Nodes (16): CallableOperator, _operator_cost(), _pep440_filter_prereleases(), Filter items in the given iterable, that match the specifier.          :param it, Takes an iterable of items and filters them so that only items which         are, Filter per PEP 440: exclude prereleases unless no finals exist., Sort key for Cost Based Ordering of specifier operators in _filter_versions., Return whether or not the item is contained in this specifier.          :param i (+8 more)
 
 ### Community 386 - "Community 386"
-Cohesion: 0.20
-Nodes (7): AlreadyRegisteredError, Registers the specified pattern factory.  	*name* (:class:`str`) is the name to, The :exc:`AlreadyRegisteredError` exception is raised when a pattern factory 	is, *message* (:class:`str`) is the error message., *name* (:class:`str`) is the name of the registered pattern., *pattern_factory* (:class:`~collections.abc.Callable`) is the registered 		patte, register_pattern()
+Cohesion: 0.29
+Nodes (11): dismiss_insight(), get_anomalies(), get_data_quality(), get_insights(), get_monthly_review(), refresh_insights(), _validate_period(), AnomaliesOut (+3 more)
 
 ### Community 387 - "Community 387"
 Cohesion: 0.20
@@ -1767,8 +1773,8 @@ Cohesion: 0.22
 Nodes (10): Sometimes the import machinery will import the parent package of a nested, test_fill_package_dir(), test_find_packages(), test_glob_relative(), test_read_files(), test_resolve_class(), TestReadAttr, write_files() (+2 more)
 
 ### Community 408 - "Community 408"
-Cohesion: 0.17
-Nodes (7): _parse_date(), Parses a variety of date formats into a 9-tuple in GMT, _build_urllib2_request(), _FeedURLHandler, get(), convert_to_idn(), Convert a URL to IDN notation
+Cohesion: 0.47
+Nodes (4): _metadata(), _parse_fred_csv(), _parse_yield_csv(), FRED adapter - macro indicators plus Treasury yield fallback series.
 
 ### Community 409 - "Community 409"
 Cohesion: 0.15
@@ -1791,8 +1797,8 @@ Cohesion: 0.22
 Nodes (6): Command, Setuptools internal actions are organized using a *command design pattern*., Construct the command for dist, updating         vars(self) with any keyword par, Set or (reset) all options/attributes/caches used by the command         to thei, Set final values for all options/attributes used by the command.         Most of, Execute the actions intended by the command.         (Side effects **SHOULD** on
 
 ### Community 416 - "Community 416"
-Cohesion: 0.05
-Nodes (33): bdist, ListCompat, distutils.command.bdist  Implements the Distutils 'bdist' command (create a buil, Print list of available formats (arguments to "--format" option)., show_formats(), Print all possible values for the 'formats' option (used by     the "--help-form, show_formats(), _() (+25 more)
+Cohesion: 0.08
+Nodes (26): Print all possible values for the 'formats' option (used by     the "--help-form, show_formats(), _(), distutils.dist  Provides the Distribution class, which represents the module dis, DistutilsArgError, DistutilsGetoptError, The option table provided to 'fancy_getopt()' is bogus., Raised by fancy_getopt in response to getopt.error -- ie. an     error in the co (+18 more)
 
 ### Community 417 - "Community 417"
 Cohesion: 0.22
@@ -1899,8 +1905,8 @@ Cohesion: 0.43
 Nodes (3): Historically, distutils "logged" by printing to sys.std*.         Later versions, If optional extensions fail to build, setuptools should show the error         i, TestBuildExtInplace
 
 ### Community 445 - "Community 445"
-Cohesion: 0.07
-Nodes (24): hatchling(), dep_command(), synced_command(), ProjectMetadata, https://peps.python.org/pep-0621/#version, metadata_command(), metadata_impl(), construct_metadata_file_1_2() (+16 more)
+Cohesion: 0.08
+Nodes (18): Context, load_toml(), ProjectMetadata, https://peps.python.org/pep-0621/#version, metadata_impl(), construct_metadata_file_1_2(), construct_metadata_file_2_1(), construct_metadata_file_2_2() (+10 more)
 
 ### Community 446 - "Community 446"
 Cohesion: 0.33
@@ -1915,8 +1921,8 @@ Cohesion: 0.32
 Nodes (11): Direction, compute_signals(), _load_yaml(), _make_signal(), _now(), Financial Signal Engine — convierte insights macro/mercado en señales financiera, Genera señales financieras desde insights macro y datos de mercado., _signals_from_insights() (+3 more)
 
 ### Community 450 - "Community 450"
-Cohesion: 0.21
-Nodes (9): files(), _get_toplevel_name(), PackagePath, Return a list of files for the named package.      :param distribution_name: The, Return the top-most parent as long as there is a parent., Infer a possibly importable module name from a name presumed on     sys.path., A reference to a path in a package, Return a path-like object for this path (+1 more)
+Cohesion: 0.12
+Nodes (13): files(), _get_toplevel_name(), PackagePath, Return a list of files for the named package.      :param distribution_name: The, Return the top-most parent as long as there is a parent., Infer a possibly importable module name from a name presumed on     sys.path., A reference to a path in a package, Return a path-like object for this path (+5 more)
 
 ### Community 451 - "Community 451"
 Cohesion: 0.17
@@ -1935,8 +1941,8 @@ Cohesion: 0.47
 Nodes (3): Ensure that auto-discovery is not triggered when the project is based on, When opting-in to pyproject.toml metadata, auto-discovery will be active if, TestWithCExtension
 
 ### Community 455 - "Community 455"
-Cohesion: 0.18
-Nodes (6): Microsoft Windows SDK Tools.          Return         ------         list of str, Microsoft Windows SDK Tools paths generator.          Return         ------, Microsoft .NET Framework Tools.          Return         ------         list of s, Return key in Microsoft software registry.          Parameters         ---------, Return True if target CPU is x86 32 bits..          Return         ------, Return True if current CPU is x86 32 bits..          Return         ------
+Cohesion: 0.22
+Nodes (5): Microsoft Windows SDK Tools.          Return         ------         list of str, Microsoft Windows SDK Tools paths generator.          Return         ------, Microsoft .NET Framework Tools.          Return         ------         list of s, Return True if target CPU is x86 32 bits..          Return         ------, Return True if current CPU is x86 32 bits..          Return         ------
 
 ### Community 456 - "Community 456"
 Cohesion: 0.17
@@ -2019,8 +2025,8 @@ Cohesion: 0.15
 Nodes (5): Return a read-only view of the sequence object *target*.      :class:`SequenceVi, SequenceView, _Sequence, Handle 'exclude()' for list/tuple attrs without a special handler, Remove items from distribution that are named in keyword arguments          For
 
 ### Community 478 - "Community 478"
-Cohesion: 0.24
-Nodes (6): CompressionError, Open uncompressed tar archive name for reading or writing., Open gzip compressed tar archive name for reading or writing.            Appendi, Open bzip2 compressed tar archive name for reading or writing.            Append, Open lzma compressed tar archive name for reading or writing.            Appendi, Exception for unavailable compression methods.
+Cohesion: 0.10
+Nodes (12): CompressionError, _LowLevelFile, Open uncompressed tar archive name for reading or writing., Open gzip compressed tar archive name for reading or writing.            Appendi, Open bzip2 compressed tar archive name for reading or writing.            Append, Open lzma compressed tar archive name for reading or writing.            Appendi, Close the TarFile. In write-mode, two finishing zero blocks are            appen, Exception for unavailable compression methods. (+4 more)
 
 ### Community 479 - "Community 479"
 Cohesion: 0.20
@@ -2209,16 +2215,16 @@ Nodes (4): pep508(), pep508_versionspec(), Expression that can be used to specif
 ## Knowledge Gaps
 - **583 isolated node(s):** `VersionEnvVars`, `EIClass`, `EIData`, `EMachine`, `winreg` (+578 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **85 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **87 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Path` connect `Community 48` to `Community 0`, `Community 517`, `Community 6`, `Community 9`, `Community 271`, `Community 20`, `Community 281`, `Community 284`, `Community 28`, `Community 286`, `Community 288`, `Community 32`, `Community 417`, `Community 41`, `Community 297`, `Community 42`, `Community 45`, `Community 430`, `Community 446`, `Community 449`, `Community 322`, `Community 325`, `Community 334`, `Community 462`, `Community 335`, `Community 81`, `Community 336`, `Community 341`, `Community 96`, `Community 243`, `Community 502`, `Community 249`, `Community 250`?**
+- **Why does `Path` connect `Community 48` to `Community 0`, `Community 256`, `Community 517`, `Community 6`, `Community 9`, `Community 20`, `Community 23`, `Community 281`, `Community 284`, `Community 28`, `Community 286`, `Community 288`, `Community 32`, `Community 417`, `Community 41`, `Community 297`, `Community 42`, `Community 430`, `Community 305`, `Community 446`, `Community 449`, `Community 322`, `Community 325`, `Community 334`, `Community 462`, `Community 335`, `Community 81`, `Community 336`, `Community 341`, `Community 96`, `Community 243`, `Community 502`, `Community 249`, `Community 250`?**
   _High betweenness centrality (0.064) - this node is a cross-community bridge._
 - **Why does `PlatformDirsABC` connect `Community 41` to `Community 96`, `Community 259`, `Community 299`, `Community 13`, `Community 243`, `Community 284`?**
   _High betweenness centrality (0.046) - this node is a cross-community bridge._
-- **Why does `Distribution` connect `Community 210` to `Community 256`, `Community 257`, `Community 9`, `Community 268`, `Community 269`, `Community 273`, `Community 410`, `Community 415`, `Community 417`, `Community 291`, `Community 43`, `Community 48`, `Community 438`, `Community 311`, `Community 325`, `Community 334`, `Community 81`, `Community 340`, `Community 87`, `Community 477`, `Community 222`, `Community 356`, `Community 246`?**
+- **Why does `Distribution` connect `Community 210` to `Community 257`, `Community 9`, `Community 268`, `Community 273`, `Community 410`, `Community 415`, `Community 417`, `Community 291`, `Community 43`, `Community 48`, `Community 438`, `Community 311`, `Community 325`, `Community 334`, `Community 81`, `Community 340`, `Community 87`, `Community 477`, `Community 222`, `Community 356`, `Community 246`, `Community 255`?**
   _High betweenness centrality (0.038) - this node is a cross-community bridge._
 - **Are the 75 inferred relationships involving `Distribution` (e.g. with `_MissingDynamic` and `EnsurePackagesDiscovered`) actually correct?**
   _`Distribution` has 75 INFERRED edges - model-reasoned connections that need verification._
@@ -2227,4 +2233,4 @@ _Questions this graph is uniquely positioned to answer:_
 - **Should `Community 0` be split into smaller, more focused modules?**
   _Cohesion score 0.05067920585161965 - nodes in this community are weakly interconnected._
 - **Should `Community 1` be split into smaller, more focused modules?**
-  _Cohesion score 0.03970741901776385 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.03870162297128589 - nodes in this community are weakly interconnected._
