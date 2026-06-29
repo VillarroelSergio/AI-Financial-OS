@@ -21,6 +21,7 @@
 | 8.6 | Budgets, Recurring Transactions & Cashflow Planning | ✅ Completa | rama `feature/fase-8-6-budgets-cashflow` |
 | 9 | Document Intelligence / RAG | Completa | rama actual |
 | 10 | Hardening, Security & Backups | Completa | rama actual |
+| 10.5 | UX Functional QA & Product Intelligence Repair | En curso | rama `feature/fase-10-5-ux-functional-qa-product-intelligence` |
 | 11 | Packaging & Release | ⏳ Pendiente | — |
 
 | Area | Estado | Ruta principal |
@@ -37,6 +38,7 @@
 | Budgets & Cashflow Planning | Pendiente | `backend/app/modules/budgets`, `backend/app/modules/transactions` |
 | Document Intelligence / RAG | Completa | `backend/app/modules/rag`, `backend/app/models/document.py` |
 | Hardening, Security & Backups | Completa | `backend/app/modules/security`, base de datos, backups |
+| UX Functional QA | En curso | `apps/desktop/src/features`, `backend/app/modules/market_intelligence`, docs fase 10.5 |
 | Packaging & Release | Pendiente | Tauri build/release |
 
 ## Capa vigente de mercado y macro
@@ -214,6 +216,25 @@ Implementado:
 - Politica clara de datos demo/mock frente a datos reales.
 
 Documentacion: `docs/25_HARDENING_SECURITY_BACKUPS.md`.
+
+### Fase 10.5 - UX Functional QA & Product Intelligence Repair
+
+Objetivo: corregir bloqueantes de experiencia, estados de datos e inteligencia contextual antes de Packaging & Release.
+
+Incluye:
+
+- Mercados con estados honestos: actualizado, cache, parcial, no disponible y error controlado sin mensajes tecnicos crudos.
+- Economia con validacion de calidad para evitar valores fallback repetidos presentados como reales.
+- Reconciliacion como calidad/revision de cartera, con explicacion de confianza, precios, FX y posiciones manuales.
+- Movimientos orientado a busqueda, filtros, nombres legibles de cuenta y acciones seguras.
+- Importar cartera con soporte de capturas reales o alcance comunicado de forma honesta, manteniendo texto y entrada manual.
+- Gastos priorizando ranking, comparativa y drilldown frente a donuts saturados.
+- Objetivos con explicacion textual de plazo, aportacion necesaria, escenarios e inflacion.
+- Planificacion con candidatos recurrentes asistidos y confirmacion explicita.
+- Copiloto IA contextual por modulo usando datos preparados por servicios deterministas.
+- Ajustes como centro de estado local: backend, IA, RAG, backups, privacidad y datos demo.
+
+Documentacion: `docs/26_UX_FUNCTIONAL_QA_PRODUCT_INTELLIGENCE_REPAIR.md`.
 
 ### Fase 11 - Packaging & Release
 
