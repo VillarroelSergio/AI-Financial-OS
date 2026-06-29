@@ -1,5 +1,5 @@
 import {
-  Bar, BarChart, CartesianGrid, Cell, Legend, ResponsiveContainer,
+  Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer,
   Tooltip, XAxis, YAxis,
 } from "recharts";
 import type { MonthForecast } from "@/lib/api/budgets";
@@ -26,7 +26,7 @@ export default function CashflowChart({ months }: Props) {
           <Tooltip
             contentStyle={{ background: "#16181a", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8 }}
             itemStyle={{ color: "#fff", fontSize: 12 }}
-            formatter={(value: number) => [value.toLocaleString("es-ES", { style: "currency", currency: "EUR" }), ""]}
+            formatter={(value: unknown) => [(value as number).toLocaleString("es-ES", { style: "currency", currency: "EUR" }), ""]}
           />
           <Legend wrapperStyle={{ fontSize: 11, color: "#8d969e" }} />
           <Bar dataKey="ingresos" name="Ingresos" fill="#00a87e" radius={[4, 4, 0, 0]} />
