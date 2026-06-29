@@ -321,6 +321,57 @@ Respuesta:
 }
 ```
 
+## Document Intelligence / RAG
+
+### GET `/api/rag/documents`
+
+Devuelve documentos locales indexados.
+
+### POST `/api/rag/documents`
+
+```json
+{
+  "filename": "contrato.txt",
+  "title": "Contrato hipoteca",
+  "text": "Texto del documento",
+  "entity_type": "account",
+  "entity_id": "uuid"
+}
+```
+
+### POST `/api/rag/documents/upload`
+
+Multipart local. Acepta `txt`, `md`, `csv` y `json`.
+
+### POST `/api/rag/query`
+
+```json
+{
+  "question": "Cuando vence la cuota?",
+  "limit": 5
+}
+```
+
+Devuelve respuesta con `sources` trazables a documento y fragmento.
+
+## Security & Backups
+
+### GET `/api/security/status`
+
+Devuelve estado local de seguridad, ruta de datos y backups.
+
+### GET `/api/security/backups`
+
+Lista backups locales.
+
+### POST `/api/security/backups`
+
+Crea copia local de la base SQLite.
+
+### GET `/api/security/integrity`
+
+Ejecuta validacion de integridad y lista tablas disponibles.
+
 ## Portfolio Import
 
 ### POST `/api/investments/import/parse-text`

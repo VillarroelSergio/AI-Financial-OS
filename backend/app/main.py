@@ -20,6 +20,7 @@ from app.modules.investments.reconciliation_routes import router as reconciliati
 from app.modules.market_intelligence.api.routes import router as market_intelligence_router
 from app.modules.financial_knowledge.router import router as financial_knowledge_router
 from app.modules.rag.routes import router as rag_router
+from app.modules.security.routes import router as security_router
 from app.modules.settings.routes import router as settings_router
 from app.modules.transactions.routes import router as transactions_router
 from app.modules.budgets.routes import router as budgets_router
@@ -78,6 +79,7 @@ app.include_router(goals_router, prefix="/api/goals", tags=["goals"])
 app.include_router(insights_router, prefix="/api/insights", tags=["insights"])
 app.include_router(ai_router, prefix="/api/ai", tags=["ai"])
 app.include_router(rag_router, prefix="/api/rag", tags=["rag"])
+app.include_router(security_router, prefix="/api/security", tags=["security"])
 app.include_router(settings_router, prefix="/api/settings", tags=["settings"])
 app.include_router(market_intelligence_router, prefix="/api/market-intelligence", tags=["market_intelligence"])
 app.include_router(financial_knowledge_router, prefix="/api/financial-knowledge", tags=["financial_knowledge"])
