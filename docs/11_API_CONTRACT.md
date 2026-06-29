@@ -194,9 +194,7 @@ Returns on-demand portfolio reconciliation report with quality states, allocatio
     "confirmed_pct": 60.0,
     "estimated_pct": 20.0,
     "manual_pct": 10.0,
-    "no_price_pct": 10.0,
-    "fx_pending_pct": 0.0,
-    "requires_review_pct": 0.0
+    "no_price_pct": 10.0
   },
   "holdings": [
     {
@@ -249,6 +247,12 @@ Returns on-demand portfolio reconciliation report with quality states, allocatio
   ]
 }
 ```
+
+**Note on Completeness Schema:** The `completeness` object contains four percentages:
+- `confirmed_pct`: holdings with validated price/cost
+- `estimated_pct`: holdings with estimated price/cost
+- `manual_pct`: includes both manually entered and requires-review holdings
+- `no_price_pct`: includes both no-price and fx-pending holdings
 
 ## Market Intelligence
 

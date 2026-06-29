@@ -25,6 +25,11 @@ Each holding is assigned one of six states:
 | **fx_pending** | FX rate missing or stale; EUR conversion pending. |
 | **requires_review** | Conflicting data or ambiguous instrument; manual review needed. |
 
+**Note on Completeness Metrics:** The `completeness` object aggregates these six states into four percentages:
+- `no_price_pct` includes all `no_price` and `fx_pending` holdings
+- `manual_pct` includes both `manual` and `requires_review` holdings
+- `confirmed_pct` and `estimated_pct` count directly
+
 ## Thresholds
 
 - **Asset concentration:** >20% triggers alert.
@@ -67,9 +72,7 @@ Returns portfolio reconciliation report.
     "confirmed_pct": 60.0,
     "estimated_pct": 20.0,
     "manual_pct": 10.0,
-    "no_price_pct": 10.0,
-    "fx_pending_pct": 0.0,
-    "requires_review_pct": 0.0
+    "no_price_pct": 10.0
   },
   "holdings": [
     {
