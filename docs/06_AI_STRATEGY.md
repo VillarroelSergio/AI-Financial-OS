@@ -192,3 +192,12 @@ La UI puede mostrarlo como “Datos usados”.
 
 - RAG documental.
 - Preguntas sobre PDFs.
+
+### Fase 10.5 - Copiloto contextual
+
+- La UI expone un copiloto contextual en modulos principales.
+- Cada pregunta puede enviar `context` con modulo, ruta, estado de dato y metricas visibles.
+- El backend filtra el contexto permitido antes de inyectarlo al prompt.
+- El contexto solo orienta la respuesta: las cifras deben validarse con tools deterministas.
+- El asistente debe indicar datos usados, faltantes o insuficientes y no inventar valores.
+- No hay SQL libre, recomendaciones vinculantes ni calculos criticos hechos solo por LLM.

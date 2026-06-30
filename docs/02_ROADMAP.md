@@ -21,7 +21,7 @@
 | 8.6 | Budgets, Recurring Transactions & Cashflow Planning | ✅ Completa | rama `feature/fase-8-6-budgets-cashflow` |
 | 9 | Document Intelligence / RAG | Completa | rama actual |
 | 10 | Hardening, Security & Backups | Completa | rama actual |
-| 10.5 | UX Functional QA & Product Intelligence Repair | En curso | rama `feature/fase-10-5-ux-functional-qa-product-intelligence` |
+| 10.5 | UX Functional QA & Product Intelligence Repair | En curso - P0/P1 mayormente implementado | rama `feature/fase-10-5-ux-functional-qa-product-intelligence` |
 | 11 | Packaging & Release | ⏳ Pendiente | — |
 
 | Area | Estado | Ruta principal |
@@ -35,7 +35,7 @@
 | Local AI Assistant | Completa | `backend/app/modules/ai`, `backend/app/modules/rag` |
 | Insights Engine | ✅ Completa | `backend/app/modules/insights` |
 | Portfolio Reconciliation | Completa | `backend/app/modules/investments` |
-| Budgets & Cashflow Planning | Pendiente | `backend/app/modules/budgets`, `backend/app/modules/transactions` |
+| Budgets & Cashflow Planning | Completa / evolucionando | `backend/app/modules/budgets`, `backend/app/modules/recurring`, `backend/app/modules/cashflow` |
 | Document Intelligence / RAG | Completa | `backend/app/modules/rag`, `backend/app/models/document.py` |
 | Hardening, Security & Backups | Completa | `backend/app/modules/security`, base de datos, backups |
 | UX Functional QA | En curso | `apps/desktop/src/features`, `backend/app/modules/market_intelligence`, docs fase 10.5 |
@@ -221,20 +221,34 @@ Documentacion: `docs/25_HARDENING_SECURITY_BACKUPS.md`.
 
 Objetivo: corregir bloqueantes de experiencia, estados de datos e inteligencia contextual antes de Packaging & Release.
 
-Incluye:
+Estado operativo:
 
-- Mercados con estados honestos: actualizado, cache, parcial, no disponible y error controlado sin mensajes tecnicos crudos.
-- Economia con validacion de calidad para evitar valores fallback repetidos presentados como reales.
-- Reconciliacion como calidad/revision de cartera, con explicacion de confianza, precios, FX y posiciones manuales.
-- Movimientos orientado a busqueda, filtros, nombres legibles de cuenta y acciones seguras.
-- Importar cartera con soporte de capturas reales o alcance comunicado de forma honesta, manteniendo texto y entrada manual.
-- Gastos priorizando ranking, comparativa y drilldown frente a donuts saturados.
-- Objetivos con explicacion textual de plazo, aportacion necesaria, escenarios e inflacion.
-- Planificacion con candidatos recurrentes asistidos y confirmacion explicita.
-- Copiloto IA contextual por modulo usando datos preparados por servicios deterministas.
-- Ajustes como centro de estado local: backend, IA, RAG, backups, privacidad y datos demo.
+| Punto | Estado | Evidencia |
+|---|---|---|
+| Product shell y UI polish | Hecho | `docs/27_FINANCIAL_COMMAND_CENTER_UI_POLISH.md`, shell y pantallas principales actualizadas |
+| Mercados con estados honestos/cache/error controlado | Hecho | `apps/desktop/src/features/markets`, `backend/app/modules/market_intelligence` |
+| Economia con calidad, regiones y datos no repetidos por fallback silencioso | Hecho | `apps/desktop/src/features/economy`, `backend/app/modules/market_intelligence/quality` |
+| Calidad de cartera con explicacion de confianza, precios, FX y manuales | Hecho | UI visible como "Calidad de cartera", `backend/app/modules/investments/reconciliation_*` |
+| Movimientos con busqueda, filtros, ordenacion, CRUD y sin UUID visibles | Hecho | `apps/desktop/src/features/transactions/TransactionsPage.tsx`, `backend/app/modules/transactions` |
+| Importar cartera con capturas reales o alcance honesto, texto fallback y manual | Hecho parcial | UI acepta capturas y comunica OCR local pendiente; texto/manual y confirmacion explicita activos |
+| Gastos con ranking, agrupacion "Otros", drilldown y visualizacion menos saturada | Hecho | `apps/desktop/src/features/spending`, `ExpenseCategoryDetailDrawer` |
+| Objetivos con escenarios, inflacion y mensajes comprensibles | Hecho | `apps/desktop/src/features/goals`, `backend/app/modules/goals` |
+| Planificacion con deteccion asistida de recurrentes | Hecho | `GET /api/recurring/candidates`, UI de candidatos, confirmacion/ignorar |
+| Facturas y suministros del hogar | Hecho inicial | `backend/app/modules/household_bills`, `HouseholdBillsTab` |
+| Copiloto IA contextual por modulo | Hecho | Contexto filtrado en `POST /api/ai/chat`, `contextualCopilot.ts` |
+| Ajustes como centro de estado local | Hecho | IA/provider/modelo/RAG/documentos/backups/integridad/ruta local/privacidad visibles; crear backup desde UI |
+| Bateria UX y snapshots | Hecho | `ux-snapshots/latest`, 19 rutas desktop y soporte responsive desktop/tablet/mobile |
+| Informe release readiness | Hecho | `docs/28_PHASE_10_5_RELEASE_READINESS_REPORT.md` |
+| Bateria de pruebas UX documentada | Hecho | `docs/29_PHASE_10_5_UX_TEST_BATTERY.md` |
+
+Pendiente antes de marcar Fase 10.5 como completa:
+
+- Ejecutar QA manual end-to-end con base de datos real y provider IA local arrancado.
+- Implementar OCR local real para capturas de cartera si se decide que "captura real" debe extraer automaticamente en esta fase; actualmente el alcance esta comunicado y no crea holdings desde imagen.
+- Revision visual responsive disponible en tooling (`npm run snapshots:responsive`) y ultima evidencia generada con 57/57 capturas; no se deben regenerar snapshots sin confirmacion explicita.
 
 Documentacion: `docs/26_UX_FUNCTIONAL_QA_PRODUCT_INTELLIGENCE_REPAIR.md`.
+Evidencia QA: `docs/28_PHASE_10_5_RELEASE_READINESS_REPORT.md`, `docs/29_PHASE_10_5_UX_TEST_BATTERY.md`.
 
 ### Fase 11 - Packaging & Release
 

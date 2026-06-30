@@ -58,3 +58,22 @@ class CalendarEvent(BaseModel):
     type: str
     date: date
     category_name: str | None
+
+
+class RecurringCandidate(BaseModel):
+    id: str
+    name: str
+    description: str
+    amount: Decimal
+    amount_min: Decimal
+    amount_max: Decimal
+    currency: str
+    type: str
+    frequency: str
+    next_date: date
+    confidence: float
+    transaction_count: int
+    transaction_ids: list[str]
+    category_id: str | None
+    account_id: str | None
+    evidence: list[str]

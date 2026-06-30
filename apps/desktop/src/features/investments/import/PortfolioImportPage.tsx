@@ -48,7 +48,7 @@ function MethodSelector({ onSelect }: { onSelect: (m: "screenshot" | "manual") =
         <div>
           <p className="font-medium text-on-dark text-sm">Desde captura</p>
           <p className="text-xs text-mute mt-1 leading-snug">
-            Pega el texto de tu broker para extraer posiciones automáticamente
+            Carga capturas reales o pega texto como fallback revisable
           </p>
         </div>
       </button>
@@ -75,6 +75,7 @@ interface ScreenshotInputProps {
 
 function ScreenshotInput({ onParsed }: ScreenshotInputProps) {
   const [text, setText] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -100,8 +101,32 @@ function ScreenshotInput({ onParsed }: ScreenshotInputProps) {
 
   return (
     <div className="flex flex-col gap-4 max-w-2xl">
+      <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+        <p className="text-sm font-medium text-on-dark">Capturas de cartera</p>
+        <p className="mt-1 text-xs leading-5 text-stone">
+          Puedes seleccionar una o varias capturas reales. En esta build la extraccion OCR local todavia no esta activada:
+          las imagenes no se guardan ni se envian a terceros. Usa el texto copiado como fallback para extraer posiciones.
+        </p>
+        <label className="mt-3 flex cursor-pointer items-center justify-center rounded-lg border border-dashed border-hairline-dark bg-white/[.03] px-4 py-6 text-center text-sm text-stone hover:border-primary/40 hover:text-on-dark">
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            multiple
+            className="hidden"
+            onChange={(event) => setFiles(Array.from(event.target.files ?? []))}
+          />
+          Cargar capturas
+        </label>
+        {files.length > 0 && (
+          <div className="mt-3 rounded-lg border border-amber-400/25 bg-amber-400/10 p-3">
+            <p className="text-xs font-medium text-amber-200">{files.length} captura{files.length === 1 ? "" : "s"} seleccionada{files.length === 1 ? "" : "s"}</p>
+            <p className="mt-1 text-xs text-stone">OCR local pendiente. No se creara ningun holding desde estas imagenes sin confirmacion ni revision manual.</p>
+          </div>
+        )}
+      </div>
+
       <div className="rounded-lg border border-hairline-dark bg-surface-deep p-4 text-xs text-stone space-y-1">
-        <p className="font-medium text-on-dark mb-2">Formato esperado (un bloque por posición):</p>
+        <p className="font-medium text-on-dark mb-2">Fallback de texto pegado (un bloque por posición):</p>
         <pre className="font-mono text-mute leading-relaxed">{`Apple
 x 0,564555
 140,15 €
@@ -406,7 +431,7 @@ export default function PortfolioImportPage() {
               ← Volver
             </button>
             <p className="text-sm text-stone font-medium">
-              {method === "screenshot" ? "Pega el texto de tu cartera" : "Entrada rápida manual"}
+              {method === "screenshot" ? "Capturas y texto de cartera" : "Entrada rápida manual"}
             </p>
           </div>
 

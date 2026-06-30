@@ -304,8 +304,11 @@ Devuelve un datasheet compacto para consumo de IA local.
 {
   "message": "Analiza mis gastos de este mes",
   "context": {
-    "scope": "spending",
-    "period": "2026-06"
+    "module": "Gastos",
+    "route": "/spending",
+    "period": "2026-06",
+    "data_status": "periodo seleccionado en pantalla",
+    "visible_metrics": ["gasto total", "ahorro neto", "categorias"]
   }
 }
 ```
@@ -314,12 +317,18 @@ Respuesta:
 
 ```json
 {
-  "answer": "...",
-  "tools_used": [],
-  "data_period": "2026-06",
-  "confidence_level": "medium"
+  "conversation_id": "uuid",
+  "message_id": "uuid",
+  "content": "...",
+  "tool_calls": [],
+  "sources": [],
+  "quality_score": 0.9,
+  "provider": "ollama",
+  "model": "qwen3-coder:30b"
 }
 ```
+
+El backend solo acepta claves contextuales permitidas (`module`, `route`, `period`, `visible_metrics`, `data_status`, `selected_entity`, `suggested_action`) y las usa para orientar la respuesta. Las cifras deben salir de tools deterministas, no del contexto visual.
 
 ## Document Intelligence / RAG
 
@@ -533,6 +542,35 @@ Devuelve lista de transacciones recurrentes ordenadas por fecha próxima.
 
 Response: `RecurringTransaction[]`
 
+### GET `/api/recurring/candidates`
+
+Devuelve candidatos recurrentes detectados desde movimientos existentes. Es un endpoint de lectura: no crea plantillas ni modifica movimientos.
+
+Response:
+
+```json
+[
+  {
+    "id": "netflix:expense",
+    "name": "Netflix",
+    "description": "Detectado por 3 movimientos similares cada 30 dias.",
+    "amount": 15.99,
+    "amount_min": 15.99,
+    "amount_max": 16.49,
+    "currency": "EUR",
+    "type": "expense",
+    "frequency": "monthly",
+    "next_date": "2026-04-05",
+    "confidence": 0.86,
+    "transaction_count": 3,
+    "transaction_ids": ["uuid"],
+    "category_id": "uuid",
+    "account_id": "uuid",
+    "evidence": ["2026-03-05 - Netflix - -16.49 EUR"]
+  }
+]
+```
+
 ### POST `/api/recurring`
 
 Crea nueva transacción recurrente.
@@ -616,6 +654,61 @@ Response:
 ```
 
 La proyección usa `max(histórico, recurrentes)` para ser conservadora. Máximo: 12 meses.
+
+## Household Bills
+
+### GET `/api/household-bills`
+
+Lista facturas registradas manualmente. Filtros opcionales: `service_type`, `provider`.
+
+### POST `/api/household-bills`
+
+```json
+{
+  "provider": "Iberdrola",
+  "service_type": "electricity",
+  "period_start": "2026-05-01",
+  "period_end": "2026-05-31",
+  "amount": "95.00",
+  "currency": "EUR",
+  "category_id": "uuid",
+  "is_recurring": true,
+  "due_date": "2026-06-10"
+}
+```
+
+### PUT `/api/household-bills/{id}`
+
+Actualiza proveedor, servicio, periodo, importe, categoria, recurrencia, vencimiento o notas.
+
+### DELETE `/api/household-bills/{id}`
+
+Elimina la factura. Response: 204.
+
+### GET `/api/household-bills/summary`
+
+Agrupa por proveedor y tipo de servicio, compara contra la factura anterior, marca subidas anomalas desde +20% y estima el siguiente recibo.
+
+```json
+{
+  "generated_at": "2026-06-29T20:00:00Z",
+  "total_monthly_estimate": 185.0,
+  "items": [
+    {
+      "service_type": "electricity",
+      "provider": "Iberdrola",
+      "bills_count": 2,
+      "last_amount": 110.0,
+      "previous_amount": 80.0,
+      "change_pct": 37.5,
+      "average_amount": 95.0,
+      "next_estimate": 110.0,
+      "anomaly": true,
+      "latest_period": "2026-05-01 - 2026-05-31"
+    }
+  ]
+}
+```
 
 ## Goals
 

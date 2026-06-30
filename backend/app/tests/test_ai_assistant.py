@@ -311,3 +311,35 @@ class TestAiRoutes:
         assert "conversation_id" in data
         assert "content" in data
         assert data["content"] == "Tu patrimonio neto es positivo."
+
+    def test_chat_injects_screen_context(self, client: TestClient):
+        mock_response = AIResponse(
+            content="Contexto recibido.",
+            tool_calls=[],
+            model="test-model",
+        )
+
+        with patch("app.modules.ai.service.get_provider") as mock_get_provider:
+            mock_provider = MagicMock()
+            mock_provider.name = "ollama"
+            mock_provider.chat = AsyncMock(return_value=mock_response)
+            mock_get_provider.return_value = mock_provider
+
+            resp = client.post(
+                "/api/ai/chat",
+                json={
+                    "message": "Explica esta pantalla",
+                    "context": {
+                        "module": "Gastos",
+                        "route": "/spending",
+                        "visible_metrics": ["gasto total", "categorias"],
+                        "ignored": "not forwarded",
+                    },
+                },
+            )
+
+        assert resp.status_code == 200
+        sent_messages = mock_provider.chat.call_args.kwargs["messages"]
+        assert "Contexto de pantalla" in sent_messages[-1]["content"]
+        assert "Gastos" in sent_messages[-1]["content"]
+        assert "ignored" not in sent_messages[-1]["content"]

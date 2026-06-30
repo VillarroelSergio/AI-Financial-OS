@@ -35,6 +35,7 @@ export interface AiConversation {
 export interface AiChatRequest {
   message: string;
   conversation_id?: string;
+  context?: Record<string, unknown>;
   provider?: string;
   model?: string;
   enable_tools?: boolean;

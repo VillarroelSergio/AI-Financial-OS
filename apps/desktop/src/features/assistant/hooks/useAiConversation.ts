@@ -64,6 +64,7 @@ export function useAiConversation() {
   const send = useCallback(
     async (
       text: string,
+      context?: Record<string, unknown>,
       provider?: string,
       model?: string,
     ) => {
@@ -83,6 +84,7 @@ export function useAiConversation() {
         const response = await sendMessage({
           message: text,
           conversation_id: activeConversationId ?? undefined,
+          context,
           provider,
           model,
           enable_tools: true,

@@ -98,6 +98,7 @@ async def chat(request: ChatRequest, db: Session = Depends(get_db)) -> ChatRespo
             db=db,
             message=request.message,
             conversation_id=request.conversation_id,
+            context=request.context,
             provider_name=request.provider,
             model=request.model,
             enable_tools=request.enable_tools,

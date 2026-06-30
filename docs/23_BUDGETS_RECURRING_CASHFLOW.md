@@ -216,3 +216,40 @@ Razón: Es conservador. Si el usuario tiene ingresos irregulares pero salario re
 - `Transaction.date` es `String` (ISO format), usado en filtros con `.like("YYYY-MM%")`.
 - Presupuestos y recurrentes siguen el patrón SQLAlchemy de `Transaction` y `Goal`.
 - Frontend usa React hooks (`useBudgets`, `useRecurring`, `useCashflowForecast`) reutilizables.
+
+## Fase 10.5 - Deteccion asistida de recurrentes
+
+La planificacion incorpora candidatos recurrentes calculados desde movimientos historicos. Esta deteccion es asistida: no crea plantillas ni modifica datos hasta que el usuario confirma cada candidato.
+
+### API
+
+**GET /api/recurring/candidates**
+
+Devuelve patrones probables de tipo `income` o `expense` agrupando movimientos por descripcion normalizada y tipo. El endpoint valida frecuencia probable (`weekly`, `monthly`, `yearly`), rango de importes, proxima fecha estimada, confianza y evidencias.
+
+```json
+{
+  "id": "netflix:expense",
+  "name": "Netflix",
+  "description": "Detectado por 3 movimientos similares cada 30 dias.",
+  "amount": 15.99,
+  "amount_min": 15.99,
+  "amount_max": 16.49,
+  "currency": "EUR",
+  "type": "expense",
+  "frequency": "monthly",
+  "next_date": "2026-04-05",
+  "confidence": 0.86,
+  "transaction_count": 3,
+  "transaction_ids": ["uuid"],
+  "category_id": "uuid",
+  "account_id": "uuid",
+  "evidence": ["2026-03-05 - Netflix - -16.49 EUR"]
+}
+```
+
+### UX
+
+La pestana Recurrentes muestra candidatos con nombre probable, importe habitual/rango, frecuencia, proxima fecha estimada, confianza, movimientos usados como evidencia y acciones para confirmar o ignorar.
+
+Confirmar convierte el candidato en recurrente mediante `POST /api/recurring`. Ignorar solo lo oculta en la sesion de UI.

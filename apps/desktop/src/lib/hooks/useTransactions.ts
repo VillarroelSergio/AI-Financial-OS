@@ -3,6 +3,7 @@ import {
   createTransaction,
   deleteTransaction,
   fetchTransactions,
+  updateTransaction,
   type TransactionCreate,
   type TransactionFilters,
 } from "@/lib/api/transactions";
@@ -43,5 +44,11 @@ export function useTransactions(filters?: TransactionFilters) {
     setTransactions((prev) => prev.filter((t) => t.id !== id));
   };
 
-  return { transactions, loading, error, reload: load, add, remove };
+  const update = async (id: string, data: Partial<TransactionCreate>) => {
+    const tx = await updateTransaction(id, data);
+    setTransactions((prev) => prev.map((item) => (item.id === id ? tx : item)));
+    return tx;
+  };
+
+  return { transactions, loading, error, reload: load, add, update, remove };
 }

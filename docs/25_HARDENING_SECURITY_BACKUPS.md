@@ -18,6 +18,17 @@ La Fase 10 anade una capa minima de operacion diaria: backups, verificacion de i
 - `POST /api/security/backups`
 - `GET /api/security/integrity`
 
+## UI en Ajustes
+
+La pantalla Ajustes consume estos endpoints y muestra:
+
+- Ruta local de base de datos con accion de copiar.
+- Estado de integridad y numero de tablas verificadas.
+- Numero de backups disponibles.
+- Ultima copia local con fecha y tamano.
+- Accion para crear un backup manual desde la UI.
+- Politica local de datos demo/mock.
+
 ## Politicas
 
 - Los backups se guardan localmente y no salen del dispositivo.

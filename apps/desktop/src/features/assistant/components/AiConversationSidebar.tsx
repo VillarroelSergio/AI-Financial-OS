@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Plus, Trash2, MessageSquare } from "lucide-react";
+import { MessageSquare, Plus, Trash2 } from "lucide-react";
 import type { AiConversation } from "../types/aiAssistant.types";
 
 interface Props {
@@ -19,17 +19,19 @@ export default function AiConversationSidebar({
   onDelete,
   onLoad,
 }: Props) {
-  useEffect(() => { onLoad(); }, [onLoad]);
+  useEffect(() => {
+    onLoad();
+  }, [onLoad]);
 
   return (
-    <div className="w-56 flex-shrink-0 border-r border-hairline-dark flex flex-col bg-surface">
+    <div className="mercury-panel w-64 flex-shrink-0 rounded-lg flex flex-col overflow-hidden">
       <div className="p-3 border-b border-hairline-dark">
         <button
           onClick={onNew}
-          className="w-full flex items-center gap-2 text-body-sm text-on-dark hover:text-primary-400 transition-colors py-1.5 px-2 rounded-lg hover:bg-surface-elevated"
+          className="mercury-button-primary w-full flex items-center justify-center gap-2 text-body-sm transition-colors py-2 px-3 rounded-lg"
         >
           <Plus size={14} />
-          Nueva conversación
+          Nueva conversacion
         </button>
       </div>
       <div className="flex-1 overflow-y-auto py-2">
@@ -39,25 +41,24 @@ export default function AiConversationSidebar({
           conversations.map((conv) => (
             <div
               key={conv.id}
-              className={`group flex items-center gap-2 px-3 py-2 cursor-pointer rounded-lg mx-1 transition-colors ${
+              className={`group flex items-center gap-2 px-3 py-2 cursor-pointer rounded-lg mx-2 transition-colors ${
                 activeId === conv.id
-                  ? "bg-surface-elevated text-on-dark"
-                  : "text-stone hover:bg-surface-elevated hover:text-on-dark"
+                  ? "bg-white/[.075] text-on-dark shadow-[inset_0_0_0_1px_rgba(255,255,255,.08)]"
+                  : "text-stone hover:bg-white/[.04] hover:text-on-dark"
               }`}
               onClick={() => onSelect(conv.id)}
             >
-              <MessageSquare size={12} className="flex-shrink-0" />
-              <span className="text-caption truncate flex-1">
-                {conv.title ?? "Conversación"}
-              </span>
+              <MessageSquare size={13} className="flex-shrink-0" />
+              <span className="text-caption truncate flex-1">{conv.title ?? "Conversacion"}</span>
               <button
+                aria-label="Eliminar conversacion"
                 onClick={(e) => {
                   e.stopPropagation();
                   onDelete(conv.id);
                 }}
-                className="opacity-0 group-hover:opacity-100 hover:text-red-400 transition-all flex-shrink-0"
+                className="opacity-0 group-hover:opacity-100 hover:text-accent-danger transition-all flex-shrink-0"
               >
-                <Trash2 size={11} />
+                <Trash2 size={12} />
               </button>
             </div>
           ))
