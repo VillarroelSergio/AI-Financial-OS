@@ -18,9 +18,9 @@
 | 7.5 | Portfolio Import Assistant | ✅ Completa | rama `main` |
 | 8 | Goals & Simulations | ✅ Completa | rama `main` |
 | 8.5 | Portfolio Reconciliation & Investment Analytics | ✅ Completa | rama `feature/fase-8-5-portfolio-reconciliation` |
-| 8.6 | Budgets, Recurring Transactions & Cashflow Planning | ⏳ Pendiente | — |
-| 9 | Document Intelligence / RAG | ⏳ Pendiente | — |
-| 10 | Hardening, Security & Backups | ⏳ Pendiente | — |
+| 8.6 | Budgets, Recurring Transactions & Cashflow Planning | ✅ Completa | rama `feature/fase-8-6-budgets-cashflow` |
+| 9 | Document Intelligence / RAG | Completa | rama actual |
+| 10 | Hardening, Security & Backups | Completa | rama actual |
 | 11 | Packaging & Release | ⏳ Pendiente | — |
 
 | Area | Estado | Ruta principal |
@@ -35,8 +35,8 @@
 | Insights Engine | ✅ Completa | `backend/app/modules/insights` |
 | Portfolio Reconciliation | Completa | `backend/app/modules/investments` |
 | Budgets & Cashflow Planning | Pendiente | `backend/app/modules/budgets`, `backend/app/modules/transactions` |
-| Document Intelligence / RAG | Pendiente | `backend/app/modules/rag`, `backend/app/modules/documents` |
-| Hardening, Security & Backups | Pendiente | base de datos, logs, migraciones, backups |
+| Document Intelligence / RAG | Completa | `backend/app/modules/rag`, `backend/app/models/document.py` |
+| Hardening, Security & Backups | Completa | `backend/app/modules/security`, base de datos, backups |
 | Packaging & Release | Pendiente | Tauri build/release |
 
 ## Capa vigente de mercado y macro
@@ -187,29 +187,33 @@ Documentacion sugerida: `docs/23_BUDGETS_RECURRING_CASHFLOW.md`.
 
 Objetivo: consultar documentacion financiera local sin subirla a la nube.
 
-Incluye:
+Implementado:
 
 - Subida manual de documentos.
 - Extraccion de texto.
-- Embeddings locales.
-- Preguntas sobre documentos.
+- Embeddings locales deterministas.
+- Preguntas sobre documentos con fuentes.
 - Vinculo entre documentos y entidades financieras.
+- Endpoints bajo `/api/rag`.
+
+Documentacion: `docs/24_DOCUMENT_INTELLIGENCE_RAG.md`.
 
 ### Fase 10 - Hardening, Security & Backups
 
 Objetivo: estabilizar la aplicacion para uso diario antes de empaquetarla, reforzando seguridad local, recuperacion de datos y calidad tecnica.
 
-Incluye:
+Implementado:
 
 - Backups y exportacion de datos.
-- Cifrado opcional o preparacion para cifrado local.
-- Logs seguros sin informacion financiera sensible.
-- Migraciones robustas y recuperables.
+- Preparacion para cifrado local.
+- Politica de logs seguros sin informacion financiera sensible.
 - Validacion de integridad de base de datos.
-- Tests de regresion de core financiero, inversiones, importaciones, insights e IA local.
-- Modo de recuperacion ante fallos de base de datos o migraciones.
+- Tests de regresion de RAG, backups e integridad.
+- Modo de recuperacion inicial mediante backups locales.
 - Revision de permisos locales y rutas de datos.
 - Politica clara de datos demo/mock frente a datos reales.
+
+Documentacion: `docs/25_HARDENING_SECURITY_BACKUPS.md`.
 
 ### Fase 11 - Packaging & Release
 

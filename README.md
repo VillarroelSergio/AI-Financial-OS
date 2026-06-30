@@ -81,6 +81,32 @@ API endpoints bajo `/api/market-intelligence/`:
 | `GET /ingest-status` | Estado de la ingesta automática de arranque |
 | `GET /ai-datasheet` | Datasheet compacto para IA local |
 
+## Document Intelligence / RAG
+
+La Fase 9 permite indexar y consultar documentacion financiera local sin subirla a la nube.
+
+Endpoints principales:
+
+| Endpoint | Descripcion |
+|---|---|
+| `GET /api/rag/documents` | Lista documentos locales indexados |
+| `POST /api/rag/documents` | Crea documento desde texto |
+| `POST /api/rag/documents/upload` | Sube documento local `txt`, `md`, `csv` o `json` |
+| `POST /api/rag/query` | Consulta documentos y devuelve fuentes |
+
+## Security & Backups
+
+La Fase 10 anade backups locales, validacion de integridad y estado de seguridad antes del empaquetado.
+
+Endpoints principales:
+
+| Endpoint | Descripcion |
+|---|---|
+| `GET /api/security/status` | Estado local de hardening |
+| `GET /api/security/backups` | Lista backups locales |
+| `POST /api/security/backups` | Crea backup SQLite local |
+| `GET /api/security/integrity` | Ejecuta comprobacion de integridad |
+
 ## Fase 6.4 - Data Integrity & Core UX Repair
 
 La app evita mostrar datos internos o enganosos: los UUID no se usan como nombres visibles, los datos demo/mock se marcan, los holdings pueden editarse con precio manual y los porcentajes de gastos se calculan contra el gasto total del periodo.
