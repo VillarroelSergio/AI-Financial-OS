@@ -2,42 +2,111 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Paleta Apple + Tokens base (compartidos entre temas) ─── */
 :root {
-  --bg-app: #050607;
-  --bg-sidebar: #0b0d0f;
-  --bg-surface: #121417;
-  --bg-card: #181b1f;
-  --bg-card-elevated: #20242a;
-  --bg-interactive: #242933;
-  --border-soft: #2a3038;
-  --border-strong: #3a4250;
-  --text-primary: #f7f9fb;
-  --text-secondary: #a7b0be;
-  --text-muted: #6f7a89;
-  --accent: #5b5ef7;
-  --accent-soft: rgba(91, 94, 247, 0.16);
-  --positive: #00c896;
-  --negative: #ff4d63;
-  --warning: #f59e0b;
-  --info: #38bdf8;
-  --canvas-dark: var(--bg-app);
-  --surface-deep: var(--bg-sidebar);
-  --surface-elevated: var(--bg-surface);
-  --surface-card: var(--bg-card);
-  --primary: var(--accent);
-  --primary-bright: #7779ff;
-  --on-dark: #ffffff;
-  --on-dark-mute: rgba(255, 255, 255, 0.72);
-  --hairline-dark: rgba(255, 255, 255, 0.12);
-  --divider-soft: rgba(255, 255, 255, 0.06);
-  --stone: var(--text-secondary);
-  --mute: var(--text-muted);
-  --accent-teal: var(--positive);
-  --accent-danger: var(--negative);
-  --accent-warning: var(--warning);
-  --accent-yellow: #b09000;
+  /* Paleta nombrada */
+  --color-obsidian: #1d1d1f;
+  --color-frost-white: #f5f5f7;
+  --color-pure-black: #000000;
+  --color-paper-white: #ffffff;
+  --color-carbon: #111111;
+  --color-platinum: #86868b;
+  --color-graphite: #333336;
+  --color-silver-mist: #cccccc;
+  --color-smoke: #424245;
+  --color-apple-blue: #0071e3;
+  --color-link-blue: #0066cc;
+  --color-halo-blue: #2997ff;
+  --color-signal-orange: #f56900;
+  --color-iris-violet: #8668ff;
+  --color-reef-teal: #00a1b3;
+
+  /* Funcionales compartidos */
+  --primary: #0071e3;
+  --positive: #008163;
+  --negative: #ee2526;
+  --warning: #ff5c00;
+  --info: #1b73e6;
+  --accent: #f56900;
+  --on-primary: #ffffff;
+
+  /* Tipografía — Familias */
+  --font-sf-pro-display: 'SF Pro Display', Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-sf-pro-text: 'SF Pro Text', Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-courier-new: "Courier New", ui-monospace, monospace;
+
+  /* Tipografía — Escala exacta DESIGN.md */
+  --text-caption: 10px;      --leading-caption: 1.83;     --tracking-caption: -0.37px;
+  --text-body: 14px;         --leading-body: 1.43;        --tracking-body: -0.22px;
+  --text-heading-sm: 19px;   --leading-heading-sm: 1.21;  --tracking-heading-sm: -0.28px;
+  --text-heading: 24px;      --leading-heading: 1.17;     --tracking-heading: -0.24px;
+  --text-heading-lg: 32px;   --leading-heading-lg: 1.14;  --tracking-heading-lg: -0.32px;
+  --text-display: 56px;      --leading-display: 1.07;     --tracking-display: -0.84px;
+  --text-hero: 80px;         --leading-hero: 1.05;        --tracking-hero: -0.24px;
+
+  /* Tipografía — Pesos */
+  --font-weight-regular: 400;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Espaciado */
+  --spacing-4: 4px;    --spacing-8: 8px;    --spacing-12: 12px;
+  --spacing-16: 16px;  --spacing-20: 20px;  --spacing-24: 24px;
+  --spacing-28: 28px;  --spacing-32: 32px;  --spacing-40: 40px;
+  --spacing-48: 48px;  --spacing-60: 60px;  --spacing-76: 76px;
+  --spacing-80: 80px;  --spacing-96: 96px;  --spacing-104: 104px;
+  --spacing-160: 160px;
+
+  /* Layout */
+  --page-max-width: 1440px;
+  --section-gap-min: 88px;
+  --section-gap-max: 120px;
+  --card-padding: 28px;
+  --element-gap: 12px;
+
+  /* Border Radius */
+  --radius-links: 10px;
+  --radius-cards: 28px;
+  --radius-buttons: 36px;
+  --radius-pill: 980px;
+  --radius-nav: 980px;
 }
 
+/* ─── Tema Oscuro (default) ─── */
+[data-theme="dark"] {
+  --bg-app: #000000;
+  --bg-sidebar: #1d1d1f;
+  --bg-surface: #111111;
+  --bg-card: #1d1d1f;
+  --bg-card-elevated: #333336;
+  --bg-interactive: #333336;
+  --text-primary: #f5f5f7;
+  --text-secondary: #86868b;
+  --text-muted: rgba(245, 245, 247, 0.5);
+  --border-soft: #333336;
+  --border-strong: #424245;
+  --divider-soft: rgba(245, 245, 247, 0.1);
+  --hairline-dark: #333336;
+}
+
+/* ─── Tema Claro ─── */
+[data-theme="light"] {
+  --bg-app: #f5f5f7;
+  --bg-sidebar: #1d1d1f;
+  --bg-surface: #ffffff;
+  --bg-card: #ffffff;
+  --bg-card-elevated: #f5f5f7;
+  --bg-interactive: #f5f5f7;
+  --text-primary: #1d1d1f;
+  --text-secondary: #86868b;
+  --text-muted: rgba(29, 29, 31, 0.5);
+  --border-soft: #e5e5e5;
+  --border-strong: #cccccc;
+  --divider-soft: rgba(29, 29, 31, 0.1);
+  --hairline-dark: #e5e5e5;
+}
+
+/* ─── Reset base ─── */
 *,
 *::before,
 *::after {
@@ -50,49 +119,156 @@ body,
   height: 100%;
   margin: 0;
   padding: 0;
-  background-color: var(--canvas-dark);
-  color: var(--on-dark);
-  font-family: Inter, Geist, ui-sans-serif, system-ui, -apple-system, sans-serif;
+  background: var(--bg-app);
+  color: var(--text-primary);
+  font-family: var(--font-sf-pro-text);
+  font-feature-settings: "numr";
   -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
 }
 
-button, a, select, input { outline: none; }
-button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible {
-  box-shadow: 0 0 0 3px var(--accent-soft);
+body {
+  overflow: hidden;
 }
-.financial-number { font-variant-numeric: tabular-nums lining-nums; }
-.dashboard-grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 20px; }
-.premium-card {
+
+button,
+a,
+select,
+input,
+textarea {
+  outline: none;
+  font: inherit;
+}
+
+button:focus-visible,
+a:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* ─── Clases de utilidad tipográfica ─── */
+.text-caption    { font-size: var(--text-caption);    line-height: var(--leading-caption);    letter-spacing: var(--tracking-caption); }
+.text-body       { font-size: var(--text-body);       line-height: var(--leading-body);       letter-spacing: var(--tracking-body); }
+.text-heading-sm { font-size: var(--text-heading-sm); line-height: var(--leading-heading-sm); letter-spacing: var(--tracking-heading-sm); }
+.text-heading    { font-size: var(--text-heading);    line-height: var(--leading-heading);    letter-spacing: var(--tracking-heading); }
+.text-heading-lg { font-size: var(--text-heading-lg); line-height: var(--leading-heading-lg); letter-spacing: var(--tracking-heading-lg); }
+.text-display    { font-size: var(--text-display);    line-height: var(--leading-display);    letter-spacing: var(--tracking-display); font-family: var(--font-sf-pro-display); }
+.text-hero       { font-size: var(--text-hero);       line-height: var(--leading-hero);       letter-spacing: var(--tracking-hero);    font-family: var(--font-sf-pro-display); }
+
+/* ─── Números financieros ─── */
+.financial-number {
+  font-family: var(--font-courier-new);
+  font-variant-numeric: tabular-nums lining-nums;
+  font-feature-settings: "numr";
+  letter-spacing: -0.07em;
+}
+
+/* ─── Grid dashboard ─── */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--spacing-16);
+}
+
+/* ─── Componentes globales ─── */
+.premium-card,
+.mercury-panel {
   border: 1px solid var(--border-soft);
-  background: linear-gradient(145deg, rgba(32,36,42,.7), rgba(18,20,23,.92));
-  box-shadow: 0 18px 50px rgba(0,0,0,.18), inset 0 1px rgba(255,255,255,.025);
+  background: var(--bg-card);
+  border-radius: var(--radius-cards);
+  box-shadow: none;
+  backdrop-filter: none;
 }
+
+[class*="shadow"] {
+  box-shadow: none !important;
+}
+
+.mercury-button {
+  border: 1px solid var(--border-soft);
+  background: transparent;
+  color: var(--text-primary);
+  border-radius: var(--radius-buttons);
+  box-shadow: none;
+  padding: 10px 20px;
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--tracking-body);
+  transition: opacity 100ms ease;
+  cursor: pointer;
+}
+
+.mercury-button:hover {
+  opacity: 0.85;
+}
+
+.mercury-button-primary {
+  border: none;
+  background: var(--primary);
+  color: var(--on-primary);
+  border-radius: var(--radius-buttons);
+  box-shadow: none;
+  padding: 10px 20px;
+  font-size: var(--text-body);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--tracking-body);
+  transition: opacity 100ms ease;
+  cursor: pointer;
+}
+
+.mercury-button-primary:hover {
+  opacity: 0.85;
+}
+
+input,
+select,
+textarea {
+  color-scheme: light dark;
+}
+
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+::selection {
+  background: rgba(0, 113, 227, 0.3);
+  color: var(--text-primary);
+}
+
 @media (max-width: 1100px) {
-  .dashboard-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  .dashboard-grid {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
 }
+
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  *,
+  *::before,
+  *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
 }
 
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
-  background: var(--surface-deep);
+  background: var(--bg-surface);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--hairline-dark);
-  border-radius: 9999px;
+  background: var(--border-strong);
+  border-radius: 99px;
 }
 
-::-webkit-scrollbar-thumb:hover {
-  background: var(--mute);
-}
-
-/* Market Watch animations */
+/* ─── Animaciones de precio ─── */
 .flash-up {
   animation: flash-up 300ms ease-out forwards;
 }
@@ -102,12 +278,12 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
 }
 
 @keyframes flash-up {
-  0%   { background-color: rgba(0, 168, 126, 0.15); }
+  0%   { background-color: rgba(0, 129, 99, .18); }
   100% { background-color: transparent; }
 }
 
 @keyframes flash-down {
-  0%   { background-color: rgba(226, 59, 74, 0.15); }
+  0%   { background-color: rgba(238, 37, 38, .16); }
   100% { background-color: transparent; }
 }
 
@@ -117,5 +293,5 @@ button:focus-visible, a:focus-visible, select:focus-visible, input:focus-visible
 
 @keyframes live-pulse {
   0%, 100% { opacity: 1; }
-  50%       { opacity: 0.3; }
+  50%       { opacity: .3; }
 }
