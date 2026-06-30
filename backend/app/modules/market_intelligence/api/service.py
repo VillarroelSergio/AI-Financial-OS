@@ -85,6 +85,10 @@ def get_macro_snapshot() -> MacroSnapshotOut:
             if point.catalog_item_id in repeated_ids:
                 point.data_status = "requires_review"
                 point.quality_score = min(point.quality_score, 0.4)
+        # Remove repeated/polluted indicators so the UI doesn't show misleading data
+        spain = [p for p in spain if p.catalog_item_id not in repeated_ids]
+        eurozone = [p for p in eurozone if p.catalog_item_id not in repeated_ids]
+        usa = [p for p in usa if p.catalog_item_id not in repeated_ids]
     all_items = [*spain, *eurozone, *usa]
     status = "ok" if spain and eurozone and usa else "partial" if all_items else "empty"
     return MacroSnapshotOut(status=status, spain=spain, eurozone=eurozone, usa=usa, generated_at=_now(), warnings=warnings)

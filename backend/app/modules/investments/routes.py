@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.models.account import Account
 from app.models.investment import Holding, InvestmentAsset, InvestmentOperation
 from app.modules.investments.schemas import (
     AccountSummaryOut,
@@ -85,7 +86,7 @@ def delete_asset(asset_id: str, db: Session = Depends(get_db)):
 
 # ── Holdings helpers ──────────────────────────────────────────────────────────
 
-def _enrich_holding(h: Holding, asset: InvestmentAsset) -> HoldingOut:
+def _enrich_holding(h: Holding, asset: InvestmentAsset, account_name: str | None = None) -> HoldingOut:
     cost_basis = (h.quantity * h.average_price).quantize(Decimal("0.0001"))
     return_absolute: Decimal | None = None
     return_percent: float | None = None
@@ -150,7 +151,7 @@ def _enrich_holding(h: Holding, asset: InvestmentAsset) -> HoldingOut:
         display_name=display_name,
         symbol=safe_symbol,
         asset_type=ASSET_TYPE_MAP.get(asset.asset_type, "unknown"),
-        broker=h.account_id,
+        broker=account_name or "Cuenta",
         invested_amount=invested_amount,
         unrealized_pnl=unrealized_pnl,
         unrealized_pnl_pct=round(unrealized_pnl_pct, 2),
@@ -179,7 +180,12 @@ def list_holdings(account_id: str | None = None, db: Session = Depends(get_db)):
     if account_id:
         q = q.filter(Holding.account_id == account_id)
     holdings = q.all()
-    return [_enrich_holding(h, _get_asset_or_404(h.asset_id, db)) for h in holdings]
+    account_ids = {h.account_id for h in holdings}
+    account_names = {
+        a.id: a.name
+        for a in db.query(Account).filter(Account.id.in_(account_ids)).all()
+    } if account_ids else {}
+    return [_enrich_holding(h, _get_asset_or_404(h.asset_id, db), account_names.get(h.account_id)) for h in holdings]
 
 
 @router.post("/holdings", response_model=HoldingOut, status_code=201)
@@ -192,7 +198,8 @@ def create_holding(payload: HoldingCreate, db: Session = Depends(get_db)):
     db.add(holding)
     db.commit()
     db.refresh(holding)
-    return _enrich_holding(holding, asset)
+    account = db.query(Account).filter(Account.id == holding.account_id).first()
+    return _enrich_holding(holding, asset, account.name if account else None)
 
 
 @router.patch("/holdings/{holding_id}", response_model=HoldingOut)
@@ -211,7 +218,8 @@ def update_holding(holding_id: str, payload: HoldingUpdate, db: Session = Depend
     db.commit()
     db.refresh(holding)
     asset = _get_asset_or_404(holding.asset_id, db)
-    return _enrich_holding(holding, asset)
+    account = db.query(Account).filter(Account.id == holding.account_id).first()
+    return _enrich_holding(holding, asset, account.name if account else None)
 
 
 @router.delete("/holdings/{holding_id}", status_code=204)

@@ -15,6 +15,7 @@ class INEAdapter(BaseAdapter):
     category = "macro"
     region = "Spain"
     requires_api_key = False
+    supported_indicators = {"ipc_general": {}}
 
     def is_available(self) -> bool:
         try:
@@ -23,7 +24,7 @@ class INEAdapter(BaseAdapter):
         except Exception:
             return False
 
-    def fetch(self) -> AdapterResult:
+    def fetch(self, indicator_id: str | None = None) -> AdapterResult:
         metadata = self._make_metadata(base_url=_URL)
         t0 = time.time()
         try:

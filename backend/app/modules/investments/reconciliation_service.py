@@ -85,7 +85,10 @@ def _compute_quality_state(h: HoldingOut) -> tuple[QualityState, bool]:
 
     if h.current_price_updated_at is not None:
         now = datetime.now(timezone.utc)
-        age_hours = (now - h.current_price_updated_at).total_seconds() / 3600
+        updated_at = h.current_price_updated_at
+        if updated_at.tzinfo is None:
+            updated_at = updated_at.replace(tzinfo=timezone.utc)
+        age_hours = (now - updated_at).total_seconds() / 3600
         if age_hours > PRICE_FRESHNESS_HOURS:
             return QualityState.ESTIMATED, False
 

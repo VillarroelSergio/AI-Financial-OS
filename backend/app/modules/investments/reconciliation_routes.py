@@ -3,11 +3,12 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.models.account import Account
 from app.models.investment import Holding, InvestmentAsset
 from app.modules.investments.reconciliation_service import (
     compute_reconciliation,
@@ -63,13 +64,21 @@ class ReconciliationReportOut(BaseModel):
 
 @router.get("/reconciliation", response_model=ReconciliationReportOut)
 def get_reconciliation(db: Session = Depends(get_db)) -> ReconciliationReportOut:
-    rows = (
-        db.query(Holding, InvestmentAsset)
-        .join(InvestmentAsset, Holding.asset_id == InvestmentAsset.id)
-        .all()
-    )
-    enriched = [_enrich_holding(h, asset) for h, asset in rows]
-    report = compute_reconciliation(enriched)
+    try:
+        rows = (
+            db.query(Holding, InvestmentAsset)
+            .join(InvestmentAsset, Holding.asset_id == InvestmentAsset.id)
+            .all()
+        )
+        account_ids = {h.account_id for h, _ in rows}
+        account_names = {
+            a.id: a.name
+            for a in db.query(Account).filter(Account.id.in_(account_ids)).all()
+        } if account_ids else {}
+        enriched = [_enrich_holding(h, asset, account_names.get(h.account_id)) for h, asset in rows]
+        report = compute_reconciliation(enriched)
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Error al calcular calidad de cartera: {exc}") from exc
 
     return ReconciliationReportOut(
         generated_at=report.generated_at,
