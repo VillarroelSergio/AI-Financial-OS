@@ -180,6 +180,80 @@ omite filas inválidas o duplicadas al confirmar y conserva el lote tras un roll
 
 ### POST `/api/investments/holdings`
 
+### GET `/api/investments/reconciliation`
+
+Returns on-demand portfolio reconciliation report with quality states, allocation weights, and concentration alerts.
+
+**Response:**
+
+```json
+{
+  "generated_at": "2026-06-29T12:00:00Z",
+  "portfolio_value_eur": 15000.00,
+  "completeness": {
+    "confirmed_pct": 60.0,
+    "estimated_pct": 20.0,
+    "manual_pct": 10.0,
+    "no_price_pct": 10.0
+  },
+  "holdings": [
+    {
+      "holding_id": "uuid",
+      "name": "Apple Inc.",
+      "ticker": "AAPL",
+      "quantity": 0.564555,
+      "current_price": 230.45,
+      "current_value": 129.99,
+      "cost_estimated": 100.99,
+      "unrealized_pnl": 29.00,
+      "weight_pct": 0.87,
+      "currency": "USD",
+      "sector": "Technology",
+      "asset_type": "stock",
+      "broker": "Trade Republic",
+      "region": "North America",
+      "quality_state": "confirmed",
+      "price_freshness_hours": 2
+    }
+  ],
+  "weights_by": {
+    "currency": [
+      { "key": "EUR", "weight_pct": 40.0 },
+      { "key": "USD", "weight_pct": 60.0 }
+    ],
+    "asset_type": [
+      { "key": "stock", "weight_pct": 70.0 },
+      { "key": "etf", "weight_pct": 30.0 }
+    ],
+    "sector": [
+      { "key": "Technology", "weight_pct": 45.0 },
+      { "key": "Healthcare", "weight_pct": 55.0 }
+    ],
+    "broker": [
+      { "key": "Trade Republic", "weight_pct": 100.0 }
+    ],
+    "region": [
+      { "key": "North America", "weight_pct": 60.0 },
+      { "key": "Europe", "weight_pct": 40.0 }
+    ]
+  },
+  "concentration_alerts": [
+    {
+      "type": "asset",
+      "key": "Apple",
+      "weight_pct": 25.0,
+      "threshold_pct": 20.0
+    }
+  ]
+}
+```
+
+**Note on Completeness Schema:** The `completeness` object contains four percentages:
+- `confirmed_pct`: holdings with validated price/cost
+- `estimated_pct`: holdings with estimated price/cost
+- `manual_pct`: includes both manually entered and requires-review holdings
+- `no_price_pct`: includes both no-price and fx-pending holdings
+
 ## Market Intelligence
 
 La API vigente para mercado, macro, divisas, bonos, noticias e impacto personal esta
@@ -244,6 +318,167 @@ Respuesta:
   "tools_used": [],
   "data_period": "2026-06",
   "confidence_level": "medium"
+}
+```
+
+## Portfolio Import
+
+### POST `/api/investments/import/parse-text`
+
+Extrae posiciones de texto pegado por el usuario (local, sin red externa).
+
+```json
+Body: { "text": "Apple\nx 0,564555\n140,15 €\n+38,76 %\n\nMicrosoft\nx 1,234\n280,50 €" }
+
+Response: [
+  {
+    "raw_name": "Apple",
+    "quantity": 0.564555,
+    "current_value": 140.15,
+    "currency": "EUR",
+    "return_pct": 38.76,
+    "estimated_cost": 100.99
+  }
+]
+```
+
+### POST `/api/investments/import/validate`
+
+Resuelve instrumentos + cobertura de precios para un batch de posiciones raw.
+
+```json
+Body: { "positions": [ { "raw_name": "Apple", "quantity": 0.564, ... } ] }
+
+Response: [
+  {
+    "raw_name": "Apple",
+    "ticker": "AAPL",
+    "name": "Apple Inc.",
+    "market": "NASDAQ",
+    "currency": "USD",
+    "quantity": 0.564,
+    "current_value": 140.15,
+    "return_pct": 38.76,
+    "estimated_cost": 100.99,
+    "current_price": null,
+    "eur_value": null,
+    "resolution_status": "found",
+    "coverage_status": "OK",
+    "import_status": "READY",
+    "requires_confirmation": false,
+    "confirmation_reason": null
+  }
+]
+```
+
+### POST `/api/investments/import/check-duplicates`
+
+```json
+Body: { "ticker": "AAPL", "account_id": "uuid" }
+
+Response: {
+  "ticker": "AAPL",
+  "account_id": "uuid",
+  "has_duplicate": false,
+  "existing_holding_id": null
+}
+```
+
+### POST `/api/investments/import/confirm`
+
+Crea holdings confirmados por el usuario. Requiere llamada explícita.
+
+```json
+Body: {
+  "positions": [
+    {
+      "ticker": "AAPL",
+      "name": "Apple Inc.",
+      "market": "NASDAQ",
+      "currency": "USD",
+      "quantity": 0.564,
+      "average_price": 179.0,
+      "price_source": "auto",
+      "account_id": "uuid"
+    }
+  ]
+}
+
+Response: {
+  "created": 1,
+  "skipped": 0,
+  "errors": [],
+  "holding_ids": ["uuid"]
+}
+```
+
+## Goals
+
+### GET `/api/goals`
+
+### POST `/api/goals`
+
+```json
+{
+  "name": "Fondo de emergencia",
+  "type": "emergency_fund",
+  "target_amount": "10000",
+  "current_amount": "2000",
+  "monthly_contribution": "300",
+  "priority": "high",
+  "target_date": "2028-01-01"
+}
+```
+
+### GET `/api/goals/{id}`
+
+### PATCH `/api/goals/{id}`
+
+### DELETE `/api/goals/{id}`
+
+### POST `/api/goals/{id}/simulate`
+
+Calcula proyección con tres escenarios de crecimiento nominal.
+
+```json
+Body: { "inflation_rate": 0.03, "max_months": 360 }
+
+Response: {
+  "goal_id": "uuid",
+  "current_amount": 2000.0,
+  "target_amount": 10000.0,
+  "monthly_contribution": 300.0,
+  "inflation_rate": 0.03,
+  "inflation_adjusted_target": 10927.0,
+  "monthly_data": [
+    { "month": 0, "label": "Jun 2026", "conservative": 2000, "base": 2000, "optimistic": 2000 }
+  ],
+  "scenarios": [
+    {
+      "scenario": "base",
+      "label": "Base",
+      "color": "#10b981",
+      "annual_growth_rate": 0.06,
+      "months_to_target": 24,
+      "projected_date": "2028-06-29",
+      "achievable_by_target_date": true,
+      "final_amount": 10000.0
+    }
+  ],
+  "target_date": "2029-01-01",
+  "generated_at": "2026-06-29T..."
+}
+```
+
+### GET `/api/goals/{id}/progress`
+
+```json
+{
+  "goal_id": "uuid",
+  "progress_pct": 20.0,
+  "remaining": 8000.0,
+  "on_track": true,
+  "base_projected_date": "2028-06-29"
 }
 ```
 

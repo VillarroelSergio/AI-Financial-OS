@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Plus, RefreshCw } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import EmptyState from "@/components/ui/EmptyState";
 import MetricCard from "@/components/ui/MetricCard";
 import Spinner from "@/components/ui/Spinner";
@@ -13,6 +14,7 @@ import AddStockDialog from "./components/AddStockDialog";
 import AddFundDialog from "./components/AddFundDialog";
 import AddSavingsDialog from "./components/AddSavingsDialog";
 import HoldingEditor from "./components/HoldingEditor";
+import ReconciliationTab from "@/features/investments/reconciliation/ReconciliationTab";
 import type { HoldingEnriched } from "@/lib/types";
 
 export default function InvestmentsPage() {
@@ -34,7 +36,9 @@ export default function InvestmentsPage() {
   const [addSavings, setAddSavings] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingHolding, setEditingHolding] = useState<HoldingEnriched | null>(null);
+  const [activeTab, setActiveTab] = useState<"posiciones" | "reconciliacion">("posiciones");
 
+  const navigate = useNavigate();
   const trAccounts = accounts.filter((a) => a.type === "broker");
   const finizensAccounts = accounts.filter((a) => a.type === "investment");
   const ahorroAccounts = accounts.filter((a) => a.type === "savings");
@@ -108,6 +112,18 @@ export default function InvestmentsPage() {
             <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
             {refreshing ? "Actualizando..." : "Actualizar precios"}
           </button>
+          <button
+            onClick={() => navigate("/investments/import")}
+            className="flex items-center gap-sm px-md py-sm rounded-full border border-hairline-dark text-body-sm text-stone hover:text-on-dark hover:border-on-dark transition-colors"
+          >
+            Importar cartera
+          </button>
+          <button
+            onClick={() => navigate("/investments/price-coverage")}
+            className="flex items-center gap-sm px-md py-sm rounded-full border border-hairline-dark text-body-sm text-stone hover:text-on-dark hover:border-on-dark transition-colors"
+          >
+            Cobertura de precios
+          </button>
         </div>
       </div>
 
@@ -143,7 +159,31 @@ export default function InvestmentsPage() {
         </div>
       )}
 
-      {!hasHoldings ? (
+      {/* Main tabs */}
+      <div className="flex gap-sm">
+        <button
+          onClick={() => setActiveTab("posiciones")}
+          className={`px-md py-xs rounded-full text-caption transition-colors ${
+            activeTab === "posiciones"
+              ? "bg-primary text-on-primary"
+              : "bg-surface-elevated text-stone-400 hover:text-on-dark"
+          }`}
+        >
+          Posiciones
+        </button>
+        <button
+          onClick={() => setActiveTab("reconciliacion")}
+          className={`px-md py-xs rounded-full text-caption transition-colors ${
+            activeTab === "reconciliacion"
+              ? "bg-primary text-on-primary"
+              : "bg-surface-elevated text-stone-400 hover:text-on-dark"
+          }`}
+        >
+          Reconciliación
+        </button>
+      </div>
+
+      {!hasHoldings && activeTab === "posiciones" ? (
         <EmptyState
           title="Sin posiciones"
           description="Añade tus primeras inversiones para ver el estado de tu cartera."
@@ -156,7 +196,7 @@ export default function InvestmentsPage() {
             </button>
           }
         />
-      ) : (
+      ) : activeTab === "posiciones" ? (
         <>
           {/* Metric cards */}
           {summary && (
@@ -192,6 +232,8 @@ export default function InvestmentsPage() {
             </div>
           </div>
         </>
+      ) : (
+        <ReconciliationTab />
       )}
 
       {/* Dialogs */}

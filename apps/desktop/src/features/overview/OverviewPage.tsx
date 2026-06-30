@@ -2,9 +2,13 @@ import { AlertTriangle, ArrowLeftRight, Landmark, PiggyBank, ShieldCheck, Trendi
 import { ChartCard, EmptyState, KpiCard, LoadingState, PageHeader } from "@/components/ui/Dashboard";
 import { useOverview } from "@/lib/hooks/useDashboard";
 import { formatCurrency, formatPercent } from "@/lib/formatters/currency";
+import { useInsights } from "@/features/insights/hooks/useInsights";
+import { InsightCard } from "@/features/insights/components/InsightCard";
 
 export default function OverviewPage() {
   const { data, loading } = useOverview();
+  const { data: insightsData } = useInsights({ limit: 2 }, []);
+  const topInsights = insightsData?.insights ?? [];
   if (loading) return <LoadingState label="Calculando tu posicion financiera" />;
 
   const d = data ?? { net_worth: "0", liquidity: "0", investments: "0", monthly_income: "0", monthly_expense: "0", monthly_savings: "0", savings_rate: 0, currency: "EUR" };
@@ -79,6 +83,14 @@ export default function OverviewPage() {
         <ChartCard className="col-span-6" title="Gastos principales" description="Pendiente de categorias del periodo">
           <EmptyState compact title="Sin desglose en resumen" description="Abre Gastos para ver categoria principal, porcentajes y filtros por periodo." />
         </ChartCard>
+
+        {topInsights.length > 0 && (
+          <ChartCard className="col-span-12" title="Top Insights" description="Señales prioritarias detectadas en tus finanzas" action={<a href="/insights" className="text-xs text-primary-bright hover:underline">Ver todos</a>}>
+            <div className="space-y-3">
+              {topInsights.map((i) => <InsightCard key={i.id} insight={i} compact />)}
+            </div>
+          </ChartCard>
+        )}
       </div>
     </div>
   );
