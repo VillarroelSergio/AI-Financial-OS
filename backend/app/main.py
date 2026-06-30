@@ -11,6 +11,7 @@ from app.modules.ai.routes import router as ai_router
 from app.modules.categories.routes import router as categories_router
 from app.modules.dashboard.routes import router as dashboard_router
 from app.modules.goals.routes import router as goals_router
+from app.modules.household_bills.routes import router as household_bills_router
 from app.modules.imports.routes import router as imports_router
 from app.modules.insights.routes import router as insights_router
 from app.modules.investments.routes import router as investments_router
@@ -86,3 +87,4 @@ app.include_router(financial_knowledge_router, prefix="/api/financial-knowledge"
 app.include_router(budgets_router, prefix="/api/budgets", tags=["budgets"])
 app.include_router(recurring_router, prefix="/api/recurring", tags=["recurring"])
 app.include_router(cashflow_router, prefix="/api/cashflow", tags=["cashflow"])
+app.include_router(household_bills_router, prefix="/api/household-bills", tags=["household_bills"])

@@ -73,6 +73,25 @@ export interface RecurringCreate {
   description?: string | null;
 }
 
+export interface RecurringCandidate {
+  id: string;
+  name: string;
+  description: string;
+  amount: number;
+  amount_min: number;
+  amount_max: number;
+  currency: string;
+  type: "income" | "expense";
+  frequency: "monthly" | "weekly" | "yearly";
+  next_date: string;
+  confidence: number;
+  transaction_count: number;
+  transaction_ids: string[];
+  category_id: string | null;
+  account_id: string | null;
+  evidence: string[];
+}
+
 export interface CalendarEvent {
   recurring_id: string;
   name: string;
@@ -110,6 +129,7 @@ export const fetchBudgetComparison = (month?: string): Promise<BudgetComparisonI
   api.get<BudgetComparisonItem[]>(`/api/budgets/comparison${month ? `?month=${month}` : ""}`);
 
 export const fetchRecurring = (): Promise<RecurringTransaction[]> => api.get<RecurringTransaction[]>("/api/recurring");
+export const fetchRecurringCandidates = (): Promise<RecurringCandidate[]> => api.get<RecurringCandidate[]>("/api/recurring/candidates");
 export const createRecurring = (body: RecurringCreate): Promise<RecurringTransaction> => api.post<RecurringTransaction>("/api/recurring", body);
 export const updateRecurring = (id: string, body: Partial<RecurringCreate>): Promise<RecurringTransaction> => api.put<RecurringTransaction>(`/api/recurring/${id}`, body);
 export const deleteRecurring = (id: string): Promise<void> => api.delete<void>(`/api/recurring/${id}`);

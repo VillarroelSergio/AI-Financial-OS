@@ -2,12 +2,18 @@ import { useState } from "react";
 import { Plus, RefreshCw } from "lucide-react";
 import BudgetCard from "./BudgetCard";
 import BudgetFormModal from "./BudgetFormModal";
+import type { BudgetCreate } from "@/lib/api/budgets";
 import { useBudgetComparison, useBudgets } from "@/lib/hooks/useBudgets";
 
 export default function BudgetTab() {
   const { add, refresh } = useBudgets();
-  const { data, loading, error } = useBudgetComparison();
+  const { data, loading, error, refresh: refreshComparison } = useBudgetComparison();
   const [showModal, setShowModal] = useState(false);
+
+  const handleAddBudget = async (body: BudgetCreate) => {
+    await add(body);
+    await refreshComparison();
+  };
 
   const overBudget = data.filter(i => i.over_budget).length;
   const totalBudget = data.reduce((s, i) => s + i.budget_amount, 0);
@@ -73,7 +79,7 @@ export default function BudgetTab() {
       )}
 
       {showModal && (
-        <BudgetFormModal onSubmit={add} onClose={() => setShowModal(false)} />
+        <BudgetFormModal onSubmit={handleAddBudget} onClose={() => setShowModal(false)} />
       )}
     </div>
   );

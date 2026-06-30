@@ -6,6 +6,7 @@ import logging
 import time
 from typing import Any
 
+import httpx
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -56,6 +57,7 @@ async def chat(
     db: Session,
     message: str,
     conversation_id: str | None = None,
+    context: dict[str, Any] | None = None,
     provider_name: str | None = None,
     model: str | None = None,
     enable_tools: bool = True,
@@ -72,6 +74,8 @@ async def chat(
         conv = conv_repo.create_conversation(db, title=_extract_title(message))
         conversation_id = conv.id
 
+    contextual_message = _with_screen_context(message, context)
+
     # Persist user message
     user_msg = conv_repo.add_message(db, conversation_id, "user", message)
 
@@ -79,8 +83,27 @@ async def chat(
     history = conv_repo.get_messages_as_llm_context(db, conversation_id)
     system_prompt = get_system_prompt()
     messages: list[dict[str, Any]] = [{"role": "system", "content": system_prompt}] + history
+    if context:
+        messages[-1] = {"role": "user", "content": contextual_message}
 
     provider = get_provider(provider_name)
+
+    # Fast availability check before entering the agentic loop.
+    # health() has a 5-second timeout internally, so this won't block long.
+    try:
+        health = await provider.health()
+        if not health.available:
+            error_detail = health.error or "provider offline"
+            raise RuntimeError(
+                f"El asistente IA no está disponible ({provider.name}): {error_detail}. "
+                "Asegúrate de que Ollama o LMStudio está en ejecución."
+            )
+    except (httpx.TransportError, httpx.TimeoutException) as exc:
+        raise RuntimeError(
+            f"No se puede conectar con el provider '{provider.name}'. "
+            f"Comprueba que el servicio está activo. Detalle: {exc}"
+        ) from exc
+
     tools = tool_registry.llm_schemas() if enable_tools else []
 
     all_tool_calls: list[ToolCallOut] = []
@@ -90,12 +113,18 @@ async def chat(
 
     # Agentic loop: call → execute tools → re-call until no more tool calls or limit
     for _round in range(_MAX_TOOL_ROUNDS):
-        response: AIResponse = await provider.chat(
-            messages=messages,
-            tools=tools if enable_tools else None,
-            model=model,
-            max_tokens=settings.AI_MAX_OUTPUT_TOKENS,
-        )
+        try:
+            response: AIResponse = await provider.chat(
+                messages=messages,
+                tools=tools if enable_tools else None,
+                model=model,
+                max_tokens=settings.AI_MAX_OUTPUT_TOKENS,
+            )
+        except (httpx.TimeoutException, httpx.TransportError) as exc:
+            raise RuntimeError(
+                f"El provider '{provider.name}' no respondió a tiempo. "
+                f"Comprueba que el modelo está cargado y el servicio está activo. Detalle: {exc}"
+            ) from exc
 
         if not response.tool_calls:
             final_content = response.content
@@ -191,6 +220,22 @@ async def chat(
 def _extract_title(message: str) -> str:
     words = message.strip().split()
     return " ".join(words[:8]) + ("..." if len(words) > 8 else "")
+
+
+def _with_screen_context(message: str, context: dict[str, Any] | None) -> str:
+    if not context:
+        return message
+    safe_context = {
+        key: value
+        for key, value in context.items()
+        if key in {"module", "route", "period", "visible_metrics", "data_status", "selected_entity", "suggested_action"}
+    }
+    return (
+        "Contexto de pantalla de AI Financial OS. "
+        "Usalo solo para orientar la respuesta; no inventes cifras y valida datos con tools si necesitas valores. "
+        f"Contexto: {json.dumps(safe_context, ensure_ascii=False, default=str)}\n\n"
+        f"Pregunta del usuario: {message}"
+    )
 
 
 def _valid_source(s: dict) -> bool:

@@ -13,9 +13,12 @@ class MacroDataPoint(BaseModel):
     unit: Optional[str] = None
     provider_id: Optional[str] = None
     quality_score: float = 1.0
+    data_status: str = "ok"
+    retrieved_at: Optional[str] = None
 
 
 class MacroSnapshotOut(BaseModel):
+    status: str = "empty"
     spain: list[MacroDataPoint] = []
     eurozone: list[MacroDataPoint] = []
     usa: list[MacroDataPoint] = []
@@ -32,6 +35,8 @@ class QuoteOut(BaseModel):
     currency: Optional[str] = None
     provider_id: Optional[str] = None
     quality_score: float = 1.0
+    data_status: str = "ok"
+    observed_at: Optional[str] = None
 
 
 class MarketSnapshotOut(BaseModel):
@@ -52,6 +57,7 @@ class ForexRateOut(BaseModel):
     date: Optional[str] = None
     provider_id: Optional[str] = None
     quality_score: float = 1.0
+    data_status: str = "ok"
 
 
 class ForexSnapshotOut(BaseModel):
@@ -68,6 +74,7 @@ class BondYieldOut(BaseModel):
     date: Optional[str] = None
     provider_id: Optional[str] = None
     quality_score: float = 1.0
+    data_status: str = "ok"
 
 
 class BondSnapshotOut(BaseModel):

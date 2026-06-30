@@ -287,17 +287,21 @@ class TestAiRoutes:
 
     def test_chat_with_mocked_provider(self, client: TestClient):
         """Chat with a mocked provider should return a valid ChatResponse."""
+        from app.modules.ai.providers.base import ProviderHealth
+
         mock_response = AIResponse(
             content="Tu patrimonio neto es positivo.",
             tool_calls=[],
             model="test-model",
         )
+        mock_health = ProviderHealth(available=True, provider="ollama", model="test-model")
 
         with patch(
             "app.modules.ai.service.get_provider"
         ) as mock_get_provider:
             mock_provider = MagicMock()
             mock_provider.name = "ollama"
+            mock_provider.health = AsyncMock(return_value=mock_health)
             mock_provider.chat = AsyncMock(return_value=mock_response)
             mock_get_provider.return_value = mock_provider
 
@@ -311,3 +315,87 @@ class TestAiRoutes:
         assert "conversation_id" in data
         assert "content" in data
         assert data["content"] == "Tu patrimonio neto es positivo."
+
+    def test_chat_with_no_provider_returns_honest_error(self, client: TestClient):
+        """Cuando el provider está offline, la respuesta debe ser 503 con mensaje claro — nunca un hang."""
+        resp = client.post(
+            "/api/ai/chat",
+            json={
+                "message": "¿Cuáles son mis gastos del mes?",
+                "provider": "ollama",
+            },
+        )
+        # No debe ser 500 ni colgar. Debe ser 503 con mensaje honesto.
+        assert resp.status_code == 503, f"Unexpected status: {resp.status_code}"
+        data = resp.json()
+        if resp.status_code == 503:
+            detail = data.get("detail", "")
+            assert detail, "503 sin detalle útil"
+            # El mensaje debe mencionar el provider o disponibilidad
+            assert any(
+                kw in detail.lower()
+                for kw in ("ollama", "lmstudio", "disponible", "provider", "activo", "conectar")
+            ), f"Mensaje 503 poco informativo: {detail!r}"
+
+    def test_provider_availability_endpoint_responds_quickly(self, client: TestClient):
+        """El endpoint /api/ai/providers debe responder con timeout explícito — nunca colgarse.
+
+        Con providers offline, los health checks tienen timeout de 5s cada uno y se
+        ejecutan en paralelo (asyncio.gather). En Windows, TCP puede tardar ~3-4s en
+        fallar por puerto cerrado. Aceptamos <7s como prueba de que existe timeout (sin
+        timeout sería potencialmente infinito); el benchmark real de producción es menor.
+        """
+        import time
+
+        start = time.monotonic()
+        resp = client.get("/api/ai/providers")
+        elapsed = time.monotonic() - start
+
+        assert resp.status_code == 200, f"Unexpected status: {resp.status_code}"
+        # Must respond before the per-provider timeout (5s) × number of providers sequential worst case.
+        # Concurrent execution (asyncio.gather) keeps it near the single-provider timeout even with N providers.
+        assert elapsed < 7.0, (
+            f"Provider check tardó {elapsed:.1f}s — timeout o concurrencia no configurados correctamente"
+        )
+        data = resp.json()
+        assert isinstance(data, list)
+        # Todos los providers deben devolver available=False cuando están offline
+        for p in data:
+            assert "name" in p
+            assert "available" in p
+
+    def test_chat_injects_screen_context(self, client: TestClient):
+        from app.modules.ai.providers.base import ProviderHealth
+
+        mock_response = AIResponse(
+            content="Contexto recibido.",
+            tool_calls=[],
+            model="test-model",
+        )
+        mock_health = ProviderHealth(available=True, provider="ollama", model="test-model")
+
+        with patch("app.modules.ai.service.get_provider") as mock_get_provider:
+            mock_provider = MagicMock()
+            mock_provider.name = "ollama"
+            mock_provider.health = AsyncMock(return_value=mock_health)
+            mock_provider.chat = AsyncMock(return_value=mock_response)
+            mock_get_provider.return_value = mock_provider
+
+            resp = client.post(
+                "/api/ai/chat",
+                json={
+                    "message": "Explica esta pantalla",
+                    "context": {
+                        "module": "Gastos",
+                        "route": "/spending",
+                        "visible_metrics": ["gasto total", "categorias"],
+                        "ignored": "not forwarded",
+                    },
+                },
+            )
+
+        assert resp.status_code == 200
+        sent_messages = mock_provider.chat.call_args.kwargs["messages"]
+        assert "Contexto de pantalla" in sent_messages[-1]["content"]
+        assert "Gastos" in sent_messages[-1]["content"]
+        assert "ignored" not in sent_messages[-1]["content"]

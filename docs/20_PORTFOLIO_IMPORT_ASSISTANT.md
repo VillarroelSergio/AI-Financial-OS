@@ -135,3 +135,14 @@ POST /api/investments/import/confirm
 | `apps/desktop/src/features/investments/import/ImportReviewTable.tsx` | Tabla editable de revisión |
 | `apps/desktop/src/lib/types/portfolio-import.ts` | Tipos TypeScript |
 | `apps/desktop/src/lib/api/portfolio-import.ts` | Cliente API |
+
+## Fase 10.5 - Alcance de capturas reales
+
+La UI acepta varias capturas (`png`, `jpg`, `webp`) para representar el caso de uso real de importacion desde broker. En la build actual no hay OCR local activado todavia: las imagenes no se guardan, no se procesan en cloud y no crean holdings. La pantalla comunica este alcance de forma explicita y ofrece texto pegado como fallback revisable.
+
+Camino futuro:
+
+- OCR local.
+- Extraccion local de tablas/posiciones.
+- Marcado de campos capturados vs estimados vs confirmados.
+- Comparacion visual contra la captura antes de confirmar.

@@ -25,6 +25,35 @@ export default function OverviewPage() {
     <div className="p-8 max-w-[1500px] mx-auto space-y-6">
       <PageHeader eyebrow="Panel financiero" title="Resumen" description="Vision ejecutiva de patrimonio, liquidez, flujo mensual y proximas acciones." actions={<span className="text-xs text-stone">Actualizado hoy</span>} />
 
+      <section className="premium-card rounded-lg overflow-hidden">
+        <div className="grid gap-6 p-6 lg:grid-cols-[1.2fr_.8fr]">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[.18em] text-primary-bright">Posicion consolidada</p>
+            <h2 className="financial-number mt-4 text-[46px] leading-none font-semibold text-on-dark">{formatCurrency(d.net_worth)}</h2>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-stone">Vista de control para patrimonio, liquidez y capacidad de ahorro con senales accionables sin ruido operativo.</p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="rounded-lg border border-hairline-dark bg-white/[.035] p-4">
+              <p className="text-xs text-stone">Liquidez</p>
+              <p className="financial-number mt-2 text-xl font-semibold text-on-dark">{formatCurrency(d.liquidity)}</p>
+            </div>
+            <div className="rounded-lg border border-hairline-dark bg-white/[.035] p-4">
+              <p className="text-xs text-stone">Ahorro mensual</p>
+              <p className={`financial-number mt-2 text-xl font-semibold ${savings >= 0 ? "text-accent-teal" : "text-accent-danger"}`}>{formatCurrency(savings)}</p>
+            </div>
+            <div className="col-span-2 rounded-lg border border-hairline-dark bg-white/[.035] p-4">
+              <div className="flex items-center justify-between text-xs text-stone">
+                <span>Tasa de ahorro</span>
+                <span className="text-on-dark">{formatPercent(d.savings_rate)}</span>
+              </div>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-white/[.06]">
+                <div className="h-full rounded-full bg-accent-teal" style={{ width: `${Math.max(0, Math.min(100, d.savings_rate * 100))}%` }} />
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <div className="dashboard-grid">
         <div className="col-span-3"><KpiCard label="Patrimonio neto" value={formatCurrency(d.net_worth)} hint="Activos consolidados" icon={Landmark} /></div>
         <div className="col-span-3"><KpiCard label="Liquidez" value={formatCurrency(d.liquidity)} hint="Disponible en cuentas" icon={WalletCards} /></div>

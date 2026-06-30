@@ -38,33 +38,48 @@ function makeReviewRow(v: ReviewRow): ReviewRow {
 
 function MethodSelector({ onSelect }: { onSelect: (m: "screenshot" | "manual") => void }) {
   return (
-    <div className="grid grid-cols-2 gap-4 max-w-lg">
-      <button
-        onClick={() => onSelect("screenshot")}
-        className="flex flex-col items-center gap-3 rounded-xl border border-hairline-dark bg-surface-deep px-6 py-8
-          hover:border-primary/40 hover:bg-white/[.03] transition-all text-center group"
-      >
-        <Upload size={28} className="text-stone group-hover:text-on-dark transition-colors" />
-        <div>
-          <p className="font-medium text-on-dark text-sm">Desde captura</p>
-          <p className="text-xs text-mute mt-1 leading-snug">
-            Pega el texto de tu broker para extraer posiciones automáticamente
+    <div className="flex flex-col gap-3 max-w-lg">
+      <div className="grid grid-cols-2 gap-4">
+        {/* Screenshot option — disabled until OCR is available */}
+        <div className="flex flex-col gap-1">
+          <div className="relative">
+            <button
+              disabled
+              className="w-full flex flex-col items-center gap-3 rounded-xl border border-hairline-dark bg-surface-deep px-6 py-8
+                opacity-40 cursor-not-allowed text-center"
+            >
+              <Upload size={28} className="text-stone" />
+              <div>
+                <p className="font-medium text-on-dark text-sm">Desde captura</p>
+                <p className="text-xs text-mute mt-1 leading-snug">
+                  Extracción automática desde imagen de pantalla
+                </p>
+              </div>
+            </button>
+            <span className="absolute -top-1 -right-1 rounded-full bg-amber-500 px-1.5 py-0.5 text-[9px] font-bold uppercase text-white leading-none">
+              Próximo
+            </span>
+          </div>
+          <p className="text-xs text-mute leading-snug px-1">
+            La extracción automática desde captura está pendiente. Usa la entrada manual o pega texto.
           </p>
         </div>
-      </button>
-      <button
-        onClick={() => onSelect("manual")}
-        className="flex flex-col items-center gap-3 rounded-xl border border-hairline-dark bg-surface-deep px-6 py-8
-          hover:border-primary/40 hover:bg-white/[.03] transition-all text-center group"
-      >
-        <Keyboard size={28} className="text-stone group-hover:text-on-dark transition-colors" />
-        <div>
-          <p className="font-medium text-on-dark text-sm">Entrada rápida</p>
-          <p className="text-xs text-mute mt-1 leading-snug">
-            Introduce posiciones manualmente una a una
-          </p>
-        </div>
-      </button>
+
+        {/* Manual / text-paste option — fully functional */}
+        <button
+          onClick={() => onSelect("manual")}
+          className="flex flex-col items-center gap-3 rounded-xl border border-hairline-dark bg-surface-deep px-6 py-8
+            hover:border-primary/40 hover:bg-white/[.03] transition-all text-center group"
+        >
+          <Keyboard size={28} className="text-stone group-hover:text-on-dark transition-colors" />
+          <div>
+            <p className="font-medium text-on-dark text-sm">Entrada rápida</p>
+            <p className="text-xs text-mute mt-1 leading-snug">
+              Introduce posiciones manualmente o pega texto de tu broker
+            </p>
+          </div>
+        </button>
+      </div>
     </div>
   );
 }
@@ -75,6 +90,7 @@ interface ScreenshotInputProps {
 
 function ScreenshotInput({ onParsed }: ScreenshotInputProps) {
   const [text, setText] = useState("");
+  const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -100,8 +116,32 @@ function ScreenshotInput({ onParsed }: ScreenshotInputProps) {
 
   return (
     <div className="flex flex-col gap-4 max-w-2xl">
+      <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+        <p className="text-sm font-medium text-on-dark">Capturas de cartera</p>
+        <p className="mt-1 text-xs leading-5 text-stone">
+          Puedes seleccionar una o varias capturas reales. En esta build la extraccion OCR local todavia no esta activada:
+          las imagenes no se guardan ni se envian a terceros. Usa el texto copiado como fallback para extraer posiciones.
+        </p>
+        <label className="mt-3 flex cursor-pointer items-center justify-center rounded-lg border border-dashed border-hairline-dark bg-white/[.03] px-4 py-6 text-center text-sm text-stone hover:border-primary/40 hover:text-on-dark">
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp"
+            multiple
+            className="hidden"
+            onChange={(event) => setFiles(Array.from(event.target.files ?? []))}
+          />
+          Cargar capturas
+        </label>
+        {files.length > 0 && (
+          <div className="mt-3 rounded-lg border border-amber-400/25 bg-amber-400/10 p-3">
+            <p className="text-xs font-medium text-amber-200">{files.length} captura{files.length === 1 ? "" : "s"} seleccionada{files.length === 1 ? "" : "s"}</p>
+            <p className="mt-1 text-xs text-stone">OCR local pendiente. No se creara ningun holding desde estas imagenes sin confirmacion ni revision manual.</p>
+          </div>
+        )}
+      </div>
+
       <div className="rounded-lg border border-hairline-dark bg-surface-deep p-4 text-xs text-stone space-y-1">
-        <p className="font-medium text-on-dark mb-2">Formato esperado (un bloque por posición):</p>
+        <p className="font-medium text-on-dark mb-2">Fallback de texto pegado (un bloque por posición):</p>
         <pre className="font-mono text-mute leading-relaxed">{`Apple
 x 0,564555
 140,15 €
@@ -379,7 +419,7 @@ export default function PortfolioImportPage() {
         <div>
           <h1 className="text-xl font-semibold text-on-dark">Importar cartera</h1>
           <p className="text-sm text-mute mt-0.5">
-            Asistente de importación desde captura de pantalla o entrada manual.
+            Asistente de importación: entrada manual o texto pegado desde tu broker.
           </p>
         </div>
       </div>
@@ -406,7 +446,7 @@ export default function PortfolioImportPage() {
               ← Volver
             </button>
             <p className="text-sm text-stone font-medium">
-              {method === "screenshot" ? "Pega el texto de tu cartera" : "Entrada rápida manual"}
+              {method === "screenshot" ? "Capturas y texto de cartera" : "Entrada rápida manual"}
             </p>
           </div>
 

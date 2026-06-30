@@ -12,7 +12,7 @@ export default function ReconciliationTab() {
     return (
       <div className="flex h-64 items-center justify-center">
         <RefreshCw size={20} className="animate-spin text-stone" />
-        <span className="ml-2 text-sm text-stone">Calculando reconciliacion...</span>
+        <span className="ml-2 text-sm text-stone">Calculando calidad de cartera...</span>
       </div>
     );
   }
@@ -54,7 +54,8 @@ export default function ReconciliationTab() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-on-dark">Reconciliacion de cartera</h2>
+          <h2 className="text-lg font-semibold text-on-dark">Calidad de cartera</h2>
+          <p className="mt-1 text-xs text-stone">Confirma que parte esta validada, estimada, manual, sin precio o pendiente de FX.</p>
           <p className="text-xs text-stone">
             Generado {new Date(data.generated_at).toLocaleString("es-ES")}
           </p>

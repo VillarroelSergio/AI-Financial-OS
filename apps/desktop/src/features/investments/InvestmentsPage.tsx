@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Plus, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { PageHeader } from "@/components/ui/Dashboard";
 import EmptyState from "@/components/ui/EmptyState";
 import MetricCard from "@/components/ui/MetricCard";
 import Spinner from "@/components/ui/Spinner";
@@ -18,7 +19,9 @@ import ReconciliationTab from "@/features/investments/reconciliation/Reconciliat
 import type { HoldingEnriched } from "@/lib/types";
 
 export default function InvestmentsPage() {
-  const demoEmpty = new URLSearchParams(window.location.search).get("demo") === "empty";
+  const searchParams = new URLSearchParams(window.location.search);
+  const demoEmpty = searchParams.get("demo") === "empty";
+  const initialTab = searchParams.get("tab") === "quality" ? "reconciliacion" : "posiciones";
   const { summary, loading: summaryLoading, refresh: refreshSummary } = useInvestmentSummary();
   const { holdings, loading: holdingsLoading, refresh: refreshHoldings, remove } = useHoldings();
   const { accounts } = useAccounts();
@@ -36,7 +39,7 @@ export default function InvestmentsPage() {
   const [addSavings, setAddSavings] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingHolding, setEditingHolding] = useState<HoldingEnriched | null>(null);
-  const [activeTab, setActiveTab] = useState<"posiciones" | "reconciliacion">("posiciones");
+  const [activeTab, setActiveTab] = useState<"posiciones" | "reconciliacion">(initialTab);
 
   const navigate = useNavigate();
   const trAccounts = accounts.filter((a) => a.type === "broker");
@@ -90,42 +93,40 @@ export default function InvestmentsPage() {
   };
 
   return (
-    <div className="p-2xl space-y-xl">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-display-lg text-on-dark">Inversiones</h1>
-          {lastUpdated && (
-            <p className="text-caption text-stone mt-xs">Última actualización: {lastUpdated}</p>
-          )}
-        </div>
-        <div className="flex items-center gap-sm">
-          <button onClick={openAdd} className="flex items-center gap-sm px-md py-sm rounded-full bg-primary text-on-primary text-body-sm hover:bg-primary/90 transition-colors">
+    <div className="p-8 max-w-[1500px] mx-auto space-y-xl">
+      <PageHeader
+        eyebrow="Portfolio desk"
+        title="Inversiones"
+        description={lastUpdated ? `Ultima actualizacion: ${lastUpdated}` : "Control de posiciones, precios, calidad y cobertura de cartera."}
+        actions={
+          <>
+          <button onClick={openAdd} className="mercury-button-primary flex items-center gap-sm px-md py-sm rounded-lg text-body-sm transition-colors">
             <Plus size={14} />
-            Anadir activo
+            Anadir
           </button>
           <button
             onClick={triggerRefresh}
             disabled={refreshing}
-            className="flex items-center gap-sm px-md py-sm rounded-full border border-hairline-dark text-body-sm text-stone hover:text-on-dark hover:border-on-dark transition-colors disabled:opacity-50"
+            className="mercury-button flex items-center gap-sm px-md py-sm rounded-lg text-body-sm disabled:opacity-50"
           >
             <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
-            {refreshing ? "Actualizando..." : "Actualizar precios"}
+            {refreshing ? "Actualizando" : "Precios"}
           </button>
           <button
             onClick={() => navigate("/investments/import")}
-            className="flex items-center gap-sm px-md py-sm rounded-full border border-hairline-dark text-body-sm text-stone hover:text-on-dark hover:border-on-dark transition-colors"
+            className="mercury-button flex items-center gap-sm px-md py-sm rounded-lg text-body-sm"
           >
-            Importar cartera
+            Importar
           </button>
           <button
             onClick={() => navigate("/investments/price-coverage")}
-            className="flex items-center gap-sm px-md py-sm rounded-full border border-hairline-dark text-body-sm text-stone hover:text-on-dark hover:border-on-dark transition-colors"
+            className="mercury-button flex items-center gap-sm px-md py-sm rounded-lg text-body-sm"
           >
-            Cobertura de precios
+            Cobertura
           </button>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {editorOpen && (
         <HoldingEditor
@@ -137,7 +138,7 @@ export default function InvestmentsPage() {
       )}
 
       {refreshResult && (
-        <div className="rounded-md border border-hairline-dark bg-surface-elevated p-lg">
+        <div className="premium-card rounded-lg p-lg">
           <div className="flex items-start justify-between gap-md">
             <div>
               <p className="text-body-sm font-semibold text-on-dark">
@@ -151,7 +152,7 @@ export default function InvestmentsPage() {
               )}
             </div>
             <div className="flex shrink-0 gap-sm">
-              <button onClick={clearResult} className="rounded-full border border-hairline-dark px-md py-xs text-caption text-stone hover:text-on-dark">
+              <button onClick={clearResult} className="mercury-button rounded-lg px-md py-xs text-caption">
                 Cerrar
               </button>
             </div>
@@ -160,26 +161,26 @@ export default function InvestmentsPage() {
       )}
 
       {/* Main tabs */}
-      <div className="flex gap-sm">
+      <div className="flex w-fit gap-sm rounded-lg border border-hairline-dark bg-white/[.035] p-1">
         <button
           onClick={() => setActiveTab("posiciones")}
-          className={`px-md py-xs rounded-full text-caption transition-colors ${
+          className={`px-md py-xs rounded-lg text-caption transition-colors ${
             activeTab === "posiciones"
               ? "bg-primary text-on-primary"
-              : "bg-surface-elevated text-stone-400 hover:text-on-dark"
+              : "text-stone hover:text-on-dark hover:bg-white/[.04]"
           }`}
         >
           Posiciones
         </button>
         <button
           onClick={() => setActiveTab("reconciliacion")}
-          className={`px-md py-xs rounded-full text-caption transition-colors ${
+          className={`px-md py-xs rounded-lg text-caption transition-colors ${
             activeTab === "reconciliacion"
               ? "bg-primary text-on-primary"
-              : "bg-surface-elevated text-stone-400 hover:text-on-dark"
+              : "text-stone hover:text-on-dark hover:bg-white/[.04]"
           }`}
         >
-          Reconciliación
+          Calidad de cartera
         </button>
       </div>
 
@@ -264,3 +265,4 @@ export default function InvestmentsPage() {
     </div>
   );
 }
+

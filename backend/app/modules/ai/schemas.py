@@ -15,6 +15,7 @@ class ChatMessageIn(BaseModel):
 class ChatRequest(BaseModel):
     conversation_id: str | None = None
     message: str
+    context: dict[str, Any] | None = None
     provider: str | None = None
     model: str | None = None
     enable_tools: bool = True

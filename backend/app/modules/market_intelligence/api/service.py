@@ -47,29 +47,64 @@ def _warn(rows: list[dict], threshold: float = 0.5) -> list[str]:
     ]
 
 
+def _status_for(row: dict) -> str:
+    if row.get("value") is None and row.get("price") is None and row.get("rate") is None and row.get("yield_value") is None:
+        return "unavailable"
+    if row.get("quality_score", 1.0) < 0.5:
+        return "limited"
+    return "ok"
+
+
 def get_macro_snapshot() -> MacroSnapshotOut:
     rows = repository.get_latest_macro_all()
     spain, eurozone, usa = [], [], []
+    seen_values: dict[tuple[str | None, float | None, str | None], set[str]] = {}
     for r in rows:
-        point = MacroDataPoint(**{k: v for k, v in r.items() if k in MacroDataPoint.model_fields})
         region = _region_for(r.get("catalog_item_id", ""))
+        key = (region, r.get("value"), r.get("period"))
+        seen_values.setdefault(key, set()).add(str(r.get("catalog_item_id", "")))
+        payload = {k: v for k, v in r.items() if k in MacroDataPoint.model_fields}
+        payload["retrieved_at"] = str(r.get("retrieved_at", "")) if r.get("retrieved_at") else None
+        payload["data_status"] = _status_for(r)
+        point = MacroDataPoint(**payload)
         if region == "spain":
             spain.append(point)
         elif region == "eurozone":
             eurozone.append(point)
         elif region == "usa":
             usa.append(point)
-    return MacroSnapshotOut(spain=spain, eurozone=eurozone, usa=usa, generated_at=_now(), warnings=_warn(rows))
+    warnings = _warn(rows)
+    repeated = [
+        ids for (region, value, period), ids in seen_values.items()
+        if region and value is not None and period and len(ids) >= 3
+    ]
+    if repeated:
+        warnings.append("Se han detectado indicadores macro con valores repetidos; revisa fuente y fecha antes de usarlos.")
+        repeated_ids = {catalog_id for ids in repeated for catalog_id in ids}
+        for point in [*spain, *eurozone, *usa]:
+            if point.catalog_item_id in repeated_ids:
+                point.data_status = "requires_review"
+                point.quality_score = min(point.quality_score, 0.4)
+        # Remove repeated/polluted indicators so the UI doesn't show misleading data
+        spain = [p for p in spain if p.catalog_item_id not in repeated_ids]
+        eurozone = [p for p in eurozone if p.catalog_item_id not in repeated_ids]
+        usa = [p for p in usa if p.catalog_item_id not in repeated_ids]
+    all_items = [*spain, *eurozone, *usa]
+    status = "ok" if spain and eurozone and usa else "partial" if all_items else "empty"
+    return MacroSnapshotOut(status=status, spain=spain, eurozone=eurozone, usa=usa, generated_at=_now(), warnings=warnings)
 
 
 def get_market_snapshot() -> MarketSnapshotOut:
     quotes = repository.get_latest_quotes()
-    indices = [QuoteOut(**{k: v for k, v in q.items() if k in QuoteOut.model_fields})
-               for q in quotes if str(q.get("catalog_item_id", "")).lower() in _INDEX_CATALOG_IDS]
-    crypto = [QuoteOut(**{k: v for k, v in q.items() if k in QuoteOut.model_fields})
-              for q in quotes if str(q.get("catalog_item_id", "")).lower() in _CRYPTO_CATALOG_IDS]
-    commodities = [QuoteOut(**{k: v for k, v in q.items() if k in QuoteOut.model_fields})
-                   for q in quotes if str(q.get("catalog_item_id", "")).lower() in _COMMODITY_CATALOG_IDS]
+    def quote(q: dict) -> QuoteOut:
+        payload = {k: v for k, v in q.items() if k in QuoteOut.model_fields}
+        payload["observed_at"] = str(q.get("observed_at", "")) if q.get("observed_at") else None
+        payload["data_status"] = _status_for(q)
+        return QuoteOut(**payload)
+
+    indices = [quote(q) for q in quotes if str(q.get("catalog_item_id", "")).lower() in _INDEX_CATALOG_IDS]
+    crypto = [quote(q) for q in quotes if str(q.get("catalog_item_id", "")).lower() in _CRYPTO_CATALOG_IDS]
+    commodities = [quote(q) for q in quotes if str(q.get("catalog_item_id", "")).lower() in _COMMODITY_CATALOG_IDS]
     sections = [indices, crypto, commodities]
     all_items = [item for section in sections for item in section]
     quality = sum(item.quality_score for item in all_items) / len(all_items) if all_items else 0.0
@@ -98,6 +133,7 @@ def get_forex_snapshot() -> ForexSnapshotOut:
         date=str(r.get("date", "")),
         provider_id=r.get("provider_id"),
         quality_score=r.get("quality_score", 1.0),
+        data_status=_status_for(r),
     ) for r in rows]
     return ForexSnapshotOut(rates=rates, generated_at=_now(), warnings=_warn(rows))
 
@@ -112,6 +148,7 @@ def get_bond_snapshot() -> BondSnapshotOut:
         date=str(r.get("date", "")),
         provider_id=r.get("provider_id"),
         quality_score=r.get("quality_score", 1.0),
+        data_status=_status_for(r),
     ) for r in rows]
     return BondSnapshotOut(yields=yields, generated_at=_now(), warnings=_warn(rows))
 

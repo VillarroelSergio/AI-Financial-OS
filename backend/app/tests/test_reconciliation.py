@@ -1,6 +1,7 @@
 from __future__ import annotations
 from datetime import datetime, timezone, timedelta
 from decimal import Decimal
+import re
 
 import pytest
 
@@ -101,3 +102,39 @@ def test_empty_holdings_returns_valid_report():
     assert report.portfolio_value_eur == 0.0
     assert report.completeness.confirmed_pct == 0.0
     assert report.holdings == []
+
+
+UUID_PATTERN = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.I)
+
+
+def test_broker_name_is_readable_not_uuid():
+    """Regression: broker column must never expose raw UUIDs to the UI.
+
+    _enrich_holding (routes.py) is responsible for resolving account_id → account
+    name before building HoldingOut. This test documents the contract: the
+    reconciliation service passes broker through unchanged, so if a UUID ever
+    reaches HoldingOut.broker it will be visible. Fix must live at the routes layer.
+    """
+    holding = _make_holding(currency="EUR")
+    holding = holding.model_copy(update={"broker": "Trade Republic"})
+    report = compute_reconciliation([holding])
+    result_broker = report.holdings[0].broker
+    assert not UUID_PATTERN.match(result_broker), (
+        f"broker must be a readable name, got UUID-like value: {result_broker}"
+    )
+    assert result_broker == "Trade Republic"
+
+
+def test_broker_uuid_would_leak_without_routes_fix():
+    """Documents that reconciliation_service is NOT responsible for UUID filtering.
+
+    If routes.py passes account_id as broker, the UUID would be visible.
+    This test exists to confirm the contract: reconciliation passes data through.
+    The fix (account name resolution) must stay in _enrich_holding.
+    """
+    fake_uuid = "9b0d545d-0bb3-4c6f-ae36-86500106e6ea"
+    holding = _make_holding(currency="EUR")
+    holding = holding.model_copy(update={"broker": fake_uuid})
+    report = compute_reconciliation([holding])
+    # Service passes it through — routes layer must prevent UUID from arriving here
+    assert report.holdings[0].broker == fake_uuid

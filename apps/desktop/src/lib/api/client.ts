@@ -14,7 +14,7 @@ export class ApiError extends Error {
   }
 }
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
+async function request<T>(path: string, init?: RequestInit, signal?: AbortSignal): Promise<T> {
   if (USE_MOCK) {
     return Promise.resolve(getMockResponse<T>(path, init));
   }
@@ -23,6 +23,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`${BASE_URL}${path}`, {
     headers: { ...(isFormData ? {} : { "Content-Type": "application/json" }), ...init?.headers },
     ...init,
+    ...(signal ? { signal } : {}),
   });
 
   if (!response.ok) {
@@ -46,9 +47,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export const api = {
-  get: <T>(path: string) => request<T>(path),
-  post: <T>(path: string, body: unknown) =>
-    request<T>(path, { method: "POST", body: JSON.stringify(body) }),
+  get: <T>(path: string, signal?: AbortSignal) => request<T>(path, undefined, signal),
+  post: <T>(path: string, body: unknown, signal?: AbortSignal) =>
+    request<T>(path, { method: "POST", body: JSON.stringify(body) }, signal),
   upload: <T>(path: string, body: FormData) => request<T>(path, { method: "POST", body }),
   put: <T>(path: string, body: unknown) =>
     request<T>(path, { method: "PUT", body: JSON.stringify(body) }),

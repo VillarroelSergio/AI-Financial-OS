@@ -17,6 +17,11 @@ import type {
   PersonalImpactMI,
 } from "@/lib/types/market-intelligence";
 
+const USER_SAFE_MARKET_ERROR =
+  "No se han podido actualizar los datos ahora. Se muestran los ultimos datos disponibles si existen.";
+const USER_SAFE_ECONOMY_ERROR =
+  "No se han podido actualizar los indicadores ahora. Se muestran los ultimos datos disponibles si existen.";
+
 export function useEconomyMI() {
   const [macro, setMacro] = useState<MacroSnapshotMI | null>(null);
   const [impact, setImpact] = useState<PersonalImpactMI | null>(null);
@@ -33,8 +38,9 @@ export function useEconomyMI() {
       ]);
       setMacro(macroData);
       setImpact(impactData);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Error al cargar datos económicos");
+      setError(null);
+    } catch {
+      setError(USER_SAFE_ECONOMY_ERROR);
     } finally {
       setLoading(false);
     }
@@ -49,7 +55,7 @@ export function useEconomyMI() {
           pollRef.current = setTimeout(poll, 3000);
         } else {
           if (status.status === "error") {
-            setError("La ingesta de datos falló; mostrando datos disponibles en caché.");
+            setError("La ingesta de datos fallo; mostrando datos disponibles en cache.");
           }
           await load();
         }
@@ -75,6 +81,24 @@ export function useMarketsMI() {
   const [error, setError] = useState<string | null>(null);
   const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const loadSnapshots = useCallback(async () => {
+    try {
+      const [marketData, forexData, bondsData] = await Promise.all([
+        getMarketSnapshot(),
+        getForexSnapshot(),
+        getBondSnapshot(),
+      ]);
+      setMarket(marketData);
+      setForex(forexData);
+      setBonds(bondsData);
+      setError(null);
+    } catch {
+      setError(USER_SAFE_MARKET_ERROR);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     const poll = async () => {
       try {
@@ -84,44 +108,19 @@ export function useMarketsMI() {
           pollRef.current = setTimeout(poll, 3000);
         } else {
           if (status.status === "error") {
-            setError("La ingesta de datos falló; mostrando datos disponibles en caché.");
+            setError("La ingesta de datos fallo; mostrando datos disponibles en cache.");
           }
-          try {
-            const [marketData, forexData, bondsData] = await Promise.all([
-              getMarketSnapshot(),
-              getForexSnapshot(),
-              getBondSnapshot(),
-            ]);
-            setMarket(marketData);
-            setForex(forexData);
-            setBonds(bondsData);
-          } catch (e) {
-            setError(e instanceof Error ? e.message : "Error al cargar datos de mercado");
-          } finally {
-            setLoading(false);
-          }
+          await loadSnapshots();
         }
       } catch {
-        try {
-          const [marketData, forexData, bondsData] = await Promise.all([
-            getMarketSnapshot(),
-            getForexSnapshot(),
-            getBondSnapshot(),
-          ]);
-          setMarket(marketData);
-          setForex(forexData);
-          setBonds(bondsData);
-        } catch (e) {
-          setError(e instanceof Error ? e.message : "Error al cargar datos de mercado");
-        }
-        setLoading(false);
+        await loadSnapshots();
       }
     };
     poll();
     return () => {
       if (pollRef.current) clearTimeout(pollRef.current);
     };
-  }, []);
+  }, [loadSnapshots]);
 
-  return { market, forex, bonds, ingestStatus, loading, error };
+  return { market, forex, bonds, ingestStatus, loading, error, refetch: loadSnapshots };
 }

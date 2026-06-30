@@ -1,6 +1,7 @@
 """AI assistant API endpoints."""
 from __future__ import annotations
 
+import asyncio
 import json
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -27,49 +28,46 @@ router = APIRouter()
 
 # ── Status & providers ────────────────────────────────────────────────────────
 
+async def _check_provider_health(name: str) -> ProviderStatus:
+    """Run a single provider health check, returning ProviderStatus regardless of outcome."""
+    try:
+        provider = ai_service.get_provider(name)
+        health = await provider.health()
+        return ProviderStatus(
+            name=name,
+            available=health.available,
+            model=health.model,
+            error=health.error,
+            latency_ms=health.latency_ms,
+        )
+    except Exception as exc:
+        return ProviderStatus(name=name, available=False, error=str(exc))
+
+
 @router.get("/status", response_model=AIStatus)
 async def get_status() -> AIStatus:
     provider_names = ai_service.list_providers()
-    statuses = []
-    for name in provider_names:
-        try:
-            provider = ai_service.get_provider(name)
-            health = await provider.health()
-            statuses.append(ProviderStatus(
-                name=name,
-                available=health.available,
-                model=health.model,
-                error=health.error,
-                latency_ms=health.latency_ms,
-            ))
-        except Exception as exc:
-            statuses.append(ProviderStatus(name=name, available=False, error=str(exc)))
-
+    # Run all health checks concurrently so N offline providers don't multiply latency
+    statuses = await asyncio.gather(
+        *(_check_provider_health(name) for name in provider_names)
+    )
     return AIStatus(
         enabled=settings.AI_ASSISTANT_ENABLED,
         default_provider=settings.AI_DEFAULT_PROVIDER,
         default_model=settings.AI_DEFAULT_MODEL,
-        providers=statuses,
+        providers=list(statuses),
     )
 
 
 @router.get("/providers", response_model=list[ProviderStatus])
 async def list_providers() -> list[ProviderStatus]:
-    result = []
-    for name in ai_service.list_providers():
-        try:
-            provider = ai_service.get_provider(name)
-            health = await provider.health()
-            result.append(ProviderStatus(
-                name=name,
-                available=health.available,
-                model=health.model,
-                error=health.error,
-                latency_ms=health.latency_ms,
-            ))
-        except Exception as exc:
-            result.append(ProviderStatus(name=name, available=False, error=str(exc)))
-    return result
+    provider_names = ai_service.list_providers()
+    # Run all health checks concurrently — avoids sequential timeout stacking
+    return list(
+        await asyncio.gather(
+            *(_check_provider_health(name) for name in provider_names)
+        )
+    )
 
 
 # ── Tools ─────────────────────────────────────────────────────────────────────
@@ -98,6 +96,7 @@ async def chat(request: ChatRequest, db: Session = Depends(get_db)) -> ChatRespo
             db=db,
             message=request.message,
             conversation_id=request.conversation_id,
+            context=request.context,
             provider_name=request.provider,
             model=request.model,
             enable_tools=request.enable_tools,

@@ -64,6 +64,7 @@ export function useAiConversation() {
   const send = useCallback(
     async (
       text: string,
+      context?: Record<string, unknown>,
       provider?: string,
       model?: string,
     ) => {
@@ -79,14 +80,23 @@ export function useAiConversation() {
       setSending(true);
       setError(null);
 
+      // Abort controller ensures the loading state is never infinite.
+      // 90 seconds is generous for a local LLM but prevents indefinite hangs.
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 90_000);
+
       try {
-        const response = await sendMessage({
-          message: text,
-          conversation_id: activeConversationId ?? undefined,
-          provider,
-          model,
-          enable_tools: true,
-        });
+        const response = await sendMessage(
+          {
+            message: text,
+            conversation_id: activeConversationId ?? undefined,
+            context,
+            provider,
+            model,
+            enable_tools: true,
+          },
+          controller.signal,
+        );
 
         if (!activeConversationId) {
           setActiveConversationId(response.conversation_id);
@@ -104,10 +114,17 @@ export function useAiConversation() {
         };
         setMessages((prev) => [...prev, assistantMsg]);
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Error al enviar mensaje");
+        if (e instanceof Error && e.name === "AbortError") {
+          setError(
+            "La respuesta tardó demasiado. Comprueba que el provider de IA está activo y el modelo está cargado.",
+          );
+        } else {
+          setError(e instanceof Error ? e.message : "Error al enviar mensaje");
+        }
         setMessages((prev) => prev.filter((m) => m.id !== userMsg.id));
       } finally {
-        setSending(false);
+        clearTimeout(timeoutId);
+        setSending(false); // always clear loading state
       }
     },
     [activeConversationId, sending, loadConversations]

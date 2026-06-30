@@ -47,6 +47,7 @@ export interface SimulationResult {
   current_amount: number;
   target_amount: number;
   monthly_contribution: number;
+  monthly_contribution_needed: number | null;
   inflation_rate: number;
   inflation_adjusted_target: number;
   monthly_data: MonthlyDataPoint[];

@@ -27,6 +27,16 @@ class LMStudioProvider(AIProvider):
     def _model(self, model: str | None) -> str:
         return model or self._default_model
 
+    async def _get_loaded_model(self) -> str | None:
+        try:
+            async with httpx.AsyncClient(timeout=5.0) as client:
+                r = await client.get(f"{self._base_url}/models")
+                r.raise_for_status()
+                models = r.json().get("data", [])
+                return models[0]["id"] if models else None
+        except Exception:
+            return None
+
     def _openai_tools(self, tools: list[dict[str, Any]]) -> list[dict[str, Any]]:
         return [
             {
@@ -62,7 +72,27 @@ class LMStudioProvider(AIProvider):
             resp.raise_for_status()
             data = resp.json()
 
-        choice = data["choices"][0]
+        logger.debug("LM Studio raw response keys: %s", list(data.keys()))
+
+        choices = data.get("choices")
+
+        if not choices and payload.get("tools"):
+            # Retry without tools — model may not support function calling
+            logger.warning("LM Studio rejected tools, retrying without them")
+            payload.pop("tools", None)
+            payload.pop("tool_choice", None)
+            async with httpx.AsyncClient(timeout=120.0) as client:
+                resp2 = await client.post(f"{self._base_url}/chat/completions", json=payload)
+                resp2.raise_for_status()
+                data = resp2.json()
+            choices = data.get("choices")
+
+        if not choices:
+            error_obj = data.get("error", data)
+            error_msg = error_obj.get("message", str(error_obj)) if isinstance(error_obj, dict) else str(error_obj)
+            logger.error("LM Studio returned no choices. Full response: %s", data)
+            raise RuntimeError(f"LM Studio error: {error_msg}")
+        choice = choices[0]
         msg = choice["message"]
         content = msg.get("content") or ""
         tool_calls: list[ToolCallResult] = []

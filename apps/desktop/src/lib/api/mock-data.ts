@@ -152,13 +152,170 @@ const mockInvestmentSummary: InvestmentSummary = {
   last_updated: null,
 };
 
+const mockReconciliation: import("./investments").ReconciliationReport = {
+  generated_at: "2026-06-30T07:15:00Z",
+  portfolio_value_eur: 5000,
+  completeness: {
+    confirmed_pct: 68,
+    estimated_pct: 18,
+    manual_pct: 10,
+    no_price_pct: 4,
+  },
+  holdings: [
+    {
+      holding_id: "h-savings",
+      display_name: "Cuenta Remunerada Trade Republic",
+      ticker: null,
+      quality_state: "manual",
+      value_eur: 5000,
+      weight_pct: 100,
+      unrealized_pnl: 0,
+      unrealized_pnl_pct: 0,
+      currency: "EUR",
+      requires_fx: false,
+      broker: "Trade Republic",
+      sector: "Cash",
+      asset_type: "savings_account",
+    },
+  ],
+  weights_by: {
+    currency: [{ key: "EUR", weight_pct: 100 }],
+    sector: [{ key: "Cash", weight_pct: 100 }],
+    broker: [{ key: "Trade Republic", weight_pct: 100 }],
+    asset_type: [{ key: "savings_account", weight_pct: 100 }],
+    region: [{ key: "Europa", weight_pct: 100 }],
+  },
+  concentration_alerts: [{ type: "asset", key: "Cuenta Remunerada Trade Republic", weight_pct: 100, threshold_pct: 35 }],
+};
+
 const mockSettings: AppSetting[] = [
   { id: "set-1", key: "app.language", value_json: '"es"', created_at: "2024-01-01T00:00:00", updated_at: "2024-01-01T00:00:00" },
   { id: "set-2", key: "theme.mode", value_json: '"dark"', created_at: "2024-01-01T00:00:00", updated_at: "2024-01-01T00:00:00" },
   { id: "set-3", key: "app.currency", value_json: '"EUR"', created_at: "2024-01-01T00:00:00", updated_at: "2024-01-01T00:00:00" },
 ];
 
+const mockBackups = [
+  {
+    filename: "financial-20260630-084500.sqlite",
+    path: "local-data/backups/financial-20260630-084500.sqlite",
+    size_bytes: 245760,
+    created_at: "2026-06-30T08:45:00",
+  },
+];
+
 const mockGoals: import("./goals").Goal[] = [];
+
+const mockRecurring: import("./budgets").RecurringTransaction[] = [
+  {
+    id: "rec-1",
+    name: "Alquiler",
+    category_id: "cat-4",
+    account_id: "mock-acc-1",
+    amount: 950,
+    currency: "EUR",
+    type: "expense",
+    frequency: "monthly",
+    day_of_month: 1,
+    day_of_week: null,
+    month_of_year: null,
+    next_date: "2026-07-01",
+    active: true,
+    description: "Pago mensual de vivienda",
+    created_at: "2026-06-01T08:00:00",
+    updated_at: "2026-06-01T08:00:00",
+  },
+];
+
+const mockRecurringCandidates: import("./budgets").RecurringCandidate[] = [
+  {
+    id: "cand-netflix",
+    name: "Netflix",
+    description: "Cargo mensual detectado con importe estable.",
+    amount: 15.99,
+    amount_min: 15.99,
+    amount_max: 15.99,
+    currency: "EUR",
+    type: "expense",
+    frequency: "monthly",
+    next_date: "2026-07-18",
+    confidence: 0.92,
+    transaction_count: 3,
+    transaction_ids: ["tx-3"],
+    category_id: "cat-3",
+    account_id: "mock-acc-1",
+    evidence: ["18/04 Netflix 15,99 EUR", "18/05 Netflix 15,99 EUR", "18/06 Netflix 15,99 EUR"],
+  },
+];
+
+const mockCalendar: import("./budgets").CalendarEvent[] = [
+  { recurring_id: "rec-1", name: "Alquiler", amount: 950, type: "expense", date: "2026-07-01", category_name: "Casa" },
+];
+
+const mockHouseholdBills: import("./household-bills").HouseholdBill[] = [
+  {
+    id: "bill-1",
+    provider: "Iberdrola",
+    service_type: "electricity",
+    period_start: "2026-05-01",
+    period_end: "2026-05-31",
+    amount: "71.20",
+    currency: "EUR",
+    category_id: "cat-4",
+    is_recurring: true,
+    due_date: "2026-06-05",
+    paid_at: "2026-06-05T09:00:00",
+    notes: null,
+    created_at: "2026-06-05T09:00:00",
+    updated_at: "2026-06-05T09:00:00",
+  },
+  {
+    id: "bill-2",
+    provider: "Movistar",
+    service_type: "internet",
+    period_start: "2026-05-01",
+    period_end: "2026-05-31",
+    amount: "54.90",
+    currency: "EUR",
+    category_id: "cat-4",
+    is_recurring: true,
+    due_date: "2026-06-10",
+    paid_at: "2026-06-10T09:00:00",
+    notes: null,
+    created_at: "2026-06-10T09:00:00",
+    updated_at: "2026-06-10T09:00:00",
+  },
+];
+
+const mockHouseholdSummary: import("./household-bills").HouseholdBillSummary = {
+  generated_at: "2026-06-30T07:15:00Z",
+  total_monthly_estimate: 126.1,
+  items: [
+    {
+      service_type: "electricity",
+      provider: "Iberdrola",
+      bills_count: 2,
+      last_amount: 71.2,
+      previous_amount: 62.4,
+      change_pct: 14.1,
+      average_amount: 66.8,
+      next_estimate: 66.8,
+      anomaly: false,
+      latest_period: "2026-05",
+    },
+    {
+      service_type: "internet",
+      provider: "Movistar",
+      bills_count: 1,
+      last_amount: 54.9,
+      previous_amount: null,
+      change_pct: null,
+      average_amount: 54.9,
+      next_estimate: 54.9,
+      anomaly: false,
+      latest_period: "2026-05",
+    },
+  ],
+};
 
 // Sparkline sintético: tendencia con ruido
 function makeSparkline(base: number, trend: number): number[] {
@@ -247,6 +404,42 @@ export function getMockResponse<T>(path: string, init?: RequestInit): T {
   if (clean === "/api/dashboard/spending/years") return { years: [2026] } as T;
   if (clean === "/api/dashboard/spending") return mockSpending as T;
   if (clean === "/api/settings") return mockSettings as T;
+  if (clean === "/api/ai/status") return {
+    enabled: true,
+    default_provider: "ollama",
+    default_model: "qwen3-coder:30b",
+    providers: [
+      { name: "ollama", available: false, model: "qwen3-coder:30b", error: "Provider local no arrancado" },
+      { name: "lmstudio", available: false, model: "local", error: "Provider local no arrancado" },
+    ],
+  } as T;
+  if (clean === "/api/rag/documents") return [] as T;
+  if (clean === "/api/security/status") return {
+    app_env: "development",
+    database_path: "local-data/financial-os.sqlite",
+    backups_available: mockBackups.length,
+    encryption_ready: true,
+    demo_data_policy: "Los datos demo deben estar identificados y excluidos de totales reales.",
+  } as T;
+  if (clean === "/api/security/backups") {
+    if (init?.method === "POST") {
+      const backup = {
+        filename: `financial-${Date.now()}.sqlite`,
+        path: `local-data/backups/financial-${Date.now()}.sqlite`,
+        size_bytes: 245760,
+        created_at: new Date().toISOString(),
+      };
+      mockBackups.unshift(backup);
+      return backup as T;
+    }
+    return mockBackups as T;
+  }
+  if (clean === "/api/security/integrity") return {
+    status: "ok",
+    database_ok: true,
+    tables: ["accounts", "transactions", "documents", "household_bills"],
+    issues: [],
+  } as T;
   if (clean.startsWith("/api/settings/")) {
     const key = decodeURIComponent(clean.slice("/api/settings/".length));
     const existing = mockSettings.find((setting) => setting.key === key);
@@ -285,8 +478,65 @@ export function getMockResponse<T>(path: string, init?: RequestInit): T {
   if (clean === "/api/investments/assets") return mockInvestmentAssets as T;
   if (clean === "/api/investments/holdings") return mockHoldings as T;
   if (clean === "/api/investments/summary") return mockInvestmentSummary as T;
+  if (clean === "/api/investments/reconciliation") return mockReconciliation as T;
   if (clean === "/api/investments/prices/refresh")
     return { ok: true, updated: 0, failed: [], needs_manual_nav: [], updated_items: [], manual_required: [], skipped: [], errors: [] } as T;
+  if (clean === "/api/recurring") {
+    if (init?.method === "POST" && typeof init.body === "string") {
+      const payload = JSON.parse(init.body) as import("./budgets").RecurringCreate;
+      const now = new Date().toISOString();
+      const item: import("./budgets").RecurringTransaction = {
+        id: crypto.randomUUID(),
+        name: payload.name,
+        category_id: payload.category_id ?? null,
+        account_id: payload.account_id ?? null,
+        amount: payload.amount,
+        currency: payload.currency ?? "EUR",
+        type: payload.type,
+        frequency: payload.frequency,
+        day_of_month: payload.day_of_month ?? null,
+        day_of_week: null,
+        month_of_year: null,
+        next_date: payload.next_date,
+        active: true,
+        description: payload.description ?? null,
+        created_at: now,
+        updated_at: now,
+      };
+      mockRecurring.unshift(item);
+      return item as T;
+    }
+    return mockRecurring as T;
+  }
+  if (clean === "/api/recurring/candidates") return mockRecurringCandidates as T;
+  if (clean === "/api/recurring/calendar") return mockCalendar as T;
+  if (clean === "/api/household-bills") {
+    if (init?.method === "POST" && typeof init.body === "string") {
+      const payload = JSON.parse(init.body) as import("./household-bills").HouseholdBillCreate;
+      const now = new Date().toISOString();
+      const bill: import("./household-bills").HouseholdBill = {
+        id: crypto.randomUUID(),
+        provider: payload.provider,
+        service_type: payload.service_type,
+        period_start: payload.period_start,
+        period_end: payload.period_end,
+        amount: payload.amount,
+        currency: payload.currency ?? "EUR",
+        category_id: payload.category_id ?? null,
+        is_recurring: payload.is_recurring ?? true,
+        due_date: payload.due_date ?? null,
+        paid_at: payload.paid_at ?? null,
+        notes: payload.notes ?? null,
+        created_at: now,
+        updated_at: now,
+      };
+      mockHouseholdBills.unshift(bill);
+      return bill as T;
+    }
+    return mockHouseholdBills as T;
+  }
+  if (clean === "/api/household-bills/summary") return mockHouseholdSummary as T;
+  if (clean.startsWith("/api/household-bills/") && init?.method === "DELETE") return undefined as T;
   if (path.startsWith("/api/markets/quotes")) {
     const catParam = path.includes("?category=")
       ? path.split("?category=")[1]

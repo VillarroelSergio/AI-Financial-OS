@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { Activity, RefreshCw } from "lucide-react";
+import { PageHeader } from "@/components/ui/Dashboard";
 import { useMarketsMI } from "@/lib/hooks/useMarketIntelligence";
 import QuoteRow from "./components/QuoteRow";
 import QualityBadge from "./components/QualityBadge";
@@ -7,8 +9,8 @@ type Tab = "indices" | "commodities" | "forex" | "bonds";
 
 function LoadingSkeleton({ isIngesting }: { isIngesting: boolean }) {
   return (
-    <div className="rounded-lg border border-hairline-dark bg-surface-elevated overflow-hidden">
-      {isIngesting && <div className="px-6 py-3 border-b border-hairline-dark bg-primary/5"><p className="text-caption text-primary">Cargando datos de mercado...</p></div>}
+    <div className="premium-card rounded-lg overflow-hidden">
+      {isIngesting && <div className="px-6 py-3 border-b border-hairline-dark bg-primary/5"><p className="text-caption text-primary-bright">Cargando datos de mercado...</p></div>}
       <div className="divide-y divide-divider-soft">
         {Array.from({ length: 8 }).map((_, i) => (
           <div key={i} className="grid grid-cols-3 items-center gap-4 px-6 py-3 animate-pulse">
@@ -23,9 +25,21 @@ function LoadingSkeleton({ isIngesting }: { isIngesting: boolean }) {
 }
 
 export default function MarketsPage() {
-  const { market, forex, bonds, ingestStatus, loading, error } = useMarketsMI();
+  const { market, forex, bonds, ingestStatus, loading, error, refetch } = useMarketsMI();
   const [activeTab, setActiveTab] = useState<Tab>("indices");
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const isIngesting = ingestStatus?.status === "running" || ingestStatus?.status === "idle";
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+      setLastRefresh(new Date());
+    } finally {
+      setRefreshing(false);
+    }
+  };
   const tabs: { key: Tab; label: string }[] = [
     { key: "indices", label: "Indices & Cripto" },
     { key: "commodities", label: "Materias primas" },
@@ -35,17 +49,44 @@ export default function MarketsPage() {
 
   return (
     <div className="p-8 space-y-6 max-w-[1400px]">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <h1 className="text-heading-md text-on-dark">Mercados</h1>
-          <p className="text-caption text-stone mt-1">Datos de mercado desde Market Intelligence.</p>
-        </div>
-        {market && !loading && <QualityBadge score={market.quality_score ?? 0} generatedAt={market.generated_at} />}
-      </div>
+      <PageHeader
+        eyebrow="Market intelligence"
+        title="Mercados"
+        description="Terminal compacto con indices, materias primas, divisas y bonos alimentado por Market Intelligence."
+        actions={
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing || loading}
+              className="flex items-center gap-1.5 rounded-lg bg-white/5 px-3 py-1.5 text-xs text-stone hover:text-on-dark disabled:opacity-50 transition-colors"
+            >
+              <RefreshCw size={12} className={refreshing ? "animate-spin" : ""} />
+              {refreshing
+                ? "Actualizando..."
+                : lastRefresh
+                ? `Actualizado ${lastRefresh.toLocaleTimeString("es-ES")}`
+                : "Actualizar"}
+            </button>
+            {market && !loading && (
+              <QualityBadge score={market.quality_score ?? 0} generatedAt={market.generated_at} />
+            )}
+          </div>
+        }
+      />
 
-      <div className="flex gap-1 border-b border-hairline-dark">
+      <section className="premium-card rounded-lg p-5">
+        <div className="flex items-center gap-3">
+          <span className="grid h-10 w-10 place-items-center rounded-lg border border-hairline-dark bg-white/[.035] text-primary-bright"><Activity size={18} /></span>
+          <div>
+            <p className="text-sm font-semibold text-on-dark">Pulso de mercado</p>
+            <p className="text-xs text-stone">Vista densa para seguimiento diario y validacion de calidad de dato.</p>
+          </div>
+        </div>
+      </section>
+
+      <div className="flex w-fit gap-1 rounded-lg border border-hairline-dark bg-white/[.035] p-1">
         {tabs.map((tab) => (
-          <button key={tab.key} onClick={() => setActiveTab(tab.key)} className={["px-4 py-2 text-body-sm transition-colors border-b-2 -mb-px", activeTab === tab.key ? "border-primary text-on-dark" : "border-transparent text-stone hover:text-on-dark"].join(" ")}>
+          <button key={tab.key} onClick={() => setActiveTab(tab.key)} className={["rounded-lg px-4 py-2 text-body-sm transition-colors", activeTab === tab.key ? "bg-white/[.08] text-on-dark shadow-[inset_0_0_0_1px_rgba(255,255,255,.08)]" : "text-stone hover:text-on-dark"].join(" ")}>
             {tab.label}
           </button>
         ))}
@@ -61,7 +102,7 @@ export default function MarketsPage() {
       ) : null}
 
       {!loading && activeTab === "indices" && (
-        <div className="rounded-lg border border-hairline-dark bg-surface-elevated overflow-hidden">
+        <div className="premium-card rounded-lg overflow-hidden">
           {market && market.indices.length > 0 && (
             <>
               <div className="px-6 pt-4 pb-2"><span className="text-caption text-mute uppercase tracking-widest font-medium">Indices</span></div>
@@ -79,13 +120,13 @@ export default function MarketsPage() {
       )}
 
       {!loading && activeTab === "commodities" && (
-        <div className="rounded-lg border border-hairline-dark bg-surface-elevated overflow-hidden">
+        <div className="premium-card rounded-lg overflow-hidden">
           {market && market.commodities.length > 0 ? <div className="divide-y divide-divider-soft">{market.commodities.map((q) => <QuoteRow key={q.catalog_item_id} quote={q} />)}</div> : <div className="p-8 text-center"><p className="text-stone text-body-sm">Sin datos de materias primas disponibles.</p></div>}
         </div>
       )}
 
       {!loading && activeTab === "forex" && (
-        <div className="rounded-lg border border-hairline-dark bg-surface-elevated overflow-hidden">
+        <div className="premium-card rounded-lg overflow-hidden">
           {forex && forex.rates.length > 0 ? (
             <div className="divide-y divide-divider-soft">
               {forex.rates.map((r) => (
@@ -104,7 +145,7 @@ export default function MarketsPage() {
       )}
 
       {!loading && activeTab === "bonds" && (
-        <div className="rounded-lg border border-hairline-dark bg-surface-elevated overflow-hidden">
+        <div className="premium-card rounded-lg overflow-hidden">
           {bonds && bonds.yields.length > 0 ? (
             <div className="divide-y divide-divider-soft">
               {bonds.yields.map((b) => (

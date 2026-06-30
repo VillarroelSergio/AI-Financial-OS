@@ -16,9 +16,7 @@ export default function AiMessageInput({ onSend, disabled, placeholder }: Props)
     if (!trimmed || disabled) return;
     onSend(trimmed);
     setText("");
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-    }
+    if (textareaRef.current) textareaRef.current.style.height = "auto";
   };
 
   const handleKey = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -36,24 +34,27 @@ export default function AiMessageInput({ onSend, disabled, placeholder }: Props)
   };
 
   return (
-    <div className="flex items-end gap-2 border-t border-hairline-dark p-3 bg-surface">
-      <textarea
-        ref={textareaRef}
-        value={text}
-        onChange={handleInput}
-        onKeyDown={handleKey}
-        disabled={disabled}
-        rows={1}
-        placeholder={placeholder ?? "Escribe tu pregunta…"}
-        className="flex-1 resize-none rounded-lg bg-surface-elevated border border-hairline-dark px-3 py-2 text-body-sm text-on-dark placeholder:text-mute focus:outline-none focus:border-primary-500 disabled:opacity-50 transition-colors"
-      />
-      <button
-        onClick={submit}
-        disabled={!text.trim() || disabled}
-        className="w-8 h-8 rounded-lg bg-primary-600 hover:bg-primary-500 disabled:bg-surface-elevated disabled:text-mute flex items-center justify-center transition-colors flex-shrink-0"
-      >
-        <Send size={14} className="text-white disabled:text-mute" />
-      </button>
+    <div className="border-t border-hairline-dark p-3 bg-black/10">
+      <div className="flex items-end gap-2 rounded-lg border border-hairline-dark bg-white/[.035] p-2">
+        <textarea
+          ref={textareaRef}
+          value={text}
+          onChange={handleInput}
+          onKeyDown={handleKey}
+          disabled={disabled}
+          rows={1}
+          placeholder={placeholder ?? "Escribe tu pregunta..."}
+          className="flex-1 resize-none bg-transparent px-2 py-2 text-body-sm text-on-dark placeholder:text-mute focus:outline-none disabled:opacity-50"
+        />
+        <button
+          aria-label="Enviar mensaje"
+          onClick={submit}
+          disabled={!text.trim() || disabled}
+          className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-lg bg-primary text-white transition-colors hover:bg-primary-bright disabled:bg-white/[.05] disabled:text-mute"
+        >
+          <Send size={14} />
+        </button>
+      </div>
     </div>
   );
 }

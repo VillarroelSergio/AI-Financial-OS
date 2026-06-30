@@ -249,6 +249,16 @@ export default function GoalSimulationPanel({ goalId, targetAmount, hasContribut
                 </ResponsiveContainer>
               </div>
 
+              {/* Aportación necesaria si no llega a plazo */}
+              {result.monthly_contribution_needed != null && result.monthly_contribution_needed > result.monthly_contribution && (
+                <div className="rounded-xl bg-amber-500/10 border border-amber-500/20 p-3 space-y-0.5">
+                  <p className="text-xs text-stone">Para llegar en plazo (escenario base) necesitarías aportar</p>
+                  <p className="text-lg font-semibold text-on-dark">
+                    {result.monthly_contribution_needed.toLocaleString("es-ES", { style: "currency", currency: "EUR" })} / mes
+                  </p>
+                </div>
+              )}
+
               <p className="text-[10px] text-mute">
                 Proyección orientativa. Escenarios basados en rentabilidades históricas.
                 No constituye asesoramiento financiero.

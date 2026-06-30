@@ -392,3 +392,20 @@ Estos valores deben calcularse en servicios o vistas:
 - Añadir conciliación de movimientos.
 - Añadir reglas de categorización.
 - Añadir split transactions.
+## Household bills
+
+Tabla `household_bills` para seguimiento manual local de suministros y facturas del hogar.
+
+Campos principales:
+
+- `id`: UUID.
+- `provider`: proveedor.
+- `service_type`: `electricity`, `gas`, `water`, `internet`, `phone`, `home_insurance`, `rent_mortgage`, `community`.
+- `period_start` / `period_end`: periodo de consumo.
+- `amount` / `currency`: importe.
+- `category_id`: categoria financiera asociada.
+- `is_recurring`: si debe considerarse recurrente para planificacion.
+- `due_date` / `paid_at`: vencimiento y pago.
+- `notes`: observaciones manuales.
+
+El resumen agrupa por proveedor y servicio, compara contra la factura anterior, marca subidas anomalas y estima el proximo recibo. La carga PDF/captura queda fuera del alcance inicial y se mantiene como evolucion futura local-first.

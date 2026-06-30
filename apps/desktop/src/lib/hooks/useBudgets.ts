@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import {
   Budget, BudgetComparisonItem, BudgetCreate, BudgetUpdate, CalendarEvent,
-  CashflowForecast, RecurringCreate, RecurringTransaction,
+  CashflowForecast, RecurringCandidate, RecurringCreate, RecurringTransaction,
   createBudget, createRecurring, deleteBudget, deleteRecurring,
   fetchBudgetComparison, fetchBudgets, fetchCalendar, fetchCashflowForecast,
-  fetchRecurring, updateBudget, updateRecurring,
+  fetchRecurring, fetchRecurringCandidates, updateBudget, updateRecurring,
 } from "@/lib/api/budgets";
 
 export function useBudgets() {
@@ -67,6 +67,7 @@ export function useBudgetComparison(month?: string) {
 
 export function useRecurring() {
   const [recurring, setRecurring] = useState<RecurringTransaction[]>([]);
+  const [candidates, setCandidates] = useState<RecurringCandidate[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -74,7 +75,9 @@ export function useRecurring() {
     setLoading(true);
     setError(null);
     try {
-      setRecurring(await fetchRecurring());
+      const [recurringData, candidateData] = await Promise.all([fetchRecurring(), fetchRecurringCandidates()]);
+      setRecurring(recurringData);
+      setCandidates(candidateData);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error al cargar recurrentes");
     } finally {
@@ -99,7 +102,7 @@ export function useRecurring() {
     await load();
   }, [load]);
 
-  return { recurring, loading, error, refresh: load, add, update, remove };
+  return { recurring, candidates, loading, error, refresh: load, add, update, remove };
 }
 
 export function useCalendar(days = 60) {

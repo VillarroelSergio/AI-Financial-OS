@@ -11,6 +11,14 @@ from app.modules.insights.scoring import compute_confidence, compute_priority
 WATCHED_SYMBOLS = {"^IBEX", "^STOXX50E", "^GSPC", "^IXIC", "MSCIWORLD"}
 
 
+def _to_str(v: object) -> str | None:
+    if v is None:
+        return None
+    if isinstance(v, datetime):
+        return v.isoformat()
+    return str(v)
+
+
 def market_context_insights(db: Session, period: str) -> list[InsightOut]:
     try:
         from app.modules.market_intelligence.storage.repository import get_latest_quotes
@@ -45,7 +53,7 @@ def market_context_insights(db: Session, period: str) -> list[InsightOut]:
             priority=compute_priority("info", "complete", 50.0),
             data_status=DataStatus.complete,
             primary_metric=InsightMetricOut(label="Variación", value=round(change, 2), unit="%"),
-            sources=[InsightSourceOut(type="market_quotes", label="Mercados", period=period, updated_at=q.get("observed_at"))],
+            sources=[InsightSourceOut(type="market_quotes", label="Mercados", period=period, updated_at=_to_str(q.get("observed_at")))],
             actions=[InsightActionOut(label="Ver mercados", target="/markets", params={})],
             created_at=now_iso,
         ))

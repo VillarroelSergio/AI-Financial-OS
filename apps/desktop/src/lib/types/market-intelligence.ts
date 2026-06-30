@@ -9,9 +9,12 @@ export interface MacroDataPointMI {
   unit?: string;
   provider_id?: string;
   quality_score: number;
+  data_status?: "ok" | "limited" | "unavailable" | "requires_review";
+  retrieved_at?: string | null;
 }
 
 export interface MacroSnapshotMI {
+  status: "ok" | "partial" | "empty" | "error";
   spain: MacroDataPointMI[];
   eurozone: MacroDataPointMI[];
   usa: MacroDataPointMI[];
@@ -28,6 +31,8 @@ export interface QuoteMI {
   currency?: string;
   provider_id?: string;
   quality_score: number;
+  data_status?: "ok" | "limited" | "unavailable" | "requires_review";
+  observed_at?: string | null;
 }
 
 export interface MarketSnapshotMI {
@@ -48,6 +53,7 @@ export interface ForexRateMI {
   date?: string;
   provider_id?: string;
   quality_score: number;
+  data_status?: "ok" | "limited" | "unavailable";
 }
 
 export interface ForexSnapshotMI {
@@ -64,6 +70,7 @@ export interface BondYieldMI {
   date?: string;
   provider_id?: string;
   quality_score: number;
+  data_status?: "ok" | "limited" | "unavailable";
 }
 
 export interface BondSnapshotMI {
