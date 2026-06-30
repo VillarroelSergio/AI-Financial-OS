@@ -214,3 +214,72 @@ def test_simulate_default_inflation(client):
     r = client.post(f"/api/goals/{goal_id}/simulate", json={})
     assert r.status_code == 200
     assert r.json()["inflation_rate"] == pytest.approx(DEFAULT_INFLATION)
+
+
+# ── Phase 10.6 validation cases ───────────────────────────────────────────────
+
+from app.modules.goals.simulation_service import SimulationResult  # noqa: E402
+
+
+def test_goal_zero_initial_capital():
+    """Capital inicial 0, aportación positiva → debe alcanzar objetivo."""
+    result = simulate_goal(
+        goal_id="test-1",
+        current_amount=0.0,
+        target_amount=10000.0,
+        monthly_contribution=200.0,
+        target_date=None,
+        inflation_rate=0.03,
+    )
+    assert isinstance(result, SimulationResult)
+    base = next(s for s in result.scenarios if s.scenario == "base")
+    assert base.months_to_target is not None
+    assert base.months_to_target > 0
+
+
+def test_goal_zero_contribution():
+    """Aportación 0 con capital inicial — solo crece por rentabilidad."""
+    result = simulate_goal(
+        goal_id="test-2",
+        current_amount=5000.0,
+        target_amount=10000.0,
+        monthly_contribution=0.0,
+        target_date=None,
+        inflation_rate=0.0,
+    )
+    conservative = next(s for s in result.scenarios if s.scenario == "conservative")
+    # Con 2% anual y 0 aportación, desde 5000 a 10000 tarda ~35 años
+    assert conservative.months_to_target is None or conservative.months_to_target > 300
+
+
+def test_goal_unreachable_in_time_shows_required_contribution():
+    """Objetivo no alcanzable debe calcular aportación necesaria."""
+    from datetime import timedelta
+    target = (date.today() + timedelta(days=365)).isoformat()  # 1 año
+    result = simulate_goal(
+        goal_id="test-3",
+        current_amount=0.0,
+        target_amount=50000.0,
+        monthly_contribution=100.0,
+        target_date=date.fromisoformat(target),
+        inflation_rate=0.0,
+    )
+    # En 12 meses con 100€/mes no se llegan a 50.000€
+    base = next(s for s in result.scenarios if s.scenario == "base")
+    assert base.achievable_by_target_date is False
+    assert result.monthly_contribution_needed is not None
+    assert result.monthly_contribution_needed > 100.0
+
+
+def test_scenarios_are_ordered_correctly():
+    """Conservador ≤ Base ≤ Optimista en monto final."""
+    result = simulate_goal(
+        goal_id="test-4",
+        current_amount=1000.0,
+        target_amount=20000.0,
+        monthly_contribution=200.0,
+        target_date=None,
+        inflation_rate=0.0,
+    )
+    amounts = {s.scenario: s.final_amount for s in result.scenarios}
+    assert amounts["conservative"] <= amounts["base"] <= amounts["optimistic"]

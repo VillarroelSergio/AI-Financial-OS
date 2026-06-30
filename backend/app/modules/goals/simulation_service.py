@@ -78,6 +78,7 @@ class SimulationResult:
     current_amount: float
     target_amount: float
     monthly_contribution: float
+    monthly_contribution_needed: Optional[float]  # Required monthly contribution to reach target by target_date (base scenario), or None
     inflation_rate: float
     inflation_adjusted_target: float  # target in future euros (at base horizon)
     monthly_data: list[MonthlyDataPoint]
@@ -135,6 +136,11 @@ def _add_months(d: date, months: int) -> date:
 def _month_label(d: date) -> str:
     MONTHS_ES = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"]
     return f"{MONTHS_ES[d.month - 1]} {d.year}"
+
+
+def _months_between(d1: date, d2: date) -> int:
+    """Approximate number of months between two dates (d2 - d1)."""
+    return (d2.year - d1.year) * 12 + (d2.month - d1.month)
 
 
 # ── Public API ────────────────────────────────────────────────────────────────
@@ -239,12 +245,29 @@ def simulate_goal(
         target_amount * (1 + inflation_rate) ** (base_months / 12), 2
     )
 
+    # Monthly contribution needed to reach target by target_date (base scenario, 6% annual)
+    monthly_contribution_needed: Optional[float] = None
+    if target_date:
+        base_scenario = next((s for s in scenario_projections if s.scenario == "base"), None)
+        if base_scenario and base_scenario.achievable_by_target_date is False:
+            months_remaining = _months_between(today, target_date)
+            if months_remaining > 0:
+                r_m = (1 + 0.06) ** (1 / 12) - 1  # base monthly rate
+                if r_m > 0:
+                    future_value_of_current = current_amount * (1 + r_m) ** months_remaining
+                    remaining = target_amount - future_value_of_current
+                    monthly_contribution_needed = remaining * r_m / ((1 + r_m) ** months_remaining - 1)
+                else:
+                    monthly_contribution_needed = (target_amount - current_amount) / months_remaining
+                monthly_contribution_needed = max(0.0, round(monthly_contribution_needed, 2))
+
     from datetime import datetime, timezone
     return SimulationResult(
         goal_id=goal_id,
         current_amount=current_amount,
         target_amount=target_amount,
         monthly_contribution=monthly_contribution,
+        monthly_contribution_needed=monthly_contribution_needed,
         inflation_rate=inflation_rate,
         inflation_adjusted_target=inflation_adjusted_target,
         monthly_data=monthly_data,

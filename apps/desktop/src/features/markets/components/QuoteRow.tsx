@@ -13,6 +13,36 @@ function formatPrice(price: number): string {
   });
 }
 
+function DataStatusBadge({ status }: { status: QuoteMI["data_status"] }) {
+  if (!status || status === "ok") return null;
+
+  const config: Record<
+    Exclude<QuoteMI["data_status"], "ok" | undefined>,
+    { label: string; className: string }
+  > = {
+    limited: {
+      label: "Limitado",
+      className: "bg-amber-400/10 text-amber-400",
+    },
+    unavailable: {
+      label: "Sin dato",
+      className: "bg-white/5 text-stone",
+    },
+    requires_review: {
+      label: "Revisar",
+      className: "bg-accent-danger/10 text-accent-danger",
+    },
+  };
+
+  const { label, className } = config[status];
+
+  return (
+    <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${className}`}>
+      {label}
+    </span>
+  );
+}
+
 export default function QuoteRow({ quote }: Props) {
   const positive = (quote.change_pct ?? 0) >= 0;
   const qualityColor =
@@ -60,9 +90,12 @@ export default function QuoteRow({ quote }: Props) {
         ) : (
           <span className="text-caption text-stone">—</span>
         )}
-        <span className={`text-[10px] rounded px-1.5 py-px ${qualityColor}`}>
-          {(quote.quality_score * 100).toFixed(0)}%
-        </span>
+        <div className="flex items-center gap-1">
+          <DataStatusBadge status={quote.data_status} />
+          <span className={`text-[10px] rounded px-1.5 py-px ${qualityColor}`}>
+            {(quote.quality_score * 100).toFixed(0)}%
+          </span>
+        </div>
       </div>
     </div>
   );

@@ -81,6 +81,7 @@ def simulate(
         current_amount=result.current_amount,
         target_amount=result.target_amount,
         monthly_contribution=result.monthly_contribution,
+        monthly_contribution_needed=result.monthly_contribution_needed,
         inflation_rate=result.inflation_rate,
         inflation_adjusted_target=result.inflation_adjusted_target,
         monthly_data=[

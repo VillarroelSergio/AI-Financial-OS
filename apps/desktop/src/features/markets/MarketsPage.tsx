@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Activity } from "lucide-react";
+import { Activity, RefreshCw } from "lucide-react";
 import { PageHeader } from "@/components/ui/Dashboard";
 import { useMarketsMI } from "@/lib/hooks/useMarketIntelligence";
 import QuoteRow from "./components/QuoteRow";
@@ -25,9 +25,21 @@ function LoadingSkeleton({ isIngesting }: { isIngesting: boolean }) {
 }
 
 export default function MarketsPage() {
-  const { market, forex, bonds, ingestStatus, loading, error } = useMarketsMI();
+  const { market, forex, bonds, ingestStatus, loading, error, refetch } = useMarketsMI();
   const [activeTab, setActiveTab] = useState<Tab>("indices");
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const isIngesting = ingestStatus?.status === "running" || ingestStatus?.status === "idle";
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await refetch();
+      setLastRefresh(new Date());
+    } finally {
+      setRefreshing(false);
+    }
+  };
   const tabs: { key: Tab; label: string }[] = [
     { key: "indices", label: "Indices & Cripto" },
     { key: "commodities", label: "Materias primas" },
@@ -41,7 +53,25 @@ export default function MarketsPage() {
         eyebrow="Market intelligence"
         title="Mercados"
         description="Terminal compacto con indices, materias primas, divisas y bonos alimentado por Market Intelligence."
-        actions={market && !loading ? <QualityBadge score={market.quality_score ?? 0} generatedAt={market.generated_at} /> : undefined}
+        actions={
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing || loading}
+              className="flex items-center gap-1.5 rounded-lg bg-white/5 px-3 py-1.5 text-xs text-stone hover:text-on-dark disabled:opacity-50 transition-colors"
+            >
+              <RefreshCw size={12} className={refreshing ? "animate-spin" : ""} />
+              {refreshing
+                ? "Actualizando..."
+                : lastRefresh
+                ? `Actualizado ${lastRefresh.toLocaleTimeString("es-ES")}`
+                : "Actualizar"}
+            </button>
+            {market && !loading && (
+              <QualityBadge score={market.quality_score ?? 0} generatedAt={market.generated_at} />
+            )}
+          </div>
+        }
       />
 
       <section className="premium-card rounded-lg p-5">

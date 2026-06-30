@@ -229,6 +229,20 @@ textarea {
   color-scheme: light dark;
 }
 
+/* Forzar color-scheme dark en tema oscuro para que los <option> nativos hereden fondo oscuro */
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  color-scheme: dark;
+  background-color: var(--bg-interactive);
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] select option {
+  background-color: var(--bg-card-elevated);
+  color: var(--text-primary);
+}
+
 table {
   border-collapse: separate;
   border-spacing: 0;

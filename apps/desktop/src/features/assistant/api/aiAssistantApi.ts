@@ -11,8 +11,8 @@ export const getAiStatus = () => api.get<AiStatus>("/api/ai/status");
 
 export const getAiTools = () => api.get<AiTool[]>("/api/ai/tools");
 
-export const sendMessage = (payload: AiChatRequest) =>
-  api.post<AiChatResponse>("/api/ai/chat", payload);
+export const sendMessage = (payload: AiChatRequest, signal?: AbortSignal) =>
+  api.post<AiChatResponse>("/api/ai/chat", payload, signal);
 
 export const createConversation = (title?: string) =>
   api.post<AiConversation>("/api/ai/conversations", { title });

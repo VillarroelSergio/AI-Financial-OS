@@ -122,5 +122,5 @@ export function useMarketsMI() {
     };
   }, [loadSnapshots]);
 
-  return { market, forex, bonds, ingestStatus, loading, error };
+  return { market, forex, bonds, ingestStatus, loading, error, refetch: loadSnapshots };
 }

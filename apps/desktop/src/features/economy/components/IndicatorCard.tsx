@@ -1,6 +1,14 @@
 // apps/desktop/src/features/economy/components/IndicatorCard.tsx
 import type { MacroDataPointMI } from "@/lib/types/market-intelligence";
 
+const STATUS_LABELS: Record<string, string> = {
+  unavailable: "Sin dato",
+  seed: "Demo",
+  stale: "En caché",
+  limited: "Parcial",
+  requires_review: "Revisar",
+};
+
 interface Props {
   indicator: MacroDataPointMI;
   size?: "default" | "large";
@@ -45,8 +53,13 @@ export default function IndicatorCard({ indicator, size = "default" }: Props) {
         </span>
       </div>
 
-      <div className={`font-semibold tabular-nums ${size === "large" ? "text-2xl" : "text-xl"} ${isUnavailable ? "text-stone" : "text-on-dark"}`}>
+      <div className={`font-semibold tabular-nums flex items-center gap-2 ${size === "large" ? "text-2xl" : "text-xl"} ${isUnavailable ? "text-stone" : "text-on-dark"}`}>
         {valueStr}
+        {indicator.data_status && indicator.data_status !== "ok" && (
+          <span className="rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide bg-white/10 text-stone">
+            {STATUS_LABELS[indicator.data_status] ?? indicator.data_status}
+          </span>
+        )}
       </div>
 
       <div className="text-[10px] text-mute mt-auto pt-1 border-t border-hairline-dark">

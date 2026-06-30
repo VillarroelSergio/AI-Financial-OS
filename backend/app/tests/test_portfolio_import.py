@@ -309,3 +309,22 @@ def test_validate_spacex_endpoint(client):
     data = r.json()
     assert data[0]["import_status"] == "REQUIRES_CONFIRMATION"
     assert data[0]["requires_confirmation"] is True
+
+
+# ── Screenshot / Opción B ─────────────────────────────────────────────────────
+
+def test_screenshot_endpoint_not_creates_holdings_without_review():
+    """La captura NO debe crear holdings directamente — solo debe devolver datos para revisión.
+
+    Opción B: no existe ruta de screenshot en el router. Las imágenes no se procesan
+    ni se envían a servicios externos. Los holdings solo se crean tras confirmación
+    explícita del usuario a través de /confirm.
+    """
+    from app.modules.investments.portfolio_import_routes import router
+
+    screenshot_routes = [r for r in router.routes if "screenshot" in str(r.path)]
+    # Opción B implementada: no debe existir ninguna ruta de screenshot
+    assert len(screenshot_routes) == 0, (
+        f"Se encontraron rutas de screenshot inesperadas: {[r.path for r in screenshot_routes]}. "
+        "La extracción automática desde captura no está disponible en esta fase (Opción B)."
+    )

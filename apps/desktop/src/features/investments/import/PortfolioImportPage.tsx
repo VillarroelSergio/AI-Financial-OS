@@ -38,33 +38,48 @@ function makeReviewRow(v: ReviewRow): ReviewRow {
 
 function MethodSelector({ onSelect }: { onSelect: (m: "screenshot" | "manual") => void }) {
   return (
-    <div className="grid grid-cols-2 gap-4 max-w-lg">
-      <button
-        onClick={() => onSelect("screenshot")}
-        className="flex flex-col items-center gap-3 rounded-xl border border-hairline-dark bg-surface-deep px-6 py-8
-          hover:border-primary/40 hover:bg-white/[.03] transition-all text-center group"
-      >
-        <Upload size={28} className="text-stone group-hover:text-on-dark transition-colors" />
-        <div>
-          <p className="font-medium text-on-dark text-sm">Desde captura</p>
-          <p className="text-xs text-mute mt-1 leading-snug">
-            Carga capturas reales o pega texto como fallback revisable
+    <div className="flex flex-col gap-3 max-w-lg">
+      <div className="grid grid-cols-2 gap-4">
+        {/* Screenshot option — disabled until OCR is available */}
+        <div className="flex flex-col gap-1">
+          <div className="relative">
+            <button
+              disabled
+              className="w-full flex flex-col items-center gap-3 rounded-xl border border-hairline-dark bg-surface-deep px-6 py-8
+                opacity-40 cursor-not-allowed text-center"
+            >
+              <Upload size={28} className="text-stone" />
+              <div>
+                <p className="font-medium text-on-dark text-sm">Desde captura</p>
+                <p className="text-xs text-mute mt-1 leading-snug">
+                  Extracción automática desde imagen de pantalla
+                </p>
+              </div>
+            </button>
+            <span className="absolute -top-1 -right-1 rounded-full bg-amber-500 px-1.5 py-0.5 text-[9px] font-bold uppercase text-white leading-none">
+              Próximo
+            </span>
+          </div>
+          <p className="text-xs text-mute leading-snug px-1">
+            La extracción automática desde captura está pendiente. Usa la entrada manual o pega texto.
           </p>
         </div>
-      </button>
-      <button
-        onClick={() => onSelect("manual")}
-        className="flex flex-col items-center gap-3 rounded-xl border border-hairline-dark bg-surface-deep px-6 py-8
-          hover:border-primary/40 hover:bg-white/[.03] transition-all text-center group"
-      >
-        <Keyboard size={28} className="text-stone group-hover:text-on-dark transition-colors" />
-        <div>
-          <p className="font-medium text-on-dark text-sm">Entrada rápida</p>
-          <p className="text-xs text-mute mt-1 leading-snug">
-            Introduce posiciones manualmente una a una
-          </p>
-        </div>
-      </button>
+
+        {/* Manual / text-paste option — fully functional */}
+        <button
+          onClick={() => onSelect("manual")}
+          className="flex flex-col items-center gap-3 rounded-xl border border-hairline-dark bg-surface-deep px-6 py-8
+            hover:border-primary/40 hover:bg-white/[.03] transition-all text-center group"
+        >
+          <Keyboard size={28} className="text-stone group-hover:text-on-dark transition-colors" />
+          <div>
+            <p className="font-medium text-on-dark text-sm">Entrada rápida</p>
+            <p className="text-xs text-mute mt-1 leading-snug">
+              Introduce posiciones manualmente o pega texto de tu broker
+            </p>
+          </div>
+        </button>
+      </div>
     </div>
   );
 }
@@ -404,7 +419,7 @@ export default function PortfolioImportPage() {
         <div>
           <h1 className="text-xl font-semibold text-on-dark">Importar cartera</h1>
           <p className="text-sm text-mute mt-0.5">
-            Asistente de importación desde captura de pantalla o entrada manual.
+            Asistente de importación: entrada manual o texto pegado desde tu broker.
           </p>
         </div>
       </div>

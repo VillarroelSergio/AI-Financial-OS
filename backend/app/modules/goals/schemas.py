@@ -81,6 +81,7 @@ class SimulationResultOut(BaseModel):
     current_amount: float
     target_amount: float
     monthly_contribution: float
+    monthly_contribution_needed: Optional[float]
     inflation_rate: float
     inflation_adjusted_target: float
     monthly_data: list[MonthlyDataPointOut]

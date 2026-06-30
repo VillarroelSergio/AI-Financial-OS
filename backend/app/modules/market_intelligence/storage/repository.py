@@ -98,11 +98,17 @@ def _persist_normalized(conn, catalog_item_id, provider_id, record, quality, now
     if existing:
         return
 
-    value_numeric = (
-        getattr(record, "value", None)
-        or getattr(record, "rate", None)
-        or getattr(record, "price", None)
-        or getattr(record, "yield_value", None)
+    def _first_not_none(*vals):
+        for v in vals:
+            if v is not None:
+                return v
+        return None
+
+    value_numeric = _first_not_none(
+        getattr(record, "value", None),
+        getattr(record, "rate", None),
+        getattr(record, "price", None),
+        getattr(record, "yield_value", None),
     )
     conn.execute(
         """

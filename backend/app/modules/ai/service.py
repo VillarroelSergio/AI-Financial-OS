@@ -6,6 +6,7 @@ import logging
 import time
 from typing import Any
 
+import httpx
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -86,6 +87,23 @@ async def chat(
         messages[-1] = {"role": "user", "content": contextual_message}
 
     provider = get_provider(provider_name)
+
+    # Fast availability check before entering the agentic loop.
+    # health() has a 5-second timeout internally, so this won't block long.
+    try:
+        health = await provider.health()
+        if not health.available:
+            error_detail = health.error or "provider offline"
+            raise RuntimeError(
+                f"El asistente IA no está disponible ({provider.name}): {error_detail}. "
+                "Asegúrate de que Ollama o LMStudio está en ejecución."
+            )
+    except (httpx.TransportError, httpx.TimeoutException) as exc:
+        raise RuntimeError(
+            f"No se puede conectar con el provider '{provider.name}'. "
+            f"Comprueba que el servicio está activo. Detalle: {exc}"
+        ) from exc
+
     tools = tool_registry.llm_schemas() if enable_tools else []
 
     all_tool_calls: list[ToolCallOut] = []
@@ -95,12 +113,18 @@ async def chat(
 
     # Agentic loop: call → execute tools → re-call until no more tool calls or limit
     for _round in range(_MAX_TOOL_ROUNDS):
-        response: AIResponse = await provider.chat(
-            messages=messages,
-            tools=tools if enable_tools else None,
-            model=model,
-            max_tokens=settings.AI_MAX_OUTPUT_TOKENS,
-        )
+        try:
+            response: AIResponse = await provider.chat(
+                messages=messages,
+                tools=tools if enable_tools else None,
+                model=model,
+                max_tokens=settings.AI_MAX_OUTPUT_TOKENS,
+            )
+        except (httpx.TimeoutException, httpx.TransportError) as exc:
+            raise RuntimeError(
+                f"El provider '{provider.name}' no respondió a tiempo. "
+                f"Comprueba que el modelo está cargado y el servicio está activo. Detalle: {exc}"
+            ) from exc
 
         if not response.tool_calls:
             final_content = response.content
