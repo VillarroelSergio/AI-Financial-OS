@@ -87,3 +87,56 @@ export const getSummary = () =>
 
 export const refreshPrices = () =>
   api.post<PriceRefreshResult>("/api/investments/prices/refresh", {});
+
+// ── Reconciliation ────────────────────────────────────────────────────────────
+
+export interface ReconciliationHolding {
+  holding_id: string;
+  display_name: string;
+  ticker: string | null;
+  quality_state: "confirmed" | "estimated" | "manual" | "no_price" | "fx_pending" | "requires_review";
+  value_eur: number;
+  weight_pct: number;
+  unrealized_pnl: number;
+  unrealized_pnl_pct: number;
+  currency: string;
+  requires_fx: boolean;
+  broker: string;
+  sector: string | null;
+  asset_type: string;
+}
+
+export interface WeightItem {
+  key: string;
+  weight_pct: number;
+}
+
+export interface ConcentrationAlert {
+  type: "asset" | "currency";
+  key: string;
+  weight_pct: number;
+  threshold_pct: number;
+}
+
+export interface ReconciliationReport {
+  generated_at: string;
+  portfolio_value_eur: number;
+  completeness: {
+    confirmed_pct: number;
+    estimated_pct: number;
+    manual_pct: number;
+    no_price_pct: number;
+  };
+  holdings: ReconciliationHolding[];
+  weights_by: {
+    currency: WeightItem[];
+    sector: WeightItem[];
+    broker: WeightItem[];
+    asset_type: WeightItem[];
+    region: WeightItem[];
+  };
+  concentration_alerts: ConcentrationAlert[];
+}
+
+export const fetchReconciliation = (): Promise<ReconciliationReport> =>
+  api.get<ReconciliationReport>("/api/investments/reconciliation");

@@ -1,183 +1,66 @@
-# 07 — Economic Intelligence
+# 07 - Economic Intelligence
 
-## Objetivo
+## Estado actual
 
-Añadir una capa de datos económicos reales y actualizados centrados en España, Eurozona y Estados Unidos para contextualizar las finanzas personales, inversiones y objetivos.
+La inteligencia economica ya no vive en un modulo independiente `economic_data`.
+Actualmente forma parte de Market Intelligence:
 
-## Principio de producto
+```txt
+backend/app/modules/market_intelligence/
+```
 
-La sección económica no debe convertirse en un portal macroeconómico genérico. Todo dato debe responder a:
+La UI consume estos datos mediante `/api/market-intelligence/*`.
 
-> ¿Cómo puede afectar esto al dinero, gastos, ahorro, inversiones u objetivos del usuario?
+## Objetivo de producto
 
-## Regiones
+La seccion economica debe explicar como el contexto macro puede afectar al dinero,
+gastos, ahorro, inversiones u objetivos del usuario. No pretende ser un portal
+macroeconomico generico.
 
-- España.
-- Eurozona.
+## Cobertura
+
+Regiones principales:
+
+- Espana.
+- Eurozona / Europa.
 - Estados Unidos.
 
-## Indicadores V1
+Tipos de datos:
 
-### España
+- Inflacion.
+- Paro.
+- PIB y actividad.
+- Tipos de interes.
+- Bonos.
+- Indices relevantes.
+- Divisas.
+- Noticias financieras seleccionadas cuando aportan contexto.
 
-- Inflación.
-- Inflación subyacente.
-- Tasa de paro.
-- PIB.
-- Euríbor.
-- Bono español 10 años.
-- IBEX 35.
-
-### Eurozona
-
-- Inflación.
-- Inflación subyacente.
-- Tasa de paro.
-- PIB.
-- Tipo BCE.
-- Bund alemán 10 años.
-- Euro Stoxx 50.
-- STOXX Europe 600.
-
-### Estados Unidos
-
-- CPI.
-- Core CPI.
-- Unemployment Rate.
-- GDP.
-- Fed Funds Rate.
-- Treasury 10Y.
-- S&P 500.
-- Nasdaq 100.
-- Dow Jones.
-
-### Divisas
-
-- EUR/USD.
-
-## Excluido V1
-
-- Materias primas.
-- Calendario macro completo.
-- Forecasts de analistas.
-- Noticias.
-- Sentiment analysis.
-
-## Fuentes candidatas
-
-La implementación debe usar providers intercambiables. Las fuentes exactas pueden cambiar sin afectar al dominio.
-
-Candidatas:
-
-- INE para España.
-- Banco de España para datos financieros españoles.
-- Eurostat para Eurozona.
-- BCE para tipos, divisas y datos monetarios.
-- FRED para Estados Unidos.
-- APIs de mercado para índices y divisas.
-
-## Arquitectura
+## Implementacion vigente
 
 ```txt
-economic_data/
-  providers/
-    ine_provider.py
-    eurostat_provider.py
-    ecb_provider.py
-    fred_provider.py
-    market_provider.py
-  service.py
-  repository.py
-  routes.py
-  schemas.py
+Catalog YAML
+  -> ProviderOrchestrator
+  -> adapters macro/mercado/noticias
+  -> QualityEngine
+  -> DuckDB (`mi_*`)
+  -> API `/api/market-intelligence/snapshot/macro`
+  -> EconomyPage / AI datasheet
 ```
 
-## Frecuencia
+## Endpoints relacionados
 
-```txt
-Índices              Diario
-Divisas              Diario
-Bonos                Diario
-Euríbor              Diario
-Inflación            Mensual
-Paro                 Mensual / trimestral
-PIB                  Trimestral
-Tipos BCE/FED        Según reunión
-```
+| Endpoint | Uso |
+|---|---|
+| `GET /api/market-intelligence/snapshot/macro` | Snapshot macro por region |
+| `GET /api/market-intelligence/personal-impact` | Impacto personal determinista |
+| `GET /api/market-intelligence/ai-datasheet` | Contexto compacto para IA |
+| `GET /api/market-intelligence/ingest-status` | Estado de ingesta |
 
-## Caché
+## Reglas
 
-Todos los datos descargados deben almacenarse localmente.
-
-Campos obligatorios:
-
-- Fuente.
-- Fecha de observación.
-- Fecha de descarga.
-- Fecha de publicación si existe.
-- Unidad.
-
-## UX
-
-La pantalla Economy debe ser un snapshot, no una tabla compleja.
-
-Estructura:
-
-```txt
-Economy
- ├─ Snapshot global
- ├─ España
- ├─ Eurozona
- ├─ EEUU
- ├─ Tipos
- ├─ Inflación
- └─ Impacto en tus finanzas
-```
-
-## Card de indicador
-
-```txt
-Inflación España
-3,2%
-+0,4 pp vs dato anterior
-Último dato: mayo 2026
-Fuente: INE
-```
-
-## Vista de impacto personal
-
-La sección más diferencial:
-
-```txt
-Impacto en tus finanzas
- ├─ Inflación vs gasto personal
- ├─ Tipos vs cuentas remuneradas
- ├─ Mercado vs inversiones
- ├─ Inflación vs objetivos
- └─ Bonos/tipos vs perfil conservador
-```
-
-## Tools IA futuras
-
-```txt
-get_macro_snapshot(region)
-get_indicator_latest(code, region)
-get_indicator_history(code, region, start_date, end_date)
-compare_macro_regions(indicator)
-explain_macro_personal_impact(indicator, user_context)
-```
-
-## Ejemplos de insights
-
-- La inflación está por encima del crecimiento de tu ahorro mensual.
-- Los tipos elevados favorecen la rentabilidad de tu liquidez.
-- Tu cartera cae en línea con los principales índices.
-- Tu objetivo de ahorro debería revisarse si quieres mantener poder adquisitivo real.
-
-## Reglas de diseño
-
-- Máximo 4 indicadores por región en overview.
-- No mostrar calendarios macro completos en V1.
-- No mezclar noticias con datos.
-- No usar colores alarmistas.
-- Mostrar siempre fecha y fuente.
+- Mostrar siempre fecha, fuente y `quality_score` cuando aplique.
+- Separar calculo determinista de explicacion IA.
+- No permitir SQL libre desde el modelo.
+- No consultar proveedores live desde la IA; usar backend y datasheets.
+- Mantener el foco en impacto personal, no en cobertura macro exhaustiva.

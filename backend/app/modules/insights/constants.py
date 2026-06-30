@@ -1,0 +1,36 @@
+from decimal import Decimal
+
+SPENDING_ANOMALY_MULTIPLIER = Decimal("1.25")
+SPENDING_ANOMALY_MIN_ABSOLUTE_EUR = Decimal("30")
+SPENDING_ANOMALY_MIN_CURRENT_EUR = Decimal("50")
+BASELINE_MONTHS = 3
+MIN_BASELINE_MONTHS = 2
+EXPENSE_DELTA_PERCENTAGE_THRESHOLD = Decimal("15")
+SAVINGS_DELTA_ABSOLUTE_THRESHOLD_EUR = Decimal("50")
+NET_WORTH_CHANGE_PERCENTAGE_THRESHOLD = Decimal("3")
+NET_WORTH_CHANGE_ABSOLUTE_THRESHOLD_EUR = Decimal("500")
+HIGH_CONCENTRATION_THRESHOLD = Decimal("40")
+BROKER_CASH_THRESHOLD = Decimal("50")
+GOAL_LAG_THRESHOLD_PERCENTAGE_POINTS = Decimal("10")
+MARKET_DAILY_CHANGE_THRESHOLD = Decimal("1.5")
+DEFAULT_LIMIT = 10
+MAX_INSIGHTS = 50
+
+SEVERITY_SCORES = {
+    "positive": 40,
+    "info": 50,
+    "warning": 75,
+    "critical": 95,
+}
+CONFIDENCE_SCORES = {
+    "complete": 90,
+    "partial": 65,
+    "insufficient": 30,
+    "empty": 20,
+    "error": 10,
+}
+FRESHNESS_SCORES = {
+    "current": 100,
+    "previous": 80,
+    "older": 50,
+}

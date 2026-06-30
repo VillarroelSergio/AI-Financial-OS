@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { RefreshCw } from "lucide-react";
+import { Plus, RefreshCw } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { PageHeader } from "@/components/ui/Dashboard";
 import EmptyState from "@/components/ui/EmptyState";
 import MetricCard from "@/components/ui/MetricCard";
 import Spinner from "@/components/ui/Spinner";
@@ -12,11 +14,16 @@ import ManualNavDialog from "./components/ManualNavDialog";
 import AddStockDialog from "./components/AddStockDialog";
 import AddFundDialog from "./components/AddFundDialog";
 import AddSavingsDialog from "./components/AddSavingsDialog";
+import HoldingEditor from "./components/HoldingEditor";
+import ReconciliationTab from "@/features/investments/reconciliation/ReconciliationTab";
+import type { HoldingEnriched } from "@/lib/types";
 
 export default function InvestmentsPage() {
-  const demoEmpty = new URLSearchParams(window.location.search).get("demo") === "empty";
+  const searchParams = new URLSearchParams(window.location.search);
+  const demoEmpty = searchParams.get("demo") === "empty";
+  const initialTab = searchParams.get("tab") === "quality" ? "reconciliacion" : "posiciones";
   const { summary, loading: summaryLoading, refresh: refreshSummary } = useInvestmentSummary();
-  const { holdings, loading: holdingsLoading, refresh: refreshHoldings } = useHoldings();
+  const { holdings, loading: holdingsLoading, refresh: refreshHoldings, remove } = useHoldings();
   const { accounts } = useAccounts();
 
   const onRefreshAll = () => {
@@ -24,13 +31,17 @@ export default function InvestmentsPage() {
     refreshHoldings();
   };
 
-  const { refresh: triggerRefresh, refreshing, needsManualNav, clearNeedsManualNav } =
+  const { refresh: triggerRefresh, refreshing, result: refreshResult, needsManualNav, clearNeedsManualNav, clearResult } =
     useRefreshPrices(onRefreshAll);
 
   const [addStock, setAddStock] = useState(false);
   const [addFund, setAddFund] = useState(false);
   const [addSavings, setAddSavings] = useState(false);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editingHolding, setEditingHolding] = useState<HoldingEnriched | null>(null);
+  const [activeTab, setActiveTab] = useState<"posiciones" | "reconciliacion">(initialTab);
 
+  const navigate = useNavigate();
   const trAccounts = accounts.filter((a) => a.type === "broker");
   const finizensAccounts = accounts.filter((a) => a.type === "investment");
   const ahorroAccounts = accounts.filter((a) => a.type === "savings");
@@ -40,12 +51,10 @@ export default function InvestmentsPage() {
   const ahorroId = ahorroAccounts[0]?.id ?? "";
 
   const accountNames: Record<string, string> = {
-    ...Object.fromEntries(trAccounts.map((a) => [a.id, "Trade Republic"])),
-    ...Object.fromEntries(finizensAccounts.map((a) => [a.id, "Finizens"])),
-    ...Object.fromEntries(ahorroAccounts.map((a) => [a.id, "Ahorro"])),
+    ...Object.fromEntries(accounts.map((a) => [a.id, a.name])),
   };
 
-  const navHoldings = holdings.filter((h) => needsManualNav.includes(h.asset_id));
+  const navHoldings = holdings.filter((h) => needsManualNav.includes(h.id));
 
   const loading = summaryLoading || holdingsLoading;
 
@@ -67,43 +76,128 @@ export default function InvestmentsPage() {
   }
 
   const hasHoldings = !demoEmpty && holdings.length > 0;
+  const realHoldings = holdings.filter((h) => !h.is_mock);
   const returnPct = summary?.return_percent ?? 0;
   const isPositive = returnPct >= 0;
+  const openAdd = () => {
+    setEditingHolding(null);
+    setEditorOpen(true);
+  };
+  const openEdit = (holding: HoldingEnriched) => {
+    setEditingHolding(holding);
+    setEditorOpen(true);
+  };
+  const deleteHolding = async (holding: HoldingEnriched) => {
+    await remove(holding.id);
+    onRefreshAll();
+  };
 
   return (
-    <div className="p-2xl space-y-xl">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-display-lg text-on-dark">Inversiones</h1>
-          {lastUpdated && (
-            <p className="text-caption text-stone mt-xs">Última actualización: {lastUpdated}</p>
-          )}
+    <div className="p-8 max-w-[1500px] mx-auto space-y-xl">
+      <PageHeader
+        eyebrow="Portfolio desk"
+        title="Inversiones"
+        description={lastUpdated ? `Ultima actualizacion: ${lastUpdated}` : "Control de posiciones, precios, calidad y cobertura de cartera."}
+        actions={
+          <>
+          <button onClick={openAdd} className="mercury-button-primary flex items-center gap-sm px-md py-sm rounded-lg text-body-sm transition-colors">
+            <Plus size={14} />
+            Anadir
+          </button>
+          <button
+            onClick={triggerRefresh}
+            disabled={refreshing}
+            className="mercury-button flex items-center gap-sm px-md py-sm rounded-lg text-body-sm disabled:opacity-50"
+          >
+            <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
+            {refreshing ? "Actualizando" : "Precios"}
+          </button>
+          <button
+            onClick={() => navigate("/investments/import")}
+            className="mercury-button flex items-center gap-sm px-md py-sm rounded-lg text-body-sm"
+          >
+            Importar
+          </button>
+          <button
+            onClick={() => navigate("/investments/price-coverage")}
+            className="mercury-button flex items-center gap-sm px-md py-sm rounded-lg text-body-sm"
+          >
+            Cobertura
+          </button>
+          </>
+        }
+      />
+
+      {editorOpen && (
+        <HoldingEditor
+          holding={editingHolding}
+          accounts={accounts}
+          onClose={() => setEditorOpen(false)}
+          onSaved={onRefreshAll}
+        />
+      )}
+
+      {refreshResult && (
+        <div className="premium-card rounded-lg p-lg">
+          <div className="flex items-start justify-between gap-md">
+            <div>
+              <p className="text-body-sm font-semibold text-on-dark">
+                {refreshResult.errors.length ? "Actualizacion parcial de precios" : "Precios revisados"}
+              </p>
+              <p className="mt-xs text-caption text-stone">
+                {refreshResult.updated} actualizados · {refreshResult.manual_required.length} requieren precio manual · {refreshResult.skipped.length} omitidos como efectivo/ahorro.
+              </p>
+              {refreshResult.manual_required.length > 0 && (
+                <p className="mt-xs text-caption text-mute">Precio manual: precio introducido por ti cuando no hay proveedor automatico.</p>
+              )}
+            </div>
+            <div className="flex shrink-0 gap-sm">
+              <button onClick={clearResult} className="mercury-button rounded-lg px-md py-xs text-caption">
+                Cerrar
+              </button>
+            </div>
+          </div>
         </div>
+      )}
+
+      {/* Main tabs */}
+      <div className="flex w-fit gap-sm rounded-lg border border-hairline-dark bg-white/[.035] p-1">
         <button
-          onClick={triggerRefresh}
-          disabled={refreshing}
-          className="flex items-center gap-sm px-md py-sm rounded-full border border-hairline-dark text-body-sm text-stone hover:text-on-dark hover:border-on-dark transition-colors disabled:opacity-50"
+          onClick={() => setActiveTab("posiciones")}
+          className={`px-md py-xs rounded-lg text-caption transition-colors ${
+            activeTab === "posiciones"
+              ? "bg-primary text-on-primary"
+              : "text-stone hover:text-on-dark hover:bg-white/[.04]"
+          }`}
         >
-          <RefreshCw size={14} className={refreshing ? "animate-spin" : ""} />
-          {refreshing ? "Actualizando..." : "Actualizar precios"}
+          Posiciones
+        </button>
+        <button
+          onClick={() => setActiveTab("reconciliacion")}
+          className={`px-md py-xs rounded-lg text-caption transition-colors ${
+            activeTab === "reconciliacion"
+              ? "bg-primary text-on-primary"
+              : "text-stone hover:text-on-dark hover:bg-white/[.04]"
+          }`}
+        >
+          Calidad de cartera
         </button>
       </div>
 
-      {!hasHoldings ? (
+      {!hasHoldings && activeTab === "posiciones" ? (
         <EmptyState
           title="Sin posiciones"
           description="Añade tus primeras inversiones para ver el estado de tu cartera."
           action={
             <button
-              onClick={() => setAddStock(true)}
+              onClick={openAdd}
               className="px-lg py-sm rounded-md text-body-sm bg-primary text-on-primary hover:bg-primary/90 transition-colors"
             >
-              Añadir acción
+              Anadir activo
             </button>
           }
         />
-      ) : (
+      ) : activeTab === "posiciones" ? (
         <>
           {/* Metric cards */}
           {summary && (
@@ -122,12 +216,7 @@ export default function InvestmentsPage() {
           {/* Chart + positions */}
           <div className="grid grid-cols-5 gap-xl">
             <div className="col-span-3">
-              {summary && (
-                <DistributionChart
-                  byAccount={summary.by_account}
-                  accountNames={accountNames}
-                />
-              )}
+              <DistributionChart holdings={realHoldings} accountNames={accountNames} />
             </div>
             <div className="col-span-2">
               <PositionsTabs
@@ -135,13 +224,17 @@ export default function InvestmentsPage() {
                 trAccountIds={trAccounts.map((a) => a.id)}
                 finizensAccountIds={finizensAccounts.map((a) => a.id)}
                 ahorroAccountIds={ahorroAccounts.map((a) => a.id)}
-                onAddStock={() => setAddStock(true)}
+                onAddStock={openAdd}
                 onAddFund={() => setAddFund(true)}
                 onAddSavings={() => setAddSavings(true)}
+                onEdit={openEdit}
+                onDelete={deleteHolding}
               />
             </div>
           </div>
         </>
+      ) : (
+        <ReconciliationTab />
       )}
 
       {/* Dialogs */}
@@ -172,3 +265,4 @@ export default function InvestmentsPage() {
     </div>
   );
 }
+

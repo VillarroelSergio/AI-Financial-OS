@@ -1,0 +1,30 @@
+equity_drawdown:
+  asset_category: equity_index
+  drawdown_threshold: -5.0
+  severe_threshold: -15.0
+  description: "Caída significativa en índices de renta variable"
+
+oil_spike:
+  commodity: oil
+  change_pct_threshold: 10.0
+  description: "Subida brusca del precio del petróleo"
+
+crypto_volatility_high:
+  asset_category: crypto
+  change_pct_threshold: 15.0
+  description: "Alta volatilidad en criptomonedas"
+
+usd_strength:
+  forex_pair: EUR/USD
+  change_pct_threshold: -2.0
+  description: "Fortalecimiento del dólar frente al euro"
+
+eur_weakness:
+  forex_pair: EUR/USD
+  change_pct_threshold: -2.0
+  description: "Debilitamiento del euro frente al dólar"
+
+electricity_price_spike:
+  commodity: electricity
+  change_pct_threshold: 20.0
+  description: "Subida brusca del precio de la electricidad"

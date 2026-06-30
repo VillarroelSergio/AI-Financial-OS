@@ -107,37 +107,17 @@ const mockSpendingCategories: CategorySpending[] = [
 
 const mockSpending: SpendingData = {
   month: "2026-06",
+  period_type: "month",
   total_expense: "1095.89",
   total_income: "2800.00",
+  net_savings: "1704.11",
+  savings_rate: 60.8,
+  transaction_count: 5,
+  average_daily_expense: "36.53",
   by_category: mockSpendingCategories,
 };
 
 const mockInvestmentAssets: InvestmentAsset[] = [
-  {
-    id: "asset-aapl", name: "Apple Inc.", ticker: "AAPL", isin: "US0378331005",
-    asset_type: "stock", currency: "USD", region: "US", sector: "Technology",
-    price_source: "yfinance", created_at: "2024-01-01T00:00:00", updated_at: "2026-06-23T10:00:00",
-  },
-  {
-    id: "asset-tef", name: "Telefónica", ticker: "TEF.MC", isin: "ES0178430E18",
-    asset_type: "stock", currency: "EUR", region: "ES", sector: "Telecom",
-    price_source: "yfinance", created_at: "2024-01-01T00:00:00", updated_at: "2026-06-23T10:00:00",
-  },
-  {
-    id: "asset-vg500", name: "Vanguard US 500 Index Inst Plus", ticker: null, isin: "IE00B5B3X895",
-    asset_type: "fund", currency: "EUR", region: "US", sector: null,
-    price_source: "manual", created_at: "2024-01-01T00:00:00", updated_at: "2026-06-23T10:00:00",
-  },
-  {
-    id: "asset-ishares", name: "iShares North America Index Inst", ticker: null, isin: "IE00B14X4S71",
-    asset_type: "fund", currency: "EUR", region: "US", sector: null,
-    price_source: "manual", created_at: "2024-01-01T00:00:00", updated_at: "2026-06-23T10:00:00",
-  },
-  {
-    id: "asset-cleome", name: "Cleome Index USA Equities", ticker: null, isin: "LU1045609586",
-    asset_type: "fund", currency: "EUR", region: "US", sector: null,
-    price_source: "manual", created_at: "2024-01-01T00:00:00", updated_at: "2026-06-23T10:00:00",
-  },
   {
     id: "asset-tr-savings", name: "Cuenta Remunerada Trade Republic", ticker: null, isin: null,
     asset_type: "savings_account", currency: "EUR", region: null, sector: null,
@@ -149,51 +129,6 @@ const assetMap = Object.fromEntries(mockInvestmentAssets.map(a => [a.id, a]));
 
 const mockHoldings: HoldingEnriched[] = [
   {
-    id: "h-aapl", account_id: "mock-acc-tr", asset_id: "asset-aapl",
-    quantity: "15", average_price: "150.0000", current_price: "192.5000",
-    current_price_currency: "USD", current_price_updated_at: "2026-06-23T10:00:00",
-    market_value: "2673.61", interest_rate: null, inception_date: null,
-    created_at: "2024-01-01T00:00:00", updated_at: "2026-06-23T10:00:00",
-    asset: assetMap["asset-aapl"],
-    cost_basis: "2250.0000", return_absolute: "423.61", return_percent: 18.83, accrued_interest: null,
-  },
-  {
-    id: "h-tef", account_id: "mock-acc-tr", asset_id: "asset-tef",
-    quantity: "200", average_price: "3.9500", current_price: "4.2100",
-    current_price_currency: "EUR", current_price_updated_at: "2026-06-23T10:00:00",
-    market_value: "842.00", interest_rate: null, inception_date: null,
-    created_at: "2024-01-01T00:00:00", updated_at: "2026-06-23T10:00:00",
-    asset: assetMap["asset-tef"],
-    cost_basis: "790.0000", return_absolute: "52.00", return_percent: 6.58, accrued_interest: null,
-  },
-  {
-    id: "h-vg500", account_id: "mock-acc-finizens", asset_id: "asset-vg500",
-    quantity: "4.59", average_price: "420.0000", current_price: "576.1900",
-    current_price_currency: "EUR", current_price_updated_at: "2026-06-23T10:00:00",
-    market_value: "2644.71", interest_rate: null, inception_date: null,
-    created_at: "2024-01-01T00:00:00", updated_at: "2026-06-23T10:00:00",
-    asset: assetMap["asset-vg500"],
-    cost_basis: "1927.8000", return_absolute: "716.91", return_percent: 37.19, accrued_interest: null,
-  },
-  {
-    id: "h-ishares", account_id: "mock-acc-finizens", asset_id: "asset-ishares",
-    quantity: "42.62", average_price: "28.0000", current_price: "39.1100",
-    current_price_currency: "EUR", current_price_updated_at: "2026-06-23T10:00:00",
-    market_value: "1667.04", interest_rate: null, inception_date: null,
-    created_at: "2024-01-01T00:00:00", updated_at: "2026-06-23T10:00:00",
-    asset: assetMap["asset-ishares"],
-    cost_basis: "1193.3600", return_absolute: "473.68", return_percent: 39.69, accrued_interest: null,
-  },
-  {
-    id: "h-cleome", account_id: "mock-acc-finizens", asset_id: "asset-cleome",
-    quantity: "0.44", average_price: "1800.0000", current_price: "2858.9500",
-    current_price_currency: "EUR", current_price_updated_at: "2026-06-23T10:00:00",
-    market_value: "1257.94", interest_rate: null, inception_date: null,
-    created_at: "2024-01-01T00:00:00", updated_at: "2026-06-23T10:00:00",
-    asset: assetMap["asset-cleome"],
-    cost_basis: "792.0000", return_absolute: "465.94", return_percent: 58.83, accrued_interest: null,
-  },
-  {
     id: "h-savings", account_id: "mock-acc-tr-savings", asset_id: "asset-tr-savings",
     quantity: "5000.00000000", average_price: "1.0000", current_price: null,
     current_price_currency: "EUR", current_price_updated_at: null,
@@ -201,21 +136,56 @@ const mockHoldings: HoldingEnriched[] = [
     created_at: "2025-01-01T00:00:00", updated_at: "2026-06-23T10:00:00",
     asset: assetMap["asset-tr-savings"],
     cost_basis: "5000.00000000", return_absolute: null, return_percent: null, accrued_interest: "72.33",
+    display_name: "Cuenta Remunerada Trade Republic", symbol: null, asset_type: "cash", broker: "mock-acc-tr-savings",
+    invested_amount: "5000.00", unrealized_pnl: "0.00", unrealized_pnl_pct: 0, currency: "EUR",
+    is_mock: false, quality_score: 0.8, warnings: ["Precio actual no disponible; puede editarse manualmente."],
   },
 ];
 
 const mockInvestmentSummary: InvestmentSummary = {
-  total_value: "14085.30",
-  total_invested: "11953.16",
-  return_absolute: "2132.14",
-  return_percent: 17.84,
+  total_value: "5000.00",
+  total_invested: "5000.00",
+  return_absolute: "0.00",
+  return_percent: 0,
   currency: "EUR",
-  by_account: [
-    { account_id: "mock-acc-tr", value: "3515.61", invested: "3040.00" },
-    { account_id: "mock-acc-finizens", value: "5569.69", invested: "3913.16" },
-    { account_id: "mock-acc-tr-savings", value: "5000.00", invested: "5000.00" },
+  by_account: [{ account_id: "mock-acc-tr-savings", value: "5000.00", invested: "5000.00" }],
+  last_updated: null,
+};
+
+const mockReconciliation: import("./investments").ReconciliationReport = {
+  generated_at: "2026-06-30T07:15:00Z",
+  portfolio_value_eur: 5000,
+  completeness: {
+    confirmed_pct: 68,
+    estimated_pct: 18,
+    manual_pct: 10,
+    no_price_pct: 4,
+  },
+  holdings: [
+    {
+      holding_id: "h-savings",
+      display_name: "Cuenta Remunerada Trade Republic",
+      ticker: null,
+      quality_state: "manual",
+      value_eur: 5000,
+      weight_pct: 100,
+      unrealized_pnl: 0,
+      unrealized_pnl_pct: 0,
+      currency: "EUR",
+      requires_fx: false,
+      broker: "Trade Republic",
+      sector: "Cash",
+      asset_type: "savings_account",
+    },
   ],
-  last_updated: "2026-06-23T10:00:00",
+  weights_by: {
+    currency: [{ key: "EUR", weight_pct: 100 }],
+    sector: [{ key: "Cash", weight_pct: 100 }],
+    broker: [{ key: "Trade Republic", weight_pct: 100 }],
+    asset_type: [{ key: "savings_account", weight_pct: 100 }],
+    region: [{ key: "Europa", weight_pct: 100 }],
+  },
+  concentration_alerts: [{ type: "asset", key: "Cuenta Remunerada Trade Republic", weight_pct: 100, threshold_pct: 35 }],
 };
 
 const mockSettings: AppSetting[] = [
@@ -224,7 +194,128 @@ const mockSettings: AppSetting[] = [
   { id: "set-3", key: "app.currency", value_json: '"EUR"', created_at: "2024-01-01T00:00:00", updated_at: "2024-01-01T00:00:00" },
 ];
 
+const mockBackups = [
+  {
+    filename: "financial-20260630-084500.sqlite",
+    path: "local-data/backups/financial-20260630-084500.sqlite",
+    size_bytes: 245760,
+    created_at: "2026-06-30T08:45:00",
+  },
+];
+
 const mockGoals: import("./goals").Goal[] = [];
+
+const mockRecurring: import("./budgets").RecurringTransaction[] = [
+  {
+    id: "rec-1",
+    name: "Alquiler",
+    category_id: "cat-4",
+    account_id: "mock-acc-1",
+    amount: 950,
+    currency: "EUR",
+    type: "expense",
+    frequency: "monthly",
+    day_of_month: 1,
+    day_of_week: null,
+    month_of_year: null,
+    next_date: "2026-07-01",
+    active: true,
+    description: "Pago mensual de vivienda",
+    created_at: "2026-06-01T08:00:00",
+    updated_at: "2026-06-01T08:00:00",
+  },
+];
+
+const mockRecurringCandidates: import("./budgets").RecurringCandidate[] = [
+  {
+    id: "cand-netflix",
+    name: "Netflix",
+    description: "Cargo mensual detectado con importe estable.",
+    amount: 15.99,
+    amount_min: 15.99,
+    amount_max: 15.99,
+    currency: "EUR",
+    type: "expense",
+    frequency: "monthly",
+    next_date: "2026-07-18",
+    confidence: 0.92,
+    transaction_count: 3,
+    transaction_ids: ["tx-3"],
+    category_id: "cat-3",
+    account_id: "mock-acc-1",
+    evidence: ["18/04 Netflix 15,99 EUR", "18/05 Netflix 15,99 EUR", "18/06 Netflix 15,99 EUR"],
+  },
+];
+
+const mockCalendar: import("./budgets").CalendarEvent[] = [
+  { recurring_id: "rec-1", name: "Alquiler", amount: 950, type: "expense", date: "2026-07-01", category_name: "Casa" },
+];
+
+const mockHouseholdBills: import("./household-bills").HouseholdBill[] = [
+  {
+    id: "bill-1",
+    provider: "Iberdrola",
+    service_type: "electricity",
+    period_start: "2026-05-01",
+    period_end: "2026-05-31",
+    amount: "71.20",
+    currency: "EUR",
+    category_id: "cat-4",
+    is_recurring: true,
+    due_date: "2026-06-05",
+    paid_at: "2026-06-05T09:00:00",
+    notes: null,
+    created_at: "2026-06-05T09:00:00",
+    updated_at: "2026-06-05T09:00:00",
+  },
+  {
+    id: "bill-2",
+    provider: "Movistar",
+    service_type: "internet",
+    period_start: "2026-05-01",
+    period_end: "2026-05-31",
+    amount: "54.90",
+    currency: "EUR",
+    category_id: "cat-4",
+    is_recurring: true,
+    due_date: "2026-06-10",
+    paid_at: "2026-06-10T09:00:00",
+    notes: null,
+    created_at: "2026-06-10T09:00:00",
+    updated_at: "2026-06-10T09:00:00",
+  },
+];
+
+const mockHouseholdSummary: import("./household-bills").HouseholdBillSummary = {
+  generated_at: "2026-06-30T07:15:00Z",
+  total_monthly_estimate: 126.1,
+  items: [
+    {
+      service_type: "electricity",
+      provider: "Iberdrola",
+      bills_count: 2,
+      last_amount: 71.2,
+      previous_amount: 62.4,
+      change_pct: 14.1,
+      average_amount: 66.8,
+      next_estimate: 66.8,
+      anomaly: false,
+      latest_period: "2026-05",
+    },
+    {
+      service_type: "internet",
+      provider: "Movistar",
+      bills_count: 1,
+      last_amount: 54.9,
+      previous_amount: null,
+      change_pct: null,
+      average_amount: 54.9,
+      next_estimate: 54.9,
+      anomaly: false,
+      latest_period: "2026-05",
+    },
+  ],
+};
 
 // Sparkline sintético: tendencia con ruido
 function makeSparkline(base: number, trend: number): number[] {
@@ -310,8 +401,45 @@ export function getMockResponse<T>(path: string, init?: RequestInit): T {
   if (clean === "/api/categories") return mockCategories as T;
   if (clean === "/api/transactions") return mockTransactions as T;
   if (clean === "/api/dashboard/overview") return mockOverview as T;
+  if (clean === "/api/dashboard/spending/years") return { years: [2026] } as T;
   if (clean === "/api/dashboard/spending") return mockSpending as T;
   if (clean === "/api/settings") return mockSettings as T;
+  if (clean === "/api/ai/status") return {
+    enabled: true,
+    default_provider: "ollama",
+    default_model: "qwen3-coder:30b",
+    providers: [
+      { name: "ollama", available: false, model: "qwen3-coder:30b", error: "Provider local no arrancado" },
+      { name: "lmstudio", available: false, model: "local", error: "Provider local no arrancado" },
+    ],
+  } as T;
+  if (clean === "/api/rag/documents") return [] as T;
+  if (clean === "/api/security/status") return {
+    app_env: "development",
+    database_path: "local-data/financial-os.sqlite",
+    backups_available: mockBackups.length,
+    encryption_ready: true,
+    demo_data_policy: "Los datos demo deben estar identificados y excluidos de totales reales.",
+  } as T;
+  if (clean === "/api/security/backups") {
+    if (init?.method === "POST") {
+      const backup = {
+        filename: `financial-${Date.now()}.sqlite`,
+        path: `local-data/backups/financial-${Date.now()}.sqlite`,
+        size_bytes: 245760,
+        created_at: new Date().toISOString(),
+      };
+      mockBackups.unshift(backup);
+      return backup as T;
+    }
+    return mockBackups as T;
+  }
+  if (clean === "/api/security/integrity") return {
+    status: "ok",
+    database_ok: true,
+    tables: ["accounts", "transactions", "documents", "household_bills"],
+    issues: [],
+  } as T;
   if (clean.startsWith("/api/settings/")) {
     const key = decodeURIComponent(clean.slice("/api/settings/".length));
     const existing = mockSettings.find((setting) => setting.key === key);
@@ -350,8 +478,65 @@ export function getMockResponse<T>(path: string, init?: RequestInit): T {
   if (clean === "/api/investments/assets") return mockInvestmentAssets as T;
   if (clean === "/api/investments/holdings") return mockHoldings as T;
   if (clean === "/api/investments/summary") return mockInvestmentSummary as T;
+  if (clean === "/api/investments/reconciliation") return mockReconciliation as T;
   if (clean === "/api/investments/prices/refresh")
-    return { updated: 2, failed: [], needs_manual_nav: ["asset-vg500", "asset-ishares", "asset-cleome"] } as T;
+    return { ok: true, updated: 0, failed: [], needs_manual_nav: [], updated_items: [], manual_required: [], skipped: [], errors: [] } as T;
+  if (clean === "/api/recurring") {
+    if (init?.method === "POST" && typeof init.body === "string") {
+      const payload = JSON.parse(init.body) as import("./budgets").RecurringCreate;
+      const now = new Date().toISOString();
+      const item: import("./budgets").RecurringTransaction = {
+        id: crypto.randomUUID(),
+        name: payload.name,
+        category_id: payload.category_id ?? null,
+        account_id: payload.account_id ?? null,
+        amount: payload.amount,
+        currency: payload.currency ?? "EUR",
+        type: payload.type,
+        frequency: payload.frequency,
+        day_of_month: payload.day_of_month ?? null,
+        day_of_week: null,
+        month_of_year: null,
+        next_date: payload.next_date,
+        active: true,
+        description: payload.description ?? null,
+        created_at: now,
+        updated_at: now,
+      };
+      mockRecurring.unshift(item);
+      return item as T;
+    }
+    return mockRecurring as T;
+  }
+  if (clean === "/api/recurring/candidates") return mockRecurringCandidates as T;
+  if (clean === "/api/recurring/calendar") return mockCalendar as T;
+  if (clean === "/api/household-bills") {
+    if (init?.method === "POST" && typeof init.body === "string") {
+      const payload = JSON.parse(init.body) as import("./household-bills").HouseholdBillCreate;
+      const now = new Date().toISOString();
+      const bill: import("./household-bills").HouseholdBill = {
+        id: crypto.randomUUID(),
+        provider: payload.provider,
+        service_type: payload.service_type,
+        period_start: payload.period_start,
+        period_end: payload.period_end,
+        amount: payload.amount,
+        currency: payload.currency ?? "EUR",
+        category_id: payload.category_id ?? null,
+        is_recurring: payload.is_recurring ?? true,
+        due_date: payload.due_date ?? null,
+        paid_at: payload.paid_at ?? null,
+        notes: payload.notes ?? null,
+        created_at: now,
+        updated_at: now,
+      };
+      mockHouseholdBills.unshift(bill);
+      return bill as T;
+    }
+    return mockHouseholdBills as T;
+  }
+  if (clean === "/api/household-bills/summary") return mockHouseholdSummary as T;
+  if (clean.startsWith("/api/household-bills/") && init?.method === "DELETE") return undefined as T;
   if (path.startsWith("/api/markets/quotes")) {
     const catParam = path.includes("?category=")
       ? path.split("?category=")[1]

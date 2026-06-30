@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import {
-  createHolding, deleteHolding, getHoldings, getSummary,
+  createHolding, deleteHolding, fetchReconciliation, getHoldings, getSummary,
   refreshPrices, updateHolding,
-  type HoldingCreate, type HoldingUpdate,
+  type HoldingCreate, type HoldingUpdate, type ReconciliationReport,
 } from "@/lib/api/investments";
 import type { HoldingEnriched, InvestmentSummary, PriceRefreshResult } from "@/lib/types";
 
@@ -69,13 +69,15 @@ export function useHoldings(accountId?: string) {
 
 export function useRefreshPrices(onRefresh: () => void) {
   const [refreshing, setRefreshing] = useState(false);
+  const [result, setResult] = useState<PriceRefreshResult | null>(null);
   const [needsManualNav, setNeedsManualNav] = useState<string[]>([]);
 
   const refresh = async () => {
     setRefreshing(true);
     try {
       const result: PriceRefreshResult = await refreshPrices();
-      setNeedsManualNav(result.needs_manual_nav);
+      setResult(result);
+      setNeedsManualNav(result.manual_required.map((item) => item.holding_id));
       onRefresh();
     } catch {
       // keep previous prices on failure
@@ -85,6 +87,29 @@ export function useRefreshPrices(onRefresh: () => void) {
   };
 
   const clearNeedsManualNav = () => setNeedsManualNav([]);
+  const clearResult = () => setResult(null);
 
-  return { refresh, refreshing, needsManualNav, clearNeedsManualNav };
+  return { refresh, refreshing, result, needsManualNav, clearNeedsManualNav, clearResult };
+}
+
+export function useReconciliation() {
+  const [data, setData] = useState<ReconciliationReport | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      setData(await fetchReconciliation());
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al cargar reconciliacion");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  return { data, loading, error, refresh: load };
 }

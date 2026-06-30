@@ -34,5 +34,8 @@ export const fetchTransactions = (filters?: TransactionFilters) => {
 export const createTransaction = (data: TransactionCreate) =>
   api.post<Transaction>("/api/transactions", data);
 
+export const updateTransaction = (id: string, data: Partial<TransactionCreate>) =>
+  api.patch<Transaction>(`/api/transactions/${id}`, data);
+
 export const deleteTransaction = (id: string) =>
   api.delete<void>(`/api/transactions/${id}`);

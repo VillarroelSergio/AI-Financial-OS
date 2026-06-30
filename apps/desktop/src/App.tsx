@@ -7,9 +7,12 @@ import GoalsPage from "@/features/goals/GoalsPage";
 import ImportsPage from "@/features/imports/ImportsPage";
 import InsightsPage from "@/features/insights/InsightsPage";
 import InvestmentsPage from "@/features/investments/InvestmentsPage";
+import PriceCoveragePage from "@/features/investments/price-coverage/PriceCoveragePage";
+import PortfolioImportPage from "@/features/investments/import/PortfolioImportPage";
 import MarketsPage from "@/features/markets/MarketsPage";
 import OverviewPage from "@/features/overview/OverviewPage";
 import SettingsPage from "@/features/settings/SettingsPage";
+import PlanificacionPage from "@/pages/PlanificacionPage";
 import SpendingPage from "@/features/spending/SpendingPage";
 import TransactionsPage from "@/features/transactions/TransactionsPage";
 
@@ -23,9 +26,12 @@ export default function App() {
         <Route path="accounts" element={<AccountsPage />} />
         <Route path="imports" element={<ImportsPage />} />
         <Route path="investments" element={<InvestmentsPage />} />
+        <Route path="investments/price-coverage" element={<PriceCoveragePage />} />
+        <Route path="investments/import" element={<PortfolioImportPage />} />
         <Route path="economy" element={<EconomyPage />} />
         <Route path="markets" element={<MarketsPage />} />
         <Route path="goals" element={<GoalsPage />} />
+        <Route path="planificacion" element={<PlanificacionPage />} />
         <Route path="insights" element={<InsightsPage />} />
         <Route path="assistant" element={<AssistantPage />} />
         <Route path="settings" element={<SettingsPage />} />

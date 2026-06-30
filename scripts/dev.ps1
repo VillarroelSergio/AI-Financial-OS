@@ -4,6 +4,7 @@ $backend = $null
 $desktop = $null
 $backendPort = 8010
 $backendUrl = "http://127.0.0.1:$backendPort"
+$env:UV_CACHE_DIR = Join-Path $root ".uv-cache"
 
 Write-Host "Iniciando AI Financial OS..." -ForegroundColor Cyan
 

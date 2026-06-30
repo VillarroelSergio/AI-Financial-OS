@@ -1,8 +1,13 @@
 import { useState } from "react";
+import type { FormEvent } from "react";
+import { Pencil, Trash2 } from "lucide-react";
+import { PageHeader } from "@/components/ui/Dashboard";
 import EmptyState from "@/components/ui/EmptyState";
+import MetricCard from "@/components/ui/MetricCard";
 import Spinner from "@/components/ui/Spinner";
 import { useAccounts } from "@/lib/hooks/useAccounts";
 import { formatCurrency } from "@/lib/formatters/currency";
+import type { Account } from "@/lib/types";
 import type { AccountCreate } from "@/lib/api/accounts";
 
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
@@ -10,8 +15,8 @@ const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   bank: "Banco",
   broker: "Broker",
   savings: "Ahorros",
-  investment: "Inversión",
-  mortgage: "Hipoteca",
+  investment: "Inversion",
+  mortgage: "Deuda",
   other: "Otro",
 };
 
@@ -23,18 +28,51 @@ const EMPTY_FORM: AccountCreate = {
 };
 
 export default function AccountsPage() {
-  const { accounts, loading, add, remove } = useAccounts();
+  const { accounts, loading, add, update, remove } = useAccounts();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<AccountCreate>(EMPTY_FORM);
+  const [editing, setEditing] = useState<Account | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const total = accounts.reduce((sum, account) => sum + Number(account.current_balance), 0);
+  const liquidity = accounts.filter((account) => ["cash", "bank", "savings"].includes(account.type)).reduce((sum, account) => sum + Number(account.current_balance), 0);
+  const savings = accounts.filter((account) => account.type === "savings").reduce((sum, account) => sum + Number(account.current_balance), 0);
+  const lastUpdated = accounts.reduce<string | null>((latest, account) => !latest || account.updated_at > latest ? account.updated_at : latest, null);
+
+  const resetForm = () => {
+    setForm(EMPTY_FORM);
+    setEditing(null);
+    setShowForm(false);
+  };
+
+  const openNew = () => {
+    setForm(EMPTY_FORM);
+    setEditing(null);
+    setShowForm(true);
+  };
+
+  const openEdit = (account: Account) => {
+    setEditing(account);
+    setForm({
+      name: account.name,
+      type: account.type,
+      institution: account.institution ?? "",
+      currency: account.currency,
+      current_balance: account.current_balance,
+    });
+    setShowForm(true);
+  };
+
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault();
     setSaving(true);
     try {
-      await add(form);
-      setShowForm(false);
-      setForm(EMPTY_FORM);
+      if (editing) {
+        await update(editing.id, form);
+      } else {
+        await add(form);
+      }
+      resetForm();
     } finally {
       setSaving(false);
     }
@@ -49,132 +87,86 @@ export default function AccountsPage() {
   }
 
   return (
-    <div className="p-2xl space-y-xl">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-display-lg text-on-dark">Cuentas</h1>
-          <p className="text-body-sm text-stone mt-xs">
-            {accounts.length} cuenta{accounts.length !== 1 ? "s" : ""}
-          </p>
-        </div>
-        <button
-          onClick={() => setShowForm((v) => !v)}
-          className="px-lg py-sm bg-primary text-on-dark text-button-md rounded-sm hover:bg-primary-bright transition-colors"
-        >
+    <div className="p-8 max-w-[1500px] mx-auto space-y-xl">
+      <PageHeader
+        eyebrow="Liquidez local"
+        title="Cuentas"
+        description="Resumen operativo de liquidez, ahorro y brokers con pesos sobre patrimonio."
+        actions={
+        <button onClick={openNew} className="mercury-button-primary px-lg py-sm text-button-md rounded-lg transition-colors">
           Nueva cuenta
         </button>
+        }
+      />
+
+      <div className="grid grid-cols-5 gap-lg">
+        <MetricCard label="Saldo total" value={formatCurrency(total)} />
+        <MetricCard label="Numero de cuentas" value={String(accounts.length)} />
+        <MetricCard label="Liquidez inmediata" value={formatCurrency(liquidity)} />
+        <MetricCard label="Cuentas de ahorro" value={formatCurrency(savings)} />
+        <MetricCard label="Ultima actualizacion" value={lastUpdated ? new Date(lastUpdated).toLocaleDateString("es-ES") : "Sin datos"} />
       </div>
 
       {showForm && (
-        <form
-          onSubmit={handleSubmit}
-          className="bg-surface-card border border-hairline-dark rounded-md p-xl space-y-lg"
-        >
-          <h2 className="text-heading-sm text-on-dark">Nueva cuenta</h2>
+        <form onSubmit={handleSubmit} className="premium-card rounded-lg p-xl space-y-lg">
+          <h2 className="text-heading-sm text-on-dark">{editing ? "Editar cuenta" : "Nueva cuenta"}</h2>
           <div className="grid grid-cols-2 gap-lg">
-            <div className="space-y-xs">
-              <label className="text-caption text-stone">Nombre</label>
-              <input
-                required
-                className="w-full bg-surface-elevated border border-hairline-dark rounded-sm px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary"
-                value={form.name}
-                onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                placeholder="Ej. BBVA"
-              />
-            </div>
-            <div className="space-y-xs">
-              <label className="text-caption text-stone">Tipo</label>
-              <select
-                className="w-full bg-surface-elevated border border-hairline-dark rounded-sm px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary"
-                value={form.type}
-                onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}
-              >
-                {Object.entries(ACCOUNT_TYPE_LABELS).map(([v, l]) => (
-                  <option key={v} value={v}>
-                    {l}
-                  </option>
-                ))}
+            <label className="space-y-xs">
+              <span className="text-caption text-stone">Nombre</span>
+              <input required className="w-full bg-white/[.035] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Ej. BBVA" />
+            </label>
+            <label className="space-y-xs">
+              <span className="text-caption text-stone">Tipo</span>
+              <select className="w-full bg-white/[.035] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary" value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}>
+                {Object.entries(ACCOUNT_TYPE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
-            </div>
-            <div className="space-y-xs">
-              <label className="text-caption text-stone">Saldo inicial</label>
-              <input
-                type="number"
-                step="0.01"
-                className="w-full bg-surface-elevated border border-hairline-dark rounded-sm px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary"
-                value={form.current_balance}
-                onChange={(e) => setForm((f) => ({ ...f, current_balance: e.target.value }))}
-              />
-            </div>
-            <div className="space-y-xs">
-              <label className="text-caption text-stone">Institución</label>
-              <input
-                className="w-full bg-surface-elevated border border-hairline-dark rounded-sm px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary"
-                value={form.institution ?? ""}
-                onChange={(e) => setForm((f) => ({ ...f, institution: e.target.value }))}
-                placeholder="Opcional"
-              />
-            </div>
+            </label>
+            <label className="space-y-xs">
+              <span className="text-caption text-stone">Saldo</span>
+              <input type="number" step="0.01" className="w-full bg-white/[.035] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary" value={form.current_balance} onChange={(e) => setForm((f) => ({ ...f, current_balance: e.target.value }))} />
+            </label>
+            <label className="space-y-xs">
+              <span className="text-caption text-stone">Divisa</span>
+              <input maxLength={3} className="w-full bg-white/[.035] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary" value={form.currency ?? "EUR"} onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value.toUpperCase() }))} />
+            </label>
+            <label className="space-y-xs col-span-2">
+              <span className="text-caption text-stone">Institucion</span>
+              <input className="w-full bg-white/[.035] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary" value={form.institution ?? ""} onChange={(e) => setForm((f) => ({ ...f, institution: e.target.value }))} placeholder="Opcional" />
+            </label>
           </div>
           <div className="flex gap-sm justify-end">
-            <button
-              type="button"
-              onClick={() => setShowForm(false)}
-              className="px-lg py-sm text-stone text-body-sm hover:text-on-dark transition-colors"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="px-lg py-sm bg-primary text-on-dark text-button-md rounded-sm hover:bg-primary-bright disabled:opacity-50 transition-colors"
-            >
-              {saving ? "Guardando..." : "Guardar"}
+            <button type="button" onClick={resetForm} className="mercury-button px-lg py-sm rounded-lg text-body-sm transition-colors">Cancelar</button>
+            <button type="submit" disabled={saving} className="mercury-button-primary px-lg py-sm text-button-md rounded-lg disabled:opacity-50 transition-colors">
+              {saving ? "Guardando..." : editing ? "Actualizar" : "Guardar"}
             </button>
           </div>
         </form>
       )}
 
       {accounts.length === 0 ? (
-        <EmptyState
-          title="Sin cuentas"
-          description="Añade tu primera cuenta para empezar a registrar movimientos."
-          action={
-            <button
-              onClick={() => setShowForm(true)}
-              className="px-lg py-sm bg-primary text-on-dark text-button-md rounded-sm hover:bg-primary-bright transition-colors"
-            >
-              Añadir cuenta
-            </button>
-          }
-        />
+        <EmptyState title="Sin cuentas" description="Anade tu primera cuenta para empezar a registrar movimientos." action={<button onClick={openNew} className="mercury-button-primary px-lg py-sm text-button-md rounded-lg transition-colors">Anadir cuenta</button>} />
       ) : (
         <div className="space-y-sm">
-          {accounts.map((account) => (
-            <div
-              key={account.id}
-              className="bg-surface-card border border-hairline-dark rounded-md p-xl flex items-center justify-between"
-            >
-              <div>
-                <p className="text-body-md text-on-dark">{account.name}</p>
-                <p className="text-caption text-stone mt-xs">
-                  {ACCOUNT_TYPE_LABELS[account.type] ?? account.type}
-                  {account.institution ? ` · ${account.institution}` : ""}
-                </p>
+          {accounts.map((account) => {
+            const share = liquidity > 0 && ["cash", "bank", "savings"].includes(account.type) ? (Number(account.current_balance) / liquidity) * 100 : 0;
+            return (
+              <div key={account.id} className="premium-card rounded-lg p-xl grid grid-cols-[1fr_auto] gap-lg">
+                <div>
+                  <p className="text-body-md text-on-dark">{account.name}</p>
+                  <p className="text-caption text-stone mt-xs">{ACCOUNT_TYPE_LABELS[account.type] ?? account.type}{account.institution ? ` · ${account.institution}` : ""}</p>
+                  <p className="text-caption text-stone mt-xs">{share.toFixed(1)}% sobre liquidez total · Incluida en patrimonio neto</p>
+                </div>
+                <div className="flex items-center gap-xl">
+                  <div className="text-right">
+                    <p className="text-heading-sm text-on-dark">{formatCurrency(account.current_balance, account.currency)}</p>
+                    <p className="text-caption text-stone">{account.currency}</p>
+                  </div>
+                  <button onClick={() => openEdit(account)} className="text-stone hover:text-on-dark transition-colors" aria-label="Editar cuenta"><Pencil size={16} /></button>
+                  <button onClick={() => remove(account.id)} className="text-stone hover:text-accent-danger transition-colors" aria-label="Eliminar cuenta"><Trash2 size={16} /></button>
+                </div>
               </div>
-              <div className="flex items-center gap-xl">
-                <p className="text-heading-sm text-on-dark">
-                  {formatCurrency(account.current_balance, account.currency)}
-                </p>
-                <button
-                  onClick={() => remove(account.id)}
-                  className="text-stone hover:text-accent-danger text-caption transition-colors"
-                >
-                  Eliminar
-                </button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>

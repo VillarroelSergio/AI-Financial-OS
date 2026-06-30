@@ -297,6 +297,80 @@ Ejemplos:
 - `ai.model = qwen`.
 - `security.level = basic`.
 
+## Importación de cartera (Portfolio Import)
+
+Las siguientes entidades no se persisten: son estructuras en memoria/API para el flujo de importación asistida.
+
+### RawPosition (in-memory)
+
+```txt
+raw_name        # Nombre tal como aparece en el texto del broker
+quantity        # Número de participaciones/acciones (opcional)
+current_value   # Valor de mercado en el momento de la captura (opcional)
+currency        # Divisa detectada (EUR, USD, GBP, AUD)
+return_pct      # Rentabilidad % desde inicio (opcional, puede ser negativa)
+estimated_cost  # Calculado: current_value / (1 + return_pct/100)
+```
+
+### ValidatedPosition (API response)
+
+Extiende RawPosition con resolución de instrumento y cobertura de precio:
+
+```txt
+ticker               # Resuelto por resolve_asset()
+name                 # Nombre oficial del instrumento
+market               # Bolsa de cotización
+current_price        # Precio actual en divisa del instrumento
+eur_value            # Valor en EUR (via FX conversion)
+resolution_status    # found | ambiguous | unavailable
+coverage_status      # OK | FX_PENDING | UNAVAILABLE
+import_status        # READY | REQUIRES_CONFIRMATION | NO_PRICE | MANUAL | REVIEW
+requires_confirmation
+confirmation_reason
+```
+
+## Simulaciones de objetivos (Goals Simulations)
+
+Ninguna de estas estructuras persiste en base de datos. Se calculan en cada petición.
+
+### SimulationResult (API response)
+
+```txt
+goal_id
+current_amount
+target_amount
+monthly_contribution
+inflation_rate
+inflation_adjusted_target   # target × (1+inflation)^(meses/12)
+monthly_data[]              # MonthlyDataPoint por mes 0..120
+scenarios[]                 # ScenarioProjection × 3
+target_date
+generated_at
+```
+
+### MonthlyDataPoint
+
+```txt
+month          # 0 = hoy
+label          # "Jun 2026"
+conservative   # Saldo escenario conservador (2%)
+base           # Saldo escenario base (6%)
+optimistic     # Saldo escenario optimista (10%)
+```
+
+### ScenarioProjection
+
+```txt
+scenario                  # conservative | base | optimistic
+label                     # Conservador | Base | Optimista
+color                     # Hex CSS
+annual_growth_rate        # 0.02 | 0.06 | 0.10
+months_to_target          # null si no se alcanza en max_months
+projected_date            # ISO date o null
+achievable_by_target_date # bool o null (solo si el objetivo tiene fecha)
+final_amount
+```
+
 ## Campos derivados no persistentes
 
 Estos valores deben calcularse en servicios o vistas:
@@ -318,3 +392,20 @@ Estos valores deben calcularse en servicios o vistas:
 - Añadir conciliación de movimientos.
 - Añadir reglas de categorización.
 - Añadir split transactions.
+## Household bills
+
+Tabla `household_bills` para seguimiento manual local de suministros y facturas del hogar.
+
+Campos principales:
+
+- `id`: UUID.
+- `provider`: proveedor.
+- `service_type`: `electricity`, `gas`, `water`, `internet`, `phone`, `home_insurance`, `rent_mortgage`, `community`.
+- `period_start` / `period_end`: periodo de consumo.
+- `amount` / `currency`: importe.
+- `category_id`: categoria financiera asociada.
+- `is_recurring`: si debe considerarse recurrente para planificacion.
+- `due_date` / `paid_at`: vencimiento y pago.
+- `notes`: observaciones manuales.
+
+El resumen agrupa por proveedor y servicio, compara contra la factura anterior, marca subidas anomalas y estima el proximo recibo. La carga PDF/captura queda fuera del alcance inicial y se mantiene como evolucion futura local-first.

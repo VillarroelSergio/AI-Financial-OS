@@ -1,6 +1,6 @@
-# 02 — Roadmap
+# 02 - Roadmap
 
-## Estado de implementación
+## Estado actual
 
 | Fase | Nombre | Estado | Commit(s) |
 |------|--------|--------|-----------|
@@ -12,482 +12,273 @@
 | 4.5 | Multi-Provider Market Data | ✅ Completa | rama `feat/multi-provider-market-data` |
 | 4.7 | EOD Market Data | ✅ Completa | rama actual |
 | 5 | Economic Intelligence | ✅ Completa | rama `feature/fase-5-economic-intelligence` |
-| 6 | Local AI Assistant | ⏳ Pendiente | — |
-| 7 | Insights Engine | ⏳ Pendiente | — |
-| 8 | Goals & Simulations | ⏳ Pendiente | — |
-| 9 | Document Intelligence / RAG | ⏳ Pendiente | — |
-| 10 | Hardening & Packaging | ⏳ Pendiente | — |
-
----
-
-## Deudas técnicas
-
-### Fase 1 — Financial Core MVP
-
-| # | Deuda | Impacto | Bloquea |
-|---|-------|---------|---------|
-| TD-01 | `categories` sin `PATCH` ni `DELETE` — solo GET + POST implementados | Medio | Fase 2 (reimportación con categorías existentes) |
-| TD-02 | Sin tests de integración para los módulos de Fase 1 (accounts, categories, transactions, dashboard) — solo existe `test_health.py` | Alto | Calidad general, refactors seguros |
-| TD-03 | `ChartCard` no existe como componente independiente — Recharts se usa directamente en `SpendingPage` | Bajo | Consistencia del design system |
-
-> Estas deudas no bloquean Fase 2, pero TD-02 debería resolverse antes de Fase 3 para evitar regresiones silenciosas.
-
-### Fase 3 — Investments Portfolio Tracker
-
-| # | Deuda | Impacto | Bloquea |
-|---|-------|---------|---------|
-| TD-04 | Conversión de divisas solo USD→EUR via yfinance `EURUSD=X` — otras divisas no soportadas | Medio | Multi-divisa en Fase 3+ |
-| TD-05 | Sin histórico de precios — solo precio actual cacheado | Bajo | Gráfica histórica en Fase 4 |
-| TD-06 | NAV de fondos Finizens siempre manual — sin proveedor automático | Bajo | No bloquea nada |
-
----
-
-## Estrategia general
-
-El proyecto se implementa por fases cerradas. Cada fase debe entregar una aplicación funcional, aunque sea limitada. No se debe avanzar a IA avanzada, RAG o automatización hasta que el core financiero sea estable.
-
-## Fase 0 — Foundation ✅
-
-### Objetivo
-
-Crear la base técnica, documental y visual del proyecto.
-
-### Incluye
-
-- Monorepo inicial.
-- Tauri + React + TypeScript.
-- Backend FastAPI.
-- SQLite.
-- DuckDB integrado para analítica futura.
-- Sistema de rutas frontend.
-- Layout base con sidebar.
-- Tema dark premium.
-- Design tokens iniciales.
-- Documentación en `/docs`.
-- Scripts de desarrollo orquestados.
-
-### No incluye
-
-- IA.
-- Importadores finales.
-- RAG.
-- APIs bancarias.
-- Automatización.
-
-### Resultado esperado
-
-Aplicación de escritorio arrancando en local con navegación base, backend funcionando y pantalla inicial vacía.
-
----
-
-## Fase 1 — Financial Core MVP ✅
-
-### Objetivo
-
-Construir el núcleo financiero determinista.
-
-### Incluye
-
-- CRUD de cuentas.
-- CRUD de categorías.
-- CRUD de movimientos.
-- Modelo de ingresos/gastos.
-- Cálculo de patrimonio básico.
-- Cálculo de cashflow mensual.
-- Dashboard Overview.
-- Dashboard Spending.
-- Estados vacíos cuidados.
-- Datos mock opcionales para desarrollo.
-
-### Pantallas
-
-- Overview.
-- Spending.
-- Accounts.
-- Transactions.
-- Settings.
-
-### Resultado esperado
-
-El usuario puede crear cuentas, añadir movimientos manuales y ver métricas financieras básicas.
-
----
-
-## Fase 2 — CSV Import Center ✅
-
-### Objetivo
-
-Importar datos personales mediante archivos CSV, empezando por Monefy.
-
-### Incluye
-
-- Import Center.
-- Flujo de importación manual.
-- Importador específico de Monefy.
-- Vista previa del CSV.
-- Mapeo de columnas.
-- Validación de datos.
-- Detección básica de duplicados.
-- Confirmación antes de guardar.
-- Historial de importaciones.
-- Rollback de importación.
-
-### Fuentes V1
-
-- Monefy CSV.
-- CSV genérico.
-
-### Resultado esperado
-
-El usuario puede importar el CSV de Monefy, revisar los movimientos, confirmar la importación y ver los dashboards actualizados.
-
----
-
-## Fase 3 — Investments Basic ✅
-
-### Objetivo
-
-Añadir visión básica de inversiones.
-
-### Incluye
-
-- Cuentas de inversión.
-- Activos manuales.
-- Holdings manuales.
-- Valor actual.
-- Aportaciones.
-- Rentabilidad simple.
-- Distribución por activo.
-- Dashboard Investments.
-
-### Fuentes iniciales
-
-- Trade Republic manual.
-- Finizens manual.
-- Cuenta remunerada manual.
-
-### Resultado esperado
-
-El usuario puede registrar posiciones básicas y ver su patrimonio financiero consolidado.
-
----
-
-## Fase 4 — Market Watch ✅
-
-### Objetivo
-
-Añadir datos de mercado actualizados con caché local.
-
-### Incluye
-
-- Índices bursátiles.
-- Divisas.
-- Bonos 10 años.
-- Caché local.
-- Última actualización visible.
-- Refresh manual.
-- Gráficas simples.
-
-### Activos previstos
-
-- IBEX 35.
-- Euro Stoxx 50.
-- STOXX Europe 600.
-- S&P 500.
-- Nasdaq 100.
-- Dow Jones.
-- MSCI World.
-- EUR/USD.
-- Bono España 10Y.
-- Bund 10Y.
-- Treasury 10Y.
-
-### Resultado esperado
-
-El usuario puede consultar contexto de mercado desde la app sin mezclarlo con sus datos personales.
-
----
-
----
-
-## Fase 4.5 — Multi-Provider Market Data ✅
-
-### Objetivo
-
-Sustituir el proveedor único (yfinance) por una arquitectura multi-provider gratuita
-con máxima cobertura, caché DuckDB y señales de frescura de datos.
-
-### Incluye
-
-- **StooqProvider** — fuente primaria, sin API key, índices/forex/commodities/cripto/volatilidad.
-- **YahooFinanceProvider** — fallback general, sin API key, marcado como fuente no garantizada.
-- **AlphaVantageProvider** — opcional, API key gratuita (ALPHA_VANTAGE_API_KEY), acciones/forex/cripto.
-- **FinnhubProvider** — opcional, API key gratuita (FINNHUB_API_KEY), acciones USA/forex/cripto/fundamentales.
-- **FMPProvider** — opcional, API key gratuita (FMP_API_KEY), acciones/ETFs/perfiles/fundamentales.
-- **ProviderRouter** — routing por asset_type, TTL por categoría, cross-validation, fallback en cascada.
-- **DuckDB cache** — tablas `market_quotes_cache`, `market_candles_cache`, `market_provider_logs`, perfiles, fundamentales.
-- **Modelos normalizados** — `MarketQuoteInternal`, `MarketCandle`, `CompanyProfile`, `Fundamentals`.
-- **Freshness status** — live / fresh / delayed / eod / closed / stale / error / unknown.
-- **Rate limiters** — por proveedor, respetando free tier.
-- **UI actualizada** — `LiveIndicator` muestra estado real, `QuoteRow` muestra badge FB/CACHE, `change_absolute` desde servidor.
-- **35 tests unitarios** — cobertura de providers, routing, caché, rate limiting, freshness.
-- **`market_data_config.yaml`** — configuración declarativa de providers, routing, TTL y mappings de 36 activos.
-
-### Restricciones cumplidas
-
-- Ningún proveedor de pago.
-- API keys nunca hardcodeadas (variables de entorno).
-- No existe `ManualCsvProvider` ni importación CSV para mercados.
-- "En vivo" solo cuando `freshness_status == "live"` — nunca asumido.
-- App funciona sin API keys (Stooq + Yahoo).
-
-### Documentación
-
-- `docs/15_MARKET_PROVIDERS.md` — guía completa de proveedores.
-
----
-
-## Fase 4.6 — Consensus Engine & TwelveData ✅
-
-### Objetivo
-
-Sustituir el fetch secuencial con fallback por un sistema de **fetch paralelo + motor de consenso**
-que cruza los datos de múltiples proveedores para maximizar precisión. Yahoo Finance queda
-relegado a último recurso. Se añade TwelveData como nuevo proveedor primario para forex y commodities.
-
-### Incluye
-
-- **TwelveDataProvider** — nuevo proveedor gratuito (800 req/día, 8 req/min). Primario para forex,
-  commodities y validador para índices y cripto. API key: `TWELVEDATA_API_KEY`.
-- **ConsensusEngine** (`consensus.py`) — motor de resolución de precio aislado y testeable:
-  - **Estrategia D**: proveedor primario por asset_type con validadores en paralelo.
-  - **Estrategia B**: mediana como precio de referencia cuando ≥3 proveedores disponibles.
-  - **Estrategia C**: ponderación por proveedor × frescura × bonus primario × penalización fallback.
-  - Detección y descarte de outliers con umbrales configurables por asset_type.
-  - `confidence_score` final refleja calidad del consenso (0.0–1.0).
-- **RequestBudget** (`budget.py`) — contador diario de peticiones por proveedor, backed en DuckDB.
-  Alpha Vantage (400/día), TwelveData (700/día), FMP (200/día). Falla en abierto.
-- **Fetch paralelo** — `ThreadPoolExecutor` en el router. Todos los providers se consultan
-  simultáneamente, no en cascada. Timeout: 5 segundos por proveedor.
-- **Yahoo como último recurso** — solo se invoca si `valid_provider_count == 0` tras el fetch paralelo.
-  Nunca actúa como fuente primaria ni validador.
-- **Routing declarativo** por `primary / validators / budget_aware / last_resort` en el YAML.
-- **Logs de decisión estructurados** — cada resolución emite `selected_source`, `consensus_method`,
-  `confidence_score`, `valid_provider_count`, `outliers`, `warnings`, `reason`.
-- **Warnings normalizados** — `rate_limited`, `budget_exhausted`, `provider_error`, `provider_timeout`,
-  `provider_mismatch`, `outlier_detected`, `unverified_single_provider`, `yahoo_last_resort`, `stale_cache_used`.
-- **55 tests** — cobertura de ConsensusEngine (8 casos), RequestBudget (5), TwelveData (5),
-  Router paralelo (2) y todos los tests anteriores (35).
-
-### Primario por tipo de activo
-
-| Tipo | Primario | Validadores | Último recurso |
-|---|---|---|---|
-| Índices | Stooq | TwelveData, Finnhub | Yahoo |
-| Acciones USA | Finnhub | TwelveData, FMP | Yahoo |
-| Acciones Europa | Stooq | TwelveData, FMP | Yahoo |
-| Forex | TwelveData | Finnhub, AV | Yahoo |
-| Cripto | Finnhub | TwelveData, AV | Yahoo |
-| Commodities | TwelveData | — | Yahoo |
-| Bonos | Stooq | — | Yahoo |
-| Volatilidad | Stooq | — | Yahoo |
-
-### Restricciones cumplidas
-
-- Yahoo Finance nunca es fuente primaria ni validador.
-- `TWELVEDATA_API_KEY` en `.env`, nunca en código.
-- Ningún proveedor de pago.
-- `MarketQuoteInternal` sin campos requeridos nuevos — contrato de API sin cambios.
-
-### Documentación
-
-- `docs/15_MARKET_PROVIDERS.md` — guía completa actualizada con TwelveData y ConsensusEngine.
-- `docs/superpowers/specs/2026-06-24-market-data-consensus-engine-design.md` — spec técnico.
-- `docs/superpowers/plans/2026-06-24-market-data-consensus-engine.md` — plan de implementación.
-
----
-
-## Fase 4.7 — EOD Market Data ✅
-
-### Objetivo
-
-Simplificar el modelo de datos de mercado a cierre diario (EOD). Una única llamada al arranque, sin refresh manual, sin estados "live".
-
-### Incluye
-
-- `EodMarketService` — fetch secuencial Stooq al arrancar (background thread).
-- `eod_only` mode en `ProviderRouter` — TTL 24h, pool filtrado a Stooq.
-- `EodBadge` — sustituye `LiveIndicator`, muestra "Cierre DD/MM/YYYY".
-- Eliminación del botón "Actualizar" en Market Watch.
-- 6 tests unitarios cubriendo cache hit, cache miss, fallo, concurrencia y filtrado de providers.
-
----
-
-## Fase 5 — Economic Intelligence ✅
-
-### Objetivo
-
-Incorporar datos macroeconómicos reales para España, Eurozona y EEUU.
-
-### Incluye
-
-- **FredProvider** — fuente principal de indicadores macro (inflación, subyacente, paro, PIB, tipos BCE/FED). API key gratuita: `FRED_API_KEY`.
-- **StooqMacroProvider** — bridge sobre el ProviderRouter de Fase 4.6 para euríbor, bonos 10Y, índices y divisas.
-- **DuckDB cache** — tabla `economic_indicators_cache` con TTL por categoría (4h para datos diarios, 24–48h para mensuales/trimestrales).
-- **Modelos normalizados** — `IndicatorOut`, `RegionSnapshotOut`, `MacroSnapshotOut`, `PersonalImpactOut`.
-- **4 endpoints REST** — `/snapshot`, `/indicators`, `/refresh`, `/impact`.
-- **Vista de impacto personal (determinista, sin IA)** — 4 comparativas calculadas: inflación vs tasa de ahorro, tipo BCE vs liquidez, mercado vs cartera, poder adquisitivo.
-- **EconomyPage** — snapshot global, tabs por región (España / Eurozona / EEUU), sección de impacto personal.
-- **23 tests** — cobertura de FredProvider, repositorio, endpoints y cálculos de impacto.
-
-### Proveedores
-
-| Indicador | Fuente |
-|-----------|--------|
-| Inflación, subyacente, paro, PIB | FRED |
-| Tipo BCE, Fed Funds | FRED |
-| Euríbor 3M, Bonos 10Y | Stooq (vía ProviderRouter) |
-| Índices, EUR/USD | Stooq (vía ProviderRouter) |
-
-### Restricciones cumplidas
-
-- `FRED_API_KEY` en `.env`, nunca en código.
-- App funciona sin API key (indicadores macro muestran "no disponible"; índices y bonos funcionan vía Stooq).
-- No se mezclan noticias ni calendarios macro.
-- Siempre se muestra fecha de observación y fuente.
-
-### Documentación
-
-- `docs/superpowers/specs/2026-06-24-economic-intelligence-design.md` — spec técnico.
-
----
-
-## Fase 6 — Local AI Assistant ⏳
-
-### Objetivo
-
-Integrar IA local mediante Ollama y LM Studio.
-
-### Incluye
-
-- Abstracción multi-provider.
-- Provider Ollama.
-- Provider LM Studio.
-- Modelo inicial recomendado: Qwen.
-- Panel lateral de IA.
-- Tools financieras controladas.
-- Respuestas basadas en datos reales.
-- Citado interno de datos usados.
-- Sin acceso SQL libre desde el modelo.
-
-### Tools iniciales
-
-- `get_net_worth`.
-- `get_monthly_summary`.
-- `get_spending_by_category`.
-- `compare_periods`.
-- `get_savings_rate`.
-- `get_goal_progress`.
-- `get_market_snapshot`.
-- `get_macro_snapshot`.
-
-### Resultado esperado
-
-El usuario puede preguntar sobre sus datos y recibir explicaciones generadas localmente.
-
----
-
-## Fase 7 — Insights Engine ⏳
-
-### Objetivo
-
-Convertir datos en insights sin depender completamente de IA.
-
-### Incluye
-
-- Motor determinista de insights.
-- Detección de anomalías.
+| 6 | Local AI Assistant | ✅ Completa | rama `feat/phase-6-local-ai-assistant` |
+| 6.4 | Data Integrity & Core UX Repair | En curso | rama `fix/phase-6-4-data-integrity-core-ux` |
+| 7 | Insights Engine | ✅ Completa | rama `main` |
+| 7.5 | Portfolio Import Assistant | ✅ Completa | rama `main` |
+| 8 | Goals & Simulations | ✅ Completa | rama `main` |
+| 8.5 | Portfolio Reconciliation & Investment Analytics | ✅ Completa | rama `feature/fase-8-5-portfolio-reconciliation` |
+| 8.6 | Budgets, Recurring Transactions & Cashflow Planning | ✅ Completa | rama `feature/fase-8-6-budgets-cashflow` |
+| 9 | Document Intelligence / RAG | Completa | rama actual |
+| 10 | Hardening, Security & Backups | Completa | rama actual |
+| 10.5 | UX Functional QA & Product Intelligence Repair | En curso - P0/P1 mayormente implementado | rama `feature/fase-10-5-ux-functional-qa-product-intelligence` |
+| 11 | Packaging & Release | ⏳ Pendiente | — |
+
+| Area | Estado | Ruta principal |
+|---|---|---|
+| Foundation | Completa | `scripts/`, `backend/`, `apps/desktop/` |
+| Financial Core | Completa | `accounts`, `categories`, `transactions`, `dashboard` |
+| Import Center | Completa | `backend/app/modules/imports` |
+| Investments | Completa | `backend/app/modules/investments` |
+| Goals | Completa | `backend/app/modules/goals` |
+| Market Intelligence | Completa / evolucionando | `backend/app/modules/market_intelligence` |
+| Local AI Assistant | Completa | `backend/app/modules/ai`, `backend/app/modules/rag` |
+| Insights Engine | ✅ Completa | `backend/app/modules/insights` |
+| Portfolio Reconciliation | Completa | `backend/app/modules/investments` |
+| Budgets & Cashflow Planning | Completa / evolucionando | `backend/app/modules/budgets`, `backend/app/modules/recurring`, `backend/app/modules/cashflow` |
+| Document Intelligence / RAG | Completa | `backend/app/modules/rag`, `backend/app/models/document.py` |
+| Hardening, Security & Backups | Completa | `backend/app/modules/security`, base de datos, backups |
+| UX Functional QA | En curso | `apps/desktop/src/features`, `backend/app/modules/market_intelligence`, docs fase 10.5 |
+| Packaging & Release | Pendiente | Tauri build/release |
+
+## Capa vigente de mercado y macro
+
+La ruta activa es `market_intelligence`. Sustituye la documentacion legacy basada en
+`market_data`, `economic_data`, `/api/markets/*` y `/api/economy/*`.
+
+Componentes actuales:
+
+- Catalogo YAML en `backend/app/modules/market_intelligence/catalog/yaml/`.
+- Ingestion adapters por region/proveedor.
+- `ProviderOrchestrator` para primario, secundarios y fallback.
+- `QualityEngine` para freshness, completeness, validity, outliers y fiabilidad.
+- Persistencia DuckDB con tablas `mi_*`.
+- API bajo `/api/market-intelligence/*`.
+- Datasheet compacto para IA local.
+
+## Proximas fases
+
+### Fase 6.4 - Data Integrity & Core UX Repair
+
+Objetivo: estabilizar la app base antes de Fase 7, evitando datos enganosos y mejorando las pantallas principales.
+
+Incluye:
+
+- Politica de datos mock/demo: deben marcarse como demo o excluirse de totales reales.
+- Holdings normalizados: los UUID solo se usan como claves internas; si falta nombre se usa ticker y, si ambos faltan, "Activo sin identificar".
+- CRUD basico de holdings con precio manual, cuenta/broker, divisa, sector y region.
+- Market snapshot con secciones claras: indices, crypto, commodities, forex y bonds, con estado partial/empty/error y quality score.
+- Estados empty/partial/error visibles en mercados, inversiones, cuentas, gastos y resumen.
+- Porcentajes de gastos calculados como `importe_categoria / gasto_total * 100`.
+- UX principal reforzada en Cuentas, Gastos, Inversiones y Resumen.
+
+### Fase 6.4.1 - Expense Drilldown & Investment Price Refresh UX Fix
+
+Incluye:
+
+- Drill-down de gastos por categoria desde donut, barras y lista de gasto.
+- Contrato `GET /api/dashboard/spending/category-detail` con total, porcentaje, media y movimientos.
+- Detalle compatible con vista mensual y anual.
+- Flujo de actualizacion de precios con resultado explicito: actualizados, manuales, omitidos y errores.
+- Las cuentas remuneradas, efectivo y `savings_account` se omiten del precio manual porque usan saldo/balance.
+- NAV queda reservado a fondos cuando exista un campo especifico; el copy general usa precio manual.
+
+### Fase 6 - Local AI Assistant
+
+Objetivo: integrar IA local mediante Ollama/LM Studio con tools controladas del backend.
+
+Incluye:
+
+- Provider local configurable.
+- Panel de asistente en desktop.
+- Tools financieras y de Market Intelligence.
+- Respuestas con datos usados y periodo de referencia.
+- Sin SQL libre generado por el modelo contra datos personales.
+
+### Fase 7 - Insights Engine
+
+Objetivo: generar insights deterministas antes de pasar por IA.
+
+Incluye:
+
+- Deteccion de anomalias.
 - Comparativas mensuales.
-- Cambios relevantes.
 - Alertas suaves.
 - Resumen mensual.
-- IA como redactor y explicador.
+- IA como redactora/explicadora, no como unica fuente de calculo.
 
-### Resultado esperado
+### Fase 7.5 - Portfolio Import Assistant
 
-La app empieza a avisar de cambios importantes sin que el usuario tenga que buscar manualmente.
+Objetivo: permitir al usuario crear su cartera inicial desde capturas de pantalla o entrada manual.
 
----
+Incluye:
 
-## Fase 8 — Goals & Simulations ⏳
+- Parser local de texto pegado desde broker (Trade Republic, Degiro, etc.).
+- Extracción de nombre, cantidad, valor actual, rentabilidad y divisa.
+- Validación de identidad de instrumento (`resolve_asset()`).
+- Cobertura de precios y FX (`audit_asset()`).
+- Coste estimado desde rentabilidad: `valor / (1 + rentab/100)`.
+- Tabla editable de revisión con estados: READY, REQUIRES_CONFIRMATION, NO_PRICE, MANUAL, REVIEW.
+- Confirmación explícita obligatoria antes de crear holdings.
+- Entrada rápida manual como fallback.
+- Gestión de activos ambiguos (SpaceX/SPCX) y manuales.
+- Sin envío de imágenes a servicios externos.
 
-### Objetivo
+Documentación: `docs/20_PORTFOLIO_IMPORT_ASSISTANT.md`.
 
-Añadir objetivos financieros y simulaciones.
+### Fase 8 - Simulaciones y objetivos avanzados
 
-### Incluye
+Objetivo: ayudar al usuario a proyectar ahorro, inversion y objetivos.
 
-- Objetivos.
-- Progreso.
-- Fecha estimada.
-- Simulación de ahorro mensual.
-- Simulación de inversión mensual.
-- Ajuste por inflación.
-- Escenarios conservador/base/optimista.
+**✅ Implementado:**
 
-### Resultado esperado
+- Escenarios conservador (2%)/base (6%)/optimista (10%) de crecimiento nominal anual.
+- Ajuste por inflacion (configurable, defecto 3% anual).
+- Progreso estimado por objetivo con fecha proyectada de consecucion.
+- Simulacion de aportaciones recurrentes (capital inicial + aportacion mensual).
+- Grafico de area con tres curvas solapadas y linea de referencia en objetivo.
+- Panel expandible por objetivo con control deslizante de inflacion.
+- Endpoints: `POST /api/goals/{id}/simulate` y `GET /api/goals/{id}/progress`.
 
-El usuario puede entender si está avanzando hacia sus objetivos y qué impacto tienen sus decisiones.
+Documentación: `docs/21_GOALS_SIMULATIONS.md`.
 
----
+### Fase 8.5 - Portfolio Reconciliation & Investment Analytics
 
-## Fase 9 — Document Intelligence / RAG ⏳
+Objetivo: consolidar la cartera importada y asegurar que las posiciones, precios, divisas, costes estimados y valoraciones son fiables antes de usarlas en patrimonio, insights y simulaciones.
 
-### Objetivo
+Incluye:
 
-Consultar documentación financiera mediante RAG local.
+- Reconciliacion entre valor capturado, precio de mercado actualizado y valor calculado en EUR.
+- Estado de calidad por holding: confirmado, estimado, manual, ambiguo, sin precio, FX pendiente o requiere revision.
+- Separacion clara entre coste estimado desde captura, coste manual y coste confirmado.
+- Rentabilidad no realizada por posicion y total de cartera.
+- Peso por activo, divisa, region, sector, broker y tipo de activo.
+- Deteccion de concentracion excesiva por activo o divisa.
+- Control de activos manuales/no cotizados y su impacto sobre la valoracion total.
+- Comparacion entre valor declarado/importado y valor calculado por mercado.
+- Resumen de completitud de cartera: porcentaje valorado automaticamente, porcentaje manual y porcentaje pendiente de revision.
+- Preparacion de datos de cartera para Insights Engine, Goals & Simulations e IA local.
 
-### Incluye
+Resultado esperado: el usuario sabe que parte de su cartera esta completamente validada, que parte usa datos estimados y que posiciones requieren accion manual.
+
+Documentacion sugerida: `docs/22_PORTFOLIO_RECONCILIATION_ANALYTICS.md`.
+
+### Fase 8.6 - Budgets, Recurring Transactions & Cashflow Planning
+
+Objetivo: pasar del analisis historico a la planificacion mensual, permitiendo anticipar gastos, ingresos recurrentes, presupuestos y saldo esperado.
+
+Incluye:
+
+- Presupuestos por categoria y periodo.
+- Gastos e ingresos recurrentes.
+- Deteccion o alta manual de suscripciones.
+- Calendario financiero simple con proximos cargos e ingresos.
+- Prevision de cashflow mensual.
+- Proyeccion de saldo a final de mes.
+- Comparativa gasto real vs presupuesto.
+- Alertas suaves por categorias cercanas al limite.
+- Reglas para gastos fijos, variables, extraordinarios e inversiones recurrentes.
+- Integracion con Insights Engine para avisos accionables.
+- Integracion futura con IA local para explicaciones sobre presupuesto y cashflow.
+
+Resultado esperado: el usuario puede responder cuanto puede gastar durante el mes, que cargos vienen proximamente y si mantiene su plan de ahorro.
+
+Documentacion sugerida: `docs/23_BUDGETS_RECURRING_CASHFLOW.md`.
+
+### Fase 9 - Document Intelligence / RAG
+
+Objetivo: consultar documentacion financiera local sin subirla a la nube.
+
+Implementado:
 
 - Subida manual de documentos.
-- Extracción de texto.
-- ChromaDB.
-- Embeddings locales.
-- Preguntas sobre documentos.
-- Enlaces entre documentos y entidades financieras.
+- Extraccion de texto.
+- Embeddings locales deterministas.
+- Preguntas sobre documentos con fuentes.
+- Vinculo entre documentos y entidades financieras.
+- Endpoints bajo `/api/rag`.
 
-### Documentos previstos
+Documentacion: `docs/24_DOCUMENT_INTELLIGENCE_RAG.md`.
 
-- Extractos.
-- Informes fiscales.
-- Contratos.
-- Informes de broker.
-- Declaraciones.
+### Fase 10 - Hardening, Security & Backups
 
-### Resultado esperado
+Objetivo: estabilizar la aplicacion para uso diario antes de empaquetarla, reforzando seguridad local, recuperacion de datos y calidad tecnica.
 
-El usuario puede consultar documentos financieros sin subirlos a la nube.
+Implementado:
 
----
+- Backups y exportacion de datos.
+- Preparacion para cifrado local.
+- Politica de logs seguros sin informacion financiera sensible.
+- Validacion de integridad de base de datos.
+- Tests de regresion de RAG, backups e integridad.
+- Modo de recuperacion inicial mediante backups locales.
+- Revision de permisos locales y rutas de datos.
+- Politica clara de datos demo/mock frente a datos reales.
 
-## Fase 10 — Hardening & Packaging ⏳
+Documentacion: `docs/25_HARDENING_SECURITY_BACKUPS.md`.
 
-### Objetivo
+### Fase 10.5 - UX Functional QA & Product Intelligence Repair
 
-Preparar la app para uso real diario.
+Objetivo: corregir bloqueantes de experiencia, estados de datos e inteligencia contextual antes de Packaging & Release.
 
-### Incluye
+Estado operativo:
 
-- Empaquetado Windows.
-- Backups.
-- Exportación de datos.
-- Cifrado opcional.
-- Logs seguros.
-- Migraciones robustas.
-- Tests.
-- Performance.
-- Documentación de usuario.
+| Punto | Estado | Evidencia |
+|---|---|---|
+| Product shell y UI polish | Hecho | `docs/27_FINANCIAL_COMMAND_CENTER_UI_POLISH.md`, shell y pantallas principales actualizadas |
+| Mercados con estados honestos/cache/error controlado | Hecho | `apps/desktop/src/features/markets`, `backend/app/modules/market_intelligence` |
+| Economia con calidad, regiones y datos no repetidos por fallback silencioso | Hecho | `apps/desktop/src/features/economy`, `backend/app/modules/market_intelligence/quality` |
+| Calidad de cartera con explicacion de confianza, precios, FX y manuales | Hecho | UI visible como "Calidad de cartera", `backend/app/modules/investments/reconciliation_*` |
+| Movimientos con busqueda, filtros, ordenacion, CRUD y sin UUID visibles | Hecho | `apps/desktop/src/features/transactions/TransactionsPage.tsx`, `backend/app/modules/transactions` |
+| Importar cartera con capturas reales o alcance honesto, texto fallback y manual | Hecho parcial | UI acepta capturas y comunica OCR local pendiente; texto/manual y confirmacion explicita activos |
+| Gastos con ranking, agrupacion "Otros", drilldown y visualizacion menos saturada | Hecho | `apps/desktop/src/features/spending`, `ExpenseCategoryDetailDrawer` |
+| Objetivos con escenarios, inflacion y mensajes comprensibles | Hecho | `apps/desktop/src/features/goals`, `backend/app/modules/goals` |
+| Planificacion con deteccion asistida de recurrentes | Hecho | `GET /api/recurring/candidates`, UI de candidatos, confirmacion/ignorar |
+| Facturas y suministros del hogar | Hecho inicial | `backend/app/modules/household_bills`, `HouseholdBillsTab` |
+| Copiloto IA contextual por modulo | Hecho | Contexto filtrado en `POST /api/ai/chat`, `contextualCopilot.ts` |
+| Ajustes como centro de estado local | Hecho | IA/provider/modelo/RAG/documentos/backups/integridad/ruta local/privacidad visibles; crear backup desde UI |
+| Bateria UX y snapshots | Hecho | `ux-snapshots/latest`, 19 rutas desktop y soporte responsive desktop/tablet/mobile |
+| Informe release readiness | Hecho | `docs/28_PHASE_10_5_RELEASE_READINESS_REPORT.md` |
+| Bateria de pruebas UX documentada | Hecho | `docs/29_PHASE_10_5_UX_TEST_BATTERY.md` |
 
-### Resultado esperado
+Pendiente antes de marcar Fase 10.5 como completa:
 
-Aplicación instalable, estable y segura para uso personal continuado.
+- Ejecutar QA manual end-to-end con base de datos real y provider IA local arrancado.
+- Implementar OCR local real para capturas de cartera si se decide que "captura real" debe extraer automaticamente en esta fase; actualmente el alcance esta comunicado y no crea holdings desde imagen.
+- Revision visual responsive disponible en tooling (`npm run snapshots:responsive`) y ultima evidencia generada con 57/57 capturas; no se deben regenerar snapshots sin confirmacion explicita.
+
+Documentacion: `docs/26_UX_FUNCTIONAL_QA_PRODUCT_INTELLIGENCE_REPAIR.md`.
+Evidencia QA: `docs/28_PHASE_10_5_RELEASE_READINESS_REPORT.md`, `docs/29_PHASE_10_5_UX_TEST_BATTERY.md`.
+
+### Fase 11 - Packaging & Release
+
+Objetivo: preparar la aplicacion como producto instalable para Windows.
+
+Incluye:
+
+- Empaquetado Windows con Tauri.
+- Instalador y desinstalador.
+- Configuracion de entorno de produccion.
+- Arranque coordinado de frontend y backend local.
+- Verificacion post-build.
+- Documentacion de instalacion y uso local.
+- Preparacion para actualizaciones futuras.
+- Revision de tamano final, rendimiento y experiencia de primer arranque.
+
+## Deudas tecnicas
+
+| ID | Deuda | Impacto |
+|---|---|---|
+| TD-01 | Revisar contrato real de `categories` frente a frontend y docs | Medio |
+| TD-02 | Ampliar tests de integracion del core financiero | Alto |
+| TD-03 | Consolidar docs de Market Intelligence con ejemplos de catalogo reales | Medio |
+| TD-04 | Eliminar o archivar codigo POC cuando deje de aportar comparacion tecnica | Bajo |
+| TD-05 | Definir CLI estable para comandos de Market Intelligence fuera del POC | Medio |
+| TD-06 | Unificar estados del roadmap y areas funcionales cuando una fase cambie de estado | Medio |
+| TD-07 | Consolidar modelo de holdings tras Portfolio Import Assistant: coste estimado, coste confirmado, instrumento validado, FX, precio actual y modo manual/automatico | Alto |
+
+## Regla documental
+
+La documentacion viva debe describir el codigo actual. Los planes generados, specs de
+implementacion y briefs de agente son historico operativo: no deben mantenerse en la
+raiz documental salvo que se conviertan en guia vigente.

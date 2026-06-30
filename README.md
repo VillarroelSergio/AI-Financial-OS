@@ -62,6 +62,71 @@ cd apps/desktop
 npx tsc --noEmit
 ```
 
+## Market Intelligence
+
+La capa vigente de mercados y macro vive en `backend/app/modules/market_intelligence`.
+El antiguo `market-data-poc/` queda como banco de pruebas legado y no debe usarse como
+fuente principal de documentacion ni de comandos operativos.
+
+API endpoints bajo `/api/market-intelligence/`:
+
+| Endpoint | Descripción |
+|---|---|
+| `GET /snapshot/macro` | Indicadores macro por región |
+| `GET /snapshot/market` | Cotizaciones de índices, cripto y commodities |
+| `GET /snapshot/forex` | Tipos de cambio |
+| `GET /snapshot/bonds` | Rendimientos de bonos |
+| `GET /snapshot/news` | Noticias financieras |
+| `GET /personal-impact` | Comparativas entre contexto macro/mercado y datos personales |
+| `GET /ingest-status` | Estado de la ingesta automática de arranque |
+| `GET /ai-datasheet` | Datasheet compacto para IA local |
+
+## Document Intelligence / RAG
+
+La Fase 9 permite indexar y consultar documentacion financiera local sin subirla a la nube.
+
+Endpoints principales:
+
+| Endpoint | Descripcion |
+|---|---|
+| `GET /api/rag/documents` | Lista documentos locales indexados |
+| `POST /api/rag/documents` | Crea documento desde texto |
+| `POST /api/rag/documents/upload` | Sube documento local `txt`, `md`, `csv` o `json` |
+| `POST /api/rag/query` | Consulta documentos y devuelve fuentes |
+
+## Security & Backups
+
+La Fase 10 anade backups locales, validacion de integridad y estado de seguridad antes del empaquetado.
+
+Endpoints principales:
+
+| Endpoint | Descripcion |
+|---|---|
+| `GET /api/security/status` | Estado local de hardening |
+| `GET /api/security/backups` | Lista backups locales |
+| `POST /api/security/backups` | Crea backup SQLite local |
+| `GET /api/security/integrity` | Ejecuta comprobacion de integridad |
+
+## Fase 6.4 - Data Integrity & Core UX Repair
+
+La app evita mostrar datos internos o enganosos: los UUID no se usan como nombres visibles, los datos demo/mock se marcan, los holdings pueden editarse con precio manual y los porcentajes de gastos se calculan contra el gasto total del periodo.
+
+Pantallas reforzadas:
+
+- Inversiones: CRUD basico de activos, distribucion por activo/broker/tipo/divisa/sector y exclusion visual de demo en repartos reales.
+- Mercados: secciones claras para indices, cripto, materias primas, divisas y bonos con provider, calidad y estados parciales.
+- Cuentas: resumen superior, cards con peso sobre liquidez, edicion y eliminacion.
+- Gastos: selector de periodo, metricas superiores, donut y barras por categoria.
+- Resumen: cards ejecutivas y secciones de salud financiera, flujo, patrimonio y proximas acciones.
+
+## Fase 6.4.1 - Expense Drilldown & Investment Price Refresh UX Fix
+
+- Gastos: las categorias se pueden abrir desde donut, lista y control visual para ver movimientos, total, peso, numero de transacciones y media.
+- API: `GET /api/dashboard/spending/category-detail` devuelve el detalle por categoria para mes o ano.
+- Inversiones: `Actualizar precios` intenta proveedores automaticos y devuelve actualizados, manuales, omitidos y errores.
+- Precio manual se usa solo cuando no hay proveedor automatico; NAV queda reservado a fondos.
+- Cuentas remuneradas, efectivo y savings/cash se omiten del refresco manual porque su valor viene del balance.
+
 ## Documentación
 
 Ver `docs/` para arquitectura, modelo de datos, contrato API y roadmap.

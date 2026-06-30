@@ -1,20 +1,43 @@
 import { useEffect, useState } from "react";
+import { Bot, Copy, Database, HardDrive, Lock, ShieldCheck } from "lucide-react";
+import { PageHeader } from "@/components/ui/Dashboard";
 import Spinner from "@/components/ui/Spinner";
 import { fetchSettings, updateSetting, type AppSetting } from "@/lib/api/settings";
+import { getAiStatus } from "@/features/assistant/api/aiAssistantApi";
+import type { AiStatus } from "@/features/assistant/types/aiAssistant.types";
+import { createBackup, fetchBackups, fetchIntegrity, fetchSecurityStatus, type BackupInfo, type IntegrityCheck, type SecurityStatus } from "@/lib/api/security";
+import { fetchRagDocuments, type RagDocument } from "@/lib/api/rag";
+import { useTheme } from "@/lib/useTheme";
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<AppSetting[]>([]);
+  const [aiStatus, setAiStatus] = useState<AiStatus | null>(null);
+  const [security, setSecurity] = useState<SecurityStatus | null>(null);
+  const [backups, setBackups] = useState<BackupInfo[]>([]);
+  const [integrity, setIntegrity] = useState<IntegrityCheck | null>(null);
+  const [documents, setDocuments] = useState<RagDocument[]>([]);
+  const [aiError, setAiError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
+  const [backupBusy, setBackupBusy] = useState(false);
+  const [systemError, setSystemError] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchSettings()
-      .then(setSettings)
+    Promise.allSettled([fetchSettings(), getAiStatus(), fetchSecurityStatus(), fetchBackups(), fetchIntegrity(), fetchRagDocuments()])
+      .then(([settingsResult, aiResult, securityResult, backupsResult, integrityResult, documentsResult]) => {
+        if (settingsResult.status === "fulfilled") setSettings(settingsResult.value);
+        if (aiResult.status === "fulfilled") setAiStatus(aiResult.value);
+        else setAiError("No disponible");
+        if (securityResult.status === "fulfilled") setSecurity(securityResult.value);
+        if (backupsResult.status === "fulfilled") setBackups(backupsResult.value);
+        if (integrityResult.status === "fulfilled") setIntegrity(integrityResult.value);
+        if (documentsResult.status === "fulfilled") setDocuments(documentsResult.value);
+      })
       .finally(() => setLoading(false));
   }, []);
 
   const getValue = (key: string): string => {
-    const s = settings.find((s) => s.key === key);
+    const s = settings.find((item) => item.key === key);
     if (!s) return "";
     try {
       return JSON.parse(s.value_json) as string;
@@ -33,6 +56,25 @@ export default function SettingsPage() {
     }
   };
 
+  const handleBackup = async () => {
+    setBackupBusy(true);
+    setSystemError(null);
+    try {
+      const backup = await createBackup();
+      setBackups((prev) => [backup, ...prev.filter((item) => item.filename !== backup.filename)]);
+      const status = await fetchSecurityStatus();
+      setSecurity(status);
+    } catch (e) {
+      setSystemError(e instanceof Error ? e.message : "No se ha podido crear el backup");
+    } finally {
+      setBackupBusy(false);
+    }
+  };
+
+  const lastBackup = backups[0];
+  const { theme, setTheme } = useTheme();
+  const providerStatus = aiStatus?.providers ?? [];
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -42,61 +84,156 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="p-2xl space-y-xl max-w-2xl">
-      <div>
-        <h1 className="text-display-lg text-on-dark">Ajustes</h1>
-        <p className="text-body-sm text-stone mt-xs">Configuración de la aplicación</p>
+    <div className="p-8 max-w-[1300px] mx-auto space-y-6">
+      <PageHeader
+        eyebrow="Control local"
+        title="Ajustes"
+        description="Centro de control para idioma, moneda, IA local, datos, privacidad e integridad."
+        actions={<span className="rounded-lg border border-hairline-dark bg-accent-teal/10 px-3 py-2 text-xs text-accent-teal">Local-first</span>}
+      />
+
+      <div className="grid gap-5 lg:grid-cols-[1.1fr_.9fr]">
+        <section className="premium-card rounded-lg overflow-hidden">
+          <div className="border-b border-hairline-dark px-5 py-4">
+            <h2 className="text-base font-semibold text-on-dark">Preferencias</h2>
+            <p className="mt-1 text-xs text-stone">Configuracion visible de la aplicacion.</p>
+          </div>
+          <div className="divide-y divide-hairline-dark">
+            <div className="p-xl flex items-center justify-between gap-6">
+              <div><p className="text-body-md text-on-dark">Idioma</p><p className="text-caption text-stone mt-xs">Idioma de la interfaz</p></div>
+              <select className="rounded-lg border border-hairline-dark bg-white/[.035] px-md py-sm text-body-sm text-on-dark" value={getValue("app.language")} onChange={(e) => handleUpdate("app.language", e.target.value)} disabled={saving === "app.language"}>
+                <option value="es">Espanol</option>
+                <option value="en">English</option>
+              </select>
+            </div>
+            <div className="p-xl flex items-center justify-between gap-6">
+              <div><p className="text-body-md text-on-dark">Moneda</p><p className="text-caption text-stone mt-xs">Moneda predeterminada</p></div>
+              <select className="rounded-lg border border-hairline-dark bg-white/[.035] px-md py-sm text-body-sm text-on-dark" value={getValue("app.currency")} onChange={(e) => handleUpdate("app.currency", e.target.value)} disabled={saving === "app.currency"}>
+                <option value="EUR">EUR - Euro</option>
+                <option value="USD">USD - Dolar</option>
+                <option value="GBP">GBP - Libra</option>
+              </select>
+            </div>
+            <div className="p-xl">
+              <p className="text-body-md text-on-dark mb-1">Apariencia</p>
+              <p className="text-caption text-stone mb-3">Elige el modo visual de la aplicacion</p>
+              <div className="flex gap-3">
+                {(["dark", "light"] as const).map((t) => (
+                  <button
+                    key={t}
+                    onClick={() => setTheme(t)}
+                    className="flex-1 rounded-[28px] p-4 text-left transition-all"
+                    style={{
+                      border: theme === t ? "2px solid #0071e3" : "1px solid var(--border-soft)",
+                      background: t === "dark" ? "#000000" : "#f5f5f7",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <div
+                      className="mb-2 h-8 rounded-[10px]"
+                      style={{ background: t === "dark" ? "#1d1d1f" : "#ffffff", border: "1px solid", borderColor: t === "dark" ? "#333336" : "#e5e5e5" }}
+                    />
+                    <p
+                      style={{
+                        fontSize: "12px",
+                        fontWeight: 600,
+                        letterSpacing: "-0.22px",
+                        color: t === "dark" ? "#f5f5f7" : "#1d1d1f",
+                      }}
+                    >
+                      {t === "dark" ? "Oscuro" : "Claro"}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="premium-card rounded-lg p-5">
+          <div className="flex items-center gap-3">
+            <span className="grid h-10 w-10 place-items-center rounded-lg border border-hairline-dark bg-white/[.035] text-primary-bright"><Bot size={18} /></span>
+            <div>
+              <h2 className="text-base font-semibold text-on-dark">Asistente IA</h2>
+              <p className="text-xs text-stone">Preparado para Ollama y LM Studio.</p>
+            </div>
+          </div>
+          <div className="mt-5 grid gap-3">
+            {[
+              ["Estado asistente", aiStatus?.enabled ? "Activo" : aiError ?? "Sin provider activo"],
+              ["Proveedor IA", aiStatus?.default_provider ?? "No configurado"],
+              ["Modelo IA", aiStatus?.default_model ?? "No configurado"],
+              ["Ollama", providerStatus.find((p) => p.name.toLowerCase().includes("ollama"))?.available ? "Disponible" : "No disponible"],
+              ["LM Studio", providerStatus.find((p) => p.name.toLowerCase().includes("lm"))?.available ? "Disponible" : "No disponible"],
+              ["Estado RAG", documents.length > 0 ? "Indexado" : "Sin documentos"],
+              ["Documentos indexados", String(documents.length)],
+            ].map(([label, value]) => (
+              <div key={label} className="flex items-center justify-between rounded-lg border border-hairline-dark bg-white/[.03] px-3 py-2">
+                <span className="text-xs text-stone">{label}</span>
+                <span className="text-xs text-on-dark">{value}</span>
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
 
-      <div className="bg-surface-card border border-hairline-dark rounded-md divide-y divide-hairline-dark">
-        <div className="p-xl flex items-center justify-between">
-          <div>
-            <p className="text-body-md text-on-dark">Idioma</p>
-            <p className="text-caption text-stone mt-xs">Idioma de la interfaz</p>
-          </div>
-          <select
-            className="bg-surface-elevated border border-hairline-dark rounded-sm px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary"
-            value={getValue("app.language")}
-            onChange={(e) => handleUpdate("app.language", e.target.value)}
-            disabled={saving === "app.language"}
-          >
-            <option value="es">Español</option>
-            <option value="en">English</option>
-          </select>
-        </div>
-
-        <div className="p-xl flex items-center justify-between">
-          <div>
-            <p className="text-body-md text-on-dark">Moneda</p>
-            <p className="text-caption text-stone mt-xs">Moneda predeterminada</p>
-          </div>
-          <select
-            className="bg-surface-elevated border border-hairline-dark rounded-sm px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary"
-            value={getValue("app.currency")}
-            onChange={(e) => handleUpdate("app.currency", e.target.value)}
-            disabled={saving === "app.currency"}
-          >
-            <option value="EUR">EUR — Euro</option>
-            <option value="USD">USD — Dólar</option>
-            <option value="GBP">GBP — Libra</option>
-          </select>
-        </div>
-
-        <div className="p-xl flex items-center justify-between">
-          <div>
-            <p className="text-body-md text-on-dark">Tema</p>
-            <p className="text-caption text-stone mt-xs">Modo visual de la aplicación</p>
-          </div>
-          <span className="text-body-sm text-stone">Dark Premium</span>
-        </div>
+      <div className="grid gap-5 lg:grid-cols-3">
+        <section className="premium-card rounded-lg p-5">
+          <ShieldCheck className="text-accent-teal" size={20} />
+          <h2 className="mt-3 text-base font-semibold text-on-dark">Privacidad local</h2>
+          <p className="mt-2 text-sm leading-6 text-stone">{security?.demo_data_policy ?? "Los datos financieros se procesan localmente. Las funciones externas deben declararse antes de activarse."}</p>
+        </section>
+        <section className="premium-card rounded-lg p-5">
+          <Database className="text-primary-bright" size={20} />
+          <h2 className="mt-3 text-base font-semibold text-on-dark">Integridad de base de datos</h2>
+          <p className="mt-2 text-sm leading-6 text-stone">{integrity?.database_ok ? `OK - ${integrity.tables.length} tablas verificadas` : "No verificada"}</p>
+          {integrity?.issues.length ? <p className="mt-2 text-xs text-accent-danger">{integrity.issues[0]}</p> : null}
+        </section>
+        <section className="premium-card rounded-lg p-5">
+          <HardDrive className="text-accent-warning" size={20} />
+          <h2 className="mt-3 text-base font-semibold text-on-dark">Ruta local de datos</h2>
+          <p className="mt-2 break-all text-sm leading-6 text-stone">{security?.database_path ?? "Ruta no disponible"}</p>
+          {security?.database_path && <button onClick={() => navigator.clipboard?.writeText(security.database_path)} className="mt-3 inline-flex items-center gap-2 rounded-lg border border-hairline-dark px-3 py-2 text-xs text-stone hover:text-on-dark"><Copy size={13} />Copiar ruta</button>}
+        </section>
       </div>
 
-      <div className="bg-surface-card border border-hairline-dark rounded-md p-xl">
-        <p className="text-heading-sm text-on-dark mb-xs">Asistente IA</p>
-        <p className="text-body-sm text-stone">
-          Disponible en Fase 6. Preparado para Ollama y LM Studio.
-        </p>
-      </div>
+      <section className="premium-card rounded-lg p-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 className="text-base font-semibold text-on-dark">Backups locales</h2>
+            <p className="mt-1 text-sm text-stone">
+              {lastBackup
+                ? `Ultima copia: ${new Date(lastBackup.created_at).toLocaleString("es-ES")} - ${(lastBackup.size_bytes / 1024).toFixed(1)} KB`
+                : "No hay copias registradas todavia."}
+            </p>
+          </div>
+          <button onClick={handleBackup} disabled={backupBusy} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
+            {backupBusy ? "Creando..." : "Crear backup"}
+          </button>
+        </div>
+        {systemError && <p className="mt-3 text-sm text-accent-danger">{systemError}</p>}
+        <div className="mt-4 grid gap-2">
+          {backups.slice(0, 3).map((backup) => (
+            <div key={backup.filename} className="flex items-center justify-between gap-3 rounded-lg border border-hairline-dark bg-white/[.03] px-3 py-2">
+              <div className="min-w-0">
+                <p className="truncate text-xs text-on-dark">{backup.filename}</p>
+                <p className="truncate text-[11px] text-stone">{backup.path}</p>
+              </div>
+              <span className="financial-number shrink-0 text-xs text-stone">{(backup.size_bytes / 1024).toFixed(1)} KB</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="premium-card rounded-lg p-5">
+        <div className="flex items-start gap-3">
+          <Lock size={18} className="mt-0.5 text-accent-teal" />
+          <div>
+            <h2 className="text-base font-semibold text-on-dark">Datos demo/mock</h2>
+            <p className="mt-1 text-sm text-stone">Los estados demo deben identificarse en cada modulo. Esta pantalla queda preparada para exponer el interruptor global cuando exista soporte backend.</p>
+          </div>
+        </div>
+      </section>
     </div>
   );
 }

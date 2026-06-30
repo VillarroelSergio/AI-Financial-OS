@@ -496,6 +496,13 @@ def main():
             "market:catalog:list",
             "market:catalog:coverage",
             "market:update",
+            "market:intelligence:init-db",
+            "market:intelligence:update",
+            "market:intelligence:quality",
+            "market:intelligence:snapshot",
+            "market:intelligence:datasheet",
+            "market:intelligence:catalog",
+            "market:intelligence:catalog:validate",
         ],
         help="POC command to run",
     )
@@ -677,6 +684,45 @@ def main():
 
     # 9. Print summary table
     print_summary_table(coverage)
+
+    # ── Market Intelligence commands ──────────────────────────────────────────
+    import sys as _sys
+    _sys.path.insert(0, str(Path(__file__).parent.parent / "backend"))
+
+    if args.command == "market:intelligence:init-db":
+        from app.modules.market_intelligence.cli.commands import cmd_init_db
+        cmd_init_db()
+        return
+
+    if args.command == "market:intelligence:update":
+        from app.modules.market_intelligence.cli.commands import cmd_update
+        cmd_update(category=getattr(args, "category", None), priority=getattr(args, "priority", None))
+        return
+
+    if args.command == "market:intelligence:quality":
+        from app.modules.market_intelligence.cli.commands import cmd_quality
+        cmd_quality()
+        return
+
+    if args.command == "market:intelligence:snapshot":
+        from app.modules.market_intelligence.cli.commands import cmd_snapshot
+        cmd_snapshot()
+        return
+
+    if args.command == "market:intelligence:datasheet":
+        from app.modules.market_intelligence.cli.commands import cmd_datasheet
+        cmd_datasheet()
+        return
+
+    if args.command == "market:intelligence:catalog":
+        from app.modules.market_intelligence.cli.commands import cmd_catalog_show
+        cmd_catalog_show()
+        return
+
+    if args.command == "market:intelligence:catalog:validate":
+        from app.modules.market_intelligence.cli.commands import cmd_catalog_validate
+        valid = cmd_catalog_validate()
+        _sys.exit(0 if valid else 1)
 
 
 if __name__ == "__main__":
