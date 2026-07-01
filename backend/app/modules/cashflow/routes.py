@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
-from typing import Any
 
 from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel

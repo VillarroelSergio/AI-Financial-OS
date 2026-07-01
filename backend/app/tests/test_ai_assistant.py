@@ -4,10 +4,9 @@ from __future__ import annotations
 import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 from fastapi.testclient import TestClient
 
-from app.modules.ai.providers.base import AIResponse, ProviderHealth, ToolCallResult
+from app.modules.ai.providers.base import AIResponse
 from app.modules.ai.tools.registry import ToolDefinition, ToolRegistry
 
 

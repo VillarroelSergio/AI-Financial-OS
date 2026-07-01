@@ -105,7 +105,11 @@ class LMStudioProvider(AIProvider):
                     args = json.loads(args)
                 except json.JSONDecodeError:
                     args = {}
-            tool_calls.append(ToolCallResult(name=fn.get("name", ""), arguments=args))
+            tool_calls.append(ToolCallResult(
+                name=fn.get("name", ""),
+                arguments=args,
+                id=tc.get("id", ""),
+            ))
 
         usage = data.get("usage", {})
         return AIResponse(

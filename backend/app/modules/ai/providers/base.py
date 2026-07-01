@@ -10,6 +10,7 @@ from typing import Any, AsyncIterator
 class ToolCallResult:
     name: str
     arguments: dict[str, Any]
+    id: str = ""  # tool_call_id for OpenAI-compatible round-tripping
 
 
 @dataclass

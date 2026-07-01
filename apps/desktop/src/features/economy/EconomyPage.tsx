@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TrendingUp } from "lucide-react";
 import { ErrorState, PageHeader } from "@/components/ui/Dashboard";
 import { useEconomyMI } from "@/lib/hooks/useMarketIntelligence";
@@ -28,6 +28,20 @@ function LoadingSkeleton({ isIngesting }: { isIngesting: boolean }) {
 export default function EconomyPage() {
   const { macro, impact, ingestStatus, loading, error } = useEconomyMI();
   const [activeRegion, setActiveRegion] = useState<RegionTab>("ES");
+
+  const availableRegions = macro
+    ? ([
+        macro.spain.length > 0 ? "ES" : null,
+        macro.eurozone.length > 0 ? "EA" : null,
+        macro.usa.length > 0 ? "US" : null,
+      ].filter(Boolean) as RegionTab[])
+    : (["ES"] as RegionTab[]);
+
+  useEffect(() => {
+    if (availableRegions.length > 0 && !availableRegions.includes(activeRegion)) {
+      setActiveRegion(availableRegions[0]);
+    }
+  }, [availableRegions]);
 
   const isIngesting = ingestStatus?.status === "running" || ingestStatus?.status === "idle";
   const activeRegionData = macro ? activeRegion === "ES" ? macro.spain : activeRegion === "EA" ? macro.eurozone : macro.usa : [];
@@ -71,7 +85,7 @@ export default function EconomyPage() {
           <section className="premium-card rounded-lg p-5">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-caption text-mute uppercase tracking-widest">Indicadores por region</h2>
-              <RegionTabs active={activeRegion} onSelect={setActiveRegion} />
+              <RegionTabs active={activeRegion} onSelect={setActiveRegion} availableRegions={availableRegions} />
             </div>
             {activeRegionData.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">

@@ -3,7 +3,7 @@ import time
 import feedparser
 from datetime import datetime, timezone
 
-from app.modules.market_intelligence.ingestion.models import AdapterResult, ProviderMetadata
+from app.modules.market_intelligence.ingestion.models import AdapterResult
 from app.modules.market_intelligence.ingestion.models import NewsItem
 from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter
 

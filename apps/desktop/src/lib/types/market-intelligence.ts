@@ -11,6 +11,8 @@ export interface MacroDataPointMI {
   quality_score: number;
   data_status?: "ok" | "limited" | "unavailable" | "requires_review";
   retrieved_at?: string | null;
+  display_name?: string;
+  description?: string;
 }
 
 export interface MacroSnapshotMI {
@@ -33,6 +35,8 @@ export interface QuoteMI {
   quality_score: number;
   data_status?: "ok" | "limited" | "unavailable" | "requires_review";
   observed_at?: string | null;
+  display_name?: string;
+  display_country?: string;
 }
 
 export interface MarketSnapshotMI {

@@ -120,7 +120,11 @@ class OllamaProvider(AIProvider):
                         args = json.loads(args)
                     except json.JSONDecodeError:
                         args = {}
-                tool_calls.append(ToolCallResult(name=fn.get("name", ""), arguments=args))
+                tool_calls.append(ToolCallResult(
+                    name=fn.get("name", ""),
+                    arguments=args,
+                    id=tc.get("id", ""),
+                ))
         elif tools and content:
             parsed = _parse_tool_call(content)
             if parsed:

@@ -3,13 +3,12 @@ from __future__ import annotations
 import json
 import logging
 import uuid
-from dataclasses import asdict
 from datetime import datetime, timezone
 from typing import Optional
 
 from app.modules.financial_knowledge.models import (
     AIDatasheet, EconomicIndicatorInsight, FinancialSignal,
-    MarketRegime, PersonalImpact, Severity,
+    MarketRegime, PersonalImpact,
 )
 from app.modules.market_intelligence.storage import repository as mi_repo
 

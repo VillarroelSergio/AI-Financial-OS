@@ -2,7 +2,6 @@
 from __future__ import annotations
 from datetime import datetime, timezone
 
-import pytest
 
 from app.modules.financial_knowledge.engines import personal_impact_engine as engine
 from app.modules.financial_knowledge.models import (

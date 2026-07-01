@@ -133,7 +133,6 @@ export default function MarketsPage() {
                 <div key={r.catalog_item_id} className="grid grid-cols-[1fr_120px_100px] items-center gap-4 px-6 py-3">
                   <div>
                     <p className="text-body-sm text-on-dark">{r.base_currency ?? "-"} / {r.quote_currency ?? "-"}</p>
-                    <p className="text-caption text-stone">{r.catalog_item_id} · {r.provider_id ?? "provider desconocido"} · calidad {(r.quality_score * 100).toFixed(0)}%</p>
                   </div>
                   <p className="text-body-sm font-semibold text-on-dark tabular-nums text-right">{r.rate != null ? r.rate.toLocaleString("es-ES", { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : "-"}</p>
                   <p className="text-caption text-stone text-right">{r.date ?? "-"}</p>
@@ -152,7 +151,6 @@ export default function MarketsPage() {
                 <div key={b.catalog_item_id} className="grid grid-cols-[1fr_120px_100px] items-center gap-4 px-6 py-3">
                   <div>
                     <p className="text-body-sm text-on-dark">{b.country ?? "-"} {b.maturity ?? ""}</p>
-                    <p className="text-caption text-stone">{b.catalog_item_id} · {b.provider_id ?? "provider desconocido"} · calidad {(b.quality_score * 100).toFixed(0)}%</p>
                   </div>
                   <p className="text-body-sm font-semibold text-on-dark tabular-nums text-right">{b.yield_value != null ? `${b.yield_value.toLocaleString("es-ES", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%` : "-"}</p>
                   <p className="text-caption text-stone text-right">{b.date ?? "-"}</p>

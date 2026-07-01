@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
-from datetime import date
 
 from app.core.database import get_db
 from app.models.goal import Goal
