@@ -8,12 +8,12 @@ from typing import Any, AsyncIterator
 
 import httpx
 
-from app.modules.ai.providers.base import AIProvider, AIResponse, ProviderHealth, ToolCallResult
+from app.modules.ai.providers.base import AIResponse, ProviderHealth, ToolCallResult
 
 logger = logging.getLogger(__name__)
 
 
-class LMStudioProvider(AIProvider):
+class LMStudioProvider:
     """OpenAI-compatible provider targeting LM Studio (or any /v1 endpoint)."""
 
     def __init__(self, base_url: str, default_model: str) -> None:

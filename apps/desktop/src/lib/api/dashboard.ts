@@ -1,5 +1,6 @@
 import type { DashboardOverview } from "@/lib/types";
 import { api } from "./client";
+import { buildQueryString } from "./queryParams";
 
 export interface CategorySpending {
   category_id: string | null;
@@ -45,18 +46,15 @@ export interface CategorySpendingDetail {
 }
 
 export const fetchOverview = () => api.get<DashboardOverview>("/api/dashboard/overview");
-export const fetchSpending = (period: { month?: string; year?: number }) => {
-  const query = period.year ? `year=${period.year}` : `month=${period.month}`;
-  return api.get<SpendingData>(`/api/dashboard/spending?${query}`);
-};
+export const fetchSpending = (period: { month?: string; year?: number }) =>
+  api.get<SpendingData>(`/api/dashboard/spending${buildQueryString({ year: period.year, month: period.year ? undefined : period.month })}`);
 export const fetchSpendingYears = () => api.get<{ years: number[] }>("/api/dashboard/spending/years");
 export const fetchCategorySpendingDetail = (
   categoryId: string | null,
   period: { month?: string; year?: number },
-) => {
-  const params = new URLSearchParams();
-  if (categoryId) params.set("category_id", categoryId);
-  if (period.year) params.set("year", String(period.year));
-  else if (period.month) params.set("month", period.month);
-  return api.get<CategorySpendingDetail>(`/api/dashboard/spending/category-detail?${params.toString()}`);
-};
+) =>
+  api.get<CategorySpendingDetail>(`/api/dashboard/spending/category-detail${buildQueryString({
+    category_id: categoryId,
+    year: period.year,
+    month: period.year ? undefined : period.month,
+  })}`);

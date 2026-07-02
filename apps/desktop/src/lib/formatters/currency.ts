@@ -1,25 +1,31 @@
+function parseNum(amount: string | number): number {
+  return typeof amount === "string" ? parseFloat(amount) : amount;
+}
+
+function intlFormat(num: number, opts: Intl.NumberFormatOptions): string {
+  return new Intl.NumberFormat("es-ES", opts).format(num);
+}
+
 export function formatCurrency(amount: string | number, currency = "EUR"): string {
-  const num = typeof amount === "string" ? parseFloat(amount) : amount;
-  return new Intl.NumberFormat("es-ES", {
+  return intlFormat(parseNum(amount), {
     style: "currency",
     currency,
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(num);
+  });
 }
 
 export function formatPercent(ratio: number): string {
-  return new Intl.NumberFormat("es-ES", {
+  return intlFormat(ratio, {
     style: "percent",
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,
-  }).format(ratio);
+  });
 }
 
 export function formatNumber(amount: string | number): string {
-  const num = typeof amount === "string" ? parseFloat(amount) : amount;
-  return new Intl.NumberFormat("es-ES", {
+  return intlFormat(parseNum(amount), {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
-  }).format(num);
+  });
 }

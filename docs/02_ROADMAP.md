@@ -58,7 +58,7 @@ Componentes actuales:
 - API bajo `/api/market-intelligence/*`.
 - Datasheet compacto para IA local.
 
-## Proximas fases
+## Detalle de fases completadas
 
 ### Fase 6.4 - Data Integrity & Core UX Repair
 
@@ -243,8 +243,7 @@ Estado operativo:
 | Informe release readiness | Hecho | `docs/28_PHASE_10_5_RELEASE_READINESS_REPORT.md` |
 | Bateria de pruebas UX documentada | Hecho | `docs/29_PHASE_10_5_UX_TEST_BATTERY.md` |
 
-Documentacion: `docs/26_UX_FUNCTIONAL_QA_PRODUCT_INTELLIGENCE_REPAIR.md`.
-Evidencia QA: `docs/28_PHASE_10_5_RELEASE_READINESS_REPORT.md`, `docs/29_PHASE_10_5_UX_TEST_BATTERY.md`.
+Documentacion: `docs/27_FINANCIAL_COMMAND_CENTER_UI_POLISH.md`.
 
 ### Fase 10.6 - Release Candidate Stabilization ✅ Completa
 
@@ -266,7 +265,6 @@ Corregido:
 
 Pruebas: 206/206 backend tests, 0 errores TypeScript.
 
-Documentacion: `docs/31_PHASE_10_6_RELEASE_CANDIDATE_STABILIZATION.md`.
 
 ### Fase 11 - Packaging & Release 🚀 En curso
 
@@ -307,13 +305,10 @@ Documentacion: `docs/31_PHASE_10_6_RELEASE_CANDIDATE_STABILIZATION.md`.
 | TD-01 | Revisar contrato real de `categories` frente a frontend y docs | Medio |
 | TD-02 | Ampliar tests de integracion del core financiero | Alto |
 | TD-03 | Consolidar docs de Market Intelligence con ejemplos de catalogo reales | Medio |
-| TD-04 | Eliminar o archivar codigo POC cuando deje de aportar comparacion tecnica | Bajo |
-| TD-05 | Definir CLI estable para comandos de Market Intelligence fuera del POC | Medio |
 | TD-06 | Unificar estados del roadmap y areas funcionales cuando una fase cambie de estado | Medio |
 | TD-07 | Consolidar modelo de holdings tras Portfolio Import Assistant: coste estimado, coste confirmado, instrumento validado, FX, precio actual y modo manual/automatico | Alto |
 | TD-08 | BLS adapter: añadir `_INDICATOR_SERIES` mapping igual que `fred.py` — mismo gap de indicator_id-blindness corregido en Fase 10.6 | Medio |
 | TD-09 | AbortController cleanup en `useEffect` return de `useAiConversation` — sin impacto funcional actual pero limpieza de recursos correcta | Bajo |
-| TD-10 | Índices de bonos USA en FRED adapter: aún se obtienen en bloque; afecta solo a bond indicators, misma clase que el bug P0-03 corregido | Menor |
 
 ## Regla documental
 

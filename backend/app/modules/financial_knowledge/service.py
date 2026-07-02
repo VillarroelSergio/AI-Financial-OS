@@ -2,11 +2,11 @@
 from __future__ import annotations
 import json
 import logging
-from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy.orm import Session
 
+from app.modules.financial_knowledge._shared import now as _now
 from app.modules.financial_knowledge.engines import economic_indicator_engine as eie
 from app.modules.financial_knowledge.engines import financial_signal_engine as fse
 from app.modules.financial_knowledge.engines import market_regime_engine as mre
@@ -20,10 +20,6 @@ from app.modules.financial_knowledge.schemas import (
 )
 
 logger = logging.getLogger("financial_knowledge.service")
-
-
-def _now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
 
 
 def recompute(db: Optional[Session] = None) -> RecomputeResultOut:
@@ -112,7 +108,7 @@ def get_snapshot() -> KnowledgeSnapshotOut:
     scores = [r.get("quality_score", 1.0) for r in insights_rows + signals_rows]
     quality = round(sum(scores) / len(scores), 3) if scores else 0.0
     return KnowledgeSnapshotOut(
-        generated_at=_now_iso(),
+        generated_at=_now().isoformat(),
         quality_score=quality,
         regime=MarketRegimeOut(**regime_row) if regime_row else None,
         signals=[FinancialSignalOut(**r) for r in signals_rows],

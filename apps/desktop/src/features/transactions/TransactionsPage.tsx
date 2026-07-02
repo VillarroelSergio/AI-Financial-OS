@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { Edit3, Plus, Search, SlidersHorizontal, Trash2 } from "lucide-react";
-import { PageHeader } from "@/components/ui/Dashboard";
-import EmptyState from "@/components/ui/EmptyState";
+import { EmptyState, PageHeader } from "@/components/ui/Dashboard";
 import Spinner from "@/components/ui/Spinner";
 import TypeBadge from "@/components/ui/TypeBadge";
 import { useTransactions } from "@/lib/hooks/useTransactions";

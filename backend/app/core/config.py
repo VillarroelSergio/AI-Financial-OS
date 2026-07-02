@@ -24,9 +24,6 @@ class Settings(BaseSettings):
     AI_MAX_OUTPUT_TOKENS: int = 4096
     AI_ENABLE_STREAMING: bool = True
     AI_ENABLE_TOOL_TRACE: bool = True
-    # Legacy keys kept for backwards compat
-    LM_STUDIO_BASE_URL: str = "http://localhost:1234/v1"
-    DEFAULT_AI_MODEL: str = "qwen"
 
     # ── Market data providers (opcionales, todos gratuitos) ───────────────────
     # Dejar vacíos si no se dispone de key — los proveedores se desactivarán.

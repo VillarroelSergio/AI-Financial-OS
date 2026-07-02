@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
-import { runAudit, resolveAsset } from "@/lib/api/price-coverage";
-import type { AuditReport, AssetResolutionResponse } from "@/lib/types/price-coverage";
+import { runAudit } from "@/lib/api/price-coverage";
+import type { AuditReport } from "@/lib/types/price-coverage";
 
 export function usePriceCoverage() {
   const [report, setReport] = useState<AuditReport | null>(null);
@@ -23,22 +23,4 @@ export function usePriceCoverage() {
   }, []);
 
   return { report, loading, error, audit };
-}
-
-export function useAssetResolve() {
-  const [resolution, setResolution] = useState<AssetResolutionResponse | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  const resolve = useCallback(async (assetName: string) => {
-    setLoading(true);
-    try {
-      const result = await resolveAsset(assetName);
-      setResolution(result);
-      return result;
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  return { resolution, loading, resolve };
 }

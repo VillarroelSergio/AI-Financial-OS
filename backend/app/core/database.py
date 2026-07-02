@@ -1,6 +1,5 @@
 from collections.abc import Generator
 
-import duckdb
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
@@ -23,14 +22,6 @@ def get_db() -> Generator[Session, None, None]:
         yield db
     finally:
         db.close()
-
-
-def get_duckdb() -> Generator[duckdb.DuckDBPyConnection, None, None]:
-    conn = duckdb.connect(settings.DUCKDB_PATH)
-    try:
-        yield conn
-    finally:
-        conn.close()
 
 
 def create_tables() -> None:

@@ -1,11 +1,10 @@
 """Market Regime Engine — clasifica el régimen macro/mercado actual."""
 from __future__ import annotations
 import logging
-import uuid
-from datetime import datetime, timezone
 from pathlib import Path
 import yaml
 
+from app.modules.financial_knowledge._shared import uid as _uid, now as _now
 from app.modules.financial_knowledge.models import (
     FinancialSignal, MarketRegime,
     RiskLevel, InflationRegime, RatesRegime, GrowthRegime, MarketTrend,
@@ -14,14 +13,6 @@ from app.modules.financial_knowledge.models import (
 logger = logging.getLogger("financial_knowledge.market_regime_engine")
 
 _REGIME_RULES_PATH = Path(__file__).parent.parent / "rules" / "regime_rules.yaml"
-
-
-def _uid() -> str:
-    return str(uuid.uuid4())
-
-
-def _now() -> datetime:
-    return datetime.now(timezone.utc)
 
 
 def _load_rules() -> dict:

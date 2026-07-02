@@ -1,5 +1,5 @@
 // apps/desktop/src/lib/hooks/useFinancialKnowledge.ts
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import {
   getKnowledgeSnapshot,
   getMarketRegime,
@@ -8,6 +8,7 @@ import {
   getAIDatasheet,
   recomputeKnowledge,
 } from "@/lib/api/financial-knowledge";
+import { useAsyncData } from "@/lib/hooks/useAsyncData";
 import type {
   AIDatasheet,
   FinancialSignal,
@@ -16,30 +17,6 @@ import type {
   PersonalImpactFK,
   RecomputeResult,
 } from "@/lib/types/financial-knowledge";
-
-function useAsyncData<T>(fetcher: () => Promise<T>) {
-  const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      setData(await fetcher());
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Error desconocido");
-    } finally {
-      setLoading(false);
-    }
-  }, [fetcher]);
-
-  useEffect(() => {
-    void load();
-  }, [load]);
-
-  return { data, loading, error, reload: load };
-}
 
 export function useKnowledgeSnapshot() {
   return useAsyncData<KnowledgeSnapshot>(getKnowledgeSnapshot);

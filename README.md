@@ -64,9 +64,7 @@ npx tsc --noEmit
 
 ## Market Intelligence
 
-La capa vigente de mercados y macro vive en `backend/app/modules/market_intelligence`.
-El antiguo `market-data-poc/` queda como banco de pruebas legado y no debe usarse como
-fuente principal de documentacion ni de comandos operativos.
+La capa de mercados y macro vive en `backend/app/modules/market_intelligence`.
 
 API endpoints bajo `/api/market-intelligence/`:
 
@@ -107,25 +105,6 @@ Endpoints principales:
 | `POST /api/security/backups` | Crea backup SQLite local |
 | `GET /api/security/integrity` | Ejecuta comprobacion de integridad |
 
-## Fase 6.4 - Data Integrity & Core UX Repair
-
-La app evita mostrar datos internos o enganosos: los UUID no se usan como nombres visibles, los datos demo/mock se marcan, los holdings pueden editarse con precio manual y los porcentajes de gastos se calculan contra el gasto total del periodo.
-
-Pantallas reforzadas:
-
-- Inversiones: CRUD basico de activos, distribucion por activo/broker/tipo/divisa/sector y exclusion visual de demo en repartos reales.
-- Mercados: secciones claras para indices, cripto, materias primas, divisas y bonos con provider, calidad y estados parciales.
-- Cuentas: resumen superior, cards con peso sobre liquidez, edicion y eliminacion.
-- Gastos: selector de periodo, metricas superiores, donut y barras por categoria.
-- Resumen: cards ejecutivas y secciones de salud financiera, flujo, patrimonio y proximas acciones.
-
-## Fase 6.4.1 - Expense Drilldown & Investment Price Refresh UX Fix
-
-- Gastos: las categorias se pueden abrir desde donut, lista y control visual para ver movimientos, total, peso, numero de transacciones y media.
-- API: `GET /api/dashboard/spending/category-detail` devuelve el detalle por categoria para mes o ano.
-- Inversiones: `Actualizar precios` intenta proveedores automaticos y devuelve actualizados, manuales, omitidos y errores.
-- Precio manual se usa solo cuando no hay proveedor automatico; NAV queda reservado a fondos.
-- Cuentas remuneradas, efectivo y savings/cash se omiten del refresco manual porque su valor viene del balance.
 
 ## Instalación (usuario final)
 
