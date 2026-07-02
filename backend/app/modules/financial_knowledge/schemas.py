@@ -1,7 +1,9 @@
 """Schemas Pydantic del Financial Knowledge Layer para la API REST."""
 from __future__ import annotations
+
 from datetime import datetime
 from typing import Optional
+
 from pydantic import BaseModel
 
 

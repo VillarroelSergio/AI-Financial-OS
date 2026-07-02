@@ -49,6 +49,16 @@ export const fetchOverview = () => api.get<DashboardOverview>("/api/dashboard/ov
 export const fetchSpending = (period: { month?: string; year?: number }) =>
   api.get<SpendingData>(`/api/dashboard/spending${buildQueryString({ year: period.year, month: period.year ? undefined : period.month })}`);
 export const fetchSpendingYears = () => api.get<{ years: number[] }>("/api/dashboard/spending/years");
+
+export interface MonthlySpendingPoint {
+  month: string;
+  income: string;
+  expense: string;
+  savings: string;
+}
+
+export const fetchSpendingMonthly = (months = 12) =>
+  api.get<MonthlySpendingPoint[]>(`/api/dashboard/spending/monthly?months=${months}`);
 export const fetchCategorySpendingDetail = (
   categoryId: string | null,
   period: { month?: string; year?: number },

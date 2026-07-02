@@ -11,6 +11,13 @@ import { api } from "./client";
 export const parseImportText = (text: string) =>
   api.post<RawPosition[]>("/api/investments/import/parse-text", { text });
 
+/** Extract positions from a broker screenshot using the local vision model. */
+export function parseImportImage(file: File) {
+  const form = new FormData();
+  form.append("file", file);
+  return api.upload<RawPosition[]>("/api/investments/import/parse-image", form);
+}
+
 /** Validate a batch of raw positions: resolve instruments + fetch price coverage. */
 export const validateImportBatch = (
   positions: Array<{

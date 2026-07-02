@@ -1,12 +1,12 @@
 """Financial Modeling Prep adapter — AAPL company profile."""
 import time
-import requests
 from datetime import datetime, timezone
 
-from app.modules.market_intelligence.ingestion.models import AdapterResult
-from app.modules.market_intelligence.ingestion.models import CompanyProfile
+import requests
+
 from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter, redact_api_key
 from app.modules.market_intelligence.ingestion.config import get_api_key
+from app.modules.market_intelligence.ingestion.models import AdapterResult, CompanyProfile
 
 _BASE_URL = "https://financialmodelingprep.com/stable/profile"
 

@@ -12,8 +12,8 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.modules.ai.memory import conversation_repository as conv_repo
 from app.modules.ai.prompts.system_prompt import get_system_prompt
-from app.modules.ai.providers import AIProvider, AIResponse, OllamaProvider, LMStudioProvider
-from app.modules.ai.schemas import ChatResponse, ToolCallOut, SourceOut
+from app.modules.ai.providers import AIProvider, AIResponse, LMStudioProvider, OllamaProvider
+from app.modules.ai.schemas import ChatResponse, SourceOut, ToolCallOut
 from app.modules.ai.tools.registry import tool_registry
 
 logger = logging.getLogger(__name__)
@@ -66,6 +66,7 @@ async def chat(
         raise RuntimeError("AI Assistant is disabled (AI_ASSISTANT_ENABLED=false)")
 
     # Ensure conversation
+    new_conversation = False
     if conversation_id:
         conv = conv_repo.get_conversation(db, conversation_id)
         if not conv:
@@ -73,6 +74,7 @@ async def chat(
     else:
         conv = conv_repo.create_conversation(db, title=_extract_title(message))
         conversation_id = conv.id
+        new_conversation = True
 
     contextual_message = _with_screen_context(message, context)
 
@@ -250,6 +252,11 @@ async def chat(
         sources=unique_sources,
         quality_score=overall_quality,
     )
+
+    # Auto-título: un saludo trivial ("hola") produce títulos repetidos e inútiles;
+    # en ese caso el primer intercambio completo da mejor contexto.
+    if new_conversation and len(message.strip().split()) < 3 and final_content:
+        conv_repo.update_conversation_title(db, conversation_id, _extract_title(final_content))
 
     return ChatResponse(
         conversation_id=conversation_id,

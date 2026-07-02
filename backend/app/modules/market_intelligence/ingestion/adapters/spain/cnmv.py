@@ -1,11 +1,11 @@
 """CNMV (Comisión Nacional del Mercado de Valores) adapter — registered entities / hechos relevantes."""
 import time
-import requests
 from datetime import datetime, timezone
 
+import requests
+
 from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter
-from app.modules.market_intelligence.ingestion.models import AdapterResult
-from app.modules.market_intelligence.ingestion.models import CompanyProfile
+from app.modules.market_intelligence.ingestion.models import AdapterResult, CompanyProfile
 
 _PRIMARY_URL = "https://www.cnmv.es/portal/HR/ResultadoBusquedaHR.aspx?nif=&division=1"
 _FALLBACK_URL = "https://www.cnmv.es/portal/Publicaciones/ListadoFondos.aspx"

@@ -1,5 +1,6 @@
 """Financial Knowledge API router."""
 from __future__ import annotations
+
 from typing import Optional
 
 from fastapi import APIRouter, Depends
@@ -8,8 +9,12 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.modules.financial_knowledge import service
 from app.modules.financial_knowledge.schemas import (
-    AIDatasheetOut, FinancialSignalOut, KnowledgeSnapshotOut,
-    MarketRegimeOut, PersonalImpactOut, RecomputeResultOut,
+    AIDatasheetOut,
+    FinancialSignalOut,
+    KnowledgeSnapshotOut,
+    MarketRegimeOut,
+    PersonalImpactOut,
+    RecomputeResultOut,
 )
 
 router = APIRouter()

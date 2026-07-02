@@ -2,11 +2,12 @@
 import csv
 import io
 import time
-import requests
 from datetime import datetime, timezone
 
-from app.modules.market_intelligence.ingestion.models import AdapterResult, MarketQuote
+import requests
+
 from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter
+from app.modules.market_intelligence.ingestion.models import AdapterResult, MarketQuote
 
 _SOURCES = {
     "sp500": {"symbol": "^SPX", "name": "S&P 500", "currency": "USD", "country": "US", "stooq": "%5Espx", "yahoo": "%5EGSPC"},
@@ -114,7 +115,7 @@ def _fetch_yahoo_fallback(catalog_id: str, source: dict, retrieved_at: datetime)
         return []
 
     item = result[0]
-    timestamps = item.get("timestamp") or []
+    item.get("timestamp") or []
     quote = (item.get("indicators", {}).get("quote") or [{}])[0]
     closes = [value for value in quote.get("close", []) if value is not None]
     if not closes:

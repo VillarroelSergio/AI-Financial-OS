@@ -31,6 +31,24 @@ export default function MarketsPage() {
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const isIngesting = ingestStatus?.status === "running" || ingestStatus?.status === "idle";
 
+  const ingestFailures = (categories: string[]) =>
+    (ingestStatus?.results ?? []).filter((r) => !r.success && categories.includes(r.category));
+
+  const EmptySection = ({ categories, fallbackText }: { categories: string[]; fallbackText: string }) => {
+    const failures = ingestFailures(categories);
+    return (
+      <div className="p-8 text-center space-y-2">
+        <p className="text-stone text-body-sm">{fallbackText}</p>
+        {ingestStatus?.storage_warning && <p className="text-body-sm text-amber-200">{ingestStatus.storage_warning}</p>}
+        {failures.map((f) => (
+          <p key={f.indicator} className="text-caption text-stone">
+            {f.indicator}: {f.error ?? "sin datos"}
+          </p>
+        ))}
+      </div>
+    );
+  };
+
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
@@ -115,13 +133,15 @@ export default function MarketsPage() {
               <div className="divide-y divide-divider-soft">{market.crypto.map((q) => <QuoteRow key={q.catalog_item_id} quote={q} />)}</div>
             </>
           )}
-          {(!market || (market.indices.length === 0 && market.crypto.length === 0)) && <div className="p-8 text-center"><p className="text-stone text-body-sm">Sin datos de indices o cripto. La ingesta no ha devuelto esas secciones.</p></div>}
+          {(!market || (market.indices.length === 0 && market.crypto.length === 0)) && (
+            <EmptySection categories={["indices", "crypto"]} fallbackText="Sin datos de indices o cripto. La ingesta no ha devuelto esas secciones." />
+          )}
         </div>
       )}
 
       {!loading && activeTab === "commodities" && (
         <div className="premium-card rounded-lg overflow-hidden">
-          {market && market.commodities.length > 0 ? <div className="divide-y divide-divider-soft">{market.commodities.map((q) => <QuoteRow key={q.catalog_item_id} quote={q} />)}</div> : <div className="p-8 text-center"><p className="text-stone text-body-sm">Sin datos de materias primas disponibles.</p></div>}
+          {market && market.commodities.length > 0 ? <div className="divide-y divide-divider-soft">{market.commodities.map((q) => <QuoteRow key={q.catalog_item_id} quote={q} />)}</div> : <EmptySection categories={["commodities"]} fallbackText="Sin datos de materias primas disponibles." />}
         </div>
       )}
 

@@ -1,11 +1,13 @@
 """Tests para FinancialSignalEngine."""
 from __future__ import annotations
-from datetime import datetime, timezone
 
+from datetime import datetime, timezone
 
 from app.modules.financial_knowledge.engines import financial_signal_engine as engine
 from app.modules.financial_knowledge.models import (
-    EconomicIndicatorInsight, Trend, Severity,
+    EconomicIndicatorInsight,
+    Severity,
+    Trend,
 )
 
 

@@ -1,10 +1,15 @@
 import re
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+
 from app.core.database import get_db
 from app.modules.insights import repository, service
 from app.modules.insights.schemas import (
-    AnomaliesOut, DismissInsightOut, InsightsSummaryOut, MonthlyReviewOut,
+    AnomaliesOut,
+    DismissInsightOut,
+    InsightsSummaryOut,
+    MonthlyReviewOut,
 )
 
 router = APIRouter()

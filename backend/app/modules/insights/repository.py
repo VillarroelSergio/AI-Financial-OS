@@ -1,8 +1,10 @@
 """Minimal persistence for dismissed insights only. All other insights are computed on-demand."""
 from __future__ import annotations
+
 import json
 from datetime import datetime, timezone
 from pathlib import Path
+
 from app.core.config import settings
 
 _DB_URL = settings.DATABASE_URL

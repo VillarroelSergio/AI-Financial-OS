@@ -1,14 +1,18 @@
 from datetime import datetime, timezone
 
 from app.modules.market_intelligence.catalog.schemas import CatalogIndicator
-from app.modules.market_intelligence.ingestion.orchestrator import CatalogFetchResult
 from app.modules.market_intelligence.ingestion.models import (
-    AdapterResult, ProviderMetadata, MacroIndicator,
+    AdapterResult,
+    MacroIndicator,
+    ProviderMetadata,
+)
+from app.modules.market_intelligence.ingestion.orchestrator import CatalogFetchResult
+from app.modules.market_intelligence.quality.checks import (
+    WEIGHTS,
+    check_completeness,
+    check_validity,
 )
 from app.modules.market_intelligence.quality.engine import QualityEngine
-from app.modules.market_intelligence.quality.checks import (
-    check_freshness, check_completeness, check_validity, WEIGHTS,
-)
 
 
 def _meta():

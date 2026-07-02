@@ -1,7 +1,7 @@
 """Tests para EconomicIndicatorEngine."""
 from __future__ import annotations
-from datetime import datetime, timezone
 
+from datetime import datetime, timezone
 
 from app.modules.financial_knowledge.engines import economic_indicator_engine as engine
 from app.modules.financial_knowledge.models import Severity

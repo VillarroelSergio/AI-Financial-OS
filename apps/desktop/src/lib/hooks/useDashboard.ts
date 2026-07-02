@@ -3,8 +3,10 @@ import {
   fetchCategorySpendingDetail,
   fetchOverview,
   fetchSpending,
+  fetchSpendingMonthly,
   fetchSpendingYears,
   type CategorySpendingDetail,
+  type MonthlySpendingPoint,
   type SpendingData,
 } from "@/lib/api/dashboard";
 import { useAsyncData } from "@/lib/hooks/useAsyncData";
@@ -33,6 +35,14 @@ export function useSpending(period: { mode: "month" | "year"; month: string; yea
 export function useSpendingYears() {
   const { data } = useAsyncData(fetchSpendingYears);
   return data?.years ?? [];
+}
+
+export function useSpendingMonthly(months = 12) {
+  const [data, setData] = useState<MonthlySpendingPoint[]>([]);
+  useEffect(() => {
+    fetchSpendingMonthly(months).then(setData).catch(() => {});
+  }, [months]);
+  return data;
 }
 
 export function useCategorySpendingDetail(

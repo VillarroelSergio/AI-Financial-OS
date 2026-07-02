@@ -1,8 +1,10 @@
 """Correlation Engine — relaciona señales macro con activos y dominios personales."""
 from __future__ import annotations
+
 import logging
 
-from app.modules.financial_knowledge._shared import uid as _uid, now as _now
+from app.modules.financial_knowledge._shared import now as _now
+from app.modules.financial_knowledge._shared import uid as _uid
 from app.modules.financial_knowledge.models import CorrelationInsight, FinancialSignal
 
 logger = logging.getLogger("financial_knowledge.correlation_engine")

@@ -1,11 +1,28 @@
+import re
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.models.account import Account
 from app.models.transaction import Transaction
-from app.modules.transactions.schemas import TransactionCreate, TransactionOut, TransactionUpdate
+from app.modules.security.service import create_backup
+from app.modules.transactions.schemas import (
+    CurrencyReassign,
+    TransactionCreate,
+    TransactionOut,
+    TransactionUpdate,
+)
 
 router = APIRouter()
+
+
+def _stamp_account_names(db: Session, txs: list[Transaction]) -> list[Transaction]:
+    # Incluye cuentas inactivas: las tx pueden apuntar a cuentas soft-deleted.
+    names = {a.id: a.name for a in db.query(Account.id, Account.name)}
+    for tx in txs:
+        tx.account_name = names.get(tx.account_id)
+    return txs
 
 
 @router.get("", response_model=list[TransactionOut])
@@ -31,7 +48,32 @@ def list_transactions(
         q = q.filter(Transaction.type == type)
     if source:
         q = q.filter(Transaction.source == source)
-    return q.order_by(Transaction.date.desc()).all()
+    return _stamp_account_names(db, q.order_by(Transaction.date.desc()).all())
+
+
+@router.post("/currency-reassign")
+def reassign_currency(payload: CurrencyReassign, db: Session = Depends(get_db)) -> dict:
+    src = payload.from_currency.strip().upper()
+    dst = payload.to_currency.strip().upper()
+    if not (re.fullmatch(r"[A-Z]{3}", src) and re.fullmatch(r"[A-Z]{3}", dst)) or src == dst:
+        raise HTTPException(
+            status_code=422,
+            detail={"error": {"code": "INVALID_CURRENCY", "message": "Divisas ISO de 3 letras y distintas", "details": {}}},
+        )
+    q = db.query(Transaction).filter(Transaction.currency == src)
+    affected = q.count()
+    if payload.preview:
+        return {"affected": affected, "applied": False, "from_currency": src, "to_currency": dst}
+    backup = create_backup()
+    q.update({"currency": dst})
+    db.commit()
+    return {
+        "affected": affected,
+        "applied": True,
+        "from_currency": src,
+        "to_currency": dst,
+        "backup_filename": backup["filename"],
+    }
 
 
 @router.post("", response_model=TransactionOut, status_code=201)
@@ -40,7 +82,7 @@ def create_transaction(payload: TransactionCreate, db: Session = Depends(get_db)
     db.add(tx)
     db.commit()
     db.refresh(tx)
-    return tx
+    return _stamp_account_names(db, [tx])[0]
 
 
 @router.patch("/{tx_id}", response_model=TransactionOut)
@@ -55,7 +97,7 @@ def update_transaction(tx_id: str, payload: TransactionUpdate, db: Session = Dep
         setattr(tx, field, value)
     db.commit()
     db.refresh(tx)
-    return tx
+    return _stamp_account_names(db, [tx])[0]
 
 
 @router.delete("/{tx_id}", status_code=204)

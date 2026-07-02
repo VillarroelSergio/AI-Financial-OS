@@ -1,5 +1,6 @@
 import hashlib
 import json
+import re
 from datetime import datetime, timezone
 from decimal import Decimal
 
@@ -118,6 +119,9 @@ def confirm(batch_id: str, payload: ConfirmImport, db: Session = Depends(get_db)
     mapping = (
         payload.mapping.model_dump() if payload.mapping else json.loads(batch.mapping_json or "{}")
     )
+    currency_override = (payload.currency_override or "").strip().upper() or None
+    if currency_override and not re.fullmatch(r"[A-Z]{3}", currency_override):
+        raise fail(422, "INVALID_CURRENCY", "La divisa debe ser un código ISO de 3 letras")
     rows = db.query(ImportRow).filter(ImportRow.import_batch_id == batch_id).all()
     imported = 0
     for row in rows:
@@ -125,6 +129,8 @@ def confirm(batch_id: str, payload: ConfirmImport, db: Session = Depends(get_db)
         normalized, errors, _ = normalize_row(raw, mapping)
         if errors or row.status == "duplicate":
             continue
+        if currency_override:
+            normalized["currency"] = currency_override
         account_name = normalized["account"]
         account = db.query(Account).filter(Account.name == account_name).first()
         if not account:

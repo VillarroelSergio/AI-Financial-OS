@@ -1,13 +1,17 @@
 import { useMemo, useState } from "react";
-import { BarChart3, CalendarDays, ChevronLeft, ChevronRight, ReceiptText, TrendingDown, TrendingUp, Wallet } from "lucide-react";
-import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { CalendarDays, ChevronLeft, ChevronRight, ReceiptText, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { Bar, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ChartCard, EmptyState, KpiCard, LoadingState, PageHeader } from "@/components/ui/Dashboard";
-import { useSpending, useSpendingYears } from "@/lib/hooks/useDashboard";
+import { useSpending, useSpendingMonthly, useSpendingYears } from "@/lib/hooks/useDashboard";
 import { formatCurrency, formatPercent } from "@/lib/formatters/currency";
 import type { CategorySpending } from "@/lib/api/dashboard";
 import ExpenseCategoryDetailDrawer from "./ExpenseCategoryDetailDrawer";
 
-const COLORS = ["#7c83ff", "#2ad2a0", "#f4b95f", "#ff5f74", "#58c9f7", "#a3a8ff"];
+// Paleta validada (banda de luminosidad, CVD y contraste sobre superficie oscura)
+const EXPENSE_COLOR = "#7c83ff";
+const INCOME_COLOR = "#1cab84";
+const SAVINGS_LINE = "#a8adb3";
+const MONTH_LABEL = new Intl.DateTimeFormat("es-ES", { month: "short" });
 const currentMonth = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; };
 const moveMonth = (value: string, delta: number) => { const [y, m] = value.split("-").map(Number); const d = new Date(y, m - 1 + delta, 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; };
 
@@ -20,6 +24,18 @@ export default function SpendingPage() {
   const loadedYears = useSpendingYears();
   const yearOptions = loadedYears.length ? loadedYears : [year];
   const { data, loading } = useSpending({ mode, month, year });
+  const monthly = useSpendingMonthly(12);
+  const trendData = useMemo(
+    () =>
+      monthly.map((p) => ({
+        month: p.month,
+        label: MONTH_LABEL.format(new Date(`${p.month}-01T00:00:00`)),
+        income: Number(p.income),
+        expense: Number(p.expense),
+        savings: Number(p.savings),
+      })),
+    [monthly],
+  );
   const expense = Number(data?.total_expense ?? 0);
   const income = Number(data?.total_income ?? 0);
   const net = Number(data?.net_savings ?? income - expense);
@@ -84,59 +100,55 @@ export default function SpendingPage() {
         <EmptyState icon={ReceiptText} title="No hay movimientos este periodo" description="Importa o registra movimientos para ver porcentajes por categoria y evolucion de ahorro." />
       ) : (
         <div className="dashboard-grid">
-          <ChartCard className="col-span-4" title="Porcentaje por categoria" description="Categorias pequenas agrupadas en Otros">
+          <ChartCard className="col-span-6" title="Evolucion mensual" description="Gasto e ingreso de los ultimos 12 meses; haz click en un mes para verlo en detalle">
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={categories}
-                    dataKey="percentage"
-                    nameKey="category"
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={56}
-                    outerRadius={88}
-                    paddingAngle={2}
-                    label={({ payload }) => {
-                      const cat = payload as { category?: string; percentage?: number };
-                      return `${cat.category ?? ""} ${Number(cat.percentage ?? 0).toFixed(1)}%`;
-                    }}
-                    labelLine={false}
-                    fontSize={10}
-                    onClick={(entry) => setSelectedCategory(entry as unknown as CategorySpending)}
-                    className="cursor-pointer"
-                  >
-                    {categories.map((cat, index) => <Cell key={cat.category_id ?? cat.category} fill={COLORS[index % COLORS.length]} />)}
-                  </Pie>
-                  <Tooltip formatter={(value, _name, item) => [`${Number(value).toFixed(1)}%`, item.payload.category]} contentStyle={{ background: "#16181a", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, color: "#fff", fontSize: 12 }} />
-                </PieChart>
+                <ComposedChart data={trendData} barGap={2} onClick={(state) => {
+                  const payload = (state as { activePayload?: { payload?: { month?: string } }[] })?.activePayload;
+                  const m = payload?.[0]?.payload?.month;
+                  if (m) { setMode("month"); setMonth(m); setYear(Number(m.slice(0, 4))); }
+                }}>
+                  <XAxis dataKey="label" tick={{ fill: "#a8adb3", fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: "#a8adb3", fontSize: 11 }} axisLine={false} tickLine={false} width={54} tickFormatter={(v: number) => `${Math.round(v)}€`} />
+                  <Tooltip
+                    formatter={(value, name) => [formatCurrency(Number(value)), name === "expense" ? "Gasto" : name === "income" ? "Ingreso" : "Ahorro"]}
+                    labelFormatter={(label, payload) => payload?.[0]?.payload?.month ?? label}
+                    contentStyle={{ background: "#16181a", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, color: "#fff", fontSize: 12 }}
+                    cursor={{ fill: "rgba(255,255,255,0.04)" }}
+                  />
+                  <Bar dataKey="income" fill={INCOME_COLOR} radius={[4, 4, 0, 0]} maxBarSize={16} className="cursor-pointer" />
+                  <Bar dataKey="expense" fill={EXPENSE_COLOR} radius={[4, 4, 0, 0]} maxBarSize={16} className="cursor-pointer" />
+                  <Line dataKey="savings" stroke={SAVINGS_LINE} strokeWidth={2} dot={false} type="monotone" />
+                </ComposedChart>
               </ResponsiveContainer>
+            </div>
+            <div className="mt-3 flex items-center gap-5 text-xs text-stone">
+              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: INCOME_COLOR }} />Ingreso</span>
+              <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ background: EXPENSE_COLOR }} />Gasto</span>
+              <span className="flex items-center gap-1.5"><span className="inline-block h-0.5 w-3.5" style={{ background: SAVINGS_LINE }} />Ahorro</span>
             </div>
           </ChartCard>
 
-          <ChartCard className="col-span-8" title="Gasto por categoria" description="Importe y porcentaje sobre el gasto mensual">
+          <ChartCard className="col-span-6" title="Gasto por categoria" description="Importe y porcentaje sobre el gasto del periodo">
             <div className="space-y-5">
-              {categories.map((cat, index) => (
+              {categories.map((cat) => (
                 <button key={cat.category_id ?? cat.category} type="button" onClick={() => setSelectedCategory(cat)} className="block w-full rounded-lg text-left transition-colors hover:bg-white/[0.03] focus:outline-none focus:ring-1 focus:ring-primary">
                   <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-center gap-2 text-sm min-w-0">
-                      <span className="h-2.5 w-2.5 rounded-full shrink-0" style={{ background: COLORS[index % COLORS.length] }} />
-                      <span className="truncate">{cat.category}</span>
-                    </div>
+                    <span className="truncate text-sm">{cat.category}</span>
                     <div className="financial-number text-right text-sm shrink-0">
                       <span>{formatCurrency(cat.amount)}</span>
                       <span className="ml-3 inline-block w-16 text-stone">{cat.percentage.toFixed(1)}%</span>
                     </div>
                   </div>
                   <div className="mt-2.5 h-2 rounded-full bg-white/5 overflow-hidden">
-                    <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(2, cat.percentage)}%`, background: COLORS[index % COLORS.length] }} />
+                    <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(2, cat.percentage)}%`, background: EXPENSE_COLOR }} />
                   </div>
                 </button>
               ))}
             </div>
           </ChartCard>
 
-          <ChartCard className="col-span-8" title={mode === "year" ? "Evolucion anual" : "Lectura del periodo"} description="Resumen claro sin mezclar bases de calculo">
+          <ChartCard className="col-span-12" title="Lectura del periodo" description="Resumen claro sin mezclar bases de calculo">
             <div className="grid grid-cols-3 gap-4">
               <div className="rounded-lg border border-hairline-dark bg-primary/10 p-4">
                 <p className="text-xs text-primary-bright">Mayor categoria</p>
@@ -153,20 +165,6 @@ export default function SpendingPage() {
                 <p className="mt-2 font-semibold">{mode === "month" ? "Mes" : "Ano"}</p>
                 <p className="mt-1 text-sm text-stone">{mode === "month" ? month : year}</p>
               </div>
-            </div>
-          </ChartCard>
-          <ChartCard className="col-span-4" title="Control visual" description="Comparacion rapida">
-            <div className="flex h-44 items-end gap-3">
-              {categories.slice(0, 6).map((cat, index) => (
-                <button key={cat.category_id ?? cat.category} type="button" onClick={() => setSelectedCategory(cat)} className="flex flex-1 flex-col items-center gap-2 rounded-lg transition-colors hover:bg-white/[0.03] focus:outline-none focus:ring-1 focus:ring-primary">
-                  <div className="w-full rounded-t-lg" style={{ height: `${Math.max(10, cat.percentage * 1.4)}px`, background: COLORS[index % COLORS.length] }} />
-                  <div className="flex min-h-10 flex-col items-center justify-start gap-1 text-center">
-                    <BarChart3 size={14} className="text-stone" />
-                    <span className="max-w-full truncate text-[10px] text-stone" title={cat.category}>{cat.category}</span>
-                    <span className="financial-number text-[10px] text-on-dark">{cat.percentage.toFixed(1)}%</span>
-                  </div>
-                </button>
-              ))}
             </div>
           </ChartCard>
         </div>

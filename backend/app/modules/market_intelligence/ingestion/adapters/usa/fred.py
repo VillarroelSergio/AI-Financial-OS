@@ -8,9 +8,12 @@ from datetime import datetime, timezone
 import requests
 
 from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter
-from app.modules.market_intelligence.ingestion.models import YieldCurvePoint
-from app.modules.market_intelligence.ingestion.models import AdapterResult, ProviderMetadata
-from app.modules.market_intelligence.ingestion.models import MacroIndicator
+from app.modules.market_intelligence.ingestion.models import (
+    AdapterResult,
+    MacroIndicator,
+    ProviderMetadata,
+    YieldCurvePoint,
+)
 
 logger = logging.getLogger("market_intelligence.adapters.fred")
 
@@ -42,6 +45,15 @@ _INDICATOR_SERIES: dict[str, list[str]] = {
     "industrial_production_usa": ["INDPRO"],  # FRED INDPRO series
     "consumer_sentiment_usa": ["UMCSENT"],    # U of Michigan via FRED
     "m2_usa": ["M2SL"],                       # M2 Money Supply
+}
+
+# Unidad real de cada serie FRED (INDPRO/UMCSENT son índices, no porcentajes)
+_SERIES_UNITS: dict[str, str] = {
+    "UNRATE": "%",
+    "FEDFUNDS": "%",
+    "INDPRO": "index",
+    "UMCSENT": "index",
+    "M2SL": "USD bn",
 }
 
 # URLs for the extra series (not available via the simple fredgraph.csv endpoint in all cases)
@@ -87,7 +99,9 @@ def _metadata() -> ProviderMetadata:
     )
 
 
-def _parse_fred_csv(text: str, indicator_id: str, name: str, source_url: str, n: int = 3) -> list[MacroIndicator]:
+def _parse_fred_csv(
+    text: str, indicator_id: str, name: str, source_url: str, n: int = 3, unit: str = "%"
+) -> list[MacroIndicator]:
     reader = csv.DictReader(io.StringIO(text))
     records: list[MacroIndicator] = []
     fields = [field for field in (reader.fieldnames or []) if field and field.upper() != "DATE"]
@@ -114,7 +128,7 @@ def _parse_fred_csv(text: str, indicator_id: str, name: str, source_url: str, n:
                     indicator_id=series_id,
                     name=name if column == "VALUE" else f"FRED {column}",
                     value=value,
-                    unit="%",
+                    unit=unit,
                     period=date_str,
                     frequency="monthly",
                 )
@@ -176,7 +190,7 @@ class FREDAdapter(BaseAdapter):
                     response = requests.get(url, headers=_HEADERS, timeout=10)
                     response.raise_for_status()
                     raw_sample = raw_sample or {"macro_preview": response.text[:500]}
-                    records.extend(_parse_fred_csv(response.text, sid, name, url))
+                    records.extend(_parse_fred_csv(response.text, sid, name, url, unit="%"))
                 except Exception as exc:
                     errors.append(f"{sid}: {exc}")
 
@@ -246,7 +260,9 @@ class FREDAdapter(BaseAdapter):
                     response = requests.get(url, headers=_HEADERS, timeout=10)
                     response.raise_for_status()
                     raw_sample = raw_sample or {"preview": response.text[:500]}
-                    records.extend(_parse_fred_csv(response.text, series_id, name, url))
+                    records.extend(
+                        _parse_fred_csv(response.text, series_id, name, url, unit=_SERIES_UNITS.get(series_id, "%"))
+                    )
                 except Exception as exc:
                     logger.warning("FRED fetch error for %s (%s): %s", indicator_id, series_id, exc)
                     errors.append(f"{series_id}: {exc}")

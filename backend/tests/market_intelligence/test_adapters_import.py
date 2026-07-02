@@ -1,7 +1,7 @@
 """Verifica que todos los adapters migrados se importan sin error."""
 import importlib
-import pytest
 
+import pytest
 
 ADAPTER_MODULES = [
     "app.modules.market_intelligence.ingestion.adapters.base",
@@ -34,9 +34,10 @@ def test_base_adapter_has_required_interface():
 
 def test_fred_adapter_fetch_bond_by_catalog_id_returns_yield():
     """us_2y (catalog ID) debe mapear a DGS2 y devolver un YieldCurvePoint, no un error."""
+    from unittest.mock import MagicMock, patch
+
     from app.modules.market_intelligence.ingestion.adapters.usa.fred import FREDAdapter
     from app.modules.market_intelligence.ingestion.models import YieldCurvePoint
-    from unittest.mock import patch, MagicMock
 
     csv_content = "DATE,VALUE\n2026-05-01,4.20\n2026-06-01,4.15\n"
     mock_response = MagicMock()

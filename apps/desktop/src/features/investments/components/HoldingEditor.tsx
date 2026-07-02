@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
-import { Save, X } from "lucide-react";
+import { Save, Search, X } from "lucide-react";
 import type { Account, AssetType, HoldingEnriched } from "@/lib/types";
-import { createAsset, createHolding, updateAsset, updateHolding } from "@/lib/api/investments";
+import { createAsset, createHolding, searchAssetCandidates, updateAsset, updateHolding, type AssetSearchCandidate } from "@/lib/api/investments";
 
 const ASSET_TYPES: { value: AssetType; label: string }[] = [
   { value: "stock", label: "Accion" },
@@ -36,6 +36,38 @@ export default function HoldingEditor({ holding, accounts, onClose, onSaved }: H
     sector: "",
     region: "",
   });
+
+  const [candidates, setCandidates] = useState<AssetSearchCandidate[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [showCandidates, setShowCandidates] = useState(false);
+
+  // Búsqueda con debounce al escribir el nombre (registro conocido + yfinance)
+  useEffect(() => {
+    if (holding || form.name.trim().length < 2 || !showCandidates) return;
+    const timer = setTimeout(async () => {
+      setSearching(true);
+      try {
+        setCandidates(await searchAssetCandidates(form.name.trim()));
+      } catch {
+        setCandidates([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [form.name, holding, showCandidates]);
+
+  const pickCandidate = (c: AssetSearchCandidate) => {
+    setForm((current) => ({
+      ...current,
+      name: c.name,
+      ticker: c.ticker,
+      currency: c.currency || current.currency,
+      asset_type: (["stock", "etf", "fund", "crypto", "bond"].includes(c.asset_type) ? c.asset_type : "stock") as AssetType,
+    }));
+    setShowCandidates(false);
+    setCandidates([]);
+  };
 
   useEffect(() => {
     if (!holding) return;
@@ -118,9 +150,35 @@ export default function HoldingEditor({ holding, accounts, onClose, onSaved }: H
             {ASSET_TYPES.map((type) => <option key={type.value} value={type.value}>{type.label}</option>)}
           </select>
         </label>
-        <label className="space-y-xs">
+        <label className="space-y-xs relative">
           <span className="text-caption text-stone">Nombre</span>
-          <input className="w-full bg-surface-elevated border border-hairline-dark rounded-sm px-md py-sm text-body-sm text-on-dark" value={form.name} onChange={(e) => set("name", e.target.value)} placeholder="Ej. S&P 500 ETF" />
+          <div className="relative">
+            <input
+              className="w-full bg-surface-elevated border border-hairline-dark rounded-sm px-md py-sm pr-8 text-body-sm text-on-dark"
+              value={form.name}
+              onChange={(e) => { set("name", e.target.value); setShowCandidates(true); }}
+              placeholder="Busca: Iberdrola, Apple, VUSA..."
+              autoComplete="off"
+            />
+            <Search size={14} className={`absolute right-2.5 top-1/2 -translate-y-1/2 ${searching ? "text-primary-bright animate-pulse" : "text-stone"}`} />
+          </div>
+          {showCandidates && candidates.length > 0 && (
+            <ul className="absolute z-20 mt-1 w-[130%] min-w-[280px] rounded-md border border-hairline-dark bg-surface-elevated shadow-lg overflow-hidden">
+              {candidates.map((c) => (
+                <li key={c.ticker}>
+                  <button
+                    type="button"
+                    onClick={() => pickCandidate(c)}
+                    className="w-full px-md py-sm text-left hover:bg-white/[.06]"
+                  >
+                    <span className="text-body-sm text-on-dark">{c.name}</span>
+                    <span className="ml-2 text-caption text-stone">{c.ticker} · {c.exchange}{c.currency ? ` · ${c.currency}` : ""}</span>
+                    {c.requires_confirmation && <p className="text-caption text-amber-200 mt-0.5">{c.confirmation_note}</p>}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </label>
         <label className="space-y-xs">
           <span className="text-caption text-stone">Ticker / simbolo</span>

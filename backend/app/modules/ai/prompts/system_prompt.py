@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-
 SYSTEM_PROMPT_BASE = """Eres un asistente financiero personal local, integrado en AI Financial OS.
 
 ## Tus capacidades

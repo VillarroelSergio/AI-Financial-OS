@@ -3,6 +3,7 @@
 Ejecutar run_migrations(conn) al arrancar.
 """
 from __future__ import annotations
+
 import duckdb
 
 _DDL_STATEMENTS = [

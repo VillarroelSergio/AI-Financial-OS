@@ -3,6 +3,8 @@ import { Bot, Copy, Database, HardDrive, Lock, ShieldCheck } from "lucide-react"
 import { PageHeader } from "@/components/ui/Dashboard";
 import Spinner from "@/components/ui/Spinner";
 import { fetchSettings, updateSetting, type AppSetting } from "@/lib/api/settings";
+import { reassignCurrency } from "@/lib/api/transactions";
+import { purgeInactiveAccounts } from "@/lib/api/accounts";
 import { getAiStatus } from "@/features/assistant/api/aiAssistantApi";
 import type { AiStatus } from "@/features/assistant/types/aiAssistant.types";
 import { createBackup, fetchBackups, fetchIntegrity, fetchSecurityStatus, type BackupInfo, type IntegrityCheck, type SecurityStatus } from "@/lib/api/security";
@@ -21,6 +23,10 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState<string | null>(null);
   const [backupBusy, setBackupBusy] = useState(false);
   const [systemError, setSystemError] = useState<string | null>(null);
+  const [currencyFixBusy, setCurrencyFixBusy] = useState(false);
+  const [currencyFixMessage, setCurrencyFixMessage] = useState<string | null>(null);
+  const [purgeBusy, setPurgeBusy] = useState(false);
+  const [purgeMessage, setPurgeMessage] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.allSettled([fetchSettings(), getAiStatus(), fetchSecurityStatus(), fetchBackups(), fetchIntegrity(), fetchRagDocuments()])
@@ -68,6 +74,53 @@ export default function SettingsPage() {
       setSystemError(e instanceof Error ? e.message : "No se ha podido crear el backup");
     } finally {
       setBackupBusy(false);
+    }
+  };
+
+  const handleCurrencyFix = async () => {
+    setCurrencyFixBusy(true);
+    setCurrencyFixMessage(null);
+    try {
+      const target = getValue("app.currency") || "EUR";
+      const preview = await reassignCurrency("USD", target, true);
+      if (!preview.affected) {
+        setCurrencyFixMessage("No hay movimientos en USD que corregir.");
+        return;
+      }
+      const ok = window.confirm(
+        `Se reasignaran ${preview.affected} movimientos de USD a ${target}. ` +
+          "Los importes no cambian de valor, solo la divisa. Se creara un backup previo. ¿Continuar?"
+      );
+      if (!ok) return;
+      const result = await reassignCurrency("USD", target, false);
+      setCurrencyFixMessage(`${result.affected} movimientos corregidos a ${target}. Backup: ${result.backup_filename}`);
+    } catch (e) {
+      setCurrencyFixMessage(e instanceof Error ? e.message : "No se pudo corregir la divisa");
+    } finally {
+      setCurrencyFixBusy(false);
+    }
+  };
+
+  const handlePurgeAccounts = async () => {
+    setPurgeBusy(true);
+    setPurgeMessage(null);
+    try {
+      const preview = await purgeInactiveAccounts(true);
+      if (!preview.affected) {
+        setPurgeMessage("No hay cuentas duplicadas inactivas que limpiar.");
+        return;
+      }
+      const ok = window.confirm(
+        `Se eliminarán ${preview.affected} cuentas inactivas sin movimientos ni posiciones: ` +
+          `${preview.names.join(", ")}. ¿Continuar?`
+      );
+      if (!ok) return;
+      const result = await purgeInactiveAccounts(false);
+      setPurgeMessage(`${result.affected} cuentas eliminadas.`);
+    } catch (e) {
+      setPurgeMessage(e instanceof Error ? e.message : "No se pudo limpiar cuentas");
+    } finally {
+      setPurgeBusy(false);
     }
   };
 
@@ -160,8 +213,12 @@ export default function SettingsPage() {
           </div>
           <div className="mt-5 grid gap-3">
             {[
-              ["Estado asistente", aiStatus?.enabled ? "Activo" : aiError ?? "Sin provider activo"],
-              ["Proveedor IA", aiStatus?.default_provider ?? "No configurado"],
+              ["Estado asistente", aiStatus?.enabled
+                ? (providerStatus.some((p) => p.available) ? "Activo" : "Proveedor offline")
+                : aiError ?? "Sin provider activo"],
+              ["Proveedor IA", aiStatus?.default_provider
+                ? ({ lmstudio: "LM Studio", ollama: "Ollama" }[aiStatus.default_provider.toLowerCase()] ?? aiStatus.default_provider)
+                : "No configurado"],
               ["Modelo IA", aiStatus?.default_model ?? "No configurado"],
               ["Ollama", providerStatus.find((p) => p.name.toLowerCase().includes("ollama"))?.available ? "Disponible" : "No disponible"],
               ["LM Studio", providerStatus.find((p) => p.name.toLowerCase().includes("lm"))?.available ? "Disponible" : "No disponible"],
@@ -191,9 +248,13 @@ export default function SettingsPage() {
         </section>
         <section className="premium-card rounded-lg p-5">
           <HardDrive className="text-accent-warning" size={20} />
-          <h2 className="mt-3 text-base font-semibold text-on-dark">Ruta local de datos</h2>
-          <p className="mt-2 break-all text-sm leading-6 text-stone">{security?.database_path ?? "Ruta no disponible"}</p>
-          {security?.database_path && <button onClick={() => navigator.clipboard?.writeText(security.database_path)} className="mt-3 inline-flex items-center gap-2 rounded-lg border border-hairline-dark px-3 py-2 text-xs text-stone hover:text-on-dark"><Copy size={13} />Copiar ruta</button>}
+          <h2 className="mt-3 text-base font-semibold text-on-dark">Datos locales</h2>
+          <p className="mt-2 break-all text-sm leading-6 text-stone">
+            {security?.database_filename
+              ? `${security.database_filename} en la carpeta de datos del backend (backend/data/)`
+              : "No disponible"}
+          </p>
+          {security?.database_filename && <button onClick={() => navigator.clipboard?.writeText(security.database_filename)} className="mt-3 inline-flex items-center gap-2 rounded-lg border border-hairline-dark px-3 py-2 text-xs text-stone hover:text-on-dark"><Copy size={13} />Copiar nombre</button>}
         </section>
       </div>
 
@@ -217,12 +278,33 @@ export default function SettingsPage() {
             <div key={backup.filename} className="flex items-center justify-between gap-3 rounded-lg border border-hairline-dark bg-white/[.03] px-3 py-2">
               <div className="min-w-0">
                 <p className="truncate text-xs text-on-dark">{backup.filename}</p>
-                <p className="truncate text-[11px] text-stone">{backup.path}</p>
+                <p className="truncate text-[11px] text-stone">{new Date(backup.created_at).toLocaleString("es-ES")}</p>
               </div>
               <span className="financial-number shrink-0 text-xs text-stone">{(backup.size_bytes / 1024).toFixed(1)} KB</span>
             </div>
           ))}
         </div>
+      </section>
+
+      <section className="premium-card rounded-lg p-5">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 className="text-base font-semibold text-on-dark">Mantenimiento de datos</h2>
+            <p className="mt-1 text-sm text-stone">
+              Corrige movimientos importados con divisa USD reasignandolos a la moneda predeterminada. Se muestra un resumen antes de aplicar y se crea un backup.
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <button onClick={handleCurrencyFix} disabled={currencyFixBusy} className="rounded-lg border border-hairline-dark px-4 py-2 text-sm text-on-dark hover:bg-white/[.05] disabled:opacity-50">
+              {currencyFixBusy ? "Comprobando..." : "Corregir divisa USD"}
+            </button>
+            <button onClick={handlePurgeAccounts} disabled={purgeBusy} className="rounded-lg border border-hairline-dark px-4 py-2 text-sm text-on-dark hover:bg-white/[.05] disabled:opacity-50">
+              {purgeBusy ? "Comprobando..." : "Limpiar cuentas duplicadas"}
+            </button>
+          </div>
+        </div>
+        {currencyFixMessage && <p className="mt-3 text-sm text-stone">{currencyFixMessage}</p>}
+        {purgeMessage && <p className="mt-3 text-sm text-stone">{purgeMessage}</p>}
       </section>
 
       <section className="premium-card rounded-lg p-5">

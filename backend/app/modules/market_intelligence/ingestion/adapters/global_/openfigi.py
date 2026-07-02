@@ -6,8 +6,7 @@ import requests
 
 from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter, redact_api_key
 from app.modules.market_intelligence.ingestion.config import get_api_key
-from app.modules.market_intelligence.ingestion.models import AdapterResult
-from app.modules.market_intelligence.ingestion.models import CompanyProfile
+from app.modules.market_intelligence.ingestion.models import AdapterResult, CompanyProfile
 
 _BASE_URL = "https://api.openfigi.com/v3/mapping"
 

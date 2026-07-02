@@ -11,6 +11,12 @@ dist-ssr/
 # Tauri
 apps/desktop/src-tauri/target/
 apps/desktop/src-tauri/gen/
+apps/desktop/src-tauri/binaries/backend/*
+!apps/desktop/src-tauri/binaries/backend/.gitkeep
+
+# PyInstaller (build de release del backend)
+backend/build/
+backend/*.spec.bak
 
 # Python
 __pycache__/

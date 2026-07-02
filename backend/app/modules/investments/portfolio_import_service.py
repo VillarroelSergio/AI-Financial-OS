@@ -35,7 +35,6 @@ from app.models.investment import Holding, InvestmentAsset
 from app.modules.investments.asset_resolution import resolve_asset
 from app.modules.investments.price_coverage_audit import audit_asset
 
-
 # ── Number / currency helpers ─────────────────────────────────────────────────
 
 _CURRENCY_SYMBOLS: dict[str, str] = {
@@ -177,6 +176,93 @@ def parse_text_positions(text: str) -> list[RawPosition]:
         if pos:
             positions.append(pos)
 
+    return positions
+
+
+# ── Image extraction via local vision model ──────────────────────────────────
+
+_VISION_PROMPT = (
+    "Extrae las posiciones de inversión visibles en esta captura de pantalla de un broker. "
+    "Devuelve SOLO un array JSON válido, sin markdown ni texto adicional, con un objeto por posición: "
+    '[{"name": "<nombre del activo>", "quantity": <número o null>, '
+    '"current_value": <valor actual numérico o null>, "currency": "<EUR|USD|GBP o null>", '
+    '"return_pct": <rentabilidad % numérica con signo o null>}]. '
+    "Usa punto como separador decimal. Si un dato no es visible, usa null. "
+    "Si no hay posiciones, devuelve []."
+)
+
+
+async def extract_positions_from_image(
+    image_b64: str, media_type: str, provider_name: str | None = None
+) -> list[RawPosition]:
+    """Extrae posiciones de una captura usando el modelo de visión IA local.
+
+    Lanza RuntimeError con mensaje legible si el proveedor no está disponible
+    o la respuesta no es JSON interpretable (p. ej. modelo sin visión).
+    """
+    from app.modules.ai.service import get_provider
+
+    provider = get_provider(provider_name)
+    health = await provider.health()
+    if not health.available:
+        raise RuntimeError(
+            f"El proveedor IA local ({provider.name}) no está disponible: {health.error or 'offline'}. "
+            "Arranca Ollama o LM Studio con un modelo de visión (p. ej. qwen2.5-vl, llava)."
+        )
+
+    if provider.name == "ollama":
+        message = {"role": "user", "content": _VISION_PROMPT, "images": [image_b64]}
+    else:
+        # OpenAI-compatible (LM Studio): content como array texto + imagen
+        message = {
+            "role": "user",
+            "content": [
+                {"type": "text", "text": _VISION_PROMPT},
+                {"type": "image_url", "image_url": {"url": f"data:{media_type};base64,{image_b64}"}},
+            ],
+        }
+
+    response = await provider.chat(messages=[message], tools=None)
+    text = (response.content or "").strip()
+    if text.startswith("```"):
+        lines = text.splitlines()
+        text = "\n".join(lines[1:-1] if lines[-1].strip() == "```" else lines[1:])
+    start, end = text.find("["), text.rfind("]")
+    if start == -1 or end == -1:
+        raise RuntimeError(
+            "El modelo no devolvió posiciones en formato JSON. "
+            "Comprueba que el modelo cargado soporta visión (qwen2.5-vl, llava, minicpm-v)."
+        )
+
+    import json as _json
+
+    try:
+        items = _json.loads(text[start : end + 1])
+    except _json.JSONDecodeError as exc:
+        raise RuntimeError(f"Respuesta del modelo no interpretable como JSON: {exc}") from exc
+
+    positions: list[RawPosition] = []
+    for item in items:
+        if not isinstance(item, dict) or not item.get("name"):
+            continue
+        currency = (item.get("currency") or "").upper() or None
+
+        def _num(value: object) -> Optional[float]:
+            try:
+                return float(value) if value is not None else None
+            except (TypeError, ValueError):
+                return None
+
+        positions.append(
+            RawPosition(
+                raw_name=str(item["name"]).strip(),
+                quantity=_num(item.get("quantity")),
+                current_value=_num(item.get("current_value")),
+                current_value_currency=currency,
+                return_pct=_num(item.get("return_pct")),
+                raw_text=_json.dumps(item, ensure_ascii=False),
+            )
+        )
     return positions
 
 

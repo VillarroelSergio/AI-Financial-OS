@@ -19,10 +19,20 @@ logger = logging.getLogger(__name__)
 
 _conn: Optional[duckdb.DuckDBPyConnection] = None
 _conn_lock = threading.Lock()
+_in_memory = False
+
+
+def is_in_memory() -> bool:
+    """True si la conexión cayó al fallback en memoria (otro proceso tiene el lock).
+
+    En ese modo los datos ingeridos NO persisten y las lecturas ven una BD vacía;
+    los consumidores deben avisar al usuario en vez de mostrar 'sin datos' mudo.
+    """
+    return _in_memory
 
 
 def get_duckdb() -> duckdb.DuckDBPyConnection:
-    global _conn
+    global _conn, _in_memory
     with _conn_lock:
         if _conn is None:
             db_path = Path(settings.DUCKDB_PATH)
@@ -31,6 +41,10 @@ def get_duckdb() -> duckdb.DuckDBPyConnection:
                 _conn = duckdb.connect(str(db_path))
                 logger.info("DuckDB opened: %s", db_path)
             except Exception:
-                logger.warning("DuckDB file locked, falling back to in-memory DB")
+                logger.warning(
+                    "DuckDB file locked by another process, falling back to in-memory DB. "
+                    "Ingested data will NOT persist and reads will be empty."
+                )
                 _conn = duckdb.connect(":memory:")
+                _in_memory = True
         return _conn

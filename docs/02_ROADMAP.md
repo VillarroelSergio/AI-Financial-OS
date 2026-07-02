@@ -281,6 +281,17 @@ Pruebas: 206/206 backend tests, 0 errores TypeScript.
 - Preparación de canal de actualización (auto-updater Tauri configurado para releases futuras).
 - Revisión de tamaño final, tiempo de arranque (<5s en hardware típico) y experiencia de primer uso (onboarding mínimo viable).
 
+**Implementado:**
+
+- `backend/run_server.py` + `backend/financial-backend.spec`: backend compilado con PyInstaller (onedir) sin dependencia de Python instalado; datos en `%APPDATA%\FinancialAgent\` cuando corre empaquetado.
+- `apps/desktop/src-tauri/src/lib.rs`: arranque coordinado — lanza el backend como proceso hijo, espera `/health` 200 antes de crear la ventana y lo termina al salir.
+- `apps/desktop/src-tauri/tauri.conf.json`: targets `msi` + `nsis`, icono, backend como resource, CSP con puerto 8010, datos de usuario conservados al desinstalar.
+- `scripts/build-release.ps1`: build completo (PyInstaller → resources → `tauri build`).
+- `scripts/smoke-test.ps1`: verificación post-build (arranque, `/health`, tiempo, cierre sin huérfanos).
+- Auto-updater documentado y diferido a la primera release pública (requiere claves de firma y endpoint de manifiestos).
+
+Documentación: `docs/30_PACKAGING_RELEASE.md`.
+
 **Criterios de aceptación:**
 
 - [ ] `tauri build` produce instalador `.msi` sin errores.

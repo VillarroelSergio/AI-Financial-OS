@@ -6,8 +6,7 @@ import requests
 
 from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter, redact_api_key
 from app.modules.market_intelligence.ingestion.config import get_api_key
-from app.modules.market_intelligence.ingestion.models import Commodity
-from app.modules.market_intelligence.ingestion.models import AdapterResult
+from app.modules.market_intelligence.ingestion.models import AdapterResult, Commodity
 
 _BASE_URL = "https://api.eia.gov/v2/petroleum/pri/spt/data/"
 

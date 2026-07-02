@@ -1,6 +1,6 @@
+import re
 from datetime import date, datetime, timezone
 from decimal import Decimal
-import re
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -37,6 +37,25 @@ ASSET_TYPE_MAP = {
 
 # ── Assets ────────────────────────────────────────────────────────────────────
 
+@router.get("/assets/search")
+def search_asset_candidates(q: str):
+    """Candidatos de ticker para el alta de activos (registro conocido + yfinance)."""
+    from app.modules.investments.asset_resolution import search_assets
+
+    return [
+        {
+            "ticker": c.ticker,
+            "name": c.name,
+            "exchange": c.exchange,
+            "currency": c.currency,
+            "asset_type": c.asset_type,
+            "requires_confirmation": c.requires_confirmation,
+            "confirmation_note": c.confirmation_note,
+        }
+        for c in search_assets(q)
+    ]
+
+
 @router.get("/assets", response_model=list[InvestmentAssetOut])
 def list_assets(db: Session = Depends(get_db)):
     return db.query(InvestmentAsset).all()
@@ -44,7 +63,23 @@ def list_assets(db: Session = Depends(get_db)):
 
 @router.post("/assets", response_model=InvestmentAssetOut, status_code=201)
 def create_asset(payload: InvestmentAssetCreate, db: Session = Depends(get_db)):
-    asset = InvestmentAsset(**payload.model_dump())
+    from app.modules.investments.asset_resolution import resolve_asset
+
+    data = payload.model_dump()
+    # Autorresolución: completa ticker cualificado (IBE → IBE.MC) y divisa para que
+    # el refresco de precios funcione sin pasos manuales.
+    resolution = resolve_asset(data.get("ticker") or data.get("name") or "")
+    if resolution.selected is None and data.get("name"):
+        resolution = resolve_asset(data["name"])
+    candidate = resolution.selected
+    if candidate:
+        if not data.get("ticker") or "." not in (data.get("ticker") or ""):
+            data["ticker"] = candidate.ticker
+        if candidate.currency:
+            # La divisa de cotización la fija el mercado del ticker, no el formulario.
+            data["currency"] = candidate.currency
+        data["price_source"] = "yfinance"
+    asset = InvestmentAsset(**data)
     db.add(asset)
     db.commit()
     db.refresh(asset)

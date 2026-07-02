@@ -1,13 +1,15 @@
-"""World Bank adapter — Spain GDP (NY.GDP.MKTP.CD)."""
+"""World Bank adapter — Spain GDP (NY.GDP.MKTP.CN, moneda local = EUR)."""
 import time
-import requests
 from datetime import datetime, timezone
 
-from app.modules.market_intelligence.ingestion.models import AdapterResult
-from app.modules.market_intelligence.ingestion.models import MacroIndicator
-from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter
+import requests
 
-_URL = "https://api.worldbank.org/v2/country/ES/indicator/NY.GDP.MKTP.CD?format=json&mrv=5"
+from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter
+from app.modules.market_intelligence.ingestion.models import AdapterResult, MacroIndicator
+
+# NY.GDP.MKTP.CN = PIB en moneda local (EUR para España). El catálogo declara
+# unit "EUR bn", así que se escala a miles de millones antes de persistir.
+_URL = "https://api.worldbank.org/v2/country/ES/indicator/NY.GDP.MKTP.CN?format=json&mrv=5"
 
 
 class WorldBankAdapter(BaseAdapter):
@@ -53,8 +55,8 @@ class WorldBankAdapter(BaseAdapter):
                         confidence_score=1.0,
                         indicator_id="WB_ESP_GDP",
                         name="Spain GDP (World Bank)",
-                        value=float(entry["value"]),
-                        unit="USD",
+                        value=round(float(entry["value"]) / 1e9, 2),
+                        unit="EUR bn",
                         period=str(entry["date"]),
                         frequency="annual",
                     )

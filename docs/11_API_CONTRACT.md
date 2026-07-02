@@ -262,7 +262,10 @@ no estan registrados en `backend/app/main.py`.
 
 ### GET `/api/market-intelligence/snapshot/macro`
 
-Devuelve indicadores macro agrupados por region.
+Devuelve indicadores macro agrupados por region. Cada punto incluye, ademas del valor:
+`subcategory`, `frequency` y `priority` (del catalogo), `previous_value` y `delta`
+(vs periodo anterior) e `history` (hasta 13 pares `{period, value}` para sparklines).
+La `unit` mostrada es siempre la declarada en el catalogo, no la del provider.
 
 ### GET `/api/market-intelligence/snapshot/market`
 
@@ -283,10 +286,26 @@ Devuelve noticias financieras.
 ### GET `/api/market-intelligence/personal-impact`
 
 Devuelve comparativas deterministas entre datos personales y contexto macro/mercado.
+Reglas del contrato:
+
+- `signal` puede ser `positive | negative | neutral | warning | no_data`.
+- Si falta el dato de mercado, la comparativa lleva `signal = "no_data"` y su
+  `signal_text` nunca afirma un veredicto.
+- Las comparativas que no aplican al perfil (sin deuda, sin gasto USD, sin cartera,
+  sin gasto en transporte/alimentacion) se omiten de la respuesta.
+- El benchmark de cartera usa la variacion a 12 meses de S&P 500 / IBEX 35 /
+  EuroStoxx 50 calculada desde `mi_historical_prices` (no el `change_pct` diario).
 
 ### GET `/api/market-intelligence/ingest-status`
 
-Devuelve el estado de la ingesta automatica lanzada al arrancar FastAPI.
+Devuelve el estado de la ingesta automatica lanzada al arrancar FastAPI. Además del
+estado global (`status`, `last_run`, `count`), incluye:
+
+- `results`: detalle por indicador (`indicator`, `category`, `provider`, `success`,
+  `fallback_used`, `error` con el motivo por proveedor).
+- `storage`: `"file"` o `"memory"`. En `"memory"` la base analítica DuckDB estaba
+  bloqueada por otro proceso y los datos no persisten; `storage_warning` explica
+  el problema. Este era el origen del fallo intermitente de Mercados.
 
 ### GET `/api/market-intelligence/ai-datasheet?scope=daily`
 

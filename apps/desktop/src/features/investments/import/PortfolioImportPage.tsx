@@ -8,6 +8,7 @@ import type {
   ReviewRow,
 } from "@/lib/types/portfolio-import";
 import {
+  parseImportImage,
   parseImportText,
   validateImportBatch,
   confirmImport,
@@ -40,28 +41,23 @@ function MethodSelector({ onSelect }: { onSelect: (m: "screenshot" | "manual") =
   return (
     <div className="flex flex-col gap-3 max-w-lg">
       <div className="grid grid-cols-2 gap-4">
-        {/* Screenshot option — disabled until OCR is available */}
+        {/* Screenshot option — vision extraction via local AI model */}
         <div className="flex flex-col gap-1">
-          <div className="relative">
-            <button
-              disabled
-              className="w-full flex flex-col items-center gap-3 rounded-xl border border-hairline-dark bg-surface-deep px-6 py-8
-                opacity-40 cursor-not-allowed text-center"
-            >
-              <Upload size={28} className="text-stone" />
-              <div>
-                <p className="font-medium text-on-dark text-sm">Desde captura</p>
-                <p className="text-xs text-mute mt-1 leading-snug">
-                  Extracción automática desde imagen de pantalla
-                </p>
-              </div>
-            </button>
-            <span className="absolute -top-1 -right-1 rounded-full bg-amber-500 px-1.5 py-0.5 text-[9px] font-bold uppercase text-white leading-none">
-              Próximo
-            </span>
-          </div>
+          <button
+            onClick={() => onSelect("screenshot")}
+            className="w-full flex flex-col items-center gap-3 rounded-xl border border-hairline-dark bg-surface-deep px-6 py-8
+              hover:border-primary/40 hover:bg-white/[.03] transition-all text-center group"
+          >
+            <Upload size={28} className="text-stone group-hover:text-on-dark transition-colors" />
+            <div>
+              <p className="font-medium text-on-dark text-sm">Desde captura</p>
+              <p className="text-xs text-mute mt-1 leading-snug">
+                Extracción con tu modelo de visión IA local
+              </p>
+            </div>
+          </button>
           <p className="text-xs text-mute leading-snug px-1">
-            La extracción automática desde captura está pendiente. Usa la entrada manual o pega texto.
+            Requiere Ollama o LM Studio con un modelo de visión (qwen2.5-vl, llava...). La imagen no sale de tu equipo.
           </p>
         </div>
 
@@ -95,32 +91,38 @@ function ScreenshotInput({ onParsed }: ScreenshotInputProps) {
   const [error, setError] = useState<string | null>(null);
 
   const handleParse = useCallback(async () => {
-    if (!text.trim()) return;
+    if (!text.trim() && files.length === 0) return;
     setLoading(true);
     setError(null);
     try {
-      const raw = await parseImportText(text);
+      const raw = [];
+      for (const file of files) {
+        raw.push(...(await parseImportImage(file)));
+      }
+      if (text.trim()) {
+        raw.push(...(await parseImportText(text)));
+      }
       if (raw.length === 0) {
-        setError("No se detectaron posiciones en el texto. Revisa el formato e inténtalo de nuevo.");
+        setError("No se detectaron posiciones en las capturas ni en el texto. Revisa el contenido e inténtalo de nuevo.");
         setLoading(false);
         return;
       }
       const validated = await validateImportBatch(raw);
       onParsed(validated.map((v) => makeReviewRow(v as ReviewRow)));
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Error al procesar el texto.");
+      setError(e instanceof Error ? e.message : "Error al procesar las capturas o el texto.");
     } finally {
       setLoading(false);
     }
-  }, [text, onParsed]);
+  }, [text, files, onParsed]);
 
   return (
     <div className="flex flex-col gap-4 max-w-2xl">
       <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
         <p className="text-sm font-medium text-on-dark">Capturas de cartera</p>
         <p className="mt-1 text-xs leading-5 text-stone">
-          Puedes seleccionar una o varias capturas reales. En esta build la extraccion OCR local todavia no esta activada:
-          las imagenes no se guardan ni se envian a terceros. Usa el texto copiado como fallback para extraer posiciones.
+          Selecciona una o varias capturas de tu broker. Se procesan con tu modelo de visión IA local
+          (Ollama/LM Studio): las imágenes no se guardan ni salen de tu equipo. Revisa siempre el resultado antes de importar.
         </p>
         <label className="mt-3 flex cursor-pointer items-center justify-center rounded-lg border border-dashed border-hairline-dark bg-white/[.03] px-4 py-6 text-center text-sm text-stone hover:border-primary/40 hover:text-on-dark">
           <input
@@ -133,9 +135,9 @@ function ScreenshotInput({ onParsed }: ScreenshotInputProps) {
           Cargar capturas
         </label>
         {files.length > 0 && (
-          <div className="mt-3 rounded-lg border border-amber-400/25 bg-amber-400/10 p-3">
-            <p className="text-xs font-medium text-amber-200">{files.length} captura{files.length === 1 ? "" : "s"} seleccionada{files.length === 1 ? "" : "s"}</p>
-            <p className="mt-1 text-xs text-stone">OCR local pendiente. No se creara ningun holding desde estas imagenes sin confirmacion ni revision manual.</p>
+          <div className="mt-3 rounded-lg border border-primary/25 bg-primary/10 p-3">
+            <p className="text-xs font-medium text-on-dark">{files.length} captura{files.length === 1 ? "" : "s"} lista{files.length === 1 ? "" : "s"} para extraer</p>
+            <p className="mt-1 text-xs text-stone">Nada se importa sin tu confirmación: primero verás la tabla de revisión.</p>
           </div>
         )}
       </div>
@@ -175,7 +177,7 @@ x 1,234
 
       <button
         onClick={handleParse}
-        disabled={loading || !text.trim()}
+        disabled={loading || (!text.trim() && files.length === 0)}
         className="self-start flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-white text-sm font-medium
           hover:bg-primary/90 disabled:opacity-50 transition-colors"
       >

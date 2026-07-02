@@ -20,12 +20,20 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: data:; connect-src 'self' http://127.0.0.1:8000 http://localhost:8000 http://127.0.0.1:11434 http://localhost:11434 http://127.0.0.1:1234 http://localhost:1234"
+      "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' asset: data:; connect-src 'self' http://127.0.0.1:8010 http://localhost:8010 http://127.0.0.1:8000 http://localhost:8000 http://127.0.0.1:11434 http://localhost:11434 http://127.0.0.1:1234 http://localhost:1234"
     }
   },
   "bundle": {
     "active": true,
-    "targets": "all",
-    "icon": []
+    "targets": ["msi", "nsis"],
+    "icon": ["icons/icon.ico"],
+    "resources": {
+      "binaries/backend": "backend"
+    },
+    "windows": {
+      "nsis": {
+        "installMode": "currentUser"
+      }
+    }
   }
 }

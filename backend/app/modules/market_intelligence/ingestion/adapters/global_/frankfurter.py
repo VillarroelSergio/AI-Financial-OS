@@ -5,8 +5,7 @@ from datetime import datetime, timezone
 import requests
 
 from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter
-from app.modules.market_intelligence.ingestion.models import CurrencyRate
-from app.modules.market_intelligence.ingestion.models import AdapterResult
+from app.modules.market_intelligence.ingestion.models import AdapterResult, CurrencyRate
 
 _BASE_URL = "https://api.frankfurter.app"
 _PAIRS = ("USD", "GBP", "JPY", "CHF", "CAD", "AUD", "CNY")

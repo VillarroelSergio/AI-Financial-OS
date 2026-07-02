@@ -2,7 +2,7 @@ import { api } from "./client";
 
 export interface SecurityStatus {
   app_env: string;
-  database_path: string;
+  database_filename: string;
   backups_available: number;
   encryption_ready: boolean;
   demo_data_policy: string;
@@ -10,7 +10,6 @@ export interface SecurityStatus {
 
 export interface BackupInfo {
   filename: string;
-  path: string;
   size_bytes: number;
   created_at: string;
 }

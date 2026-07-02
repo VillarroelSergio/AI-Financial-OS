@@ -27,7 +27,6 @@ from dataclasses import dataclass
 from datetime import date
 from typing import Optional
 
-
 # ── Scenario definitions ──────────────────────────────────────────────────────
 
 @dataclass(frozen=True)

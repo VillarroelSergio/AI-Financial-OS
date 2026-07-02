@@ -3,13 +3,15 @@
 Adaptado de market-data-poc/services/orchestrator.py.
 """
 from __future__ import annotations
+
 import logging
 from dataclasses import dataclass
 
 from app.modules.market_intelligence.catalog.schemas import CatalogIndicator
 from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter
 from app.modules.market_intelligence.ingestion.models import (
-    AdapterResult, ProviderMetadata,
+    AdapterResult,
+    ProviderMetadata,
 )
 
 logger = logging.getLogger("market_intelligence.orchestrator")
@@ -47,16 +49,20 @@ class ProviderOrchestrator:
             indicator.provider_secondary,
             indicator.provider_fallback,
         ]
+        attempts: list[str] = []
         for provider_id in [p for p in chain if p]:
             adapter = self._get_adapter(provider_id)
             if adapter is None:
                 logger.debug("No adapter found for provider '%s'", provider_id)
+                attempts.append(f"{provider_id}: sin adapter registrado")
                 continue
             if not adapter.is_available():
                 logger.info("Provider '%s' not available (API key missing?)", provider_id)
+                attempts.append(f"{provider_id}: no disponible (¿API key ausente?)")
                 continue
             if not adapter.supports(indicator.id):
                 logger.debug("Provider '%s' does not support indicator '%s'", provider_id, indicator.id)
+                attempts.append(f"{provider_id}: no soporta este indicador")
                 continue
             try:
                 try:
@@ -65,6 +71,7 @@ class ProviderOrchestrator:
                     result = adapter.fetch()
             except Exception as exc:
                 logger.warning("Adapter '%s' raised exception: %s", provider_id, exc)
+                attempts.append(f"{provider_id}: {exc}")
                 continue
             logger.info(
                 "fetch indicator=%s provider=%s success=%s fallback=%s latency=%.0fms",
@@ -79,6 +86,7 @@ class ProviderOrchestrator:
                     fallback_used=(provider_id != indicator.provider_primary),
                     catalog_id=indicator.id,
                 )
+            attempts.append(f"{provider_id}: {result.error or 'sin datos'}")
 
         _empty_meta = ProviderMetadata(
             name="Orchestrator", id="orchestrator", category="orchestration",
@@ -90,7 +98,7 @@ class ProviderOrchestrator:
             indicator=indicator,
             adapter_result=AdapterResult(
                 provider="Orchestrator", success=False, records=[],
-                error=f"No provider produced data for '{indicator.id}'",
+                error="; ".join(attempts) or f"No provider produced data for '{indicator.id}'",
                 latency_ms=0.0, raw_sample=None, metadata=_empty_meta,
             ),
             provider_used="none",

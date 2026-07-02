@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone, date
+from datetime import date, datetime, timezone
 from decimal import Decimal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -10,9 +10,9 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.models.budget import Budget
-from app.models.transaction import Transaction
 from app.models.category import Category
-from app.modules.budgets.schemas import BudgetCreate, BudgetOut, BudgetUpdate, BudgetComparisonItem
+from app.models.transaction import Transaction
+from app.modules.budgets.schemas import BudgetComparisonItem, BudgetCreate, BudgetOut, BudgetUpdate
 
 router = APIRouter()
 
@@ -24,6 +24,8 @@ def list_budgets(db: Session = Depends(get_db)) -> list[BudgetOut]:
 
 @router.post("", response_model=BudgetOut, status_code=201)
 def create_budget(body: BudgetCreate, db: Session = Depends(get_db)) -> BudgetOut:
+    if not db.get(Category, body.category_id):
+        raise HTTPException(status_code=422, detail="La categoría indicada no existe")
     budget = Budget(id=str(uuid.uuid4()), **body.model_dump())
     db.add(budget)
     db.commit()
@@ -70,7 +72,7 @@ def budget_comparison(
     # Build the YYYY-MM prefix for string-based date filtering
     month_prefix = f"{year}-{mon:02d}"
 
-    budgets = db.query(Budget).filter(Budget.active == True).all()
+    budgets = db.query(Budget).filter(Budget.active).all()
     result: list[BudgetComparisonItem] = []
 
     for budget in budgets:

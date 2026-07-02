@@ -1,12 +1,20 @@
 from __future__ import annotations
-from datetime import datetime, date, timezone
+
+from datetime import date, datetime, timezone
 from decimal import Decimal
+
 from sqlalchemy.orm import Session
+
 from app.models.goal import Goal
 from app.modules.insights.constants import GOAL_LAG_THRESHOLD_PERCENTAGE_POINTS
 from app.modules.insights.schemas import (
-    DataStatus, InsightActionOut, InsightMetricOut, InsightOut,
-    InsightSeverity, InsightSourceOut, InsightType,
+    DataStatus,
+    InsightActionOut,
+    InsightMetricOut,
+    InsightOut,
+    InsightSeverity,
+    InsightSourceOut,
+    InsightType,
 )
 from app.modules.insights.scoring import compute_confidence, compute_priority
 

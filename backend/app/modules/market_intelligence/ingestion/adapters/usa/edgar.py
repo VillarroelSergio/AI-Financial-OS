@@ -1,11 +1,15 @@
 """SEC EDGAR adapter — Apple Inc company profile and financial facts."""
 import time
-import requests
 from datetime import datetime, timezone
 
+import requests
+
 from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter
-from app.modules.market_intelligence.ingestion.models import AdapterResult, ProviderMetadata
-from app.modules.market_intelligence.ingestion.models import CompanyProfile
+from app.modules.market_intelligence.ingestion.models import (
+    AdapterResult,
+    CompanyProfile,
+    ProviderMetadata,
+)
 
 _HEADERS = {"User-Agent": "MarketDataPOC/0.1 contact@example.com"}
 

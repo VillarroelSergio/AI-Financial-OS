@@ -1,4 +1,5 @@
 import pytest
+
 from app.modules.market_intelligence.catalog.loader import CatalogLoader
 from app.modules.market_intelligence.catalog.schemas import CatalogIndicator
 

@@ -80,11 +80,11 @@ const mockCategories: Category[] = [
 ];
 
 const mockTransactions: Transaction[] = [
-  { id: "tx-1", account_id: "mock-acc-1", category_id: "cat-1", date: "2026-06-20", description: "Mercadona", amount: "-87.40", currency: "EUR", converted_amount: null, converted_currency: null, type: "expense", source: "manual", source_name: null, external_id: null, import_batch_id: null, notes: null, created_at: "2026-06-20T10:00:00", updated_at: "2026-06-20T10:00:00" },
-  { id: "tx-2", account_id: "mock-acc-1", category_id: "cat-2", date: "2026-06-19", description: "Renfe AVE Madrid", amount: "-42.50", currency: "EUR", converted_amount: null, converted_currency: null, type: "expense", source: "manual", source_name: null, external_id: null, import_batch_id: null, notes: null, created_at: "2026-06-19T10:00:00", updated_at: "2026-06-19T10:00:00" },
-  { id: "tx-3", account_id: "mock-acc-1", category_id: "cat-3", date: "2026-06-18", description: "Netflix", amount: "-15.99", currency: "EUR", converted_amount: null, converted_currency: null, type: "expense", source: "manual", source_name: null, external_id: null, import_batch_id: null, notes: null, created_at: "2026-06-18T10:00:00", updated_at: "2026-06-18T10:00:00" },
-  { id: "tx-4", account_id: "mock-acc-1", category_id: "cat-4", date: "2026-06-15", description: "Alquiler junio", amount: "-950.00", currency: "EUR", converted_amount: null, converted_currency: null, type: "expense", source: "manual", source_name: null, external_id: null, import_batch_id: null, notes: null, created_at: "2026-06-15T10:00:00", updated_at: "2026-06-15T10:00:00" },
-  { id: "tx-5", account_id: "mock-acc-1", category_id: "cat-5", date: "2026-06-01", description: "Nómina junio", amount: "2800.00", currency: "EUR", converted_amount: null, converted_currency: null, type: "income", source: "manual", source_name: null, external_id: null, import_batch_id: null, notes: null, created_at: "2026-06-01T10:00:00", updated_at: "2026-06-01T10:00:00" },
+  { id: "tx-1", account_id: "mock-acc-1", account_name: "Cuenta demo", category_id: "cat-1", date: "2026-06-20", description: "Mercadona", amount: "-87.40", currency: "EUR", converted_amount: null, converted_currency: null, type: "expense", source: "manual", source_name: null, external_id: null, import_batch_id: null, notes: null, created_at: "2026-06-20T10:00:00", updated_at: "2026-06-20T10:00:00" },
+  { id: "tx-2", account_id: "mock-acc-1", account_name: "Cuenta demo", category_id: "cat-2", date: "2026-06-19", description: "Renfe AVE Madrid", amount: "-42.50", currency: "EUR", converted_amount: null, converted_currency: null, type: "expense", source: "manual", source_name: null, external_id: null, import_batch_id: null, notes: null, created_at: "2026-06-19T10:00:00", updated_at: "2026-06-19T10:00:00" },
+  { id: "tx-3", account_id: "mock-acc-1", account_name: "Cuenta demo", category_id: "cat-3", date: "2026-06-18", description: "Netflix", amount: "-15.99", currency: "EUR", converted_amount: null, converted_currency: null, type: "expense", source: "manual", source_name: null, external_id: null, import_batch_id: null, notes: null, created_at: "2026-06-18T10:00:00", updated_at: "2026-06-18T10:00:00" },
+  { id: "tx-4", account_id: "mock-acc-1", account_name: "Cuenta demo", category_id: "cat-4", date: "2026-06-15", description: "Alquiler junio", amount: "-950.00", currency: "EUR", converted_amount: null, converted_currency: null, type: "expense", source: "manual", source_name: null, external_id: null, import_batch_id: null, notes: null, created_at: "2026-06-15T10:00:00", updated_at: "2026-06-15T10:00:00" },
+  { id: "tx-5", account_id: "mock-acc-1", account_name: "Cuenta demo", category_id: "cat-5", date: "2026-06-01", description: "Nómina junio", amount: "2800.00", currency: "EUR", converted_amount: null, converted_currency: null, type: "income", source: "manual", source_name: null, external_id: null, import_batch_id: null, notes: null, created_at: "2026-06-01T10:00:00", updated_at: "2026-06-01T10:00:00" },
 ];
 
 const mockOverview: DashboardOverview = {
@@ -197,7 +197,6 @@ const mockSettings: AppSetting[] = [
 const mockBackups = [
   {
     filename: "financial-20260630-084500.sqlite",
-    path: "local-data/backups/financial-20260630-084500.sqlite",
     size_bytes: 245760,
     created_at: "2026-06-30T08:45:00",
   },
@@ -394,6 +393,176 @@ export const mockMarketQuotes: MarketQuote[] = rawMockMarketQuotes.map((quote) =
   confidence_score: 1,
 }));
 
+// ── Market Intelligence (página Economía) ────────────────────────────────────
+
+function macroHistory(latest: number, step: number, months = 13) {
+  const points = [];
+  for (let i = months - 1; i >= 0; i--) {
+    const d = new Date(2026, 5 - i, 1);
+    points.push({
+      period: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`,
+      value: Number((latest - step * i).toFixed(2)),
+    });
+  }
+  return points;
+}
+
+function macroPoint(
+  id: string,
+  name: string,
+  value: number,
+  unit: string,
+  subcategory: string,
+  opts: { priority?: string; frequency?: string; step?: number; period?: string; country?: string } = {}
+) {
+  const history = macroHistory(value, opts.step ?? 0.1);
+  return {
+    catalog_item_id: id,
+    indicator_id: id,
+    country: opts.country ?? "ES",
+    period: opts.period ?? "2026-06",
+    value,
+    unit,
+    provider_id: "mock",
+    quality_score: 0.95,
+    data_status: "ok",
+    retrieved_at: "2026-07-01T09:00:00Z",
+    display_name: name,
+    description: name,
+    subcategory,
+    frequency: opts.frequency ?? "monthly",
+    priority: opts.priority ?? "critical",
+    previous_value: history[history.length - 2]?.value ?? null,
+    delta: Number((value - (history[history.length - 2]?.value ?? value)).toFixed(2)),
+    history,
+  };
+}
+
+const mockMacroSnapshot = {
+  status: "ok",
+  spain: [
+    macroPoint("ipc_general", "IPC General España", 2.8, "%", "inflation", { step: 0.08 }),
+    macroPoint("ipc_subyacente", "IPC Subyacente España", 2.4, "%", "inflation", { step: 0.05 }),
+    macroPoint("euribor_12m", "Euríbor 12M", 2.17, "%", "interest_rates", { step: -0.04 }),
+    macroPoint("tipo_bce", "Tipo BCE", 2.15, "%", "interest_rates", { step: -0.05 }),
+    macroPoint("desempleo_spain", "Desempleo España", 10.6, "%", "employment", { step: -0.09 }),
+    macroPoint("pib_spain", "PIB España", 1687.15, "EUR bn", "gdp", { frequency: "yearly", period: "2025", step: 12 }),
+    macroPoint("confianza_consumidor_spain", "Confianza del Consumidor España", 86, "index", "sentiment", { priority: "medium", step: 0.6 }),
+  ],
+  eurozone: [
+    macroPoint("inflation_eurozone", "Inflación Eurozona", 2.2, "%", "inflation", { country: "EU", step: 0.04 }),
+    macroPoint("unemployment_eurozone", "Desempleo Eurozona", 6.3, "%", "employment", { country: "EU", step: -0.02 }),
+  ],
+  usa: [
+    macroPoint("fed_funds_rate", "Fed Funds Rate", 3.63, "%", "interest_rates", { country: "US", step: -0.06 }),
+    macroPoint("cpi_usa", "CPI USA", 2.6, "%", "inflation", { country: "US", step: 0.03 }),
+    macroPoint("unemployment_usa", "Desempleo USA", 4.3, "%", "employment", { country: "US", step: 0.02 }),
+    macroPoint("industrial_production_usa", "Producción Industrial USA", 102.65, "index", "industrial", { country: "US", priority: "high", step: 0.2 }),
+    macroPoint("consumer_sentiment_usa", "Consumer Sentiment USA", 61.2, "index", "sentiment", { country: "US", priority: "medium", step: 0.8 }),
+  ],
+  generated_at: "2026-07-01T09:00:00Z",
+  warnings: [],
+};
+
+const mockBondSnapshot = {
+  yields: [
+    { catalog_item_id: "us_2y", country: "US", maturity: "2Y", yield_value: 3.72, date: "2026-06-30", provider_id: "mock", quality_score: 1, data_status: "ok" },
+    { catalog_item_id: "us_5y", country: "US", maturity: "5Y", yield_value: 3.85, date: "2026-06-30", provider_id: "mock", quality_score: 1, data_status: "ok" },
+    { catalog_item_id: "us_10y", country: "US", maturity: "10Y", yield_value: 4.1, date: "2026-06-30", provider_id: "mock", quality_score: 1, data_status: "ok" },
+    { catalog_item_id: "us_30y", country: "US", maturity: "30Y", yield_value: 4.45, date: "2026-06-30", provider_id: "mock", quality_score: 1, data_status: "ok" },
+    { catalog_item_id: "spain_10y", country: "ES", maturity: "10Y", yield_value: 3.12, date: "2026-06-30", provider_id: "mock", quality_score: 1, data_status: "ok" },
+    { catalog_item_id: "germany_10y", country: "DE", maturity: "10Y", yield_value: 2.56, date: "2026-06-30", provider_id: "mock", quality_score: 1, data_status: "ok" },
+  ],
+  generated_at: "2026-07-01T09:00:00Z",
+  warnings: [],
+};
+
+const mockForexSnapshot = {
+  rates: [
+    { catalog_item_id: "eur_usd", base_currency: "EUR", quote_currency: "USD", rate: 1.1342, date: "2026-06-30", provider_id: "mock", quality_score: 1, data_status: "ok" },
+  ],
+  generated_at: "2026-07-01T09:00:00Z",
+  warnings: [],
+};
+
+const mockPersonalImpact = {
+  generated_at: "2026-07-01T09:00:00Z",
+  comparatives: [
+    {
+      id: "real_portfolio_return",
+      title: "Rentabilidad real de tu cartera",
+      description: "Rentabilidad de tu cartera menos la inflación. Positiva significa que ganas poder adquisitivo.",
+      market_value: 2.8, market_label: "IPC (referencia): 2.80%",
+      personal_value: -16.07, personal_label: "Rentabilidad real: -16.07%",
+      signal: "negative", signal_text: "Tu cartera pierde frente a la inflación",
+      source_ids: ["ipc_general"],
+    },
+    {
+      id: "inflation_vs_savings",
+      title: "Inflación vs tu tasa de ahorro",
+      description: "Tu tasa de ahorro mensual comparada con el IPC general. Por encima de la inflación significa que mantienes poder adquisitivo.",
+      market_value: 2.8, market_label: "IPC General: 2.80%",
+      personal_value: 22.54, personal_label: "Tu ahorro: 22.54%",
+      signal: "positive", signal_text: "Estás por encima de la inflación · La inflación cuesta ~29 €/mes a tu efectivo",
+      source_ids: ["ipc_general"],
+    },
+    {
+      id: "rates_vs_liquidity",
+      title: "Tipos BCE vs tu liquidez",
+      description: "Con tipos altos conviene tener colchón de liquidez. Se recomiendan mínimo 3 meses de gastos cubiertos.",
+      market_value: 2.15, market_label: "Tipo BCE: 2.15%",
+      personal_value: 7.0, personal_label: "Tu liquidez: 7.0 meses",
+      signal: "positive", signal_text: "Tienes colchón suficiente · A tipo BCE tu efectivo podría rentar ~22 €/mes",
+      source_ids: ["tipo_bce"],
+    },
+    {
+      id: "purchasing_power",
+      title: "Poder adquisitivo actual",
+      description: "El IPC general mide la pérdida de poder adquisitivo. Por debajo del 2% es el objetivo del BCE.",
+      market_value: 2.8, market_label: "IPC General: 2.80%",
+      personal_value: null, personal_label: "Indicador macro",
+      signal: "neutral", signal_text: "Inflación moderada (2.80%)",
+      source_ids: ["ipc_general"],
+    },
+    {
+      id: "risk_premium_spain",
+      title: "Prima de riesgo España",
+      description: "Diferencial bono español 10Y vs bund alemán en puntos básicos.",
+      market_value: 56, market_label: "Prima de riesgo: 56 bps",
+      personal_value: null, personal_label: "Indicador macro",
+      signal: "positive", signal_text: "Prima de riesgo controlada",
+      source_ids: ["spain_10y", "germany_10y"],
+    },
+    {
+      id: "market_vs_portfolio",
+      title: "Mercado vs rentabilidad de tu cartera",
+      description: "Variación media de S&P 500, IBEX 35 y EuroStoxx 50 en los últimos 12 meses frente al retorno de tu cartera desde la compra.",
+      market_value: null, market_label: "Índices (12 meses): Sin datos",
+      personal_value: -13.27, personal_label: "Tu cartera (desde compra): -13.27%",
+      signal: "no_data", signal_text: "Sin datos de mercado — comparativa no disponible",
+      source_ids: ["sp500", "ibex35", "eurostoxx50"],
+    },
+    {
+      id: "oil_vs_transport",
+      title: "Petróleo vs tu gasto en transporte",
+      description: "El precio del Brent impacta en los carburantes. Por debajo de 80 USD/barril es favorable.",
+      market_value: null, market_label: "Brent: Sin datos",
+      personal_value: 19, personal_label: "Transporte/mes: 19 €",
+      signal: "no_data", signal_text: "Sin datos de mercado — comparativa no disponible",
+      source_ids: ["brent"],
+    },
+  ],
+  warnings: ["2 comparativas sin datos de mercado disponibles."],
+};
+
+const mockIngestStatus = {
+  status: "done",
+  last_run: "2026-07-01T09:00:00Z",
+  count: 24,
+  results: [],
+  storage: "file",
+};
+
 export function getMockResponse<T>(path: string, init?: RequestInit): T {
   const clean = path.split("?")[0];
 
@@ -402,6 +571,14 @@ export function getMockResponse<T>(path: string, init?: RequestInit): T {
   if (clean === "/api/transactions") return mockTransactions as T;
   if (clean === "/api/dashboard/overview") return mockOverview as T;
   if (clean === "/api/dashboard/spending/years") return { years: [2026] } as T;
+  if (clean === "/api/dashboard/spending/monthly") return [
+    { month: "2026-02", income: "2650.00", expense: "1420.50", savings: "1229.50" },
+    { month: "2026-03", income: "2650.00", expense: "1611.20", savings: "1038.80" },
+    { month: "2026-04", income: "2800.00", expense: "1245.75", savings: "1554.25" },
+    { month: "2026-05", income: "2800.00", expense: "1780.10", savings: "1019.90" },
+    { month: "2026-06", income: "2800.00", expense: "1382.50", savings: "1417.50" },
+    { month: "2026-07", income: "2800.00", expense: "1095.89", savings: "1704.11" },
+  ] as T;
   if (clean === "/api/dashboard/spending") return mockSpending as T;
   if (clean === "/api/settings") return mockSettings as T;
   if (clean === "/api/ai/status") return {
@@ -416,7 +593,7 @@ export function getMockResponse<T>(path: string, init?: RequestInit): T {
   if (clean === "/api/rag/documents") return [] as T;
   if (clean === "/api/security/status") return {
     app_env: "development",
-    database_path: "local-data/financial-os.sqlite",
+    database_filename: "financial-os.sqlite",
     backups_available: mockBackups.length,
     encryption_ready: true,
     demo_data_policy: "Los datos demo deben estar identificados y excluidos de totales reales.",
@@ -425,7 +602,6 @@ export function getMockResponse<T>(path: string, init?: RequestInit): T {
     if (init?.method === "POST") {
       const backup = {
         filename: `financial-${Date.now()}.sqlite`,
-        path: `local-data/backups/financial-${Date.now()}.sqlite`,
         size_bytes: 245760,
         created_at: new Date().toISOString(),
       };
@@ -537,6 +713,11 @@ export function getMockResponse<T>(path: string, init?: RequestInit): T {
   }
   if (clean === "/api/household-bills/summary") return mockHouseholdSummary as T;
   if (clean.startsWith("/api/household-bills/") && init?.method === "DELETE") return undefined as T;
+  if (clean === "/api/market-intelligence/snapshot/macro") return mockMacroSnapshot as T;
+  if (clean === "/api/market-intelligence/snapshot/bonds") return mockBondSnapshot as T;
+  if (clean === "/api/market-intelligence/snapshot/forex") return mockForexSnapshot as T;
+  if (clean === "/api/market-intelligence/personal-impact") return mockPersonalImpact as T;
+  if (clean === "/api/market-intelligence/ingest-status") return mockIngestStatus as T;
   if (path.startsWith("/api/markets/quotes")) {
     const catParam = path.includes("?category=")
       ? path.split("?category=")[1]

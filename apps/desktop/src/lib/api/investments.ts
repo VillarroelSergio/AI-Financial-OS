@@ -48,6 +48,19 @@ export interface OperationCreate {
   fees?: string;
 }
 
+export interface AssetSearchCandidate {
+  ticker: string;
+  name: string;
+  exchange: string;
+  currency: string;
+  asset_type: string;
+  requires_confirmation: boolean;
+  confirmation_note: string;
+}
+
+export const searchAssetCandidates = (query: string) =>
+  api.get<AssetSearchCandidate[]>(`/api/investments/assets/search?q=${encodeURIComponent(query)}`);
+
 export const getAssets = () =>
   api.get<InvestmentAsset[]>("/api/investments/assets");
 

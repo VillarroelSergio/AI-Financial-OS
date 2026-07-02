@@ -6,9 +6,11 @@ import requests
 
 from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter, redact_api_key
 from app.modules.market_intelligence.ingestion.config import get_api_key
-from app.modules.market_intelligence.ingestion.models import CurrencyRate
-from app.modules.market_intelligence.ingestion.models import AdapterResult
-from app.modules.market_intelligence.ingestion.models import MarketQuote
+from app.modules.market_intelligence.ingestion.models import (
+    AdapterResult,
+    CurrencyRate,
+    MarketQuote,
+)
 
 _BASE_URL = "https://api.polygon.io"
 

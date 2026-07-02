@@ -1,12 +1,12 @@
 from __future__ import annotations
-from datetime import datetime, timezone, timedelta
-from decimal import Decimal
-import re
 
+import re
+from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 
 from app.modules.investments.reconciliation_service import (
-    compute_reconciliation,
     QualityState,
+    compute_reconciliation,
 )
 from app.modules.investments.schemas import HoldingOut, InvestmentAssetOut
 

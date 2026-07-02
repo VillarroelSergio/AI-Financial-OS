@@ -1,11 +1,13 @@
 """Repository DuckDB para el Financial Knowledge Layer."""
 from __future__ import annotations
+
 import json
 import logging
 from typing import Optional
 
 from app.core.duckdb import get_duckdb
-from app.modules.financial_knowledge._shared import uid as _uid, now as _now
+from app.modules.financial_knowledge._shared import now as _now
+from app.modules.financial_knowledge._shared import uid as _uid
 from app.modules.financial_knowledge.storage.migrations import run_migrations
 
 logger = logging.getLogger("financial_knowledge.repository")

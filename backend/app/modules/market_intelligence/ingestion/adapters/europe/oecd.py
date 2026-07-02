@@ -2,12 +2,16 @@
 import csv
 import io
 import time
-import requests
 from datetime import datetime, timezone
 
+import requests
+
 from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter
-from app.modules.market_intelligence.ingestion.models import AdapterResult, ProviderMetadata
-from app.modules.market_intelligence.ingestion.models import MacroIndicator
+from app.modules.market_intelligence.ingestion.models import (
+    AdapterResult,
+    MacroIndicator,
+    ProviderMetadata,
+)
 
 _HEADERS = {"User-Agent": "MarketDataPOC/0.1 contact@example.com"}
 

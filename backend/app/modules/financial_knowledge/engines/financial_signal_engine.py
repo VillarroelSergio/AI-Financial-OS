@@ -1,13 +1,20 @@
 """Financial Signal Engine — convierte insights macro/mercado en señales financieras."""
 from __future__ import annotations
+
 import logging
 from pathlib import Path
 from typing import Optional
+
 import yaml
 
-from app.modules.financial_knowledge._shared import uid as _uid, now as _now
+from app.modules.financial_knowledge._shared import now as _now
+from app.modules.financial_knowledge._shared import uid as _uid
 from app.modules.financial_knowledge.models import (
-    EconomicIndicatorInsight, FinancialSignal, Severity, Direction, Trend,
+    Direction,
+    EconomicIndicatorInsight,
+    FinancialSignal,
+    Severity,
+    Trend,
 )
 from app.modules.market_intelligence.storage import repository as mi_repo
 
@@ -67,7 +74,6 @@ def _signals_from_insights(
         cat = insight.category
         value = insight.value
         trend = insight.trend
-        sid = []
 
         # ── Inflation signals ──────────────────────────────────────────────
         if cat in ("inflation", "core_inflation"):
@@ -318,7 +324,7 @@ def _signals_from_market(
             ))
 
     # ── Forex signals ───────────────────────────────────────────────────────
-    usd_threshold = market_rules.get("usd_strength", {}).get("change_pct_threshold", -2.0)
+    market_rules.get("usd_strength", {}).get("change_pct_threshold", -2.0)
     for fx in forex:
         if fx.get("base_currency") == "EUR" and fx.get("quote_currency") == "USD":
             rate = fx.get("rate", 1.0) or 1.0

@@ -3,6 +3,7 @@
 Punto de entrada para los comandos CLI market:intelligence:update.
 """
 from __future__ import annotations
+
 import importlib
 import logging
 import uuid
@@ -12,7 +13,8 @@ from datetime import datetime, timezone
 from app.modules.market_intelligence.catalog.loader import CatalogLoader
 from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter
 from app.modules.market_intelligence.ingestion.orchestrator import (
-    CatalogFetchResult, ProviderOrchestrator,
+    CatalogFetchResult,
+    ProviderOrchestrator,
 )
 
 logger = logging.getLogger("market_intelligence.runner")

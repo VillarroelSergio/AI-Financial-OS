@@ -16,6 +16,9 @@ class ColumnMapping(BaseModel):
 
 class ConfirmImport(BaseModel):
     mapping: ColumnMapping | None = None
+    # Fuerza la divisa de todos los movimientos importados (p. ej. CSV de Monefy
+    # etiquetado en USD cuando los importes reales son EUR).
+    currency_override: str | None = None
 
 
 class ImportBatchOut(BaseModel):

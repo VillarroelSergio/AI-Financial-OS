@@ -5,8 +5,13 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.modules.market_intelligence.api import service
 from app.modules.market_intelligence.api.schemas import (
-    AiDatasheetOut, BondSnapshotOut, ForexSnapshotOut,
-    MacroSnapshotOut, MarketSnapshotOut, NewsSnapshotOut, PersonalImpactOut,
+    AiDatasheetOut,
+    BondSnapshotOut,
+    ForexSnapshotOut,
+    MacroSnapshotOut,
+    MarketSnapshotOut,
+    NewsSnapshotOut,
+    PersonalImpactOut,
 )
 
 router = APIRouter()

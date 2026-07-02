@@ -3,11 +3,11 @@
 Consolidado desde market-data-poc/models/{base,assets,macro,market,company,news}.py
 """
 from __future__ import annotations
+
 from dataclasses import dataclass, field
 from datetime import date, datetime
 from enum import Enum
 from typing import Optional
-
 
 # ── Base ─────────────────────────────────────────────────────────────────────
 

@@ -15,11 +15,11 @@ Statuses:
 """
 from __future__ import annotations
 
-import yfinance as yf
-
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from typing import Optional
+
+import yfinance as yf
 
 from app.modules.investments.asset_resolution import resolve_asset
 from app.modules.market_intelligence.ingestion.equity_quote_service import get_equity_quote

@@ -6,8 +6,7 @@ import requests
 
 from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter
 from app.modules.market_intelligence.ingestion.config import get_api_key
-from app.modules.market_intelligence.ingestion.models import AdapterResult
-from app.modules.market_intelligence.ingestion.models import CompanyProfile
+from app.modules.market_intelligence.ingestion.models import AdapterResult, CompanyProfile
 
 _BASE_URL = "https://api.opencorporates.com/v0.4/companies/search"
 _HEADERS = {"User-Agent": "MarketDataPOC/0.1 contact@example.com"}

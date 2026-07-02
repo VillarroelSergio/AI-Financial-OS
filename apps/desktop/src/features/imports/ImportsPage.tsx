@@ -19,6 +19,7 @@ export default function ImportsPage() {
   const [history, setHistory] = useState<ImportBatch[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [currencyOverride, setCurrencyOverride] = useState("");
   const [result, setResult] = useState<{ rows_imported: number; rows_skipped: number } | null>(null);
 
   useEffect(() => { if (!demoMode) listImports().then(setHistory).catch(() => undefined); }, [demoMode]);
@@ -34,7 +35,7 @@ export default function ImportsPage() {
   async function confirm() {
     if (!preview || demoMode) return;
     setBusy(true); setError("");
-    try { setResult(await confirmImport(preview.import_batch_id, preview.mapping)); setStep(5); setHistory(await listImports()); }
+    try { setResult(await confirmImport(preview.import_batch_id, preview.mapping, currencyOverride || undefined)); setStep(5); setHistory(await listImports()); }
     catch { setError("No se pudo completar la importacion. No se han guardado filas nuevas."); }
     finally { setBusy(false); }
   }
@@ -73,7 +74,7 @@ export default function ImportsPage() {
             <div className="p-5 flex justify-between items-center border-b border-hairline-dark"><div><h2 className="font-semibold">Vista previa y validacion</h2><p className="text-sm text-stone mt-1">Hasta 100 filas de {preview.rows_total}.</p></div><div className="flex gap-2 text-xs"><span className="rounded-lg bg-accent-teal/10 text-accent-teal px-3 py-1.5">{preview.rows_valid} validas</span><span className="rounded-lg bg-accent-danger/10 text-accent-danger px-3 py-1.5">{preview.rows_invalid} invalidas</span><span className="rounded-lg bg-accent-warning/10 text-accent-warning px-3 py-1.5">{preview.warnings_count} avisos</span></div></div>
             <div className="overflow-x-auto"><table className="w-full text-sm"><thead className="text-xs text-stone bg-black/20"><tr>{["Fila", "Fecha", "Cuenta", "Categoria", "Descripcion", "Importe", "Estado"].map((x) => <th key={x} className="text-left font-medium px-4 py-3">{x}</th>)}</tr></thead><tbody>{preview.preview_rows.map((row) => <tr key={row.row_number} className="border-t border-divider-soft"><td className="px-4 py-3 text-stone">{row.row_number}</td><td className="px-4 py-3">{row.date}</td><td className="px-4 py-3">{row.account}</td><td className="px-4 py-3">{row.category || "-"}</td><td className="px-4 py-3">{row.description}</td><td className={`px-4 py-3 font-medium ${Number(row.amount) < 0 ? "text-accent-danger" : "text-accent-teal"}`}>{row.amount} {row.currency}</td><td className="px-4 py-3"><span className={row.status === "valid" ? "text-accent-teal" : "text-accent-danger"}>{row.status === "valid" ? "Valida" : row.status === "duplicate" ? "Duplicada" : row.errors[0]}</span></td></tr>)}</tbody></table></div>
           </section>
-          <div className="premium-card rounded-lg p-5 flex items-center justify-between"><div><b>Confirmacion explicita</b><p className="text-sm text-stone mt-1">Solo se guardaran filas validas y no duplicadas. El lote se puede revertir.</p></div><div className="flex gap-3"><button className="mercury-button px-4 py-2 rounded-lg" onClick={() => { setPreview(null); setStep(0); }}>Cancelar</button><button disabled={!preview.rows_valid || busy || demoMode} onClick={confirm} className="mercury-button-primary px-5 py-2 rounded-lg disabled:opacity-40">{demoMode ? "Demo de snapshot" : `Importar ${preview.rows_valid} movimientos`}</button></div></div>
+          <div className="premium-card rounded-lg p-5 flex items-center justify-between"><div><b>Confirmacion explicita</b><p className="text-sm text-stone mt-1">Solo se guardaran filas validas y no duplicadas. El lote se puede revertir.</p></div><div className="flex items-center gap-3"><label className="flex items-center gap-2 text-xs text-stone">Divisa<select value={currencyOverride} onChange={(e) => setCurrencyOverride(e.target.value)} className="rounded-lg border border-hairline-dark bg-white/[.035] px-2 py-2 text-sm text-on-dark"><option value="">Del archivo</option><option value="EUR">EUR</option><option value="USD">USD</option><option value="GBP">GBP</option></select></label><button className="mercury-button px-4 py-2 rounded-lg" onClick={() => { setPreview(null); setStep(0); }}>Cancelar</button><button disabled={!preview.rows_valid || busy || demoMode} onClick={confirm} className="mercury-button-primary px-5 py-2 rounded-lg disabled:opacity-40">{demoMode ? "Demo de snapshot" : `Importar ${preview.rows_valid} movimientos`}</button></div></div>
         </>
       )}
 

@@ -1,13 +1,17 @@
 """AI Datasheet Generator — genera datasheet compacto para consumo de IA local."""
 from __future__ import annotations
+
 import json
 import logging
 from typing import Optional
 
-from app.modules.financial_knowledge._shared import uid as _uid, now as _now
+from app.modules.financial_knowledge._shared import now as _now
 from app.modules.financial_knowledge.models import (
-    AIDatasheet, EconomicIndicatorInsight, FinancialSignal,
-    MarketRegime, PersonalImpact,
+    AIDatasheet,
+    EconomicIndicatorInsight,
+    FinancialSignal,
+    MarketRegime,
+    PersonalImpact,
 )
 from app.modules.market_intelligence.storage import repository as mi_repo
 

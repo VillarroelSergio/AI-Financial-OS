@@ -25,6 +25,8 @@ const USER_SAFE_ECONOMY_ERROR =
 export function useEconomyMI() {
   const [macro, setMacro] = useState<MacroSnapshotMI | null>(null);
   const [impact, setImpact] = useState<PersonalImpactMI | null>(null);
+  const [bonds, setBonds] = useState<BondSnapshotMI | null>(null);
+  const [forex, setForex] = useState<ForexSnapshotMI | null>(null);
   const [ingestStatus, setIngestStatus] = useState<IngestStatus | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -32,12 +34,16 @@ export function useEconomyMI() {
 
   const load = useCallback(async () => {
     try {
-      const [macroData, impactData] = await Promise.all([
+      const [macroData, impactData, bondsData, forexData] = await Promise.all([
         getMacroSnapshot(),
         getPersonalImpact().catch(() => null),
+        getBondSnapshot().catch(() => null),
+        getForexSnapshot().catch(() => null),
       ]);
       setMacro(macroData);
       setImpact(impactData);
+      setBonds(bondsData);
+      setForex(forexData);
       setError(null);
     } catch {
       setError(USER_SAFE_ECONOMY_ERROR);
@@ -69,7 +75,7 @@ export function useEconomyMI() {
     };
   }, [load]);
 
-  return { macro, impact, ingestStatus, loading, error };
+  return { macro, impact, bonds, forex, ingestStatus, loading, error };
 }
 
 export function useMarketsMI() {
