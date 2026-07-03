@@ -1,4 +1,4 @@
-# Build de release Windows (Fase 11): backend PyInstaller + tauri build (.msi / .exe NSIS).
+﻿# Build de release Windows (Fase 11): backend PyInstaller + tauri build (.msi / .exe NSIS).
 # Uso: .\scripts\build-release.ps1 [-SkipBackend]
 param(
     [switch]$SkipBackend
@@ -31,6 +31,8 @@ if (-not (Test-Path (Join-Path $backendDist "financial-backend.exe"))) {
 if (Test-Path $binariesDir) { Remove-Item $binariesDir -Recurse -Force }
 New-Item -ItemType Directory -Force $binariesDir | Out-Null
 Copy-Item "$backendDist\*" $binariesDir -Recurse
+$envFile = Join-Path $backendDir ".env"
+if (Test-Path $envFile) { Copy-Item $envFile $binariesDir }
 
 # 3. Frontend + bundle Tauri
 Write-Host "[3/3] Ejecutando tauri build..." -ForegroundColor Cyan

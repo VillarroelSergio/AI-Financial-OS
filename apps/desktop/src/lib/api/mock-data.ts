@@ -477,6 +477,34 @@ const mockBondSnapshot = {
   warnings: [],
 };
 
+const mockQuote = (catalog_item_id: string, name: string, price: number, change_pct: number, currency = "USD", country = "US") => ({
+  catalog_item_id, symbol: catalog_item_id.toUpperCase(), asset_type: "index",
+  price, change_pct, currency, observed_at: "2026-06-30T22:00:00Z",
+  provider_id: "mock", quality_score: 1, data_status: "ok",
+  display_name: name, display_country: country,
+});
+
+const mockMarketSnapshot = {
+  status: "ok",
+  indices: [
+    mockQuote("sp500", "S&P 500", 7483.24, 0.42),
+    mockQuote("nasdaq", "Nasdaq Composite", 25832.67, -0.8),
+    mockQuote("ibex35", "IBEX 35", 19783.8, 0.57, "EUR", "ES"),
+    mockQuote("eurostoxx50", "EuroStoxx 50", 6386.23, 0.4, "EUR", "EA"),
+  ],
+  crypto: [
+    mockQuote("bitcoin", "Bitcoin", 61880, 1.13, "USD", "GLOBAL"),
+    mockQuote("ethereum", "Ethereum", 1743.14, 6.03, "USD", "GLOBAL"),
+  ],
+  commodities: [
+    mockQuote("gold", "Oro", 4190.3, 1.9, "USD", "GLOBAL"),
+    mockQuote("brent", "Brent Crude Oil", 71.4, -0.6, "USD", "GLOBAL"),
+  ],
+  generated_at: "2026-07-01T09:00:00Z",
+  warnings: [],
+  quality_score: 1,
+};
+
 const mockForexSnapshot = {
   rates: [
     { catalog_item_id: "eur_usd", base_currency: "EUR", quote_currency: "USD", rate: 1.1342, date: "2026-06-30", provider_id: "mock", quality_score: 1, data_status: "ok" },
@@ -714,6 +742,7 @@ export function getMockResponse<T>(path: string, init?: RequestInit): T {
   if (clean === "/api/household-bills/summary") return mockHouseholdSummary as T;
   if (clean.startsWith("/api/household-bills/") && init?.method === "DELETE") return undefined as T;
   if (clean === "/api/market-intelligence/snapshot/macro") return mockMacroSnapshot as T;
+  if (clean === "/api/market-intelligence/snapshot/market") return mockMarketSnapshot as T;
   if (clean === "/api/market-intelligence/snapshot/bonds") return mockBondSnapshot as T;
   if (clean === "/api/market-intelligence/snapshot/forex") return mockForexSnapshot as T;
   if (clean === "/api/market-intelligence/personal-impact") return mockPersonalImpact as T;

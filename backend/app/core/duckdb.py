@@ -20,6 +20,7 @@ logger = logging.getLogger(__name__)
 _conn: Optional[duckdb.DuckDBPyConnection] = None
 _conn_lock = threading.Lock()
 _in_memory = False
+_local = threading.local()
 
 
 def is_in_memory() -> bool:
@@ -47,4 +48,11 @@ def get_duckdb() -> duckdb.DuckDBPyConnection:
                 )
                 _conn = duckdb.connect(":memory:")
                 _in_memory = True
-        return _conn
+    # Un DuckDBPyConnection no es seguro para queries concurrentes desde varios
+    # threads (ingesta en daemon thread + requests de FastAPI). Cada thread usa
+    # su propio cursor (conexión duplicada sobre la misma BD).
+    cursor = getattr(_local, "cursor", None)
+    if cursor is None:
+        cursor = _conn.cursor()
+        _local.cursor = cursor
+    return cursor

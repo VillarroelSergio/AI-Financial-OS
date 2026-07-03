@@ -14,6 +14,15 @@ import sys
 from pathlib import Path
 
 PORT = int(os.environ.get("BACKEND_PORT", "8010"))
+_NULL_STREAMS = []
+
+
+def _ensure_standard_streams() -> None:
+    for stream_name in ("stdout", "stderr"):
+        if getattr(sys, stream_name) is None:
+            stream = open(os.devnull, "w", encoding="utf-8")
+            _NULL_STREAMS.append(stream)
+            setattr(sys, stream_name, stream)
 
 
 def _configure_production_env() -> None:
@@ -25,6 +34,8 @@ def _configure_production_env() -> None:
 
 
 def main() -> None:
+    _ensure_standard_streams()
+
     if getattr(sys, "frozen", False):
         _configure_production_env()
 

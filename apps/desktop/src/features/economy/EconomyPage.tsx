@@ -133,6 +133,18 @@ export default function EconomyPage() {
 
       {loading && <LoadingSkeleton isIngesting={isIngesting} />}
 
+      {!loading && isIngesting && (
+        <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-2.5">
+          <p className="text-caption text-primary-bright">Actualizando datos en segundo plano… Se muestran los ultimos datos disponibles.</p>
+        </div>
+      )}
+
+      {ingestStatus?.storage_warning && (
+        <div className="rounded-lg border border-amber-400/25 bg-amber-400/10 px-4 py-2.5">
+          <p className="text-caption text-amber-200">{ingestStatus.storage_warning}</p>
+        </div>
+      )}
+
       {error && !loading && (
         <ErrorState
           title="No se han podido actualizar los datos macro"

@@ -11,7 +11,11 @@ _status: dict = {"status": "idle", "last_run": None, "count": 0, "results": []}
 
 
 def get_ingest_status() -> dict:
+    from app.modules.market_intelligence.ingestion.runner import ADAPTER_LOAD_ERRORS
+
     status = _status.copy()
+    if ADAPTER_LOAD_ERRORS:
+        status["adapter_load_errors"] = dict(ADAPTER_LOAD_ERRORS)
     # El fallback en memoria significa que nada persiste: avisar siempre.
     status["storage"] = "memory" if is_in_memory() else "file"
     if status["storage"] == "memory":

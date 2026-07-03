@@ -39,7 +39,8 @@ mod backend {
         }
         let exe = resource_dir.join("backend").join("financial-backend.exe");
         let mut cmd = Command::new(&exe);
-        cmd.env("APP_ENV", "production")
+        cmd.current_dir(exe.parent().unwrap())
+            .env("APP_ENV", "production")
             .env("BACKEND_PORT", PORT.to_string());
         #[cfg(windows)]
         {

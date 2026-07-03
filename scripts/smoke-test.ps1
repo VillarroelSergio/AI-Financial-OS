@@ -1,4 +1,4 @@
-# Smoke test post-build (Fase 11): lanza el binario de release, espera /health,
+﻿# Smoke test post-build (Fase 11): lanza el binario de release, espera /health,
 # comprueba que la app sigue viva y cierra limpio.
 # Uso: .\scripts\smoke-test.ps1 [-ExePath <ruta>] [-TimeoutSec 60]
 param(
