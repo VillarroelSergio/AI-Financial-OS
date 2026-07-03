@@ -105,7 +105,7 @@ export default function AddStockDialog({ open, accountId, onClose, onSuccess }: 
               <input
                 type="number"
                 step="0.000001"
-                min="0"
+                min="0.000001"
                 className="w-full bg-canvas-dark border border-hairline-dark rounded-md px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary"
                 value={quantity}
                 onChange={e => setQuantity(e.target.value)}
@@ -118,7 +118,7 @@ export default function AddStockDialog({ open, accountId, onClose, onSuccess }: 
               <input
                 type="number"
                 step="0.01"
-                min="0"
+                min="0.01"
                 className="w-full bg-canvas-dark border border-hairline-dark rounded-md px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary"
                 value={avgPrice}
                 onChange={e => setAvgPrice(e.target.value)}

@@ -87,6 +87,27 @@ export const updateHolding = (id: string, data: HoldingUpdate) =>
 export const deleteHolding = (id: string) =>
   api.delete<void>(`/api/investments/holdings/${id}`);
 
+export interface HoldingPerformancePoint {
+  date: string;
+  price: number;
+}
+
+export interface HoldingPerformance {
+  holding_id: string;
+  name: string;
+  ticker: string;
+  currency: string;
+  entry_date: string;
+  entry_price: number;
+  entry_source: "operation" | "holding";
+  current_price: number;
+  change_pct: number | null;
+  series: HoldingPerformancePoint[];
+}
+
+export const getHoldingPerformance = (holdingId: string) =>
+  api.get<HoldingPerformance>(`/api/investments/holdings/${holdingId}/performance`);
+
 export const getOperations = (accountId?: string) =>
   api.get<InvestmentOperation[]>(
     `/api/investments/operations${accountId ? `?account_id=${accountId}` : ""}`

@@ -57,8 +57,10 @@ export interface MonthlySpendingPoint {
   savings: string;
 }
 
-export const fetchSpendingMonthly = (months = 12) =>
-  api.get<MonthlySpendingPoint[]>(`/api/dashboard/spending/monthly?months=${months}`);
+export const fetchSpendingMonthly = (months = 12, year?: number) =>
+  api.get<MonthlySpendingPoint[]>(
+    `/api/dashboard/spending/monthly${buildQueryString({ months, year })}`,
+  );
 export const fetchCategorySpendingDetail = (
   categoryId: string | null,
   period: { month?: string; year?: number },

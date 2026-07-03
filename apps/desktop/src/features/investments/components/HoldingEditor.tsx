@@ -24,6 +24,7 @@ interface HoldingEditorProps {
 export default function HoldingEditor({ holding, accounts, onClose, onSaved }: HoldingEditorProps) {
   const defaultAccount = accounts.find((a) => ["broker", "investment", "savings"].includes(a.type)) ?? accounts[0];
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     account_id: defaultAccount?.id ?? "",
     name: "",
@@ -85,7 +86,17 @@ export default function HoldingEditor({ holding, accounts, onClose, onSaved }: H
     });
   }, [holding]);
 
-  const canSave = useMemo(() => form.account_id && Number(form.quantity) >= 0, [form]);
+  const isListed = form.asset_type === "stock" || form.asset_type === "etf";
+  const validationError = useMemo(() => {
+    if (!form.account_id) return "Selecciona una cuenta";
+    if (!form.name.trim() && !form.ticker.trim()) return "Indica el nombre o el ticker del activo";
+    if (isListed) {
+      if (Number(form.quantity) <= 0) return "Indica cuántas acciones tienes (mayor que 0)";
+      if (Number(form.average_price) <= 0) return "Indica el precio medio de compra (mayor que 0)";
+    }
+    return null;
+  }, [form, isListed]);
+  const canSave = validationError === null;
 
   const set = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }));
 
@@ -93,6 +104,7 @@ export default function HoldingEditor({ holding, accounts, onClose, onSaved }: H
     event.preventDefault();
     if (!canSave) return;
     setSaving(true);
+    setError(null);
     try {
       const assetPayload = {
         name: form.name.trim() || form.ticker.trim() || "Activo sin identificar",
@@ -124,6 +136,8 @@ export default function HoldingEditor({ holding, accounts, onClose, onSaved }: H
       }
       onSaved();
       onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "No se pudo guardar el activo");
     } finally {
       setSaving(false);
     }
@@ -209,6 +223,9 @@ export default function HoldingEditor({ holding, accounts, onClose, onSaved }: H
           <input className="w-full bg-surface-elevated border border-hairline-dark rounded-sm px-md py-sm text-body-sm text-on-dark" value={form.region} onChange={(e) => set("region", e.target.value)} placeholder="Opcional" />
         </label>
       </div>
+      {(error || (validationError && validationError !== "Selecciona una cuenta")) && (
+        <p className="text-caption text-accent-danger">{error ?? validationError}</p>
+      )}
       <div className="flex justify-end gap-sm">
         <button type="button" onClick={onClose} className="px-lg py-sm text-body-sm text-stone hover:text-on-dark">Cancelar</button>
         <button type="submit" disabled={saving || !canSave} className="inline-flex items-center gap-sm px-lg py-sm bg-primary text-on-dark text-button-md rounded-sm hover:bg-primary-bright disabled:opacity-50">

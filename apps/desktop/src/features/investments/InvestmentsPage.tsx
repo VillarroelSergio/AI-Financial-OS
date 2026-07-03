@@ -118,10 +118,10 @@ export default function InvestmentsPage() {
             Importar
           </button>
           <button
-            onClick={() => navigate("/investments/price-coverage")}
+            onClick={() => navigate("/investments/tracking")}
             className="mercury-button flex items-center gap-sm px-md py-sm rounded-lg text-body-sm"
           >
-            Cobertura
+            Seguimiento
           </button>
           </>
         }

@@ -19,6 +19,8 @@ class ConfirmImport(BaseModel):
     # Fuerza la divisa de todos los movimientos importados (p. ej. CSV de Monefy
     # etiquetado en USD cuando los importes reales son EUR).
     currency_override: str | None = None
+    # Asigna todos los movimientos a esta cuenta en lugar de la columna del archivo.
+    account_id: str | None = None
 
 
 class ImportBatchOut(BaseModel):

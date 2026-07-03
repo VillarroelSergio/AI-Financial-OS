@@ -89,19 +89,30 @@ def get_overview(db: Session = Depends(get_db)) -> OverviewOut:
 
 
 @router.get("/spending/monthly")
-def get_spending_monthly(months: int = Query(12, ge=1, le=36), db: Session = Depends(get_db)) -> list[dict]:
+def get_spending_monthly(
+    months: int = Query(12, ge=1, le=36),
+    year: int | None = Query(None, ge=1900, le=2200, description="Si se indica, devuelve enero-diciembre de ese año"),
+    db: Session = Depends(get_db),
+) -> list[dict]:
     """Serie mensual de ingreso/gasto/ahorro para la tendencia de Gastos."""
-    now = datetime.now(timezone.utc)
-    prefixes = []
-    year, month = now.year, now.month
-    for _ in range(months):
-        prefixes.append(f"{year}-{month:02d}")
-        month -= 1
-        if month == 0:
-            year, month = year - 1, 12
-    prefixes.reverse()
+    if year is not None:
+        prefixes = [f"{year}-{m:02d}" for m in range(1, 13)]
+    else:
+        now = datetime.now(timezone.utc)
+        prefixes = []
+        y, month = now.year, now.month
+        for _ in range(months):
+            prefixes.append(f"{y}-{month:02d}")
+            month -= 1
+            if month == 0:
+                y, month = y - 1, 12
+        prefixes.reverse()
 
-    txs = db.query(Transaction).filter(Transaction.date >= f"{prefixes[0]}-01").all()
+    txs = (
+        db.query(Transaction)
+        .filter(Transaction.date >= f"{prefixes[0]}-01", Transaction.date <= f"{prefixes[-1]}-31")
+        .all()
+    )
     by_month: dict[str, dict[str, Decimal]] = {p: {"income": Decimal("0"), "expense": Decimal("0")} for p in prefixes}
     for t in txs:
         prefix = str(t.date)[:7]

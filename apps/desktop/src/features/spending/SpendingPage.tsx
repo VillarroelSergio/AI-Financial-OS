@@ -24,7 +24,7 @@ export default function SpendingPage() {
   const loadedYears = useSpendingYears();
   const yearOptions = loadedYears.length ? loadedYears : [year];
   const { data, loading } = useSpending({ mode, month, year });
-  const monthly = useSpendingMonthly(12);
+  const monthly = useSpendingMonthly(12, mode === "year" ? year : undefined);
   const trendData = useMemo(
     () =>
       monthly.map((p) => ({
@@ -100,7 +100,7 @@ export default function SpendingPage() {
         <EmptyState icon={ReceiptText} title="No hay movimientos este periodo" description="Importa o registra movimientos para ver porcentajes por categoria y evolucion de ahorro." />
       ) : (
         <div className="dashboard-grid">
-          <ChartCard className="col-span-6" title="Evolucion mensual" description="Gasto e ingreso de los ultimos 12 meses; haz click en un mes para verlo en detalle">
+          <ChartCard className="col-span-6" title="Evolucion mensual" description={mode === "year" ? `Gasto e ingreso del ano ${year}; haz click en un mes para verlo en detalle` : "Gasto e ingreso de los ultimos 12 meses; haz click en un mes para verlo en detalle"}>
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={trendData} barGap={2} onClick={(state) => {

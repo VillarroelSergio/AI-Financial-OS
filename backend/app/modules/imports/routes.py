@@ -18,7 +18,7 @@ from app.modules.imports.service import (
     MONEFY_COLUMNS,
     dumps,
     normalize_row,
-    read_csv,
+    read_table,
 )
 
 router = APIRouter()
@@ -43,11 +43,11 @@ async def preview(
         raise fail(400, "UNSUPPORTED_SOURCE", "Fuente de importación no soportada")
     content = await file.read()
     try:
-        columns, rows = read_csv(content)
+        columns, rows = read_table(file.filename, content)
     except ValueError as exc:
         raise fail(422, "INVALID_CSV", str(exc)) from exc
     if source_type == "monefy" and not {"date", "amount"}.issubset(set(columns)):
-        raise fail(422, "INVALID_COLUMNS", "El CSV de Monefy requiere date y amount")
+        raise fail(422, "INVALID_COLUMNS", "El archivo de Monefy requiere date y amount")
     mapping = (
         DEFAULT_MONEFY_MAPPING
         if source_type == "monefy"
@@ -122,6 +122,11 @@ def confirm(batch_id: str, payload: ConfirmImport, db: Session = Depends(get_db)
     currency_override = (payload.currency_override or "").strip().upper() or None
     if currency_override and not re.fullmatch(r"[A-Z]{3}", currency_override):
         raise fail(422, "INVALID_CURRENCY", "La divisa debe ser un código ISO de 3 letras")
+    target_account = None
+    if payload.account_id:
+        target_account = db.query(Account).filter(Account.id == payload.account_id).first()
+        if not target_account:
+            raise fail(422, "INVALID_ACCOUNT", "La cuenta seleccionada no existe")
     rows = db.query(ImportRow).filter(ImportRow.import_batch_id == batch_id).all()
     imported = 0
     for row in rows:
@@ -131,16 +136,19 @@ def confirm(batch_id: str, payload: ConfirmImport, db: Session = Depends(get_db)
             continue
         if currency_override:
             normalized["currency"] = currency_override
-        account_name = normalized["account"]
-        account = db.query(Account).filter(Account.name == account_name).first()
-        if not account:
-            account = Account(
-                name=account_name,
-                type="cash" if "efectivo" in account_name.casefold() else "other",
-                currency=normalized["currency"],
-            )
-            db.add(account)
-            db.flush()
+        if target_account:
+            account = target_account
+        else:
+            account_name = normalized["account"]
+            account = db.query(Account).filter(Account.name == account_name).first()
+            if not account:
+                account = Account(
+                    name=account_name,
+                    type="cash" if "efectivo" in account_name.casefold() else "other",
+                    currency=normalized["currency"],
+                )
+                db.add(account)
+                db.flush()
         category = None
         if normalized["category"]:
             category = db.query(Category).filter(Category.name == normalized["category"]).first()

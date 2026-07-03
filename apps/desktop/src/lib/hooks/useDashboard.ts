@@ -37,11 +37,11 @@ export function useSpendingYears() {
   return data?.years ?? [];
 }
 
-export function useSpendingMonthly(months = 12) {
+export function useSpendingMonthly(months = 12, year?: number) {
   const [data, setData] = useState<MonthlySpendingPoint[]>([]);
   useEffect(() => {
-    fetchSpendingMonthly(months).then(setData).catch(() => {});
-  }, [months]);
+    fetchSpendingMonthly(months, year).then(setData).catch(() => {});
+  }, [months, year]);
   return data;
 }
 
