@@ -8,5 +8,5 @@ export function previewImport(file: File, sourceType: string) {
   return api.upload<ImportPreview>("/api/imports/preview", form);
 }
 export const listImports = () => api.get<ImportBatch[]>("/api/imports");
-export const confirmImport = (id: string, mapping: Record<string, string>, currencyOverride?: string, accountId?: string) => api.post<{ rows_imported: number; rows_skipped: number }>(`/api/imports/${id}/confirm`, { mapping, ...(currencyOverride ? { currency_override: currencyOverride } : {}), ...(accountId ? { account_id: accountId } : {}) });
+export const confirmImport = (id: string, mapping: Record<string, string>, currencyOverride?: string, accountId?: string) => api.post<{ rows_imported: number; rows_skipped: number; transfers_detected: number; bills_created: number }>(`/api/imports/${id}/confirm`, { mapping, ...(currencyOverride ? { currency_override: currencyOverride } : {}), ...(accountId ? { account_id: accountId } : {}) });
 export const rollbackImport = (id: string) => api.post<{ rows_removed: number }>(`/api/imports/${id}/rollback`, {});

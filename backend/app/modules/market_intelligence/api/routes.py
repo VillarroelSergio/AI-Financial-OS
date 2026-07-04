@@ -23,6 +23,13 @@ def get_personal_impact(db: Session = Depends(get_db)):
     return compute_personal_impact(db)
 
 
+@router.get("/personal-economy")
+def get_personal_economy(db: Session = Depends(get_db)) -> dict:
+    """Cruce macro↔finanzas personales: inflación propia, salario real, Euríbor, fiscal."""
+    from app.modules.market_intelligence.api.personal_economy import compute_personal_economy
+    return compute_personal_economy(db)
+
+
 @router.get("/ingest-status")
 def ingest_status() -> dict:
     from app.modules.market_intelligence.ingestion.startup import get_ingest_status

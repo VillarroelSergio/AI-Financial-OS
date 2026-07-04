@@ -6,6 +6,7 @@ import type { ImpactComparative, MacroDataPointMI } from "@/lib/types/market-int
 import IndicatorCard from "./components/IndicatorCard";
 import RegionTabs, { type RegionTab } from "./components/RegionTabs";
 import ImpactCard from "./components/ImpactCard";
+import PersonalEconomySection from "./components/PersonalEconomySection";
 import RatesAndDebtSection from "./components/RatesAndDebtSection";
 
 // Agrupación temática por subcategoría del catálogo
@@ -74,7 +75,7 @@ function groupByTheme(indicators: MacroDataPointMI[]): Array<[string, MacroDataP
 }
 
 export default function EconomyPage() {
-  const { macro, impact, bonds, forex, ingestStatus, loading, error } = useEconomyMI();
+  const { macro, impact, bonds, forex, personalEconomy, ingestStatus, loading, error } = useEconomyMI();
   const [activeRegion, setActiveRegion] = useState<RegionTab>("ES");
   const [showSecondary, setShowSecondary] = useState(false);
 
@@ -165,6 +166,8 @@ export default function EconomyPage() {
               </div>
             </section>
           )}
+
+          <PersonalEconomySection data={personalEconomy} macroSpain={macro.spain} />
 
           <RatesAndDebtSection bonds={bonds} forex={forex} />
 

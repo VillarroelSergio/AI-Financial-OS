@@ -23,6 +23,10 @@ class Transaction(Base):
     type: Mapped[str] = mapped_column(String, nullable=False)
     source: Mapped[str] = mapped_column(String, default="manual")
     source_name: Mapped[str | None] = mapped_column(String, nullable=True)
+    # Conciliación Monefy↔banco: 'personal' cuenta en analítica; 'pending' espera
+    # revisión; 'excluded' no cuenta (compartido, duplicado de Monefy o traspaso).
+    analytics_scope: Mapped[str] = mapped_column(String, default="personal")
+    linked_transaction_id: Mapped[str | None] = mapped_column(String, nullable=True)
     external_id: Mapped[str | None] = mapped_column(String, nullable=True)
     import_batch_id: Mapped[str | None] = mapped_column(String, nullable=True)
     notes: Mapped[str | None] = mapped_column(String, nullable=True)

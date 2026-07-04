@@ -60,6 +60,8 @@ export interface Transaction {
   source_name: string | null;
   external_id: string | null;
   import_batch_id: string | null;
+  analytics_scope: "personal" | "excluded" | "pending";
+  linked_transaction_id: string | null;
   notes: string | null;
   created_at: string;
   updated_at: string;
@@ -91,14 +93,14 @@ export interface ApiErrorResponse {
 
 export interface ImportPreviewRow {
   row_number: number; date: string; account: string; category: string; amount: string;
-  currency: string; description: string; status: "valid" | "invalid" | "duplicate";
+  currency: string; description: string; status: "valid" | "invalid" | "duplicate" | "skipped";
   errors: string[]; warnings: string[];
 }
 
 export interface ImportPreview {
-  import_batch_id: string; source_type: "monefy" | "generic_csv"; columns: string[];
-  rows_total: number; rows_valid: number; rows_invalid: number; warnings_count: number;
-  preview_rows: ImportPreviewRow[]; mapping: Record<string, string>;
+  import_batch_id: string; source_type: string; detected_source: string | null; columns: string[];
+  rows_total: number; rows_valid: number; rows_invalid: number; rows_skipped: number;
+  warnings_count: number; preview_rows: ImportPreviewRow[]; mapping: Record<string, string>;
 }
 
 export interface ImportBatch {

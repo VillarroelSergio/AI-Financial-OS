@@ -113,6 +113,56 @@ export interface PersonalImpactMI {
   warnings: string[];
 }
 
+export interface PersonalInflationCategoryMI {
+  category: string;
+  current: number;
+  previous: number;
+  yoy_pct: number | null;
+}
+
+export interface PersonalEconomyMI {
+  generated_at: string;
+  personal_inflation: {
+    user_yoy_pct: number | null;
+    ipc_general: number | null;
+    ipc_subyacente: number | null;
+    current_total: number;
+    previous_total: number;
+    by_category: PersonalInflationCategoryMI[];
+  };
+  real_salary: {
+    monthly_now: number | null;
+    monthly_year_ago: number | null;
+    nominal_yoy_pct: number | null;
+    ipc: number | null;
+    real_yoy_pct: number | null;
+  };
+  savings: {
+    idle_liquidity: number;
+    tipo_bce: number | null;
+    potential_monthly: number | null;
+  };
+  euribor: {
+    value: number | null;
+    year_ago: number | null;
+    history: { period: string; value: number }[];
+  };
+  fiscal_calendar: {
+    date: string;
+    label: string;
+    audience: "todos" | "autonomos";
+    days_left: number;
+  }[];
+  relevant_news: {
+    id: string;
+    title: string | null;
+    published_at: string;
+    source_name: string | null;
+    url: string | null;
+    matched: string[];
+  }[];
+}
+
 export interface IngestResultDetail {
   indicator: string;
   category: string;

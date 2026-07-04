@@ -116,6 +116,7 @@ def _get_personal_data(db: Session) -> dict:
 
     transport_monthly = _cat_monthly(["transporte", "gasolina"])
     food_home_monthly = _cat_monthly(["alimentaci"])
+    home_monthly = _cat_monthly(["casa", "hogar"])
 
     return {
         "total_balance": total_balance,
@@ -128,6 +129,7 @@ def _get_personal_data(db: Session) -> dict:
         "usd_monthly_expense": usd_monthly,
         "transport_monthly": transport_monthly,
         "food_home_monthly": food_home_monthly,
+        "home_monthly": home_monthly,
     }
 
 
@@ -139,6 +141,7 @@ _MI_EMPTY = {
     "ipc_general": None, "tipo_bce": None, "euribor_12m": None, "eur_usd": None,
     "brent": None, "spain_10y": None, "germany_10y": None, "risk_premium_bps": None,
     "ipc_subyacente": None, "confianza_consumidor_spain": None, "index_avg_change_1y": None,
+    "euribor_12m_year_ago": None, "brent_change_1y": None,
 }
 
 
@@ -158,6 +161,25 @@ def _get_mi_data() -> dict:
 
     def _macro(cid: str) -> float | None:
         return _scalar("mi_macro_observations", "value", cid, "retrieved_at")
+
+    def _macro_year_ago(cid: str) -> float | None:
+        """Valor de un indicador macro hace ~12 meses según su histórico."""
+        try:
+            from app.modules.market_intelligence.storage import repository
+
+            points = repository.get_macro_history(max_points=30).get(cid, [])
+        except Exception:
+            return None
+        if len(points) < 2:
+            return None
+        last_period = points[-1][0][:7]
+        year, month = int(last_period[:4]), int(last_period[5:7])
+        target = f"{year - 1}-{month:02d}"
+        value = None
+        for period, v in points:
+            if period[:7] <= target:
+                value = v
+        return value
 
     def _index_change_1y(cid: str) -> float | None:
         """Variación % a ~12 meses desde el histórico de precios."""
@@ -203,6 +225,8 @@ def _get_mi_data() -> dict:
         "ipc_subyacente": _macro("ipc_subyacente"),
         "confianza_consumidor_spain": _macro("confianza_consumidor_spain"),
         "index_avg_change_1y": index_avg,
+        "euribor_12m_year_ago": _macro_year_ago("euribor_12m"),
+        "brent_change_1y": _index_change_1y("brent"),
     }
 
 
@@ -327,6 +351,16 @@ def _build_comparatives(personal: dict, mi: dict) -> list[ImpactComparative]:
             signal5, text5 = "positive", "Euríbor en zona razonable"
         else:
             signal5, text5 = "warning", "Euríbor elevado — revisa tu hipoteca variable"
+        # Cuantificación: variación anual del Euríbor aplicada a tu deuda pendiente.
+        euribor_ya = mi.get("euribor_12m_year_ago")
+        if euribor is not None and euribor_ya is not None:
+            monthly_delta = debt * (euribor - euribor_ya) / 100 / 12
+            if abs(monthly_delta) >= 1:
+                direction = "encarece" if monthly_delta > 0 else "abarata"
+                text5 += (
+                    f" · La variación anual del Euríbor ({euribor_ya:.2f}%→{euribor:.2f}%) "
+                    f"{direction} tu revisión ~{abs(monthly_delta):,.0f} €/mes (aprox.)"
+                )
         comparatives.append(ImpactComparative(
             id="euribor_vs_mortgage",
             title="Euríbor vs tu deuda hipotecaria",
@@ -385,6 +419,33 @@ def _build_comparatives(personal: dict, mi: dict) -> list[ImpactComparative]:
             personal_label=f"Transporte/mes: {_fmt(transport, ' €', 0)}",
             signal=signal7,
             signal_text=text7,
+            source_ids=["brent"],
+        ))
+
+    # 7b. Energía vs tu gasto en Casa (solo si hay gasto en hogar)
+    brent_yoy = mi.get("brent_change_1y")
+    home = personal.get("home_monthly") or 0.0
+    if home > 0:
+        if brent_yoy is None:
+            signal7b, text7b = "no_data", _NO_DATA_TEXT
+        elif brent_yoy > 10:
+            signal7b = "warning"
+            text7b = f"La energía sube {_fmt(brent_yoy, '%', 1)} interanual — vigila luz y gas en tu gasto de Casa"
+        elif brent_yoy < -10:
+            signal7b = "positive"
+            text7b = f"La energía baja {_fmt(abs(brent_yoy), '%', 1)} interanual — alivio en los suministros del hogar"
+        else:
+            signal7b, text7b = "neutral", "Precio de la energía estable en el último año"
+        comparatives.append(ImpactComparative(
+            id="energy_vs_home",
+            title="Energía vs tu gasto en Casa",
+            description="Variación interanual del Brent como proxy del coste energético frente a tu gasto mensual en el hogar (luz, gas, suministros).",
+            market_value=brent_yoy,
+            market_label=f"Energía (12 meses): {_fmt(brent_yoy, '%', 1)}",
+            personal_value=home,
+            personal_label=f"Casa/mes: {_fmt(home, ' €', 0)}",
+            signal=signal7b,
+            signal_text=text7b,
             source_ids=["brent"],
         ))
 
@@ -501,7 +562,7 @@ def compute_personal_impact(db: Session) -> PersonalImpactOut:
             "total_balance": 0.0, "monthly_income": 0.0, "monthly_expense": 0.0,
             "savings_rate": None, "months_covered": None, "portfolio_return": None,
             "total_debt": 0.0, "usd_monthly_expense": 0.0,
-            "transport_monthly": 0.0, "food_home_monthly": 0.0,
+            "transport_monthly": 0.0, "food_home_monthly": 0.0, "home_monthly": 0.0,
         }
 
     try:

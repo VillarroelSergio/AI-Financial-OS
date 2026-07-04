@@ -6,6 +6,7 @@ import {
   getForexSnapshot,
   getBondSnapshot,
   getPersonalImpact,
+  getPersonalEconomy,
   getIngestStatus,
 } from "@/lib/api/market-intelligence";
 import type {
@@ -14,6 +15,7 @@ import type {
   IngestStatus,
   MacroSnapshotMI,
   MarketSnapshotMI,
+  PersonalEconomyMI,
   PersonalImpactMI,
 } from "@/lib/types/market-intelligence";
 
@@ -30,7 +32,8 @@ const cache: {
   market: MarketSnapshotMI | null;
   forex: ForexSnapshotMI | null;
   bonds: BondSnapshotMI | null;
-} = { macro: null, impact: null, market: null, forex: null, bonds: null };
+  personalEconomy: PersonalEconomyMI | null;
+} = { macro: null, impact: null, market: null, forex: null, bonds: null, personalEconomy: null };
 
 const POLL_MS = 3000;
 
@@ -73,21 +76,26 @@ export function useEconomyMI() {
   const [impact, setImpact] = useState<PersonalImpactMI | null>(cache.impact);
   const [bonds, setBonds] = useState<BondSnapshotMI | null>(cache.bonds);
   const [forex, setForex] = useState<ForexSnapshotMI | null>(cache.forex);
+  const [personalEconomy, setPersonalEconomy] = useState<PersonalEconomyMI | null>(
+    cache.personalEconomy
+  );
   const [loading, setLoading] = useState(cache.macro === null);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const [macroData, impactData, bondsData, forexData] = await Promise.all([
+    const [macroData, impactData, bondsData, forexData, personalEconomyData] = await Promise.all([
       getMacroSnapshot().catch(() => null),
       getPersonalImpact().catch(() => null),
       getBondSnapshot().catch(() => null),
       getForexSnapshot().catch(() => null),
+      getPersonalEconomy().catch(() => null),
     ]);
     // Nunca pisar un dato bueno con null: si un fetch falla, se conserva el último válido.
     if (macroData) setMacro((cache.macro = macroData));
     if (impactData) setImpact((cache.impact = impactData));
     if (bondsData) setBonds((cache.bonds = bondsData));
     if (forexData) setForex((cache.forex = forexData));
+    if (personalEconomyData) setPersonalEconomy((cache.personalEconomy = personalEconomyData));
     setError(macroData ? null : USER_SAFE_ECONOMY_ERROR);
     setLoading(false);
   }, []);
@@ -103,7 +111,7 @@ export function useEconomyMI() {
     load();
   });
 
-  return { macro, impact, bonds, forex, ingestStatus, loading, error };
+  return { macro, impact, bonds, forex, personalEconomy, ingestStatus, loading, error };
 }
 
 export function useMarketsMI() {

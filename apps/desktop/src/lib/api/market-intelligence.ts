@@ -6,6 +6,7 @@ import type {
   ForexSnapshotMI,
   BondSnapshotMI,
   PersonalImpactMI,
+  PersonalEconomyMI,
   IngestStatus,
 } from "@/lib/types/market-intelligence";
 
@@ -23,6 +24,9 @@ export const getBondSnapshot = () =>
 
 export const getPersonalImpact = () =>
   api.get<PersonalImpactMI>("/api/market-intelligence/personal-impact");
+
+export const getPersonalEconomy = () =>
+  api.get<PersonalEconomyMI>("/api/market-intelligence/personal-economy");
 
 export const getIngestStatus = () =>
   api.get<IngestStatus>("/api/market-intelligence/ingest-status");

@@ -174,7 +174,7 @@
   region: USA
   frequency: monthly
   priority: medium
-  dashboard: false
+  dashboard: true
   ai: true
   historical: 10y
   retention: 5y
