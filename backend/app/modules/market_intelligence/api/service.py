@@ -66,6 +66,9 @@ def get_macro_snapshot() -> MacroSnapshotOut:
         payload = {k: v for k, v in r.items() if k in MacroDataPoint.model_fields}
         payload["retrieved_at"] = str(r.get("retrieved_at", "")) if r.get("retrieved_at") else None
         payload["data_status"] = _status_for(r)
+        cat_item = _catalog.get_by_id(r.get("catalog_item_id", ""))
+        payload["display_name"] = cat_item.name if cat_item else None
+        payload["description"] = cat_item.description if cat_item else None
         point = MacroDataPoint(**payload)
         if region == "spain":
             spain.append(point)
@@ -100,6 +103,9 @@ def get_market_snapshot() -> MarketSnapshotOut:
         payload = {k: v for k, v in q.items() if k in QuoteOut.model_fields}
         payload["observed_at"] = str(q.get("observed_at", "")) if q.get("observed_at") else None
         payload["data_status"] = _status_for(q)
+        cat_item = _catalog.get_by_id(q.get("catalog_item_id", ""))
+        payload["display_name"] = cat_item.name if cat_item else None
+        payload["display_country"] = cat_item.country if cat_item else None
         return QuoteOut(**payload)
 
     indices = [quote(q) for q in quotes if str(q.get("catalog_item_id", "")).lower() in _INDEX_CATALOG_IDS]

@@ -3,7 +3,7 @@ import csv
 import io
 import time
 import requests
-from datetime import datetime, timezone, date
+from datetime import datetime, timezone
 
 from app.modules.market_intelligence.ingestion.models import AdapterResult, MarketQuote
 from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter

@@ -60,6 +60,14 @@ _BOND_INDICATOR_IDS: set[str] = {
     "us_treasury_10y", "us_treasury_30y",
 }
 
+# Mapping catalog IDs (bonds.yaml) → (FRED series, maturity label)
+_CATALOG_TO_FRED_SERIES: dict[str, tuple[str, str]] = {
+    "us_2y":  ("DGS2",  "2Y"),
+    "us_5y":  ("DGS5",  "5Y"),
+    "us_10y": ("DGS10", "10Y"),
+    "us_30y": ("DGS30", "30Y"),
+}
+
 
 def _metadata() -> ProviderMetadata:
     return ProviderMetadata(
@@ -193,6 +201,17 @@ class FREDAdapter(BaseAdapter):
                     records.extend(_parse_yield_csv(response.text, series_id, maturity, url))
                 except Exception as exc:
                     errors.append(f"{series_id}: {exc}")
+
+        elif indicator_id in _CATALOG_TO_FRED_SERIES:
+            series_id, maturity = _CATALOG_TO_FRED_SERIES[indicator_id]
+            url = f"https://fred.stlouisfed.org/graph/fredgraph.csv?id={series_id}"
+            try:
+                response = requests.get(url, headers=_HEADERS, timeout=10)
+                response.raise_for_status()
+                raw_sample = {"yield_preview": response.text[:500]}
+                records.extend(_parse_yield_csv(response.text, series_id, maturity, url))
+            except Exception as exc:
+                errors.append(f"{series_id}: {exc}")
 
         else:
             # Fetch only the FRED series relevant for this indicator

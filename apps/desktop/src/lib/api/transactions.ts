@@ -1,5 +1,6 @@
 import type { Transaction } from "@/lib/types";
 import { api } from "./client";
+import { buildQueryString } from "./queryParams";
 
 export interface TransactionCreate {
   account_id: string;
@@ -20,16 +21,8 @@ export interface TransactionFilters {
   type?: string;
 }
 
-export const fetchTransactions = (filters?: TransactionFilters) => {
-  const params = new URLSearchParams();
-  if (filters) {
-    Object.entries(filters).forEach(([k, v]) => {
-      if (v) params.set(k, v);
-    });
-  }
-  const qs = params.toString();
-  return api.get<Transaction[]>(`/api/transactions${qs ? `?${qs}` : ""}`);
-};
+export const fetchTransactions = (filters?: TransactionFilters) =>
+  api.get<Transaction[]>(`/api/transactions${buildQueryString({ ...filters })}`);
 
 export const createTransaction = (data: TransactionCreate) =>
   api.post<Transaction>("/api/transactions", data);

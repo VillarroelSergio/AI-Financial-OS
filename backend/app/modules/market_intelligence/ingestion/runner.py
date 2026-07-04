@@ -10,7 +10,6 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 from app.modules.market_intelligence.catalog.loader import CatalogLoader
-from app.modules.market_intelligence.catalog.schemas import CatalogIndicator
 from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter
 from app.modules.market_intelligence.ingestion.orchestrator import (
     CatalogFetchResult, ProviderOrchestrator,

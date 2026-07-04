@@ -39,4 +39,10 @@ backend/data/
 # OS
 .DS_Store
 Thumbs.db
-*.json
+
+# Graphify semantic cache (regenerated, not product code) — solo GRAPH_REPORT.md se versiona
+graphify-out/*
+!graphify-out/GRAPH_REPORT.md
+
+# POC excluida del release (ver docs/PRE_RELEASE_AUDIT.md HYG-1)
+market-data-poc/

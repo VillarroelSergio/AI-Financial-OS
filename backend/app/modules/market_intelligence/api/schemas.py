@@ -15,6 +15,8 @@ class MacroDataPoint(BaseModel):
     quality_score: float = 1.0
     data_status: str = "ok"
     retrieved_at: Optional[str] = None
+    display_name: Optional[str] = None
+    description: Optional[str] = None
 
 
 class MacroSnapshotOut(BaseModel):
@@ -37,6 +39,8 @@ class QuoteOut(BaseModel):
     quality_score: float = 1.0
     data_status: str = "ok"
     observed_at: Optional[str] = None
+    display_name: Optional[str] = None
+    display_country: Optional[str] = None
 
 
 class MarketSnapshotOut(BaseModel):

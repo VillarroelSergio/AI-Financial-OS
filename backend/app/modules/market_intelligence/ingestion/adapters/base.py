@@ -13,6 +13,10 @@ from app.modules.market_intelligence.ingestion.models import (
 from app.modules.market_intelligence.ingestion.config import get_api_key
 
 
+def redact_api_key(value: str, api_key: str | None) -> str:
+    return value.replace(api_key, "***") if api_key else value
+
+
 class BaseAdapter(ABC):
     name: str = ""
     category: str = ""

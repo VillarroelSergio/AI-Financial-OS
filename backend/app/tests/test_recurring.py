@@ -1,7 +1,5 @@
 from __future__ import annotations
 from datetime import date
-import pytest
-from fastapi.testclient import TestClient
 
 
 def test_create_recurring(client):

@@ -4,28 +4,12 @@ import {
   refreshPrices, updateHolding,
   type HoldingCreate, type HoldingUpdate, type ReconciliationReport,
 } from "@/lib/api/investments";
+import { useAsyncData } from "@/lib/hooks/useAsyncData";
 import type { HoldingEnriched, InvestmentSummary, PriceRefreshResult } from "@/lib/types";
 
 export function useInvestmentSummary() {
-  const [summary, setSummary] = useState<InvestmentSummary | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      setSummary(await getSummary());
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Error al cargar resumen");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
-
-  return { summary, loading, error, refresh: load };
+  const { data: summary, loading, error, reload } = useAsyncData<InvestmentSummary>(getSummary);
+  return { summary, loading, error, refresh: reload };
 }
 
 export function useHoldings(accountId?: string) {
@@ -93,23 +77,6 @@ export function useRefreshPrices(onRefresh: () => void) {
 }
 
 export function useReconciliation() {
-  const [data, setData] = useState<ReconciliationReport | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      setData(await fetchReconciliation());
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Error al cargar reconciliacion");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => { load(); }, [load]);
-
-  return { data, loading, error, refresh: load };
+  const { data, loading, error, reload } = useAsyncData<ReconciliationReport>(fetchReconciliation);
+  return { data, loading, error, refresh: reload };
 }

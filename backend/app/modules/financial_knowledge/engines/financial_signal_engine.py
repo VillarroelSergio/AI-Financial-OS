@@ -1,12 +1,11 @@
 """Financial Signal Engine — convierte insights macro/mercado en señales financieras."""
 from __future__ import annotations
 import logging
-import uuid
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 import yaml
 
+from app.modules.financial_knowledge._shared import uid as _uid, now as _now
 from app.modules.financial_knowledge.models import (
     EconomicIndicatorInsight, FinancialSignal, Severity, Direction, Trend,
 )
@@ -17,14 +16,6 @@ logger = logging.getLogger("financial_knowledge.financial_signal_engine")
 _SIGNAL_RULES_PATH = Path(__file__).parent.parent / "rules" / "signal_rules.yaml"
 _MACRO_RULES_PATH = Path(__file__).parent.parent / "rules" / "macro_rules.yaml"
 _MARKET_RULES_PATH = Path(__file__).parent.parent / "rules" / "market_rules.yaml"
-
-
-def _uid() -> str:
-    return str(uuid.uuid4())
-
-
-def _now() -> datetime:
-    return datetime.now(timezone.utc)
 
 
 def _load_yaml(path: Path) -> dict:

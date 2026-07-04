@@ -3,7 +3,6 @@ from datetime import datetime, timezone, timedelta
 from decimal import Decimal
 import re
 
-import pytest
 
 from app.modules.investments.reconciliation_service import (
     compute_reconciliation,

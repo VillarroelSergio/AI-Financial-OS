@@ -2,14 +2,12 @@
 from __future__ import annotations
 import json
 import logging
-import uuid
-from dataclasses import asdict
-from datetime import datetime, timezone
 from typing import Optional
 
+from app.modules.financial_knowledge._shared import uid as _uid, now as _now
 from app.modules.financial_knowledge.models import (
     AIDatasheet, EconomicIndicatorInsight, FinancialSignal,
-    MarketRegime, PersonalImpact, Severity,
+    MarketRegime, PersonalImpact,
 )
 from app.modules.market_intelligence.storage import repository as mi_repo
 
@@ -19,14 +17,6 @@ _MAX_INSIGHTS = 10
 _MAX_SIGNALS = 15
 _MAX_IMPACTS = 8
 _MAX_NEWS = 5
-
-
-def _uid() -> str:
-    return str(uuid.uuid4())
-
-
-def _now() -> datetime:
-    return datetime.now(timezone.utc)
 
 
 def _severity_rank(s: str) -> int:

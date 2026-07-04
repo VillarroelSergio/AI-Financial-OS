@@ -1,27 +1,18 @@
 """Personal Impact Engine — cuantifica el impacto personal de señales financieras."""
 from __future__ import annotations
 import logging
-import uuid
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 import yaml
 
 from sqlalchemy.orm import Session
 
+from app.modules.financial_knowledge._shared import uid as _uid, now as _now
 from app.modules.financial_knowledge.models import FinancialSignal, PersonalImpact, Severity
 
 logger = logging.getLogger("financial_knowledge.personal_impact_engine")
 
 _RULES_PATH = Path(__file__).parent.parent / "rules" / "personal_impact_rules.yaml"
-
-
-def _uid() -> str:
-    return str(uuid.uuid4())
-
-
-def _now() -> datetime:
-    return datetime.now(timezone.utc)
 
 
 def _load_rules() -> dict:

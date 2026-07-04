@@ -1,23 +1,14 @@
 """Knowledge Graph Engine — construye grafo de conocimiento financiero."""
 from __future__ import annotations
 import logging
-import uuid
-from datetime import datetime, timezone
 
+from app.modules.financial_knowledge._shared import uid as _uid, now as _now
 from app.modules.financial_knowledge.models import (
     EconomicIndicatorInsight, FinancialSignal, MarketRegime,
     PersonalImpact, KnowledgeGraphNode, KnowledgeGraphEdge,
 )
 
 logger = logging.getLogger("financial_knowledge.knowledge_graph_engine")
-
-
-def _uid() -> str:
-    return str(uuid.uuid4())
-
-
-def _now() -> datetime:
-    return datetime.now(timezone.utc)
 
 
 def _node(node_type: str, label: str, props: dict | None = None) -> KnowledgeGraphNode:

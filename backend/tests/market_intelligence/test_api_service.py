@@ -16,10 +16,11 @@ def test_get_macro_snapshot_returns_valid_schema():
 
 
 def test_get_macro_snapshot_marks_repeated_values_for_review():
+    # Use real catalog IDs so _region_for resolves "spain" correctly
     rows = [
         {
-            "catalog_item_id": "spain_cpi",
-            "indicator_id": "cpi",
+            "catalog_item_id": "ipc_general",
+            "indicator_id": "ipc_general",
             "country": "ES",
             "period": "2026-05",
             "value": 1.8,
@@ -29,8 +30,8 @@ def test_get_macro_snapshot_marks_repeated_values_for_review():
             "retrieved_at": "2026-06-29T10:00:00Z",
         },
         {
-            "catalog_item_id": "spain_core_cpi",
-            "indicator_id": "core_cpi",
+            "catalog_item_id": "ipc_subyacente",
+            "indicator_id": "ipc_subyacente",
             "country": "ES",
             "period": "2026-05",
             "value": 1.8,
@@ -40,8 +41,8 @@ def test_get_macro_snapshot_marks_repeated_values_for_review():
             "retrieved_at": "2026-06-29T10:00:00Z",
         },
         {
-            "catalog_item_id": "spain_unemployment",
-            "indicator_id": "unemployment",
+            "catalog_item_id": "pib_spain",
+            "indicator_id": "pib_spain",
             "country": "ES",
             "period": "2026-05",
             "value": 1.8,
@@ -54,10 +55,10 @@ def test_get_macro_snapshot_marks_repeated_values_for_review():
     with patch("app.modules.market_intelligence.api.service.repository.get_latest_macro_all", return_value=rows):
         result = service.get_macro_snapshot()
 
-    assert result.status == "partial"
+    # Repeated items are filtered out to avoid showing misleading data in the UI
+    assert result.status == "empty"
     assert result.warnings
-    assert {item.data_status for item in result.spain} == {"requires_review"}
-    assert all(item.quality_score == 0.4 for item in result.spain)
+    assert result.spain == []
 
 
 def test_get_forex_snapshot_returns_valid_schema():
@@ -85,3 +86,40 @@ def test_get_news_snapshot_returns_valid_schema():
         result = service.get_news_snapshot()
     assert hasattr(result, "items")
     assert isinstance(result.items, list)
+
+
+def test_get_market_snapshot_includes_display_name():
+    rows = [{
+        "catalog_item_id": "sp500",
+        "symbol": "^SPX",
+        "asset_type": "index",
+        "price": 5800.0,
+        "change_pct": 0.5,
+        "currency": "USD",
+        "observed_at": "2026-06-01T10:00:00Z",
+        "provider_id": "stooq",
+        "quality_score": 0.9,
+    }]
+    with patch("app.modules.market_intelligence.api.service.repository.get_latest_quotes", return_value=rows):
+        result = service.get_market_snapshot()
+    assert result.indices[0].display_name == "S&P 500"
+    assert result.indices[0].display_country == "US"
+
+
+def test_get_macro_snapshot_includes_display_name():
+    rows = [{
+        "catalog_item_id": "ipc_general",
+        "indicator_id": "ipc_general",
+        "country": "ES",
+        "period": "2026-05",
+        "value": 2.1,
+        "unit": "%",
+        "provider_id": "ine",
+        "quality_score": 0.9,
+        "retrieved_at": "2026-06-01T10:00:00Z",
+    }]
+    with patch("app.modules.market_intelligence.api.service.repository.get_latest_macro_all", return_value=rows):
+        result = service.get_macro_snapshot()
+    assert result.spain[0].display_name is not None
+    assert "ipc" in result.spain[0].display_name.lower() or "general" in result.spain[0].display_name.lower()
+    assert result.spain[0].description is not None

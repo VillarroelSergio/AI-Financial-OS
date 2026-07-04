@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { Plus, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { PageHeader } from "@/components/ui/Dashboard";
-import EmptyState from "@/components/ui/EmptyState";
+import { EmptyState, PageHeader } from "@/components/ui/Dashboard";
 import MetricCard from "@/components/ui/MetricCard";
 import Spinner from "@/components/ui/Spinner";
 import { useAccounts } from "@/lib/hooks/useAccounts";

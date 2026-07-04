@@ -1,12 +1,11 @@
 """Economic Indicator Engine — convierte datos macro crudos en insights interpretables."""
 from __future__ import annotations
 import logging
-import uuid
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 import yaml
 
+from app.modules.financial_knowledge._shared import uid as _uid, now as _now
 from app.modules.financial_knowledge.models import (
     EconomicIndicatorInsight, Trend, Severity,
 )
@@ -47,14 +46,6 @@ def _load_rules() -> dict:
     if _RULES_PATH.exists():
         return yaml.safe_load(_RULES_PATH.read_text(encoding="utf-8")) or {}
     return {}
-
-
-def _uid() -> str:
-    return str(uuid.uuid4())
-
-
-def _now() -> datetime:
-    return datetime.now(timezone.utc)
 
 
 def _compute_trend(value: float, previous: Optional[float]) -> Trend:

@@ -17,7 +17,6 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.modules.investments.portfolio_import_service import (
     ConfirmedPosition,
-    RawPosition,
     ValidatedPosition,
     create_holding_from_import,
     find_duplicates,

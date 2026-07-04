@@ -13,7 +13,6 @@
   unit: "USD/oz"
   description: "Precio del oro por onza troy"
   provider_primary: stooq
-  provider_secondary: alpha_vantage
   provider_fallback: polygon
 
 - id: silver
@@ -31,7 +30,6 @@
   unit: "USD/oz"
   description: "Precio de la plata por onza troy"
   provider_primary: stooq
-  provider_secondary: alpha_vantage
 
 - id: brent
   name: "Brent Crude Oil"
@@ -115,7 +113,6 @@
   unit: "USD/lb"
   description: "Precio del cobre"
   provider_primary: stooq
-  provider_secondary: alpha_vantage
 
 - id: lithium
   name: "Litio"

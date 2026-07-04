@@ -8,7 +8,6 @@ from typing import Any
 from sqlalchemy.orm import Session
 
 from app.models.ai import AIConversation, AIMessage, AIToolCall
-from app.core.config import settings
 
 
 def create_conversation(db: Session, title: str | None = None) -> AIConversation:

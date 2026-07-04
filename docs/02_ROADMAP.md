@@ -21,8 +21,9 @@
 | 8.6 | Budgets, Recurring Transactions & Cashflow Planning | ✅ Completa | rama `feature/fase-8-6-budgets-cashflow` |
 | 9 | Document Intelligence / RAG | Completa | rama actual |
 | 10 | Hardening, Security & Backups | Completa | rama actual |
-| 10.5 | UX Functional QA & Product Intelligence Repair | En curso - P0/P1 mayormente implementado | rama `feature/fase-10-5-ux-functional-qa-product-intelligence` |
-| 11 | Packaging & Release | ⏳ Pendiente | — |
+| 10.5 | UX Functional QA & Product Intelligence Repair | ✅ Completa | rama `feature/fase-10-5-ux-functional-qa-product-intelligence` |
+| 10.6 | Release Candidate Stabilization | ✅ Completa | rama `fix/corrections-and-stabilization` |
+| 11 | Packaging & Release | 🚀 En curso | — |
 
 | Area | Estado | Ruta principal |
 |---|---|---|
@@ -38,7 +39,8 @@
 | Budgets & Cashflow Planning | Completa / evolucionando | `backend/app/modules/budgets`, `backend/app/modules/recurring`, `backend/app/modules/cashflow` |
 | Document Intelligence / RAG | Completa | `backend/app/modules/rag`, `backend/app/models/document.py` |
 | Hardening, Security & Backups | Completa | `backend/app/modules/security`, base de datos, backups |
-| UX Functional QA | En curso | `apps/desktop/src/features`, `backend/app/modules/market_intelligence`, docs fase 10.5 |
+| UX Functional QA | ✅ Completa | `apps/desktop/src/features`, `backend/app/modules/market_intelligence`, docs fase 10.5 |
+| Release Candidate Stabilization | ✅ Completa | `backend/app/modules/*`, `apps/desktop/src/features/*`, docs fase 10.6 |
 | Packaging & Release | Pendiente | Tauri build/release |
 
 ## Capa vigente de mercado y macro
@@ -56,7 +58,7 @@ Componentes actuales:
 - API bajo `/api/market-intelligence/*`.
 - Datasheet compacto para IA local.
 
-## Proximas fases
+## Detalle de fases completadas
 
 ### Fase 6.4 - Data Integrity & Core UX Repair
 
@@ -241,29 +243,60 @@ Estado operativo:
 | Informe release readiness | Hecho | `docs/28_PHASE_10_5_RELEASE_READINESS_REPORT.md` |
 | Bateria de pruebas UX documentada | Hecho | `docs/29_PHASE_10_5_UX_TEST_BATTERY.md` |
 
-Pendiente antes de marcar Fase 10.5 como completa:
+Documentacion: `docs/27_FINANCIAL_COMMAND_CENTER_UI_POLISH.md`.
 
-- Ejecutar QA manual end-to-end con base de datos real y provider IA local arrancado.
-- Implementar OCR local real para capturas de cartera si se decide que "captura real" debe extraer automaticamente en esta fase; actualmente el alcance esta comunicado y no crea holdings desde imagen.
-- Revision visual responsive disponible en tooling (`npm run snapshots:responsive`) y ultima evidencia generada con 57/57 capturas; no se deben regenerar snapshots sin confirmacion explicita.
+### Fase 10.6 - Release Candidate Stabilization ✅ Completa
 
-Documentacion: `docs/26_UX_FUNCTIONAL_QA_PRODUCT_INTELLIGENCE_REPAIR.md`.
-Evidencia QA: `docs/28_PHASE_10_5_RELEASE_READINESS_REPORT.md`, `docs/29_PHASE_10_5_UX_TEST_BATTERY.md`.
+Objetivo: corregir todos los bloqueantes P0/P1 identificados en el informe Release Readiness antes de avanzar a Packaging.
 
-### Fase 11 - Packaging & Release
+Veredicto: **GO para Fase 11** — todos los criterios cumplidos.
 
-Objetivo: preparar la aplicacion como producto instalable para Windows.
+Corregido:
 
-Incluye:
+| Bloqueante | Módulo | Resolución |
+|---|---|---|
+| P0-01 | Importar cartera | Opción B implementada — captura marcada "Próximo", alcance honesto |
+| P0-02 | Mercados | `DataStatusBadge` por fila; refresh manual con timestamp |
+| P0-03 | Economía | FRED adapter aislado por `indicator_id`; `_first_not_none()` preserva 0.0 |
+| P0-04 | Objetivos | `monthly_contribution_needed` calculado y mostrado; resumen textual por escenario |
+| P0-05 | Asistente IA | Pre-flight health check; 503 honesto; AbortController 90s; sin carga infinita |
+| P1-01 | Planificación | Auto-refresh tras crear presupuesto sin cambio de tab |
+| UI | Transacciones | Picklist dark mode; cuenta no obligatoria en edición de Monify |
 
-- Empaquetado Windows con Tauri.
-- Instalador y desinstalador.
-- Configuracion de entorno de produccion.
-- Arranque coordinado de frontend y backend local.
-- Verificacion post-build.
-- Documentacion de instalacion y uso local.
-- Preparacion para actualizaciones futuras.
-- Revision de tamano final, rendimiento y experiencia de primer arranque.
+Pruebas: 206/206 backend tests, 0 errores TypeScript.
+
+
+### Fase 11 - Packaging & Release 🚀 En curso
+
+**Objetivo funcional:** entregar la aplicación como producto instalable para Windows, con arranque fiable, sin dependencias externas visibles para el usuario y con experiencia de primer uso clara.
+
+**Alcance:**
+
+- Empaquetado Windows con Tauri (`tauri build`): genera `.msi` / `.exe` instalable.
+- Arranque coordinado: el proceso Tauri lanza el backend FastAPI + Uvicorn en proceso hijo, espera `GET /api/health` antes de abrir la ventana.
+- Entorno de producción: variables de entorno y rutas de datos aisladas del entorno de desarrollo; DuckDB y SQLite en `%APPDATA%\FinancialAgent\`.
+- Instalador y desinstalador limpios (sin residuos en `AppData` tras desinstalar salvo datos de usuario explícitamente conservados).
+- Verificación post-build: smoke test automatizado que lanza el binario, espera UI, comprueba `/api/health` y cierra.
+- Documentación de instalación, primer arranque y resolución de problemas comunes.
+- Preparación de canal de actualización (auto-updater Tauri configurado para releases futuras).
+- Revisión de tamaño final, tiempo de arranque (<5s en hardware típico) y experiencia de primer uso (onboarding mínimo viable).
+
+**Criterios de aceptación:**
+
+- [ ] `tauri build` produce instalador `.msi` sin errores.
+- [ ] El instalador no requiere que el usuario instale Python, Node o ninguna dependencia adicional.
+- [ ] La aplicación arranca en menos de 5 segundos en hardware de referencia (i5/8GB).
+- [ ] `/api/health` responde `200` antes de que la ventana principal sea interactiva.
+- [ ] Los datos del usuario persisten entre reinicios en `%APPDATA%\FinancialAgent\`.
+- [ ] La desinstalación no deja residuos fuera de `%APPDATA%\FinancialAgent\` (datos del usuario se conservan por defecto).
+- [ ] Smoke test automatizado pasa en build limpio.
+- [ ] Documentación de instalación revisada y publicada.
+
+**Limitaciones aceptadas heredadas de Fase 10.6:**
+
+- Extracción automática de cartera desde captura de pantalla no disponible (comunicado como "Próximo" en UI).
+- BLS adapter con el mismo gap de `indicator_id` que el FRED adapter pre-10.6 — diferido post-release.
+- AbortController no limpiado en unmount de `useAiConversation` — sin impacto funcional confirmado.
 
 ## Deudas tecnicas
 
@@ -272,10 +305,10 @@ Incluye:
 | TD-01 | Revisar contrato real de `categories` frente a frontend y docs | Medio |
 | TD-02 | Ampliar tests de integracion del core financiero | Alto |
 | TD-03 | Consolidar docs de Market Intelligence con ejemplos de catalogo reales | Medio |
-| TD-04 | Eliminar o archivar codigo POC cuando deje de aportar comparacion tecnica | Bajo |
-| TD-05 | Definir CLI estable para comandos de Market Intelligence fuera del POC | Medio |
 | TD-06 | Unificar estados del roadmap y areas funcionales cuando una fase cambie de estado | Medio |
 | TD-07 | Consolidar modelo de holdings tras Portfolio Import Assistant: coste estimado, coste confirmado, instrumento validado, FX, precio actual y modo manual/automatico | Alto |
+| TD-08 | BLS adapter: añadir `_INDICATOR_SERIES` mapping igual que `fred.py` — mismo gap de indicator_id-blindness corregido en Fase 10.6 | Medio |
+| TD-09 | AbortController cleanup en `useEffect` return de `useAiConversation` — sin impacto funcional actual pero limpieza de recursos correcta | Bajo |
 
 ## Regla documental
 

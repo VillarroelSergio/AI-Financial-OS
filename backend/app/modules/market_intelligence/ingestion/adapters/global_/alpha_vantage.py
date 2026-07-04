@@ -3,9 +3,9 @@ import time
 import requests
 from datetime import datetime, timezone
 
-from app.modules.market_intelligence.ingestion.models import AdapterResult, ProviderMetadata
+from app.modules.market_intelligence.ingestion.models import AdapterResult
 from app.modules.market_intelligence.ingestion.models import MarketQuote
-from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter
+from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter, redact_api_key
 from app.modules.market_intelligence.ingestion.config import get_api_key
 
 _BASE_URL = "https://www.alphavantage.co/query"
@@ -34,7 +34,7 @@ class AlphaVantageAdapter(BaseAdapter):
                 provider=self.name,
                 success=False,
                 records=[],
-                error=_redact_api_key(str(exc), api_key),
+                error=redact_api_key(str(exc), api_key),
                 latency_ms=latency_ms,
                 raw_sample=None,
                 metadata=metadata,
@@ -78,6 +78,3 @@ class AlphaVantageAdapter(BaseAdapter):
             metadata=metadata,
         )
 
-
-def _redact_api_key(value: str, api_key: str | None) -> str:
-    return value.replace(api_key, "***") if api_key else value

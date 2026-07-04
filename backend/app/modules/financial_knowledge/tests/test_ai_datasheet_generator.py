@@ -2,7 +2,6 @@
 from __future__ import annotations
 from datetime import datetime, timezone
 
-import pytest
 
 from app.modules.financial_knowledge.engines import ai_datasheet_generator as generator
 from app.modules.financial_knowledge.models import (
