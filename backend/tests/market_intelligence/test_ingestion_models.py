@@ -1,9 +1,14 @@
 from datetime import datetime, timezone
-from app.modules.market_intelligence.ingestion.models import (
-    AdapterResult, MacroIndicator, CurrencyRate, BondYield,
-    MarketQuote, ProviderMetadata, ProviderStatus, ProviderHealth,
-)
+
 from app.modules.market_intelligence.ingestion.config import get_api_key
+from app.modules.market_intelligence.ingestion.models import (
+    AdapterResult,
+    BondYield,
+    MacroIndicator,
+    ProviderHealth,
+    ProviderMetadata,
+    ProviderStatus,
+)
 
 
 def _meta():

@@ -1,11 +1,11 @@
 from unittest.mock import MagicMock
-import pytest
 
 from app.modules.market_intelligence.catalog.schemas import CatalogIndicator
-from app.modules.market_intelligence.ingestion.orchestrator import ProviderOrchestrator
 from app.modules.market_intelligence.ingestion.models import (
-    AdapterResult, ProviderMetadata, ProviderStatus,
+    AdapterResult,
+    ProviderMetadata,
 )
+from app.modules.market_intelligence.ingestion.orchestrator import ProviderOrchestrator
 
 
 def _make_meta(name: str) -> ProviderMetadata:

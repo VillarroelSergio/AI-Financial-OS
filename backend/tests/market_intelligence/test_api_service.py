@@ -1,5 +1,4 @@
 from unittest.mock import patch
-import pytest
 
 from app.modules.market_intelligence.api import service
 

@@ -1,6 +1,6 @@
-from app.modules.insights.rules.net_worth_rules import net_worth_change_insight
-from app.modules.insights.rules.investment_rules import investment_allocation_insight
 from app.modules.insights.rules.goal_rules import goal_progress_insights
+from app.modules.insights.rules.investment_rules import investment_allocation_insight
+from app.modules.insights.rules.net_worth_rules import net_worth_change_insight
 from app.modules.insights.schemas import DataStatus
 
 

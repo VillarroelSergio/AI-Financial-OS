@@ -11,12 +11,12 @@ Euribor 3M/12M no disponible sin clave FRED API — el endpoint SDMX de BDE
 import csv as _csv
 import io
 import time
-import requests
 from datetime import datetime, timezone
 
+import requests
+
 from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter
-from app.modules.market_intelligence.ingestion.models import AdapterResult
-from app.modules.market_intelligence.ingestion.models import MacroIndicator
+from app.modules.market_intelligence.ingestion.models import AdapterResult, MacroIndicator
 
 _HEADERS = {"User-Agent": "MarketDataPOC/0.1 contact@example.com"}
 _ECB_BASE = "https://data-api.ecb.europa.eu/service/data"

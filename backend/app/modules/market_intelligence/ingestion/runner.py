@@ -3,16 +3,19 @@
 Punto de entrada para los comandos CLI market:intelligence:update.
 """
 from __future__ import annotations
+
 import importlib
 import logging
 import uuid
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
 from app.modules.market_intelligence.catalog.loader import CatalogLoader
 from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter
 from app.modules.market_intelligence.ingestion.orchestrator import (
-    CatalogFetchResult, ProviderOrchestrator,
+    CatalogFetchResult,
+    ProviderOrchestrator,
 )
 
 logger = logging.getLogger("market_intelligence.runner")
@@ -69,9 +72,16 @@ class IngestionSummary:
     results: list[CatalogFetchResult] = field(default_factory=list)
 
 
+# Fallos de import/instanciación del último build_adapters — expuestos en
+# /ingest-status para que un bundle sin adapters (p.ej. PyInstaller sin
+# hiddenimports) no vuelva a fallar en silencio.
+ADAPTER_LOAD_ERRORS: dict[str, str] = {}
+
+
 def build_adapters(provider_ids: list[str] | None = None) -> list[BaseAdapter]:
     """Instancia los adapters para los provider_ids dados (o todos si None)."""
     ids = provider_ids or list(_ADAPTER_MAP.keys())
+    ADAPTER_LOAD_ERRORS.clear()
     adapters: list[BaseAdapter] = []
     for pid in ids:
         module_path = _ADAPTER_MAP.get(pid)
@@ -90,6 +100,7 @@ def build_adapters(provider_ids: list[str] | None = None) -> list[BaseAdapter]:
                 continue
             adapters.append(adapter_cls())
         except Exception as exc:
+            ADAPTER_LOAD_ERRORS[pid] = str(exc)
             logger.warning("Could not load adapter '%s': %s", pid, exc)
     return adapters
 
@@ -134,8 +145,12 @@ def run_ingestion(
     failed = 0
     fallbacks = 0
 
-    for indicator in indicators:
-        result = orchestrator.fetch_indicator(indicator)
+    # Fetch en paralelo (HTTP-bound); la persistencia sigue secuencial porque
+    # DuckDB comparte una única conexión de escritura.
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        fetched = list(pool.map(orchestrator.fetch_indicator, indicators))
+
+    for indicator, result in zip(indicators, fetched):
         results.append(result)
 
         if result.adapter_result.success:

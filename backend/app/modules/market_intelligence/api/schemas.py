@@ -1,7 +1,14 @@
 """Pydantic output schemas para la Market Intelligence API."""
 from __future__ import annotations
+
 from typing import Optional
+
 from pydantic import BaseModel
+
+
+class MacroHistoryPoint(BaseModel):
+    period: str
+    value: float
 
 
 class MacroDataPoint(BaseModel):
@@ -17,6 +24,12 @@ class MacroDataPoint(BaseModel):
     retrieved_at: Optional[str] = None
     display_name: Optional[str] = None
     description: Optional[str] = None
+    subcategory: Optional[str] = None
+    frequency: Optional[str] = None
+    priority: Optional[str] = None
+    previous_value: Optional[float] = None
+    delta: Optional[float] = None
+    history: list[MacroHistoryPoint] = []
 
 
 class MacroSnapshotOut(BaseModel):
@@ -132,7 +145,7 @@ class ImpactComparative(BaseModel):
     market_label: str
     personal_value: Optional[float] = None
     personal_label: str
-    signal: str  # "positive" | "negative" | "neutral" | "warning"
+    signal: str  # "positive" | "negative" | "neutral" | "warning" | "no_data"
     signal_text: str
     source_ids: list[str] = []
 

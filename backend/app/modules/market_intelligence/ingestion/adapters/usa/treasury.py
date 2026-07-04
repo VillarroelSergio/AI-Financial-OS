@@ -1,15 +1,20 @@
 """US Treasury adapter — daily yield curve (focus: 10Y yield)."""
-import time
-import requests
-import os
 import json
+import os
 import re
+import time
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 
+import requests
+
 from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter
-from app.modules.market_intelligence.ingestion.models import BondYield, YieldCurvePoint
-from app.modules.market_intelligence.ingestion.models import AdapterResult, ProviderMetadata
+from app.modules.market_intelligence.ingestion.models import (
+    AdapterResult,
+    BondYield,
+    ProviderMetadata,
+    YieldCurvePoint,
+)
 
 _HEADERS = {"User-Agent": "MarketDataPOC/0.1 contact@example.com"}
 
@@ -235,7 +240,7 @@ class TreasuryAdapter(BaseAdapter):
                     r = requests.get(_TREASURY_URL, headers=_HEADERS, timeout=self.timeout_seconds)
                     r.raise_for_status()
                     break
-                except Exception as exc:
+                except Exception:
                     if not records and attempt >= self.retries:
                         raise
                     time.sleep(0.5 * (attempt + 1))

@@ -1,7 +1,8 @@
 from __future__ import annotations
+
+import uuid
 from datetime import datetime, timezone
 from decimal import Decimal
-import uuid
 
 from sqlalchemy import Boolean, DateTime, Integer, Numeric, String
 from sqlalchemy.orm import Mapped, mapped_column

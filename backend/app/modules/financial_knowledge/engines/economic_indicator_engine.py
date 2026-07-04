@@ -1,13 +1,18 @@
 """Economic Indicator Engine — convierte datos macro crudos en insights interpretables."""
 from __future__ import annotations
+
 import logging
 from pathlib import Path
 from typing import Optional
+
 import yaml
 
-from app.modules.financial_knowledge._shared import uid as _uid, now as _now
+from app.modules.financial_knowledge._shared import now as _now
+from app.modules.financial_knowledge._shared import uid as _uid
 from app.modules.financial_knowledge.models import (
-    EconomicIndicatorInsight, Trend, Severity,
+    EconomicIndicatorInsight,
+    Severity,
+    Trend,
 )
 from app.modules.market_intelligence.storage import repository as mi_repo
 

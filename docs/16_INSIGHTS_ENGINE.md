@@ -93,6 +93,11 @@ Tool: `get_insights_summary`
 | `empty` | Sin datos relevantes |
 | `error` | Error controlado |
 
+Cuando `data_status` es `empty` (sin transacciones en el periodo), la respuesta
+devuelve `insights: []` y el `summary` a cero, aunque las reglas de contexto
+(macro/mercado/calidad) hubieran generado insights informativos. Badge y cuerpo
+derivan siempre del mismo estado y no pueden contradecirse.
+
 ## Umbrales configurables
 
 Ver `constants.py`. Ejemplo: `SPENDING_ANOMALY_MULTIPLIER = 1.25`

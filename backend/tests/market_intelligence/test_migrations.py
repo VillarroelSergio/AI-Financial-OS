@@ -1,5 +1,6 @@
 import duckdb
 import pytest
+
 from app.modules.market_intelligence.storage.migrations import run_migrations
 
 EXPECTED_TABLES = [

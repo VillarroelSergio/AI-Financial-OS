@@ -1,12 +1,12 @@
 """Alpha Vantage adapter — IBM global quote."""
 import time
-import requests
 from datetime import datetime, timezone
 
-from app.modules.market_intelligence.ingestion.models import AdapterResult
-from app.modules.market_intelligence.ingestion.models import MarketQuote
+import requests
+
 from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter, redact_api_key
 from app.modules.market_intelligence.ingestion.config import get_api_key
+from app.modules.market_intelligence.ingestion.models import AdapterResult, MarketQuote
 
 _BASE_URL = "https://www.alphavantage.co/query"
 

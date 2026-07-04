@@ -1,15 +1,24 @@
 """Tests para AIDatasheetGenerator."""
 from __future__ import annotations
-from datetime import datetime, timezone
 
+from datetime import datetime, timezone
+from unittest.mock import patch
 
 from app.modules.financial_knowledge.engines import ai_datasheet_generator as generator
 from app.modules.financial_knowledge.models import (
-    EconomicIndicatorInsight, FinancialSignal, MarketRegime,
-    PersonalImpact, Trend, Severity, Direction,
-    RiskLevel, InflationRegime, RatesRegime, GrowthRegime, MarketTrend,
+    Direction,
+    EconomicIndicatorInsight,
+    FinancialSignal,
+    GrowthRegime,
+    InflationRegime,
+    MarketRegime,
+    MarketTrend,
+    PersonalImpact,
+    RatesRegime,
+    RiskLevel,
+    Severity,
+    Trend,
 )
-from unittest.mock import patch
 
 
 def _insight(name: str, severity: Severity = Severity.MEDIUM) -> EconomicIndicatorInsight:

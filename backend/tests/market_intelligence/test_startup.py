@@ -1,5 +1,6 @@
-from unittest.mock import patch, MagicMock
 import importlib
+from unittest.mock import MagicMock, patch
+
 from app.modules.market_intelligence.ingestion.runner import IngestionSummary
 
 
@@ -21,6 +22,7 @@ def test_launch_startup_ingest_sets_running_then_done():
 
     mock_summary = MagicMock(spec=IngestionSummary)
     mock_summary.success = 42
+    mock_summary.results = []
 
     with patch(
         "app.modules.market_intelligence.ingestion.startup.run_ingestion",

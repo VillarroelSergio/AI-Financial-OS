@@ -23,3 +23,12 @@ export const createAccount = (data: AccountCreate) => api.post<Account>("/api/ac
 export const updateAccount = (id: string, data: AccountUpdate) =>
   api.patch<Account>(`/api/accounts/${id}`, data);
 export const deleteAccount = (id: string) => api.delete<void>(`/api/accounts/${id}`);
+
+export interface PurgeInactiveResult {
+  affected: number;
+  names: string[];
+  applied: boolean;
+}
+
+export const purgeInactiveAccounts = (preview: boolean) =>
+  api.post<PurgeInactiveResult>(`/api/accounts/purge-inactive?preview=${preview}`, {});

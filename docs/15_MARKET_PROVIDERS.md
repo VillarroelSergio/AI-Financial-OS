@@ -94,6 +94,34 @@ Reglas importantes:
 - Usar escrituras idempotentes con checksums cuando aplique.
 - Para lecturas latest, preferir ventanas con `QUALIFY ROW_NUMBER()`.
 - No consultar proveedores live desde la IA; la IA consume datasheets y endpoints backend.
+- **DuckDB solo admite un proceso escritor.** Si el archivo esta bloqueado por otro
+  proceso, `get_duckdb()` cae a una BD en memoria: la ingesta no persiste y las
+  lecturas ven una BD vacia. `is_in_memory()` expone ese estado y tanto
+  `ingest-status` (`storage`/`storage_warning`) como los snapshots (warning) lo
+  avisan al usuario. Evita arrancar dos backends a la vez.
+
+Notas de adapters:
+
+- `world_bank`: PIB de España via `NY.GDP.MKTP.CN` (moneda local = EUR), escalado a
+  "EUR bn" antes de persistir, alineado con el `unit` del catalogo.
+- `coingecko`: una unica llamada batcheada (cache 60 s) para todos los coins; sin
+  cache, la cuarta peticion consecutiva del free tier devolvia 429 y `xrp` quedaba
+  sin datos (no tiene fallback: Stooq solo cubre indices).
+- `stooq`: si el CSV esta bloqueado usa fallback interno a Yahoo Chart; el resultado
+  es `success=True` con `error` informativo.
+- `fred`: cada serie declara su unidad real (`_SERIES_UNITS`): INDPRO y UMCSENT son
+  indices, no porcentajes; M2SL es "USD bn".
+
+Guard de persistencia (`repository._record_matches_catalog`):
+
+- Un registro solo se persiste si su tipo coincide con la categoria del item del
+  catalogo (macro→MacroIndicator, bonds→YieldCurvePoint/BondYield, etc.). Evita que
+  un fallback generico (FRED devolviendo Fed Funds) contamine bonos o commodities
+  con valores clonados.
+- Para bonos, la maturity del registro debe coincidir con la codificada en el id
+  (`us_2y` → `2Y`); los adapters de curva devuelven las 8 maturities completas.
+- `purge_mismatched_macro_observations()` limpia la contaminacion historica al
+  arrancar la ingesta (idempotente, lanzada desde `launch_startup_ingest`).
 
 ## API activa
 

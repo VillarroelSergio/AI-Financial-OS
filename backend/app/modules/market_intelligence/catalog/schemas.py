@@ -1,5 +1,6 @@
 """Schemas del catálogo de datos de mercado."""
 from __future__ import annotations
+
 from dataclasses import dataclass
 
 

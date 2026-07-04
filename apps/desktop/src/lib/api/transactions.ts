@@ -32,3 +32,18 @@ export const updateTransaction = (id: string, data: Partial<TransactionCreate>) 
 
 export const deleteTransaction = (id: string) =>
   api.delete<void>(`/api/transactions/${id}`);
+
+export interface CurrencyReassignResult {
+  affected: number;
+  applied: boolean;
+  from_currency: string;
+  to_currency: string;
+  backup_filename?: string;
+}
+
+export const reassignCurrency = (fromCurrency: string, toCurrency: string, preview: boolean) =>
+  api.post<CurrencyReassignResult>("/api/transactions/currency-reassign", {
+    from_currency: fromCurrency,
+    to_currency: toCurrency,
+    preview,
+  });

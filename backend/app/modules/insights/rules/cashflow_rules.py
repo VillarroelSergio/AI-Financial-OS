@@ -1,11 +1,19 @@
 from __future__ import annotations
+
 from datetime import datetime, timezone
 from decimal import Decimal
+
 from sqlalchemy.orm import Session
+
 from app.models.transaction import Transaction
 from app.modules.insights.schemas import (
-    DataStatus, InsightActionOut, InsightMetricOut, InsightOut,
-    InsightSeverity, InsightSourceOut, InsightType,
+    DataStatus,
+    InsightActionOut,
+    InsightMetricOut,
+    InsightOut,
+    InsightSeverity,
+    InsightSourceOut,
+    InsightType,
 )
 from app.modules.insights.scoring import compute_confidence, compute_priority
 

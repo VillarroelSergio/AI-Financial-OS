@@ -1,5 +1,5 @@
 // apps/desktop/src/lib/hooks/useMarketIntelligence.ts
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   getMacroSnapshot,
   getMarketSnapshot,
@@ -22,105 +22,120 @@ const USER_SAFE_MARKET_ERROR =
 const USER_SAFE_ECONOMY_ERROR =
   "No se han podido actualizar los indicadores ahora. Se muestran los ultimos datos disponibles si existen.";
 
-export function useEconomyMI() {
-  const [macro, setMacro] = useState<MacroSnapshotMI | null>(null);
-  const [impact, setImpact] = useState<PersonalImpactMI | null>(null);
-  const [ingestStatus, setIngestStatus] = useState<IngestStatus | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+// ponytail: caché a nivel de módulo — sobrevive al desmontaje al cambiar de
+// pestaña, así la vista repinta el último dato bueno al instante y revalida detrás.
+const cache: {
+  macro: MacroSnapshotMI | null;
+  impact: PersonalImpactMI | null;
+  market: MarketSnapshotMI | null;
+  forex: ForexSnapshotMI | null;
+  bonds: BondSnapshotMI | null;
+} = { macro: null, impact: null, market: null, forex: null, bonds: null };
 
-  const load = useCallback(async () => {
-    try {
-      const [macroData, impactData] = await Promise.all([
-        getMacroSnapshot(),
-        getPersonalImpact().catch(() => null),
-      ]);
-      setMacro(macroData);
-      setImpact(impactData);
-      setError(null);
-    } catch {
-      setError(USER_SAFE_ECONOMY_ERROR);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+const POLL_MS = 3000;
+
+/** Polling del estado de ingesta: mientras corre (o aún no arrancó) sigue
+ *  preguntando; cuando termina, dispara un refetch para pintar el dato fresco.
+ *  Los snapshots NO esperan a la ingesta: se cargan de inmediato desde caché DuckDB. */
+function useIngestPolling(onSettled: (status: IngestStatus) => void) {
+  const [ingestStatus, setIngestStatus] = useState<IngestStatus | null>(null);
 
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let cancelled = false;
     const poll = async () => {
       try {
         const status = await getIngestStatus();
+        if (cancelled) return;
         setIngestStatus(status);
         if (status.status === "running" || status.status === "idle") {
-          pollRef.current = setTimeout(poll, 3000);
+          timer = setTimeout(poll, POLL_MS);
         } else {
-          if (status.status === "error") {
-            setError("La ingesta de datos fallo; mostrando datos disponibles en cache.");
-          }
-          await load();
+          onSettled(status);
         }
       } catch {
-        await load();
+        // Sin estado de ingesta no bloqueamos nada: los snapshots ya se cargaron.
       }
     };
     poll();
     return () => {
-      if (pollRef.current) clearTimeout(pollRef.current);
+      cancelled = true;
+      if (timer) clearTimeout(timer);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return ingestStatus;
+}
+
+export function useEconomyMI() {
+  const [macro, setMacro] = useState<MacroSnapshotMI | null>(cache.macro);
+  const [impact, setImpact] = useState<PersonalImpactMI | null>(cache.impact);
+  const [bonds, setBonds] = useState<BondSnapshotMI | null>(cache.bonds);
+  const [forex, setForex] = useState<ForexSnapshotMI | null>(cache.forex);
+  const [loading, setLoading] = useState(cache.macro === null);
+  const [error, setError] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    const [macroData, impactData, bondsData, forexData] = await Promise.all([
+      getMacroSnapshot().catch(() => null),
+      getPersonalImpact().catch(() => null),
+      getBondSnapshot().catch(() => null),
+      getForexSnapshot().catch(() => null),
+    ]);
+    // Nunca pisar un dato bueno con null: si un fetch falla, se conserva el último válido.
+    if (macroData) setMacro((cache.macro = macroData));
+    if (impactData) setImpact((cache.impact = impactData));
+    if (bondsData) setBonds((cache.bonds = bondsData));
+    if (forexData) setForex((cache.forex = forexData));
+    setError(macroData ? null : USER_SAFE_ECONOMY_ERROR);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    load();
   }, [load]);
 
-  return { macro, impact, ingestStatus, loading, error };
+  const ingestStatus = useIngestPolling((status) => {
+    if (status.status === "error") {
+      setError("La ingesta de datos fallo; mostrando datos disponibles en cache.");
+    }
+    load();
+  });
+
+  return { macro, impact, bonds, forex, ingestStatus, loading, error };
 }
 
 export function useMarketsMI() {
-  const [market, setMarket] = useState<MarketSnapshotMI | null>(null);
-  const [forex, setForex] = useState<ForexSnapshotMI | null>(null);
-  const [bonds, setBonds] = useState<BondSnapshotMI | null>(null);
-  const [ingestStatus, setIngestStatus] = useState<IngestStatus | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [market, setMarket] = useState<MarketSnapshotMI | null>(cache.market);
+  const [forex, setForex] = useState<ForexSnapshotMI | null>(cache.forex);
+  const [bonds, setBonds] = useState<BondSnapshotMI | null>(cache.bonds);
+  const [loading, setLoading] = useState(cache.market === null);
   const [error, setError] = useState<string | null>(null);
-  const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadSnapshots = useCallback(async () => {
-    try {
-      const [marketData, forexData, bondsData] = await Promise.all([
-        getMarketSnapshot(),
-        getForexSnapshot(),
-        getBondSnapshot(),
-      ]);
-      setMarket(marketData);
-      setForex(forexData);
-      setBonds(bondsData);
-      setError(null);
-    } catch {
-      setError(USER_SAFE_MARKET_ERROR);
-    } finally {
-      setLoading(false);
-    }
+    const [marketData, forexData, bondsData] = await Promise.all([
+      getMarketSnapshot().catch(() => null),
+      getForexSnapshot().catch(() => null),
+      getBondSnapshot().catch(() => null),
+    ]);
+    if (marketData) setMarket((cache.market = marketData));
+    if (forexData) setForex((cache.forex = forexData));
+    if (bondsData) setBonds((cache.bonds = bondsData));
+    setError(marketData ? null : USER_SAFE_MARKET_ERROR);
+    setLoading(false);
   }, []);
 
   useEffect(() => {
-    const poll = async () => {
-      try {
-        const status = await getIngestStatus();
-        setIngestStatus(status);
-        if (status.status === "running" || status.status === "idle") {
-          pollRef.current = setTimeout(poll, 3000);
-        } else {
-          if (status.status === "error") {
-            setError("La ingesta de datos fallo; mostrando datos disponibles en cache.");
-          }
-          await loadSnapshots();
-        }
-      } catch {
-        await loadSnapshots();
-      }
-    };
-    poll();
-    return () => {
-      if (pollRef.current) clearTimeout(pollRef.current);
-    };
+    loadSnapshots();
   }, [loadSnapshots]);
+
+  const ingestStatus = useIngestPolling((status) => {
+    if (status.status === "error") {
+      setError("La ingesta de datos fallo; mostrando datos disponibles en cache.");
+    }
+    loadSnapshots();
+  });
 
   return { market, forex, bonds, ingestStatus, loading, error, refetch: loadSnapshots };
 }

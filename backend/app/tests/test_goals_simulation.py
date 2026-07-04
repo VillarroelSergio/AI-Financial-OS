@@ -12,7 +12,6 @@ from app.modules.goals.simulation_service import (
     simulate_goal,
 )
 
-
 # ── Unit: monthly balance formula ─────────────────────────────────────────────
 
 def test_monthly_balance_zero_rate():

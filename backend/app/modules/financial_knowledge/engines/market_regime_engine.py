@@ -1,13 +1,21 @@
 """Market Regime Engine — clasifica el régimen macro/mercado actual."""
 from __future__ import annotations
+
 import logging
 from pathlib import Path
+
 import yaml
 
-from app.modules.financial_knowledge._shared import uid as _uid, now as _now
+from app.modules.financial_knowledge._shared import now as _now
+from app.modules.financial_knowledge._shared import uid as _uid
 from app.modules.financial_knowledge.models import (
-    FinancialSignal, MarketRegime,
-    RiskLevel, InflationRegime, RatesRegime, GrowthRegime, MarketTrend,
+    FinancialSignal,
+    GrowthRegime,
+    InflationRegime,
+    MarketRegime,
+    MarketTrend,
+    RatesRegime,
+    RiskLevel,
 )
 
 logger = logging.getLogger("financial_knowledge.market_regime_engine")

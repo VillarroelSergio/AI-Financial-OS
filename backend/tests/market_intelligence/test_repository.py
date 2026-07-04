@@ -1,12 +1,17 @@
+from datetime import datetime, timezone
+from unittest.mock import patch
+
 import duckdb
 import pytest
-from unittest.mock import patch
-from datetime import datetime, timezone
 
-from app.modules.market_intelligence.ingestion.models import MacroIndicator, AdapterResult, ProviderMetadata
-from app.modules.market_intelligence.ingestion.orchestrator import CatalogFetchResult
 from app.modules.market_intelligence.catalog.schemas import CatalogIndicator
-from app.modules.market_intelligence.quality.schemas import QualityResult, CheckResult
+from app.modules.market_intelligence.ingestion.models import (
+    AdapterResult,
+    MacroIndicator,
+    ProviderMetadata,
+)
+from app.modules.market_intelligence.ingestion.orchestrator import CatalogFetchResult
+from app.modules.market_intelligence.quality.schemas import CheckResult, QualityResult
 from app.modules.market_intelligence.storage.migrations import run_migrations
 
 

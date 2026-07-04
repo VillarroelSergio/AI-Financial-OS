@@ -1,7 +1,13 @@
-import { TrendingUp, TrendingDown, Minus, AlertTriangle } from "lucide-react";
+import { TrendingUp, TrendingDown, Minus, AlertTriangle, CircleOff } from "lucide-react";
 import type { ImpactComparative } from "@/lib/types/market-intelligence";
 
 const SIGNAL_CONFIG = {
+  no_data: {
+    label: "Sin datos",
+    textColor: "text-mute",
+    badgeClass: "bg-white/5 text-mute border-white/10",
+    Icon: CircleOff,
+  },
   positive: {
     label: "Positivo",
     textColor: "text-accent-success",
@@ -37,7 +43,11 @@ export default function ImpactCard({ item }: Props) {
   const { Icon } = config;
 
   return (
-    <div className="rounded-xl border border-hairline-dark bg-surface-elevated p-4 flex flex-col gap-3">
+    <div
+      className={`rounded-xl border border-hairline-dark bg-surface-elevated p-4 flex flex-col gap-3 ${
+        item.signal === "no_data" ? "opacity-70" : ""
+      }`}
+    >
       <div className="flex items-start justify-between gap-3">
         <span className="text-body-sm text-on-dark font-medium">{item.title}</span>
         <span

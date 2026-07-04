@@ -8,9 +8,10 @@ Endpoints:
 """
 from __future__ import annotations
 
+import base64
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -19,6 +20,7 @@ from app.modules.investments.portfolio_import_service import (
     ConfirmedPosition,
     ValidatedPosition,
     create_holding_from_import,
+    extract_positions_from_image,
     find_duplicates,
     parse_text_positions,
     validate_position,
@@ -178,6 +180,41 @@ def parse_text(payload: ParseTextRequest) -> list[RawPositionOut]:
             detail={"error": {"code": "EMPTY_TEXT", "message": "El texto pegado está vacío."}},
         )
     raw = parse_text_positions(payload.text)
+    return [
+        RawPositionOut(
+            raw_name=p.raw_name,
+            quantity=p.quantity,
+            current_value=p.current_value,
+            current_value_currency=p.current_value_currency,
+            return_pct=p.return_pct,
+            raw_text=p.raw_text,
+        )
+        for p in raw
+    ]
+
+
+@router.post("/parse-image", response_model=list[RawPositionOut])
+async def parse_image(file: UploadFile = File(...)) -> list[RawPositionOut]:
+    """Extrae posiciones de una captura del broker con el modelo de visión IA local."""
+    media_type = file.content_type or "image/png"
+    if not media_type.startswith("image/"):
+        raise HTTPException(
+            status_code=422,
+            detail={"error": {"code": "INVALID_FILE", "message": "El archivo debe ser una imagen (PNG/JPG)."}},
+        )
+    content = await file.read()
+    if len(content) > 8 * 1024 * 1024:
+        raise HTTPException(
+            status_code=422,
+            detail={"error": {"code": "FILE_TOO_LARGE", "message": "La captura supera el límite de 8 MB."}},
+        )
+    try:
+        raw = await extract_positions_from_image(base64.b64encode(content).decode(), media_type)
+    except RuntimeError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail={"error": {"code": "VISION_UNAVAILABLE", "message": str(exc)}},
+        ) from exc
     return [
         RawPositionOut(
             raw_name=p.raw_name,

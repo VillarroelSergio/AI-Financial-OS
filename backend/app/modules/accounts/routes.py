@@ -3,9 +3,30 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.models.account import Account
+from app.models.investment import Holding
+from app.models.transaction import Transaction
 from app.modules.accounts.schemas import AccountCreate, AccountOut, AccountUpdate
 
 router = APIRouter()
+
+
+@router.post("/purge-inactive")
+def purge_inactive_accounts(preview: bool = True, db: Session = Depends(get_db)) -> dict:
+    """Elimina cuentas soft-deleted sin transacciones ni posiciones (duplicados de imports)."""
+    referenced = {r[0] for r in db.query(Transaction.account_id).distinct()}
+    referenced |= {r[0] for r in db.query(Holding.account_id).distinct()}
+    purgeable = (
+        db.query(Account)
+        .filter(Account.is_active == False)  # noqa: E712
+        .filter(Account.id.notin_(referenced))
+        .all()
+    )
+    names = [a.name for a in purgeable]
+    if not preview:
+        for account in purgeable:
+            db.delete(account)
+        db.commit()
+    return {"affected": len(names), "names": names, "applied": not preview}
 
 
 @router.get("", response_model=list[AccountOut])

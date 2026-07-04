@@ -1,11 +1,11 @@
 """INE (Instituto Nacional de Estadística) adapter — IPC General España."""
 import time
-import requests
 from datetime import datetime, timezone
 
+import requests
+
 from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter
-from app.modules.market_intelligence.ingestion.models import AdapterResult
-from app.modules.market_intelligence.ingestion.models import MacroIndicator
+from app.modules.market_intelligence.ingestion.models import AdapterResult, MacroIndicator
 
 _URL = "https://servicios.ine.es/wstempus/js/ES/DATOS_SERIE/IPC206449?nult=3"
 

@@ -1,6 +1,6 @@
+import re
 from datetime import date, datetime, timezone
 from decimal import Decimal
-import re
 
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
@@ -37,6 +37,25 @@ ASSET_TYPE_MAP = {
 
 # ── Assets ────────────────────────────────────────────────────────────────────
 
+@router.get("/assets/search")
+def search_asset_candidates(q: str):
+    """Candidatos de ticker para el alta de activos (registro conocido + yfinance)."""
+    from app.modules.investments.asset_resolution import search_assets
+
+    return [
+        {
+            "ticker": c.ticker,
+            "name": c.name,
+            "exchange": c.exchange,
+            "currency": c.currency,
+            "asset_type": c.asset_type,
+            "requires_confirmation": c.requires_confirmation,
+            "confirmation_note": c.confirmation_note,
+        }
+        for c in search_assets(q)
+    ]
+
+
 @router.get("/assets", response_model=list[InvestmentAssetOut])
 def list_assets(db: Session = Depends(get_db)):
     return db.query(InvestmentAsset).all()
@@ -44,7 +63,35 @@ def list_assets(db: Session = Depends(get_db)):
 
 @router.post("/assets", response_model=InvestmentAssetOut, status_code=201)
 def create_asset(payload: InvestmentAssetCreate, db: Session = Depends(get_db)):
-    asset = InvestmentAsset(**payload.model_dump())
+    from app.modules.investments.asset_resolution import resolve_asset
+
+    data = payload.model_dump()
+    # Autorresolución: completa ticker cualificado (IBE → IBE.MC) y divisa para que
+    # el refresco de precios funcione sin pasos manuales.
+    resolution = resolve_asset(data.get("ticker") or data.get("name") or "")
+    if resolution.selected is None and data.get("name"):
+        resolution = resolve_asset(data["name"])
+    candidate = resolution.selected
+    if candidate:
+        if not data.get("ticker") or "." not in (data.get("ticker") or ""):
+            data["ticker"] = candidate.ticker
+        if candidate.currency:
+            # La divisa de cotización la fija el mercado del ticker, no el formulario.
+            data["currency"] = candidate.currency
+        data["price_source"] = "yfinance"
+    elif data.get("asset_type") in {"stock", "etf"}:
+        # Una acción/ETF que ningún proveedor reconoce no puede seguirse: no se guarda.
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "error": {
+                    "code": "UNRESOLVED_TICKER",
+                    "message": "No se reconoce esa acción. Busca por nombre o usa el ticker de mercado (p. ej. IBE.MC, AAPL).",
+                    "details": {"ticker": data.get("ticker"), "name": data.get("name")},
+                }
+            },
+        )
+    asset = InvestmentAsset(**data)
     db.add(asset)
     db.commit()
     db.refresh(asset)
@@ -192,6 +239,18 @@ def list_holdings(account_id: str | None = None, db: Session = Depends(get_db)):
 def create_holding(payload: HoldingCreate, db: Session = Depends(get_db)):
     asset = _get_asset_or_404(payload.asset_id, db)
     data = payload.model_dump()
+    if asset.asset_type in {"stock", "etf"}:
+        # Una posición en acciones sin cantidad o sin precio de compra no tiene sentido.
+        if Decimal(str(data.get("quantity") or 0)) <= 0:
+            raise HTTPException(
+                status_code=422,
+                detail={"error": {"code": "INVALID_QUANTITY", "message": "Indica cuántas acciones tienes (mayor que 0)", "details": {}}},
+            )
+        if Decimal(str(data.get("average_price") or 0)) <= 0:
+            raise HTTPException(
+                status_code=422,
+                detail={"error": {"code": "INVALID_PRICE", "message": "Indica el precio medio de compra (mayor que 0)", "details": {}}},
+            )
     if data.get("current_price") is not None and data.get("market_value") is None:
         data["market_value"] = Decimal(str(data["quantity"])) * Decimal(str(data["current_price"]))
     holding = Holding(**data)
@@ -232,6 +291,75 @@ def delete_holding(holding_id: str, db: Session = Depends(get_db)):
         )
     db.delete(holding)
     db.commit()
+
+
+@router.get("/holdings/{holding_id}/performance")
+def get_holding_performance(holding_id: str, db: Session = Depends(get_db)) -> dict:
+    """Evolución del precio desde la compra registrada hasta hoy, en la divisa nativa del activo."""
+    holding = db.query(Holding).filter(Holding.id == holding_id).first()
+    if not holding:
+        raise HTTPException(
+            status_code=404,
+            detail={"error": {"code": "NOT_FOUND", "message": "Holding no encontrado", "details": {}}},
+        )
+    asset = _get_asset_or_404(holding.asset_id, db)
+    if not asset.ticker:
+        raise HTTPException(
+            status_code=422,
+            detail={"error": {"code": "NO_TICKER", "message": "El activo no tiene ticker; no hay histórico disponible", "details": {}}},
+        )
+
+    buy = (
+        db.query(InvestmentOperation)
+        .filter(
+            InvestmentOperation.asset_id == asset.id,
+            InvestmentOperation.account_id == holding.account_id,
+            InvestmentOperation.operation_type == "buy",
+        )
+        .order_by(InvestmentOperation.date.asc())
+        .first()
+    )
+    entry_date = buy.date if buy else (holding.inception_date or holding.created_at.date())
+    entry_price = buy.price if buy and buy.price is not None else holding.average_price
+    entry_source = "operation" if buy else "holding"
+
+    import yfinance as yf
+
+    try:
+        hist = yf.Ticker(asset.ticker).history(start=entry_date.isoformat(), auto_adjust=False)
+        closes = hist["Close"].dropna()
+    except Exception:
+        closes = None
+    if closes is None or closes.empty:
+        raise HTTPException(
+            status_code=502,
+            detail={"error": {"code": "NO_PRICE_HISTORY", "message": f"Sin histórico de precios para {asset.ticker}", "details": {}}},
+        )
+
+    # ponytail: downsample a <=240 puntos; suficiente para la gráfica, sin tabla de histórico en DB
+    step = max(1, len(closes) // 240)
+    series = [
+        {"date": idx.date().isoformat(), "price": round(float(v), 4)}
+        for idx, v in closes.iloc[::step].items()
+    ]
+    last_date = closes.index[-1].date().isoformat()
+    if series[-1]["date"] != last_date:
+        series.append({"date": last_date, "price": round(float(closes.iloc[-1]), 4)})
+
+    current_price = float(closes.iloc[-1])
+    entry = float(entry_price) if entry_price else 0.0
+    return {
+        "holding_id": holding.id,
+        "name": asset.name,
+        "ticker": asset.ticker,
+        "currency": asset.currency,
+        "entry_date": entry_date.isoformat(),
+        "entry_price": round(entry, 4),
+        "entry_source": entry_source,
+        "current_price": round(current_price, 4),
+        "change_pct": round((current_price / entry - 1) * 100, 2) if entry > 0 else None,
+        "series": series,
+    }
 
 
 # ── Operations ────────────────────────────────────────────────────────────────

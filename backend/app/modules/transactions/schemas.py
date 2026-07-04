@@ -15,6 +15,12 @@ class TransactionCreate(BaseModel):
     notes: str | None = None
 
 
+class CurrencyReassign(BaseModel):
+    from_currency: str
+    to_currency: str
+    preview: bool = True
+
+
 class TransactionUpdate(BaseModel):
     category_id: str | None = None
     date: str | None = None
@@ -26,6 +32,7 @@ class TransactionUpdate(BaseModel):
 class TransactionOut(BaseModel):
     id: str
     account_id: str
+    account_name: str | None = None
     category_id: str | None
     date: str
     description: str

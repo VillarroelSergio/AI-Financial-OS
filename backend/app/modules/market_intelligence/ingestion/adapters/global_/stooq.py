@@ -2,11 +2,12 @@
 import csv
 import io
 import time
-import requests
 from datetime import datetime, timezone
 
-from app.modules.market_intelligence.ingestion.models import AdapterResult, MarketQuote
+import requests
+
 from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter
+from app.modules.market_intelligence.ingestion.models import AdapterResult, MarketQuote
 
 _SOURCES = {
     "sp500": {"symbol": "^SPX", "name": "S&P 500", "currency": "USD", "country": "US", "stooq": "%5Espx", "yahoo": "%5EGSPC"},
@@ -19,6 +20,13 @@ _SOURCES = {
     "cac40": {"symbol": "^CAC", "name": "CAC 40", "currency": "EUR", "country": "FR", "stooq": "%5Ecac", "yahoo": "%5EFCHI"},
     "ftse100": {"symbol": "^FTSE", "name": "FTSE 100", "currency": "GBP", "country": "GB", "stooq": "%5Eukx", "yahoo": "%5EFTSE"},
     "nikkei225": {"symbol": "^NKX", "name": "Nikkei 225", "currency": "JPY", "country": "JP", "stooq": "%5Enkx", "yahoo": "%5EN225"},
+    # Futuros de commodities — mismos endpoints CSV públicos de stooq, sin API key.
+    "gold": {"symbol": "GC.F", "name": "Oro", "currency": "USD", "country": "GLOBAL", "stooq": "gc.f", "yahoo": "GC%3DF", "asset_type": "commodity"},
+    "silver": {"symbol": "SI.F", "name": "Plata", "currency": "USD", "country": "GLOBAL", "stooq": "si.f", "yahoo": "SI%3DF", "asset_type": "commodity"},
+    "brent": {"symbol": "CB.F", "name": "Brent Crude Oil", "currency": "USD", "country": "GLOBAL", "stooq": "cb.f", "yahoo": "BZ%3DF", "asset_type": "commodity"},
+    "wti": {"symbol": "CL.F", "name": "WTI Crude Oil", "currency": "USD", "country": "US", "stooq": "cl.f", "yahoo": "CL%3DF", "asset_type": "commodity"},
+    "natural_gas": {"symbol": "NG.F", "name": "Gas Natural", "currency": "USD", "country": "GLOBAL", "stooq": "ng.f", "yahoo": "NG%3DF", "asset_type": "commodity"},
+    "copper": {"symbol": "HG.F", "name": "Cobre", "currency": "USD", "country": "GLOBAL", "stooq": "hg.f", "yahoo": "HG%3DF", "asset_type": "commodity"},
 }
 
 _HEADERS = {"User-Agent": "MarketDataPOC/0.1"}
@@ -51,7 +59,11 @@ class StooqAdapter(BaseAdapter):
                 records.append(_fetch_stooq_csv(catalog_id, source, retrieved_at))
             except Exception as exc:
                 errors.append(f"{source['symbol']}: {exc}")
-                fallback_record = _fetch_yahoo_fallback(catalog_id, source, retrieved_at)
+                try:
+                    fallback_record = _fetch_yahoo_fallback(catalog_id, source, retrieved_at)
+                except Exception as fallback_exc:
+                    errors.append(f"{source['symbol']} (yahoo): {fallback_exc}")
+                    fallback_record = None
                 if fallback_record:
                     records.append(fallback_record)
                     fallback_used.append(source["symbol"])
@@ -114,7 +126,7 @@ def _fetch_yahoo_fallback(catalog_id: str, source: dict, retrieved_at: datetime)
         return []
 
     item = result[0]
-    timestamps = item.get("timestamp") or []
+    item.get("timestamp") or []
     quote = (item.get("indicators", {}).get("quote") or [{}])[0]
     closes = [value for value in quote.get("close", []) if value is not None]
     if not closes:
@@ -143,7 +155,7 @@ def _quote(
         confidence_score=confidence,
         symbol=source["symbol"],
         name=source["name"],
-        asset_type="index",
+        asset_type=source.get("asset_type", "index"),
         price=price,
         change_pct=change_pct,
         currency=source["currency"],

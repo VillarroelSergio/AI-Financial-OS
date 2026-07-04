@@ -1,11 +1,11 @@
 """BME (Bolsas y Mercados Españoles) adapter — IBEX 35."""
 import time
-import requests
 from datetime import datetime, timezone
 
+import requests
+
 from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter
-from app.modules.market_intelligence.ingestion.models import AdapterResult
-from app.modules.market_intelligence.ingestion.models import MarketQuote
+from app.modules.market_intelligence.ingestion.models import AdapterResult, MarketQuote
 
 _PRIMARY_URL = (
     "https://www.bolsasymercados.es/bme-exchange/es/Indices/Renta-Variable"

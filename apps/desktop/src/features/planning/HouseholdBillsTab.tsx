@@ -29,6 +29,8 @@ const serviceLabel = (value: string) => SERVICE_OPTIONS.find(([key]) => key === 
 
 export default function HouseholdBillsTab() {
   const { bills, summary, loading, error, add, remove } = useHouseholdBills();
+  // El summary del backend agrega importes sin divisa; usamos la de las facturas.
+  const billsCurrency = bills[0]?.currency ?? "EUR";
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<HouseholdBillCreate>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
@@ -65,7 +67,7 @@ export default function HouseholdBillsTab() {
         <section className="rounded-lg border border-hairline-dark bg-surface-card p-5">
           <Home size={18} className="text-primary-bright" />
           <p className="mt-3 text-xs text-stone">Estimacion proximo mes</p>
-          <p className="financial-number mt-1 text-2xl text-on-dark">{formatCurrency(summary?.total_monthly_estimate ?? 0)}</p>
+          <p className="financial-number mt-1 text-2xl text-on-dark">{formatCurrency(summary?.total_monthly_estimate ?? 0, billsCurrency)}</p>
         </section>
         <section className="rounded-lg border border-hairline-dark bg-surface-card p-5">
           <p className="text-xs text-stone">Servicios controlados</p>
@@ -105,7 +107,7 @@ export default function HouseholdBillsTab() {
               <div key={`${item.service_type}-${item.provider}`} className="rounded-lg border border-hairline-dark bg-white/[.03] p-3">
                 <div className="flex items-center justify-between gap-3">
                   <div><p className="text-sm text-on-dark">{serviceLabel(item.service_type)} · {item.provider}</p><p className="text-xs text-stone">{item.bills_count} facturas · {item.latest_period}</p></div>
-                  <div className="text-right"><p className="financial-number text-sm text-on-dark">{formatCurrency(item.next_estimate)}</p><p className={item.anomaly ? "text-xs text-amber-200" : "text-xs text-stone"}>{item.change_pct == null ? "Sin comparativa" : `${item.change_pct}% vs anterior`}</p></div>
+                  <div className="text-right"><p className="financial-number text-sm text-on-dark">{formatCurrency(item.next_estimate, billsCurrency)}</p><p className={item.anomaly ? "text-xs text-amber-200" : "text-xs text-stone"}>{item.change_pct == null ? "Sin comparativa" : `${item.change_pct}% vs anterior`}</p></div>
                 </div>
               </div>
             )) : <p className="text-sm text-stone">Registra la primera factura para ver comparativas.</p>}

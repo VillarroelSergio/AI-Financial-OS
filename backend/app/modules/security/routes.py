@@ -18,7 +18,7 @@ router = APIRouter()
 def security_status() -> SecurityStatusOut:
     return SecurityStatusOut(
         app_env=settings.APP_ENV,
-        database_path=str(database_path()),
+        database_filename=database_path().name,
         backups_available=len(list_backups()),
         encryption_ready=True,
         demo_data_policy="demo data must be labeled and excluded from real totals",

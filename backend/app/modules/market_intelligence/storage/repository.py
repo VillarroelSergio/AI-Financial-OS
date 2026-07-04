@@ -1,16 +1,24 @@
 """Repository DuckDB para el Market Intelligence Layer."""
 from __future__ import annotations
+
 import hashlib
 import json
 import logging
+import re
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
 from app.core.duckdb import get_duckdb
+from app.modules.market_intelligence.catalog.loader import CatalogLoader
 from app.modules.market_intelligence.ingestion.models import (
-    MacroIndicator, CurrencyRate, BondYield, MarketQuote,
-    HistoricalPrice, Commodity, NewsItem,
+    BondYield,
+    Commodity,
+    CurrencyRate,
+    HistoricalPrice,
+    MacroIndicator,
+    MarketQuote,
+    NewsItem,
 )
 from app.modules.market_intelligence.ingestion.orchestrator import CatalogFetchResult
 from app.modules.market_intelligence.quality.schemas import QualityResult
@@ -19,6 +27,43 @@ from app.modules.market_intelligence.storage.migrations import run_migrations
 logger = logging.getLogger("market_intelligence.repository")
 
 _migrations_run = False
+_catalog = CatalogLoader()
+
+# Tipos de registro admisibles por categoría de catálogo. Evita que un fallback
+# genérico (p. ej. FRED devolviendo Fed Funds) persista macro bajo un bono o commodity.
+_ALLOWED_MODELS_BY_CATEGORY: dict[str, set[str]] = {
+    "macro": {"MacroIndicator"},
+    "bonds": {"BondYield", "YieldCurvePoint"},
+    "commodities": {"Commodity", "MarketQuote", "HistoricalPrice"},
+    "indices": {"MarketQuote", "HistoricalPrice"},
+    "crypto": {"MarketQuote", "HistoricalPrice"},
+    "forex": {"CurrencyRate"},
+    "news": {"NewsItem"},
+}
+
+
+def _expected_maturity(catalog_item_id: str) -> str | None:
+    """us_2y → '2Y', spain_10y → '10Y'. None si el id no codifica maturity."""
+    match = re.search(r"_(\d+)y$", catalog_item_id)
+    return f"{match.group(1)}Y" if match else None
+
+
+def _record_matches_catalog(catalog_item_id: str, record) -> bool:
+    item = _catalog.get_by_id(catalog_item_id)
+    if item is None or not item.category:
+        return True  # item desconocido: no bloquear
+    allowed = _ALLOWED_MODELS_BY_CATEGORY.get(item.category)
+    if allowed is None:
+        return True
+    if type(record).__name__ not in allowed:
+        return False
+    # Los adapters de bonos devuelven la curva completa: solo la maturity del item
+    if item.category == "bonds":
+        expected = _expected_maturity(catalog_item_id)
+        maturity = getattr(record, "maturity", None)
+        if expected and maturity and maturity.upper() != expected:
+            return False
+    return True
 
 
 def _conn():
@@ -75,6 +120,12 @@ def persist_fetch_result(
 
     # Normalized records por tipo de modelo
     for record in result.adapter_result.records:
+        if not _record_matches_catalog(catalog_item_id, record):
+            logger.debug(
+                "Descartado %s para '%s': tipo incompatible con la categoría del catálogo",
+                type(record).__name__, catalog_item_id,
+            )
+            continue
         _persist_normalized(conn, catalog_item_id, provider_id, record, quality, now)
 
     # Health log
@@ -300,6 +351,50 @@ def get_latest_macro(catalog_item_id: str) -> Optional[dict]:
     return dict(zip(cols, row))
 
 
+def purge_mismatched_macro_observations() -> int:
+    """Elimina observaciones macro estampadas bajo items que no son macro.
+
+    Limpia la contaminación histórica del fallback FRED (Fed Funds persistido
+    bajo us_2y/us_5y/us_10y/us_30y/wti...). Idempotente; se ejecuta al arrancar la ingesta.
+    """
+    non_macro_ids = [i.id for i in _catalog.load_all() if i.category and i.category != "macro"]
+    if not non_macro_ids:
+        return 0
+    conn = _conn()
+    placeholders = ", ".join("?" for _ in non_macro_ids)
+    count = conn.execute(
+        f"SELECT COUNT(*) FROM mi_macro_observations WHERE catalog_item_id IN ({placeholders})",
+        non_macro_ids,
+    ).fetchone()[0]
+    if count:
+        conn.execute(
+            f"DELETE FROM mi_macro_observations WHERE catalog_item_id IN ({placeholders})",
+            non_macro_ids,
+        )
+        logger.warning("Purgadas %d observaciones macro contaminadas (items no-macro)", count)
+
+    # Bonos: elimina filas cuya maturity no coincide con la codificada en el id
+    # (los adapters de curva persistían las 8 maturities bajo cada item).
+    bond_purged = 0
+    for item in _catalog.get_by_category("bonds"):
+        expected = _expected_maturity(item.id)
+        if not expected:
+            continue
+        mismatched = conn.execute(
+            "SELECT COUNT(*) FROM mi_bond_yields WHERE catalog_item_id = ? AND upper(maturity) != ?",
+            [item.id, expected],
+        ).fetchone()[0]
+        if mismatched:
+            conn.execute(
+                "DELETE FROM mi_bond_yields WHERE catalog_item_id = ? AND upper(maturity) != ?",
+                [item.id, expected],
+            )
+            bond_purged += mismatched
+    if bond_purged:
+        logger.warning("Purgadas %d filas de bonos con maturity incorrecta", bond_purged)
+    return int(count) + int(bond_purged)
+
+
 def get_latest_macro_all() -> list[dict]:
     conn = _conn()
     rows = conn.execute("""
@@ -310,6 +405,26 @@ def get_latest_macro_all() -> list[dict]:
     cols = ["catalog_item_id", "indicator_id", "country", "period", "value", "unit",
             "provider_id", "quality_score", "retrieved_at"]
     return [dict(zip(cols, r)) for r in rows]
+
+
+def get_macro_history(max_points: int = 13) -> dict[str, list[tuple[str, float]]]:
+    """Serie (period, value) por indicador macro, ordenada por periodo ascendente.
+
+    Devuelve como máximo `max_points` puntos por indicador (suficiente para
+    sparkline de 12 meses + delta vs periodo anterior).
+    """
+    conn = _conn()
+    rows = conn.execute("""
+        SELECT catalog_item_id, period, value
+        FROM mi_macro_observations
+        WHERE value IS NOT NULL AND period IS NOT NULL AND period != ''
+        QUALIFY ROW_NUMBER() OVER (PARTITION BY catalog_item_id, period ORDER BY retrieved_at DESC) = 1
+        ORDER BY catalog_item_id, period
+    """).fetchall()
+    history: dict[str, list[tuple[str, float]]] = {}
+    for catalog_item_id, period, value in rows:
+        history.setdefault(str(catalog_item_id), []).append((str(period), float(value)))
+    return {cid: points[-max_points:] for cid, points in history.items()}
 
 
 def get_latest_quotes() -> list[dict]:

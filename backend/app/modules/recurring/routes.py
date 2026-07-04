@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import calendar
-import uuid
 import re
+import uuid
 from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
@@ -15,7 +15,11 @@ from app.models.category import Category
 from app.models.recurring_transaction import RecurringTransaction
 from app.models.transaction import Transaction
 from app.modules.recurring.schemas import (
-    CalendarEvent, RecurringCandidate, RecurringCreate, RecurringOut, RecurringUpdate,
+    CalendarEvent,
+    RecurringCandidate,
+    RecurringCreate,
+    RecurringOut,
+    RecurringUpdate,
 )
 
 router = APIRouter()
@@ -179,7 +183,7 @@ def get_calendar(
     from_date = date.today()
     until = from_date + timedelta(days=days)
 
-    rts = db.query(RecurringTransaction).filter(RecurringTransaction.active == True).all()
+    rts = db.query(RecurringTransaction).filter(RecurringTransaction.active).all()
     events: list[CalendarEvent] = []
 
     for rt in rts:

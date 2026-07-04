@@ -1,7 +1,11 @@
 """Orchestrator — calls all rules, scores, filters and returns insights."""
 from __future__ import annotations
+
 from datetime import datetime, timezone
+
 from sqlalchemy.orm import Session
+
+from app.models.transaction import Transaction
 from app.modules.insights import repository
 from app.modules.insights.constants import DEFAULT_LIMIT
 from app.modules.insights.rules.cashflow_rules import cashflow_alert_insight
@@ -20,13 +24,12 @@ from app.modules.insights.schemas import (
     AnomaliesOut,
     DataStatus,
     InsightOut,
+    InsightSourceOut,
     InsightsSummaryCountOut,
     InsightsSummaryOut,
     MonthlyReviewOut,
-    InsightSourceOut,
 )
 from app.modules.insights.scoring import sort_and_limit
-from app.models.transaction import Transaction
 
 
 def _current_period() -> str:
@@ -99,6 +102,10 @@ def get_insights(
 
     sorted_insights = sort_and_limit(insights, limit)
     data_status = _determine_data_status(insights, db, p)
+    # Sin transacciones en el periodo, los insights de contexto (macro/mercado/calidad)
+    # contradicen al cuerpo "sin datos": badge y lista deben derivar del mismo estado.
+    if data_status == DataStatus.empty:
+        sorted_insights = []
 
     return InsightsSummaryOut(
         period=p,
