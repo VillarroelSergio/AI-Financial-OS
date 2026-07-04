@@ -1,6 +1,6 @@
 type RegionTab = "ES" | "EA" | "US";
 
-const TABS: Array<{ value: RegionTab; label: string }> = [
+const ALL_TABS: Array<{ value: RegionTab; label: string }> = [
   { value: "ES", label: "España" },
   { value: "EA", label: "Eurozona" },
   { value: "US", label: "EEUU" },
@@ -9,16 +9,17 @@ const TABS: Array<{ value: RegionTab; label: string }> = [
 interface Props {
   active: RegionTab;
   onSelect: (r: RegionTab) => void;
+  availableRegions: RegionTab[];
 }
 
-export default function RegionTabs({ active, onSelect }: Props) {
+export default function RegionTabs({ active, onSelect, availableRegions }: Props) {
+  const tabs = ALL_TABS.filter((t) => availableRegions.includes(t.value));
+
+  if (tabs.length <= 1) return null;
+
   return (
-    <div
-      role="tablist"
-      aria-label="Seleccionar región"
-      className="flex gap-1.5"
-    >
-      {TABS.map((tab) => {
+    <div role="tablist" aria-label="Seleccionar región" className="flex gap-1.5">
+      {tabs.map((tab) => {
         const isActive = active === tab.value;
         return (
           <button

@@ -1,13 +1,13 @@
 """Tests para FinancialSignalEngine."""
 from __future__ import annotations
-from datetime import datetime, timezone
-from unittest.mock import patch
 
-import pytest
+from datetime import datetime, timezone
 
 from app.modules.financial_knowledge.engines import financial_signal_engine as engine
 from app.modules.financial_knowledge.models import (
-    EconomicIndicatorInsight, Trend, Severity, Direction,
+    EconomicIndicatorInsight,
+    Severity,
+    Trend,
 )
 
 

@@ -1,6 +1,7 @@
-from app.modules.insights.scoring import compute_priority, compute_confidence, sort_and_limit
-from app.modules.insights.schemas import InsightOut, InsightType, InsightSeverity, DataStatus
 from datetime import datetime, timezone
+
+from app.modules.insights.schemas import DataStatus, InsightOut, InsightSeverity, InsightType
+from app.modules.insights.scoring import compute_confidence, compute_priority, sort_and_limit
 
 
 def _make_insight(severity, data_status, impact_score=50.0, freshness="current"):

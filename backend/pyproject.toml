@@ -1,6 +1,6 @@
 [project]
 name = "ai-financial-os-backend"
-version = "0.1.0"
+version = "0.1.2"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi[standard]>=0.115.0",
@@ -14,6 +14,7 @@ dependencies = [
     "requests>=2.31",
     "pyyaml>=6.0",
     "feedparser>=6.0",
+    "openpyxl>=3.1.0",
 ]
 
 [dependency-groups]
@@ -22,9 +23,12 @@ dev = [
     "httpx>=0.27.0",
     "ruff>=0.8.0",
 ]
+build = [
+    "pyinstaller>=6.0",
+]
 
 [tool.pytest.ini_options]
-testpaths = ["app/tests"]
+testpaths = ["app/tests", "tests"]
 
 [tool.ruff]
 line-length = 100

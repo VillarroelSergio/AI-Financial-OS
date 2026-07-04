@@ -4,12 +4,10 @@ from __future__ import annotations
 import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 from fastapi.testclient import TestClient
 
-from app.modules.ai.providers.base import AIResponse, ProviderHealth, ToolCallResult
+from app.modules.ai.providers.base import AIResponse
 from app.modules.ai.tools.registry import ToolDefinition, ToolRegistry
-
 
 # ── Tool Registry ─────────────────────────────────────────────────────────────
 
@@ -81,6 +79,7 @@ class TestToolRegistry:
 class TestOllamaProvider:
     def test_health_offline(self):
         import asyncio
+
         from app.modules.ai.providers.ollama_provider import OllamaProvider
 
         provider = OllamaProvider("http://localhost:19999", "test-model")
@@ -90,6 +89,7 @@ class TestOllamaProvider:
 
     def test_list_models_offline(self):
         import asyncio
+
         from app.modules.ai.providers.ollama_provider import OllamaProvider
 
         provider = OllamaProvider("http://localhost:19999", "test-model")
@@ -98,6 +98,7 @@ class TestOllamaProvider:
 
     def test_chat_with_mock(self):
         import asyncio
+
         from app.modules.ai.providers.ollama_provider import OllamaProvider
 
         provider = OllamaProvider("http://localhost:11434", "test-model")
@@ -122,6 +123,7 @@ class TestOllamaProvider:
 class TestLMStudioProvider:
     def test_health_offline(self):
         import asyncio
+
         from app.modules.ai.providers.lmstudio_provider import LMStudioProvider
 
         provider = LMStudioProvider("http://localhost:19999/v1", "test-model")

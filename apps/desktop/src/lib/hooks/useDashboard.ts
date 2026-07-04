@@ -3,23 +3,17 @@ import {
   fetchCategorySpendingDetail,
   fetchOverview,
   fetchSpending,
+  fetchSpendingMonthly,
   fetchSpendingYears,
   type CategorySpendingDetail,
+  type MonthlySpendingPoint,
   type SpendingData,
 } from "@/lib/api/dashboard";
+import { useAsyncData } from "@/lib/hooks/useAsyncData";
 import type { DashboardOverview } from "@/lib/types";
 
 export function useOverview() {
-  const [data, setData] = useState<DashboardOverview | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetchOverview()
-      .then(setData)
-      .catch(() => {})
-      .finally(() => setLoading(false));
-  }, []);
-
+  const { data, loading } = useAsyncData<DashboardOverview>(fetchOverview);
   return { data, loading };
 }
 
@@ -39,15 +33,16 @@ export function useSpending(period: { mode: "month" | "year"; month: string; yea
 }
 
 export function useSpendingYears() {
-  const [years, setYears] = useState<number[]>([]);
+  const { data } = useAsyncData(fetchSpendingYears);
+  return data?.years ?? [];
+}
 
+export function useSpendingMonthly(months = 12, year?: number) {
+  const [data, setData] = useState<MonthlySpendingPoint[]>([]);
   useEffect(() => {
-    fetchSpendingYears()
-      .then((data) => setYears(data.years))
-      .catch(() => setYears([]));
-  }, []);
-
-  return years;
+    fetchSpendingMonthly(months, year).then(setData).catch(() => {});
+  }, [months, year]);
+  return data;
 }
 
 export function useCategorySpendingDetail(

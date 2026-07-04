@@ -4,6 +4,7 @@ La IA local SOLO consume el output de generate_ai_datasheet().
 Nunca llama a providers ni a APIs externas.
 """
 from __future__ import annotations
+
 import json
 import logging
 from datetime import datetime, timezone

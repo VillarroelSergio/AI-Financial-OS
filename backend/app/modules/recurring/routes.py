@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import calendar
-import uuid
 import re
+import uuid
 from collections import defaultdict
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
@@ -15,7 +15,11 @@ from app.models.category import Category
 from app.models.recurring_transaction import RecurringTransaction
 from app.models.transaction import Transaction
 from app.modules.recurring.schemas import (
-    CalendarEvent, RecurringCandidate, RecurringCreate, RecurringOut, RecurringUpdate,
+    CalendarEvent,
+    RecurringCandidate,
+    RecurringCreate,
+    RecurringOut,
+    RecurringUpdate,
 )
 
 router = APIRouter()
@@ -27,24 +31,24 @@ def _next_occurrences(rt: RecurringTransaction, from_date: date, until: date) ->
     cursor = rt.next_date
     # Guard: advance cursor to from_date
     while cursor < from_date:
-        cursor = _advance(rt, cursor)
+        cursor = _advance(cursor, rt.frequency, rt.day_of_month)
     while cursor <= until:
         dates.append(cursor)
-        cursor = _advance(rt, cursor)
+        cursor = _advance(cursor, rt.frequency, rt.day_of_month)
     return dates
 
 
-def _advance(rt: RecurringTransaction, current: date) -> date:
-    if rt.frequency == "weekly":
+def _advance(current: date, frequency: str, day_of_month: int | None = None) -> date:
+    if frequency == "weekly":
         return current + timedelta(weeks=1)
-    elif rt.frequency == "monthly":
-        target_day = rt.day_of_month or current.day
+    elif frequency == "monthly":
+        target_day = day_of_month or current.day
         m = current.month + 1
         y = current.year + (m - 1) // 12
         m = ((m - 1) % 12) + 1
         max_day = calendar.monthrange(y, m)[1]
         return date(y, m, min(target_day, max_day))
-    elif rt.frequency == "yearly":
+    elif frequency == "yearly":
         return date(current.year + 1, current.month, current.day)
     return current + timedelta(days=30)
 
@@ -73,18 +77,6 @@ def _frequency_from_intervals(intervals: list[int]) -> tuple[str, float] | None:
     if 330 <= avg <= 400:
         return "yearly", avg
     return None
-
-
-def _add_days_by_frequency(last_date: date, frequency: str, day_of_month: int | None = None) -> date:
-    if frequency == "weekly":
-        return last_date + timedelta(days=7)
-    if frequency == "yearly":
-        return date(last_date.year + 1, last_date.month, last_date.day)
-    month = last_date.month + 1
-    year = last_date.year + (month - 1) // 12
-    month = ((month - 1) % 12) + 1
-    target_day = day_of_month or last_date.day
-    return date(year, month, min(target_day, calendar.monthrange(year, month)[1]))
 
 
 @router.get("", response_model=list[RecurringOut])
@@ -141,7 +133,7 @@ def list_recurring_candidates(
             currency=last_tx.currency,
             type=tx_type,
             frequency=frequency_name,
-            next_date=_add_days_by_frequency(last_date, frequency_name, common_day),
+            next_date=_advance(last_date, frequency_name, common_day),
             confidence=round(confidence, 2),
             transaction_count=len(dated),
             transaction_ids=[tx.id for tx, _ in dated],
@@ -191,7 +183,7 @@ def get_calendar(
     from_date = date.today()
     until = from_date + timedelta(days=days)
 
-    rts = db.query(RecurringTransaction).filter(RecurringTransaction.active == True).all()
+    rts = db.query(RecurringTransaction).filter(RecurringTransaction.active).all()
     events: list[CalendarEvent] = []
 
     for rt in rts:

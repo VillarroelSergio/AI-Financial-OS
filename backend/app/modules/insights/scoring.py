@@ -1,5 +1,6 @@
 from __future__ import annotations
-from app.modules.insights.constants import SEVERITY_SCORES, CONFIDENCE_SCORES, FRESHNESS_SCORES
+
+from app.modules.insights.constants import CONFIDENCE_SCORES, FRESHNESS_SCORES, SEVERITY_SCORES
 from app.modules.insights.schemas import InsightOut
 
 

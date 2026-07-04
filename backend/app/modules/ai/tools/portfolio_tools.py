@@ -1,9 +1,8 @@
 """Controlled portfolio/investment tools for the AI assistant."""
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from decimal import Decimal
 import re
+from datetime import datetime, timezone
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -86,7 +85,7 @@ async def _get_asset_allocation(db: Session, **_: Any) -> dict[str, Any]:
 
 async def _get_currency_exposure(db: Session, **_: Any) -> dict[str, Any]:
     holdings = db.query(Holding).all()
-    assets = {a.id: a for a in db.query(InvestmentAsset).all()}
+    {a.id: a for a in db.query(InvestmentAsset).all()}
     total = sum(float(h.market_value or h.quantity * h.average_price) for h in holdings)
     by_currency: dict[str, float] = {}
     for h in holdings:

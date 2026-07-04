@@ -9,6 +9,22 @@ export interface SnapshotRoute {
 
 export const snapshotRoutes: SnapshotRoute[] = [
   {
+    path: "/welcome",
+    filename: "welcome.png",
+    screenName: "Welcome",
+    state: "mock_data",
+    description: "Guía inicial de bienvenida con pasos de carga de datos",
+    requiresInteraction: false,
+  },
+  {
+    path: "/investments/tracking",
+    filename: "investments-tracking.png",
+    screenName: "Position Tracking",
+    state: "mock_data",
+    description: "Seguimiento de posiciones: evolución de cada acción desde el precio de entrada",
+    requiresInteraction: false,
+  },
+  {
     path: "/",
     filename: "overview.png",
     screenName: "Overview",

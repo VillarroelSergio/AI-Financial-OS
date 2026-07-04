@@ -1,7 +1,10 @@
 """AI tool: get_insights_summary — wraps deterministic InsightsEngine."""
 from __future__ import annotations
+
 from typing import Any
+
 from sqlalchemy.orm import Session
+
 from app.modules.ai.tools.registry import ToolDefinition, tool_registry
 from app.modules.insights import service as insights_service
 

@@ -11,6 +11,15 @@ def test_get_insights_empty_db(client):
     assert isinstance(data["insights"], list)
 
 
+def test_empty_status_has_no_insights_in_badge(client):
+    """Si el cuerpo dice 'sin datos', el badge no debe contar insights de contexto."""
+    r = client.get("/api/insights")
+    data = r.json()
+    if data["data_status"] == "empty":
+        assert data["insights"] == []
+        assert data["summary"]["total"] == 0
+
+
 def test_get_insights_with_period(client):
     r = client.get("/api/insights?period=2026-06")
     assert r.status_code == 200

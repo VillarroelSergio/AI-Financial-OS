@@ -1,11 +1,11 @@
 """RSS adapter — aggregates financial news from multiple RSS feeds."""
 import time
-import feedparser
 from datetime import datetime, timezone
 
-from app.modules.market_intelligence.ingestion.models import AdapterResult, ProviderMetadata
-from app.modules.market_intelligence.ingestion.models import NewsItem
+import feedparser
+
 from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter
+from app.modules.market_intelligence.ingestion.models import AdapterResult, NewsItem
 
 RSS_FEEDS = [
     {"name": "Expansión", "url": "https://www.expansion.com/rss/portada.xml", "category": "finance"},

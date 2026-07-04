@@ -1,12 +1,13 @@
 """Repository DuckDB para el Financial Knowledge Layer."""
 from __future__ import annotations
+
 import json
 import logging
-import uuid
-from datetime import datetime, timezone
 from typing import Optional
 
 from app.core.duckdb import get_duckdb
+from app.modules.financial_knowledge._shared import now as _now
+from app.modules.financial_knowledge._shared import uid as _uid
 from app.modules.financial_knowledge.storage.migrations import run_migrations
 
 logger = logging.getLogger("financial_knowledge.repository")
@@ -21,14 +22,6 @@ def _conn():
         run_migrations(c)
         _migrations_run = True
     return c
-
-
-def _uid() -> str:
-    return str(uuid.uuid4())
-
-
-def _now() -> datetime:
-    return datetime.now(timezone.utc)
 
 
 def save_insights(insights: list) -> int:

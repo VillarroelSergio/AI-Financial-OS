@@ -1,9 +1,8 @@
-from app.modules.insights.rules.spending_rules import (
-    spending_anomaly_insights,
-    monthly_comparison_insights,
-    savings_rate_insight,
-)
 from app.modules.insights.rules.cashflow_rules import cashflow_alert_insight
+from app.modules.insights.rules.spending_rules import (
+    savings_rate_insight,
+    spending_anomaly_insights,
+)
 from app.modules.insights.schemas import DataStatus
 
 

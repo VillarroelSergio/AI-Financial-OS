@@ -1,36 +1,43 @@
 """Financial Knowledge Service — orquesta el pipeline de conocimiento financiero."""
 from __future__ import annotations
+
 import json
 import logging
-from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy.orm import Session
 
+from app.modules.financial_knowledge._shared import now as _now
+from app.modules.financial_knowledge.engines import ai_datasheet_generator as adg
+from app.modules.financial_knowledge.engines import correlation_engine as ce
 from app.modules.financial_knowledge.engines import economic_indicator_engine as eie
 from app.modules.financial_knowledge.engines import financial_signal_engine as fse
-from app.modules.financial_knowledge.engines import market_regime_engine as mre
-from app.modules.financial_knowledge.engines import correlation_engine as ce
-from app.modules.financial_knowledge.engines import personal_impact_engine as pie
 from app.modules.financial_knowledge.engines import knowledge_graph_engine as kge
-from app.modules.financial_knowledge.engines import ai_datasheet_generator as adg
+from app.modules.financial_knowledge.engines import market_regime_engine as mre
+from app.modules.financial_knowledge.engines import personal_impact_engine as pie
 from app.modules.financial_knowledge.schemas import (
-    AIDatasheetOut, EconomicIndicatorInsightOut, FinancialSignalOut,
-    KnowledgeSnapshotOut, MarketRegimeOut, PersonalImpactOut, RecomputeResultOut,
+    AIDatasheetOut,
+    EconomicIndicatorInsightOut,
+    FinancialSignalOut,
+    KnowledgeSnapshotOut,
+    MarketRegimeOut,
+    PersonalImpactOut,
+    RecomputeResultOut,
 )
 
 logger = logging.getLogger("financial_knowledge.service")
 
 
-def _now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
-
-
 def recompute(db: Optional[Session] = None) -> RecomputeResultOut:
     """Ejecuta el pipeline completo de conocimiento financiero."""
     from app.modules.financial_knowledge.storage.repository import (
-        save_insights, save_signals, save_regime, save_impacts,
-        save_datasheet, save_knowledge_graph_nodes, save_knowledge_graph_edges,
+        save_datasheet,
+        save_impacts,
+        save_insights,
+        save_knowledge_graph_edges,
+        save_knowledge_graph_nodes,
+        save_regime,
+        save_signals,
     )
     errors: list[str] = []
     insights_count = signals_count = impacts_count = 0
@@ -103,7 +110,10 @@ def recompute(db: Optional[Session] = None) -> RecomputeResultOut:
 
 def get_snapshot() -> KnowledgeSnapshotOut:
     from app.modules.financial_knowledge.storage.repository import (
-        get_latest_insights, get_latest_signals, get_latest_regime, get_latest_impacts,
+        get_latest_impacts,
+        get_latest_insights,
+        get_latest_regime,
+        get_latest_signals,
     )
     insights_rows = get_latest_insights(limit=20)
     signals_rows = get_latest_signals()
@@ -112,7 +122,7 @@ def get_snapshot() -> KnowledgeSnapshotOut:
     scores = [r.get("quality_score", 1.0) for r in insights_rows + signals_rows]
     quality = round(sum(scores) / len(scores), 3) if scores else 0.0
     return KnowledgeSnapshotOut(
-        generated_at=_now_iso(),
+        generated_at=_now().isoformat(),
         quality_score=quality,
         regime=MarketRegimeOut(**regime_row) if regime_row else None,
         signals=[FinancialSignalOut(**r) for r in signals_rows],

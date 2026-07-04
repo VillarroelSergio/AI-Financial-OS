@@ -3,8 +3,10 @@ import hashlib
 import io
 import json
 import re
-from datetime import datetime
+from datetime import date, datetime
 from decimal import Decimal, InvalidOperation
+
+MAX_FILE_BYTES = 10 * 1024 * 1024
 
 MONEFY_COLUMNS = {
     "date",
@@ -29,12 +31,66 @@ DEFAULT_MONEFY_MAPPING = {
 
 
 def decode_csv(content: bytes) -> str:
-    if len(content) > 10 * 1024 * 1024:
+    if len(content) > MAX_FILE_BYTES:
         raise ValueError("El archivo supera el límite de 10 MB")
     try:
         return content.decode("utf-8-sig")
     except UnicodeDecodeError as exc:
         raise ValueError("El archivo debe estar codificado en UTF-8") from exc
+
+
+def _cell_to_str(value: object) -> str:
+    """Normaliza celdas de Excel al mismo formato de texto que produce un CSV."""
+    if value is None:
+        return ""
+    if isinstance(value, datetime):
+        return value.strftime("%d/%m/%Y")
+    if isinstance(value, date):
+        return value.strftime("%d/%m/%Y")
+    if isinstance(value, float) and value.is_integer():
+        return str(int(value))
+    return str(value).strip()
+
+
+def read_xlsx(content: bytes) -> tuple[list[str], list[dict[str, str]]]:
+    if len(content) > MAX_FILE_BYTES:
+        raise ValueError("El archivo supera el límite de 10 MB")
+    import openpyxl
+
+    try:
+        workbook = openpyxl.load_workbook(io.BytesIO(content), read_only=True, data_only=True)
+    except Exception as exc:
+        raise ValueError("No se pudo leer el archivo XLSX") from exc
+    sheet = workbook.worksheets[0]
+    rows_iter = sheet.iter_rows(values_only=True)
+    raw_columns = next(rows_iter, None) or []
+    seen: dict[str, int] = {}
+    columns: list[str] = []
+    for raw_column in raw_columns:
+        column = _cell_to_str(raw_column)
+        occurrence = seen.get(column, 0)
+        columns.append(column if occurrence == 0 else f"{column}.{occurrence}")
+        seen[column] = occurrence + 1
+    if not any(columns):
+        raise ValueError("El XLSX no contiene cabeceras")
+    rows = [
+        {
+            column: _cell_to_str(values[index] if index < len(values) else None)
+            for index, column in enumerate(columns)
+        }
+        for values in rows_iter
+        if values and any(_cell_to_str(v) for v in values)
+    ]
+    if not rows:
+        raise ValueError("El XLSX no contiene movimientos")
+    return columns, rows
+
+
+def read_table(filename: str | None, content: bytes) -> tuple[list[str], list[dict[str, str]]]:
+    """Lee CSV o XLSX y devuelve columnas + filas normalizadas a texto."""
+    if (filename or "").lower().endswith(".xlsx"):
+        return read_xlsx(content)
+    return read_csv(content)
 
 
 def read_csv(content: bytes) -> tuple[list[str], list[dict[str, str]]]:

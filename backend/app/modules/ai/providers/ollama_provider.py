@@ -8,7 +8,7 @@ from typing import Any, AsyncIterator
 
 import httpx
 
-from app.modules.ai.providers.base import AIProvider, AIResponse, ProviderHealth, ToolCallResult
+from app.modules.ai.providers.base import AIResponse, ProviderHealth, ToolCallResult
 
 logger = logging.getLogger(__name__)
 
@@ -66,7 +66,7 @@ def _build_tool_system_suffix(tools: list[dict[str, Any]]) -> str:
     return "\n".join(lines)
 
 
-class OllamaProvider(AIProvider):
+class OllamaProvider:
     def __init__(self, base_url: str, default_model: str) -> None:
         self._base_url = base_url.rstrip("/")
         self._default_model = default_model
@@ -120,7 +120,11 @@ class OllamaProvider(AIProvider):
                         args = json.loads(args)
                     except json.JSONDecodeError:
                         args = {}
-                tool_calls.append(ToolCallResult(name=fn.get("name", ""), arguments=args))
+                tool_calls.append(ToolCallResult(
+                    name=fn.get("name", ""),
+                    arguments=args,
+                    id=tc.get("id", ""),
+                ))
         elif tools and content:
             parsed = _parse_tool_call(content)
             if parsed:

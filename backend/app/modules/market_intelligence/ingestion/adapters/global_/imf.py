@@ -1,11 +1,11 @@
 """IMF adapter — GDP growth forecasts via DataMapper API."""
 import time
-import requests
 from datetime import datetime, timezone
 
-from app.modules.market_intelligence.ingestion.models import AdapterResult, ProviderMetadata
-from app.modules.market_intelligence.ingestion.models import MacroIndicator
+import requests
+
 from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter
+from app.modules.market_intelligence.ingestion.models import AdapterResult, MacroIndicator
 
 _URL = "https://www.imf.org/external/datamapper/api/v1/NGDP_RPCH/ESP/USA/DEU?periods=2023,2024,2025"
 

@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { Edit3, Plus, Search, SlidersHorizontal, Trash2 } from "lucide-react";
-import { PageHeader } from "@/components/ui/Dashboard";
-import EmptyState from "@/components/ui/EmptyState";
+import { EmptyState, PageHeader } from "@/components/ui/Dashboard";
 import Spinner from "@/components/ui/Spinner";
 import TypeBadge from "@/components/ui/TypeBadge";
 import { useTransactions } from "@/lib/hooks/useTransactions";
@@ -54,7 +53,8 @@ export default function TransactionsPage() {
   const [saving, setSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
-  const accountName = (id: string) => accounts.find((a) => a.id === id)?.name ?? "Cuenta sin nombre";
+  const accountName = (tx: { account_id: string; account_name?: string | null }) =>
+    tx.account_name ?? accounts.find((a) => a.id === tx.account_id)?.name ?? "Cuenta sin nombre";
   const categoryName = (id: string | null) => id ? (categories.find((c) => c.id === id)?.name ?? "Sin categoria") : "Sin categoria";
 
   const visibleTransactions = useMemo(() => {
@@ -69,7 +69,7 @@ export default function TransactionsPage() {
         tx.date,
         tx.amount,
         tx.currency,
-        accountName(tx.account_id),
+        accountName(tx),
         categoryName(tx.category_id),
       ].some((value) => value.toLowerCase().includes(normalized));
     }).sort((a, b) => {
@@ -226,7 +226,7 @@ export default function TransactionsPage() {
                     <tr key={tx.id} className="border-b border-divider-soft hover:bg-white/[.025] transition-colors">
                       <td className="px-xl py-md text-body-sm text-stone whitespace-nowrap">{tx.date}</td>
                       <td className="px-xl py-md text-body-sm text-on-dark min-w-[220px]">{tx.description}</td>
-                      <td className="px-xl py-md text-body-sm text-stone">{accountName(tx.account_id)}</td>
+                      <td className="px-xl py-md text-body-sm text-stone">{accountName(tx)}</td>
                       <td className="px-xl py-md text-body-sm text-stone">{categoryName(tx.category_id)}</td>
                       <td className="px-xl py-md"><TypeBadge type={tx.type} /></td>
                       <td className={`financial-number px-xl py-md text-right text-body-sm font-medium ${amount >= 0 ? "text-accent-teal" : "text-on-dark"}`}>{formatCurrency(tx.amount, tx.currency)}</td>

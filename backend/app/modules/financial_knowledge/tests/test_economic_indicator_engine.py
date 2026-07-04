@@ -1,12 +1,10 @@
 """Tests para EconomicIndicatorEngine."""
 from __future__ import annotations
-from datetime import datetime, timezone
-from unittest.mock import patch
 
-import pytest
+from datetime import datetime, timezone
 
 from app.modules.financial_knowledge.engines import economic_indicator_engine as engine
-from app.modules.financial_knowledge.models import Trend, Severity
+from app.modules.financial_knowledge.models import Severity
 
 
 def _macro_row(catalog_id: str, value: float, unit: str = "%", country: str = "ES") -> dict:

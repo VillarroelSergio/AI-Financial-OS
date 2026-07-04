@@ -6,10 +6,9 @@ Verifies that:
 - value_numeric in repository correctly handles 0.0 values (falsy bug)
 """
 from __future__ import annotations
+
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
-
-import pytest
 
 # ── FRED adapter indicator isolation ─────────────────────────────────────────
 

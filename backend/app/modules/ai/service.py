@@ -12,8 +12,8 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.modules.ai.memory import conversation_repository as conv_repo
 from app.modules.ai.prompts.system_prompt import get_system_prompt
-from app.modules.ai.providers import AIProvider, AIResponse, OllamaProvider, LMStudioProvider
-from app.modules.ai.schemas import ChatResponse, ConversationOut, ToolCallOut, SourceOut
+from app.modules.ai.providers import AIProvider, AIResponse, LMStudioProvider, OllamaProvider
+from app.modules.ai.schemas import ChatResponse, SourceOut, ToolCallOut
 from app.modules.ai.tools.registry import tool_registry
 
 logger = logging.getLogger(__name__)
@@ -66,6 +66,7 @@ async def chat(
         raise RuntimeError("AI Assistant is disabled (AI_ASSISTANT_ENABLED=false)")
 
     # Ensure conversation
+    new_conversation = False
     if conversation_id:
         conv = conv_repo.get_conversation(db, conversation_id)
         if not conv:
@@ -73,6 +74,7 @@ async def chat(
     else:
         conv = conv_repo.create_conversation(db, title=_extract_title(message))
         conversation_id = conv.id
+        new_conversation = True
 
     contextual_message = _with_screen_context(message, context)
 
@@ -110,6 +112,7 @@ async def chat(
     all_sources: list[dict] = []
     final_content: str | None = None
     overall_quality: float | None = None
+    seen_call_signatures: set[str] = set()
 
     # Agentic loop: call → execute tools → re-call until no more tool calls or limit
     for _round in range(_MAX_TOOL_ROUNDS):
@@ -130,9 +133,30 @@ async def chat(
             final_content = response.content
             break
 
+        # Detect repeated tool calls — break early to avoid infinite same-call cycle
+        call_sigs = frozenset(
+            f"{tc.name}:{json.dumps(tc.arguments, sort_keys=True)}"
+            for tc in response.tool_calls
+        )
+        if call_sigs & seen_call_signatures:
+            logger.warning("Tool call loop detected (repeated: %s) — forcing synthesis", call_sigs & seen_call_signatures)
+            messages.append({
+                "role": "user",
+                "content": "Ya tienes todos los datos necesarios. Responde ahora en texto claro y conciso sin más llamadas a herramientas.",
+            })
+            try:
+                synth: AIResponse = await provider.chat(
+                    messages=messages, tools=None, model=model, max_tokens=settings.AI_MAX_OUTPUT_TOKENS
+                )
+                final_content = synth.content or ""
+            except Exception:
+                final_content = ""
+            break
+        seen_call_signatures |= call_sigs
+
         # Execute tool calls
         tool_results_for_llm: list[dict] = []
-        for tc in response.tool_calls:
+        for i, tc in enumerate(response.tool_calls):
             start = time.monotonic()
             result = await tool_registry.execute(tc.name, tc.arguments, db=db)
             duration = int((time.monotonic() - start) * 1000)
@@ -170,20 +194,44 @@ async def chat(
                 status=status,
             )
 
-            # Format tool result for re-injection
+            # Include tool_call_id so OpenAI-compatible models associate results with calls
+            call_id = tc.id or f"call_{_round}_{i}"
             tool_results_for_llm.append({
                 "role": "tool",
+                "tool_call_id": call_id,
                 "name": tc.name,
                 "content": json.dumps(result, ensure_ascii=False, default=str),
             })
 
-        # Append assistant + tool results to history for next round
-        messages.append({"role": "assistant", "content": response.content or ""})
+        # Re-inject assistant message WITH tool_calls array (required by OpenAI-compatible APIs)
+        assistant_tool_calls_fmt = [
+            {
+                "id": tc.id or f"call_{_round}_{i}",
+                "type": "function",
+                "function": {"name": tc.name, "arguments": json.dumps(tc.arguments)},
+            }
+            for i, tc in enumerate(response.tool_calls)
+        ]
+        messages.append({
+            "role": "assistant",
+            "content": response.content or "",
+            "tool_calls": assistant_tool_calls_fmt,
+        })
         messages.extend(tool_results_for_llm)
 
     else:
-        # Hit round limit — use last content or synthesize
-        final_content = response.content  # type: ignore[possibly-undefined]
+        # Exhausted rounds — force one text-only synthesis call instead of returning empty
+        messages.append({
+            "role": "user",
+            "content": "Con los datos que has obtenido, responde al usuario en texto claro y conciso. No hagas más llamadas a herramientas.",
+        })
+        try:
+            synth_final: AIResponse = await provider.chat(
+                messages=messages, tools=None, model=model, max_tokens=settings.AI_MAX_OUTPUT_TOKENS
+            )
+            final_content = synth_final.content or "He analizado tus datos financieros. Reformula tu pregunta para obtener más detalle."
+        except Exception:
+            final_content = "He ejecutado el análisis pero no pude generar una respuesta. Inténtalo de nuevo."
 
     # Deduplicate sources
     seen_sources: set[str] = set()
@@ -204,6 +252,11 @@ async def chat(
         sources=unique_sources,
         quality_score=overall_quality,
     )
+
+    # Auto-título: un saludo trivial ("hola") produce títulos repetidos e inútiles;
+    # en ese caso el primer intercambio completo da mejor contexto.
+    if new_conversation and len(message.strip().split()) < 3 and final_content:
+        conv_repo.update_conversation_title(db, conversation_id, _extract_title(final_content))
 
     return ChatResponse(
         conversation_id=conversation_id,

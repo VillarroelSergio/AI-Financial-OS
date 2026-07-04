@@ -1,11 +1,11 @@
 """REE (Red Eléctrica de España) adapter — electricity market prices."""
 import time
-import requests
 from datetime import datetime, timezone
 
+import requests
+
 from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter
-from app.modules.market_intelligence.ingestion.models import AdapterResult, ProviderMetadata
-from app.modules.market_intelligence.ingestion.models import MacroIndicator
+from app.modules.market_intelligence.ingestion.models import AdapterResult, MacroIndicator
 
 _URL = (
     "https://apidatos.ree.es/es/datos/mercados/precios-mercados-tiempo-real"
@@ -93,7 +93,7 @@ class REEAdapter(BaseAdapter):
         for entry in values[-3:]:
             value = entry.get("value")
             dt_str = entry.get("datetime", "")
-            percentage = entry.get("percentage")
+            entry.get("percentage")
             if value is None:
                 continue
             records.append(

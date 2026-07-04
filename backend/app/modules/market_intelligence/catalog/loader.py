@@ -1,7 +1,9 @@
 """CatalogLoader — carga y valida los indicadores del catálogo YAML."""
 from __future__ import annotations
+
 from pathlib import Path
 from typing import Any
+
 import yaml
 
 from app.modules.market_intelligence.catalog.schemas import CatalogIndicator

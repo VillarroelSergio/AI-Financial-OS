@@ -1,9 +1,10 @@
 """Correlation Engine — relaciona señales macro con activos y dominios personales."""
 from __future__ import annotations
-import logging
-import uuid
-from datetime import datetime, timezone
 
+import logging
+
+from app.modules.financial_knowledge._shared import now as _now
+from app.modules.financial_knowledge._shared import uid as _uid
 from app.modules.financial_knowledge.models import CorrelationInsight, FinancialSignal
 
 logger = logging.getLogger("financial_knowledge.correlation_engine")
@@ -52,14 +53,6 @@ _SIGNAL_CORRELATIONS: dict[str, list[tuple[str, str, str, str]]] = {
         ("income", "income", "risk_signal", "Deterioro del empleo aumenta el riesgo de pérdida de ingresos"),
     ],
 }
-
-
-def _uid() -> str:
-    return str(uuid.uuid4())
-
-
-def _now() -> datetime:
-    return datetime.now(timezone.utc)
 
 
 def compute_correlations(signals: list[FinancialSignal]) -> list[CorrelationInsight]:

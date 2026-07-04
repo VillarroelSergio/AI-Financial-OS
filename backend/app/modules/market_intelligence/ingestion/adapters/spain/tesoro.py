@@ -1,11 +1,11 @@
 """Tesoro Público adapter — Spanish government bond yields."""
 import time
-import requests
 from datetime import datetime, timezone
 
+import requests
+
 from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter
-from app.modules.market_intelligence.ingestion.models import AdapterResult, ProviderMetadata
-from app.modules.market_intelligence.ingestion.models import MacroIndicator
+from app.modules.market_intelligence.ingestion.models import AdapterResult, MacroIndicator
 
 _PRIMARY_URL = (
     "https://www.tesoro.es/sites/default/files/estadisticas/fondos"

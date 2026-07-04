@@ -7,12 +7,10 @@ import pytest
 
 from app.modules.goals.simulation_service import (
     DEFAULT_INFLATION,
-    SCENARIOS,
     _monthly_balance,
     _months_to_target,
     simulate_goal,
 )
-
 
 # ── Unit: monthly balance formula ─────────────────────────────────────────────
 

@@ -1,14 +1,20 @@
 """Financial Signal Engine — convierte insights macro/mercado en señales financieras."""
 from __future__ import annotations
+
 import logging
-import uuid
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
+
 import yaml
 
+from app.modules.financial_knowledge._shared import now as _now
+from app.modules.financial_knowledge._shared import uid as _uid
 from app.modules.financial_knowledge.models import (
-    EconomicIndicatorInsight, FinancialSignal, Severity, Direction, Trend,
+    Direction,
+    EconomicIndicatorInsight,
+    FinancialSignal,
+    Severity,
+    Trend,
 )
 from app.modules.market_intelligence.storage import repository as mi_repo
 
@@ -17,14 +23,6 @@ logger = logging.getLogger("financial_knowledge.financial_signal_engine")
 _SIGNAL_RULES_PATH = Path(__file__).parent.parent / "rules" / "signal_rules.yaml"
 _MACRO_RULES_PATH = Path(__file__).parent.parent / "rules" / "macro_rules.yaml"
 _MARKET_RULES_PATH = Path(__file__).parent.parent / "rules" / "market_rules.yaml"
-
-
-def _uid() -> str:
-    return str(uuid.uuid4())
-
-
-def _now() -> datetime:
-    return datetime.now(timezone.utc)
 
 
 def _load_yaml(path: Path) -> dict:
@@ -76,7 +74,6 @@ def _signals_from_insights(
         cat = insight.category
         value = insight.value
         trend = insight.trend
-        sid = []
 
         # ── Inflation signals ──────────────────────────────────────────────
         if cat in ("inflation", "core_inflation"):
@@ -327,7 +324,7 @@ def _signals_from_market(
             ))
 
     # ── Forex signals ───────────────────────────────────────────────────────
-    usd_threshold = market_rules.get("usd_strength", {}).get("change_pct_threshold", -2.0)
+    market_rules.get("usd_strength", {}).get("change_pct_threshold", -2.0)
     for fx in forex:
         if fx.get("base_currency") == "EUR" and fx.get("quote_currency") == "USD":
             rate = fx.get("rate", 1.0) or 1.0

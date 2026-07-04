@@ -1,27 +1,20 @@
 """Personal Impact Engine — cuantifica el impacto personal de señales financieras."""
 from __future__ import annotations
+
 import logging
-import uuid
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
-import yaml
 
+import yaml
 from sqlalchemy.orm import Session
 
+from app.modules.financial_knowledge._shared import now as _now
+from app.modules.financial_knowledge._shared import uid as _uid
 from app.modules.financial_knowledge.models import FinancialSignal, PersonalImpact, Severity
 
 logger = logging.getLogger("financial_knowledge.personal_impact_engine")
 
 _RULES_PATH = Path(__file__).parent.parent / "rules" / "personal_impact_rules.yaml"
-
-
-def _uid() -> str:
-    return str(uuid.uuid4())
-
-
-def _now() -> datetime:
-    return datetime.now(timezone.utc)
 
 
 def _load_rules() -> dict:
@@ -38,7 +31,7 @@ def _get_user_cash_total(db: Session) -> float:
     """Suma saldos de cuentas de tipo efectivo/ahorro."""
     try:
         from app.models.account import Account
-        rows = db.query(Account).filter(Account.is_active == True).all()
+        rows = db.query(Account).filter(Account.is_active).all()
         return sum(
             getattr(a, "balance", 0.0) or 0.0
             for a in rows
@@ -52,7 +45,7 @@ def _get_user_portfolio_value(db: Session) -> float:
     """Valor total de la cartera de inversión."""
     try:
         from app.models.investment import Investment
-        rows = db.query(Investment).filter(Investment.is_active == True).all()
+        rows = db.query(Investment).filter(Investment.is_active).all()
         return sum(getattr(r, "current_value", 0.0) or 0.0 for r in rows)
     except Exception:
         return 0.0
@@ -61,7 +54,7 @@ def _get_user_portfolio_value(db: Session) -> float:
 def _get_user_goals(db: Session) -> list[dict]:
     try:
         from app.models.goal import Goal
-        rows = db.query(Goal).filter(Goal.is_active == True).all()
+        rows = db.query(Goal).filter(Goal.is_active).all()
         return [{"id": str(g.id), "name": getattr(g, "name", ""), "target": getattr(g, "target_amount", 0.0)} for g in rows]
     except Exception:
         return []
@@ -70,7 +63,7 @@ def _get_user_goals(db: Session) -> list[dict]:
 def _get_user_account_ids(db: Session) -> list[str]:
     try:
         from app.models.account import Account
-        rows = db.query(Account).filter(Account.is_active == True).all()
+        rows = db.query(Account).filter(Account.is_active).all()
         return [str(r.id) for r in rows]
     except Exception:
         return []
@@ -81,7 +74,7 @@ def compute_personal_impacts(
     db: Optional[Session] = None,
 ) -> list[PersonalImpact]:
     """Genera impactos personales desde señales activas y datos del usuario."""
-    rules = _load_rules()
+    _load_rules()
     active = _active_types(signals)
     impacts: list[PersonalImpact] = []
     now = _now()

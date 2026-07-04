@@ -1,17 +1,36 @@
 """Market Intelligence API service — lee desde DuckDB, nunca llama providers."""
 from __future__ import annotations
+
 import logging
 from datetime import datetime, timezone
 
+from app.core.duckdb import is_in_memory
 from app.modules.market_intelligence.api.schemas import (
-    AiDatasheetOut, BondSnapshotOut, BondYieldOut, ForexRateOut, ForexSnapshotOut,
-    MacroDataPoint, MacroSnapshotOut, MarketSnapshotOut, NewsItemOut, NewsSnapshotOut,
+    AiDatasheetOut,
+    BondSnapshotOut,
+    BondYieldOut,
+    ForexRateOut,
+    ForexSnapshotOut,
+    MacroDataPoint,
+    MacroSnapshotOut,
+    MarketSnapshotOut,
+    NewsItemOut,
+    NewsSnapshotOut,
     QuoteOut,
 )
 from app.modules.market_intelligence.catalog.loader import CatalogLoader
 from app.modules.market_intelligence.storage import repository
 
 logger = logging.getLogger("market_intelligence.api")
+
+_MEMORY_WARNING = (
+    "Base analítica bloqueada por otro proceso: los datos de mercado no persisten "
+    "en esta sesión. Cierra procesos duplicados del backend y reinicia la app."
+)
+
+
+def _storage_warnings() -> list[str]:
+    return [_MEMORY_WARNING] if is_in_memory() else []
 
 _catalog = CatalogLoader()
 _INDEX_CATALOG_IDS = {
@@ -57,15 +76,34 @@ def _status_for(row: dict) -> str:
 
 def get_macro_snapshot() -> MacroSnapshotOut:
     rows = repository.get_latest_macro_all()
+    try:
+        macro_history = repository.get_macro_history()
+    except Exception:
+        macro_history = {}
     spain, eurozone, usa = [], [], []
     seen_values: dict[tuple[str | None, float | None, str | None], set[str]] = {}
     for r in rows:
-        region = _region_for(r.get("catalog_item_id", ""))
+        catalog_id = str(r.get("catalog_item_id", ""))
+        region = _region_for(catalog_id)
         key = (region, r.get("value"), r.get("period"))
-        seen_values.setdefault(key, set()).add(str(r.get("catalog_item_id", "")))
+        seen_values.setdefault(key, set()).add(catalog_id)
         payload = {k: v for k, v in r.items() if k in MacroDataPoint.model_fields}
         payload["retrieved_at"] = str(r.get("retrieved_at", "")) if r.get("retrieved_at") else None
         payload["data_status"] = _status_for(r)
+        cat_item = _catalog.get_by_id(catalog_id)
+        payload["display_name"] = cat_item.name if cat_item else None
+        payload["description"] = cat_item.description if cat_item else None
+        payload["subcategory"] = cat_item.subcategory if cat_item else None
+        payload["frequency"] = cat_item.frequency if cat_item else None
+        payload["priority"] = cat_item.priority if cat_item else None
+        # La unidad del catálogo manda sobre la que reporte el adapter
+        if cat_item and cat_item.unit:
+            payload["unit"] = cat_item.unit
+        points = macro_history.get(catalog_id, [])
+        payload["history"] = [{"period": p, "value": v} for p, v in points]
+        if len(points) >= 2 and r.get("value") is not None:
+            payload["previous_value"] = points[-2][1]
+            payload["delta"] = round(float(r["value"]) - points[-2][1], 4)
         point = MacroDataPoint(**payload)
         if region == "spain":
             spain.append(point)
@@ -73,7 +111,7 @@ def get_macro_snapshot() -> MacroSnapshotOut:
             eurozone.append(point)
         elif region == "usa":
             usa.append(point)
-    warnings = _warn(rows)
+    warnings = _storage_warnings() + _warn(rows)
     repeated = [
         ids for (region, value, period), ids in seen_values.items()
         if region and value is not None and period and len(ids) >= 3
@@ -100,6 +138,9 @@ def get_market_snapshot() -> MarketSnapshotOut:
         payload = {k: v for k, v in q.items() if k in QuoteOut.model_fields}
         payload["observed_at"] = str(q.get("observed_at", "")) if q.get("observed_at") else None
         payload["data_status"] = _status_for(q)
+        cat_item = _catalog.get_by_id(q.get("catalog_item_id", ""))
+        payload["display_name"] = cat_item.name if cat_item else None
+        payload["display_country"] = cat_item.country if cat_item else None
         return QuoteOut(**payload)
 
     indices = [quote(q) for q in quotes if str(q.get("catalog_item_id", "")).lower() in _INDEX_CATALOG_IDS]
@@ -109,7 +150,7 @@ def get_market_snapshot() -> MarketSnapshotOut:
     all_items = [item for section in sections for item in section]
     quality = sum(item.quality_score for item in all_items) / len(all_items) if all_items else 0.0
     status = "ok" if indices and crypto and commodities else "partial" if all_items else "empty"
-    warnings = _warn(quotes)
+    warnings = _storage_warnings() + _warn(quotes)
     if commodities and not indices and not crypto:
         warnings.append("Solo hay commodities disponibles.")
     return MarketSnapshotOut(

@@ -1,7 +1,6 @@
-from app.modules.insights.rules.market_rules import market_context_insights
-from app.modules.insights.rules.macro_rules import macro_context_insights
 from app.modules.insights.rules.data_quality_rules import data_quality_insights
-from app.modules.insights.schemas import DataStatus
+from app.modules.insights.rules.macro_rules import macro_context_insights
+from app.modules.insights.rules.market_rules import market_context_insights
 
 
 def test_market_no_data_returns_empty_or_partial(client):

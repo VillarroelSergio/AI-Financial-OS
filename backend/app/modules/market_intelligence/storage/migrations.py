@@ -4,8 +4,8 @@ Ejecutar run_migrations(conn) al arrancar o con market:intelligence:init-db.
 Todas las tablas usan CREATE TABLE IF NOT EXISTS para ser idempotentes.
 """
 from __future__ import annotations
-import duckdb
 
+import duckdb
 
 _DDL_STATEMENTS = [
     """

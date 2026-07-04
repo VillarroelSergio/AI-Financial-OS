@@ -8,25 +8,25 @@ from app.core import database as db_module
 from app.core.database import create_tables
 from app.modules.accounts.routes import router as accounts_router
 from app.modules.ai.routes import router as ai_router
+from app.modules.budgets.routes import router as budgets_router
+from app.modules.cashflow.routes import router as cashflow_router
 from app.modules.categories.routes import router as categories_router
 from app.modules.dashboard.routes import router as dashboard_router
+from app.modules.financial_knowledge.router import router as financial_knowledge_router
 from app.modules.goals.routes import router as goals_router
 from app.modules.household_bills.routes import router as household_bills_router
 from app.modules.imports.routes import router as imports_router
 from app.modules.insights.routes import router as insights_router
-from app.modules.investments.routes import router as investments_router
-from app.modules.investments.price_coverage_routes import router as price_coverage_router
 from app.modules.investments.portfolio_import_routes import router as portfolio_import_router
+from app.modules.investments.price_coverage_routes import router as price_coverage_router
 from app.modules.investments.reconciliation_routes import router as reconciliation_router
+from app.modules.investments.routes import router as investments_router
 from app.modules.market_intelligence.api.routes import router as market_intelligence_router
-from app.modules.financial_knowledge.router import router as financial_knowledge_router
 from app.modules.rag.routes import router as rag_router
+from app.modules.recurring.routes import router as recurring_router
 from app.modules.security.routes import router as security_router
 from app.modules.settings.routes import router as settings_router
 from app.modules.transactions.routes import router as transactions_router
-from app.modules.budgets.routes import router as budgets_router
-from app.modules.recurring.routes import router as recurring_router
-from app.modules.cashflow.routes import router as cashflow_router
 
 
 @asynccontextmanager

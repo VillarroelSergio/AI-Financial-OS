@@ -3,14 +3,22 @@
 Adaptado de market-data-poc/adapters/base.py con imports actualizados.
 """
 from __future__ import annotations
+
+import time
 from abc import ABC, abstractmethod
 from datetime import datetime
-import time
 
-from app.modules.market_intelligence.ingestion.models import (
-    AdapterResult, ProviderHealth, ProviderMetadata, ProviderStatus,
-)
 from app.modules.market_intelligence.ingestion.config import get_api_key
+from app.modules.market_intelligence.ingestion.models import (
+    AdapterResult,
+    ProviderHealth,
+    ProviderMetadata,
+    ProviderStatus,
+)
+
+
+def redact_api_key(value: str, api_key: str | None) -> str:
+    return value.replace(api_key, "***") if api_key else value
 
 
 class BaseAdapter(ABC):

@@ -3,6 +3,7 @@
 Adaptado de market-data-poc/adapters/catalog.py.
 """
 from __future__ import annotations
+
 import time
 from datetime import datetime, timezone
 

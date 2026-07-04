@@ -64,9 +64,7 @@ npx tsc --noEmit
 
 ## Market Intelligence
 
-La capa vigente de mercados y macro vive en `backend/app/modules/market_intelligence`.
-El antiguo `market-data-poc/` queda como banco de pruebas legado y no debe usarse como
-fuente principal de documentacion ni de comandos operativos.
+La capa de mercados y macro vive en `backend/app/modules/market_intelligence`.
 
 API endpoints bajo `/api/market-intelligence/`:
 
@@ -107,30 +105,73 @@ Endpoints principales:
 | `POST /api/security/backups` | Crea backup SQLite local |
 | `GET /api/security/integrity` | Ejecuta comprobacion de integridad |
 
-## Fase 6.4 - Data Integrity & Core UX Repair
 
-La app evita mostrar datos internos o enganosos: los UUID no se usan como nombres visibles, los datos demo/mock se marcan, los holdings pueden editarse con precio manual y los porcentajes de gastos se calculan contra el gasto total del periodo.
+## Instalación (usuario final)
 
-Pantallas reforzadas:
+Si recibes el instalador ya compilado (`.msi` en Windows):
 
-- Inversiones: CRUD basico de activos, distribucion por activo/broker/tipo/divisa/sector y exclusion visual de demo en repartos reales.
-- Mercados: secciones claras para indices, cripto, materias primas, divisas y bonos con provider, calidad y estados parciales.
-- Cuentas: resumen superior, cards con peso sobre liquidez, edicion y eliminacion.
-- Gastos: selector de periodo, metricas superiores, donut y barras por categoria.
-- Resumen: cards ejecutivas y secciones de salud financiera, flujo, patrimonio y proximas acciones.
+1. Ejecuta el instalador y sigue el asistente.
+2. Antes de arrancar la app por primera vez crea tu archivo de configuración:
+   ```powershell
+   # Desde la raíz del repositorio (solo para builds from source)
+   copy backend\.env.example backend\.env
+   ```
+   Si usas el instalador empaquetado, la app crea `backend/.env` automáticamente la primera vez que arranca y usa valores por defecto (IA local, sin claves externas).
+3. Los datos de la aplicación se almacenan localmente en `backend/data/`:
+   - `financial.db` — base de datos SQLite principal
+   - `analytics.duckdb` — caché analítica
+4. **Troubleshooting**: si la app arranca pero el backend no responde, comprueba que el puerto 8000 esté libre. Puedes arrancar el backend manualmente con `.\scripts\backend.ps1` y revisar la consola.
 
-## Fase 6.4.1 - Expense Drilldown & Investment Price Refresh UX Fix
+## Configuración de entorno
 
-- Gastos: las categorias se pueden abrir desde donut, lista y control visual para ver movimientos, total, peso, numero de transacciones y media.
-- API: `GET /api/dashboard/spending/category-detail` devuelve el detalle por categoria para mes o ano.
-- Inversiones: `Actualizar precios` intenta proveedores automaticos y devuelve actualizados, manuales, omitidos y errores.
-- Precio manual se usa solo cuando no hay proveedor automatico; NAV queda reservado a fondos.
-- Cuentas remuneradas, efectivo y savings/cash se omiten del refresco manual porque su valor viene del balance.
+Copia el archivo de ejemplo y edita las variables que necesites:
+
+```powershell
+copy backend\.env.example backend\.env
+```
+
+El archivo `backend/.env.example` documenta todas las opciones. Las más relevantes:
+
+| Variable | Descripción | Requerida |
+|---|---|---|
+| `DATABASE_URL` | Ruta de la base de datos SQLite | Sí (default OK) |
+| `OLLAMA_BASE_URL` | URL de tu instancia de Ollama | Solo si usas IA local |
+| `LMSTUDIO_BASE_URL` | URL de tu instancia de LM Studio | Solo si usas LM Studio |
+| `ALPHA_VANTAGE_API_KEY` | Clave API para datos de mercado | Opcional (free tier) |
+| `FINNHUB_API_KEY` | Clave API Finnhub | Opcional (free tier) |
+| `FRED_API_KEY` | Clave API FRED (datos macro EE.UU.) | Opcional (free tier) |
+
+Para IA local, el proveedor por defecto es Ollama. Ajusta `AI_DEFAULT_PROVIDER` y `AI_DEFAULT_MODEL` según tu setup.
+
+## Build de distribución
+
+Requisitos previos adicionales para generar el instalador:
+
+- **Rust stable** (se instala con `rustup`)
+- **WiX Toolset 3.x** (solo Windows, para generar `.msi`) — [descargar aquí](https://wixtoolset.org/)
+
+```powershell
+# Instala dependencias y compila frontend + backend Rust
+cd apps/desktop
+npm run tauri build
+```
+
+El instalador resultante aparece en `apps/desktop/src-tauri/target/release/bundle/`:
+- `msi/` — instalador Windows `.msi`
+- `nsis/` — instalador NSIS alternativo
+
+La build de release deshabilita las DevTools de Tauri y aplica la CSP de producción definida en `tauri.conf.json`.
 
 ## Documentación
 
 Ver `docs/` para arquitectura, modelo de datos, contrato API y roadmap.
 
+
+## Licencia
+
+MIT — ver [LICENSE](LICENSE)
+
+---
 
 Para usar la herramienta de capturas desde apps/desktop/:
 

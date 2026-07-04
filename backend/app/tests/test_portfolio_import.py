@@ -16,14 +16,10 @@ from app.modules.investments.portfolio_import_service import (
     parse_text_positions,
     validate_position,
 )
+from app.modules.market_intelligence.ingestion.equity_quote_service import EquityQuoteResult
 
 QUOTE_PATH = "app.modules.investments.price_coverage_audit.get_equity_quote"
 FX_PATH = "app.modules.investments.price_coverage_audit.fetch_fx_rate"
-
-
-# ── Helpers (shared with price-coverage tests) ────────────────────────────────
-
-from app.modules.market_intelligence.ingestion.equity_quote_service import EquityQuoteResult
 
 
 def _ok_quote(price=150.0, currency="USD", provider="finnhub"):

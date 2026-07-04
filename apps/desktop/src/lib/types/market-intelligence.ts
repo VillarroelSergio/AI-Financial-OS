@@ -1,5 +1,10 @@
 // apps/desktop/src/lib/types/market-intelligence.ts
 
+export interface MacroHistoryPointMI {
+  period: string;
+  value: number;
+}
+
 export interface MacroDataPointMI {
   catalog_item_id: string;
   indicator_id?: string;
@@ -11,6 +16,14 @@ export interface MacroDataPointMI {
   quality_score: number;
   data_status?: "ok" | "limited" | "unavailable" | "requires_review";
   retrieved_at?: string | null;
+  display_name?: string;
+  description?: string;
+  subcategory?: string;
+  frequency?: string;
+  priority?: string;
+  previous_value?: number | null;
+  delta?: number | null;
+  history?: MacroHistoryPointMI[];
 }
 
 export interface MacroSnapshotMI {
@@ -33,6 +46,8 @@ export interface QuoteMI {
   quality_score: number;
   data_status?: "ok" | "limited" | "unavailable" | "requires_review";
   observed_at?: string | null;
+  display_name?: string;
+  display_country?: string;
 }
 
 export interface MarketSnapshotMI {
@@ -87,7 +102,7 @@ export interface ImpactComparative {
   market_label: string;
   personal_value: number | null;
   personal_label: string;
-  signal: "positive" | "negative" | "neutral" | "warning";
+  signal: "positive" | "negative" | "neutral" | "warning" | "no_data";
   signal_text: string;
   source_ids: string[];
 }
@@ -98,8 +113,20 @@ export interface PersonalImpactMI {
   warnings: string[];
 }
 
+export interface IngestResultDetail {
+  indicator: string;
+  category: string;
+  provider: string;
+  success: boolean;
+  fallback_used: boolean;
+  error: string | null;
+}
+
 export interface IngestStatus {
   status: "idle" | "running" | "done" | "error";
   last_run: string | null;
   count: number;
+  results?: IngestResultDetail[];
+  storage?: "file" | "memory";
+  storage_warning?: string;
 }

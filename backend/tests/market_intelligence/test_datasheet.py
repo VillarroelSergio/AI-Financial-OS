@@ -1,32 +1,34 @@
 """TDD tests for AI Datasheet generator."""
 from unittest.mock import patch
 
-import pytest
-
 from app.modules.market_intelligence.ai.datasheet import generate_ai_datasheet
 
 
 def _empty_macro():
-    from app.modules.market_intelligence.api.schemas import MacroSnapshotOut
     from datetime import datetime, timezone
+
+    from app.modules.market_intelligence.api.schemas import MacroSnapshotOut
     return MacroSnapshotOut(spain=[], eurozone=[], usa=[], generated_at=datetime.now(timezone.utc).isoformat())
 
 
 def _empty_forex():
-    from app.modules.market_intelligence.api.schemas import ForexSnapshotOut
     from datetime import datetime, timezone
+
+    from app.modules.market_intelligence.api.schemas import ForexSnapshotOut
     return ForexSnapshotOut(rates=[], generated_at=datetime.now(timezone.utc).isoformat())
 
 
 def _empty_bonds():
-    from app.modules.market_intelligence.api.schemas import BondSnapshotOut
     from datetime import datetime, timezone
+
+    from app.modules.market_intelligence.api.schemas import BondSnapshotOut
     return BondSnapshotOut(yields=[], generated_at=datetime.now(timezone.utc).isoformat())
 
 
 def _empty_news():
-    from app.modules.market_intelligence.api.schemas import NewsSnapshotOut
     from datetime import datetime, timezone
+
+    from app.modules.market_intelligence.api.schemas import NewsSnapshotOut
     return NewsSnapshotOut(items=[], generated_at=datetime.now(timezone.utc).isoformat())
 
 

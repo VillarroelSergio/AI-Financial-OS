@@ -1,5 +1,6 @@
 """Bridge entre el sistema de API keys del POC y los settings del backend."""
 from __future__ import annotations
+
 from app.core.config import settings
 
 

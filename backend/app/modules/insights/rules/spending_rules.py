@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from datetime import datetime, timezone
 from decimal import Decimal
 
@@ -8,12 +9,12 @@ from app.models.category import Category
 from app.models.transaction import Transaction
 from app.modules.insights.constants import (
     BASELINE_MONTHS,
+    EXPENSE_DELTA_PERCENTAGE_THRESHOLD,
     MIN_BASELINE_MONTHS,
+    SAVINGS_DELTA_ABSOLUTE_THRESHOLD_EUR,
     SPENDING_ANOMALY_MIN_ABSOLUTE_EUR,
     SPENDING_ANOMALY_MIN_CURRENT_EUR,
     SPENDING_ANOMALY_MULTIPLIER,
-    EXPENSE_DELTA_PERCENTAGE_THRESHOLD,
-    SAVINGS_DELTA_ABSOLUTE_THRESHOLD_EUR,
 )
 from app.modules.insights.schemas import (
     DataStatus,

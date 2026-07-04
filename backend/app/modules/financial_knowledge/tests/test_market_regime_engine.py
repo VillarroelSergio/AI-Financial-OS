@@ -1,13 +1,18 @@
 """Tests para MarketRegimeEngine."""
 from __future__ import annotations
-from datetime import datetime, timezone
 
-import pytest
+from datetime import datetime, timezone
 
 from app.modules.financial_knowledge.engines import market_regime_engine as engine
 from app.modules.financial_knowledge.models import (
-    FinancialSignal, Direction, Severity, RiskLevel, InflationRegime,
-    RatesRegime, GrowthRegime, MarketTrend,
+    Direction,
+    FinancialSignal,
+    GrowthRegime,
+    InflationRegime,
+    MarketTrend,
+    RatesRegime,
+    RiskLevel,
+    Severity,
 )
 
 

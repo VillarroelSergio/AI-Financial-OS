@@ -20,7 +20,7 @@ Field semantics:
 """
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
 
 
@@ -174,6 +174,53 @@ _KNOWN: dict[str, TickerCandidate] = {
 
 def _normalize(name: str) -> str:
     return name.lower().strip()
+
+
+def search_assets(query: str, max_results: int = 6) -> list[TickerCandidate]:
+    """Búsqueda de activos: registro conocido primero, después yfinance Search.
+
+    Permite dar de alta cualquier activo del mundo, no solo los 19 del registro.
+    """
+    key = _normalize(query)
+    if not key:
+        return []
+
+    results: list[TickerCandidate] = []
+    seen: set[str] = set()
+    for k, c in _KNOWN.items():
+        if key in k and c.ticker not in seen:
+            seen.add(c.ticker)
+            results.append(c)
+
+    if len(results) >= max_results:
+        return results[:max_results]
+
+    try:
+        import yfinance as yf
+
+        quotes = yf.Search(query, max_results=max_results).quotes
+    except Exception:
+        quotes = []
+
+    for q in quotes:
+        symbol = q.get("symbol")
+        if not symbol or symbol in seen:
+            continue
+        seen.add(symbol)
+        results.append(
+            TickerCandidate(
+                ticker=symbol,
+                yfinance_symbol=symbol,
+                name=q.get("shortname") or q.get("longname") or symbol,
+                exchange=q.get("exchange") or "",
+                currency=q.get("currency") or "",
+                asset_type=(q.get("quoteType") or "equity").lower(),
+                confidence=0.8,
+            )
+        )
+        if len(results) >= max_results:
+            break
+    return results
 
 
 def resolve_asset(asset_name: str) -> AssetResolution:

@@ -1,15 +1,15 @@
 """Abstract base for all AI providers."""
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, AsyncIterator
+from typing import Any, AsyncIterator, Protocol
 
 
 @dataclass
 class ToolCallResult:
     name: str
     arguments: dict[str, Any]
+    id: str = ""  # tool_call_id for OpenAI-compatible round-tripping
 
 
 @dataclass
@@ -31,12 +31,12 @@ class ProviderHealth:
     latency_ms: int | None = None
 
 
-class AIProvider(ABC):
+class AIProvider(Protocol):
+    """Structural interface implemented by OllamaProvider and LMStudioProvider."""
+
     @property
-    @abstractmethod
     def name(self) -> str: ...
 
-    @abstractmethod
     async def chat(
         self,
         messages: list[dict[str, Any]],
@@ -45,7 +45,6 @@ class AIProvider(ABC):
         max_tokens: int = 4096,
     ) -> AIResponse: ...
 
-    @abstractmethod
     async def stream_chat(
         self,
         messages: list[dict[str, Any]],
@@ -54,8 +53,6 @@ class AIProvider(ABC):
         max_tokens: int = 4096,
     ) -> AsyncIterator[str]: ...
 
-    @abstractmethod
     async def health(self) -> ProviderHealth: ...
 
-    @abstractmethod
     async def list_models(self) -> list[str]: ...

@@ -1,16 +1,19 @@
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
-from datetime import date
-
 from app.core.database import get_db
 from app.models.goal import Goal
 from app.modules.goals.schemas import (
-    GoalCreate, GoalOut, GoalProgressOut, GoalUpdate,
-    SimulationRequest, SimulationResultOut,
-    MonthlyDataPointOut, ScenarioProjectionOut,
+    GoalCreate,
+    GoalOut,
+    GoalProgressOut,
+    GoalUpdate,
+    MonthlyDataPointOut,
+    ScenarioProjectionOut,
+    SimulationRequest,
+    SimulationResultOut,
 )
-from app.modules.goals.simulation_service import simulate_goal, DEFAULT_INFLATION
+from app.modules.goals.simulation_service import DEFAULT_INFLATION, simulate_goal
 
 router = APIRouter()
 

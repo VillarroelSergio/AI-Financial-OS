@@ -13,7 +13,6 @@
   unit: "USD/oz"
   description: "Precio del oro por onza troy"
   provider_primary: stooq
-  provider_secondary: alpha_vantage
   provider_fallback: polygon
 
 - id: silver
@@ -31,7 +30,6 @@
   unit: "USD/oz"
   description: "Precio de la plata por onza troy"
   provider_primary: stooq
-  provider_secondary: alpha_vantage
 
 - id: brent
   name: "Brent Crude Oil"
@@ -47,8 +45,8 @@
   retention: 5y
   unit: "USD/bbl"
   description: "Precio del petróleo Brent"
-  provider_primary: eia
-  provider_secondary: stooq
+  provider_primary: stooq
+  provider_secondary: eia
 
 - id: wti
   name: "WTI Crude Oil"
@@ -64,8 +62,9 @@
   retention: 5y
   unit: "USD/bbl"
   description: "West Texas Intermediate crude oil"
-  provider_primary: eia
-  provider_secondary: fred
+  provider_primary: stooq
+  provider_secondary: eia
+  provider_fallback: fred
 
 - id: natural_gas
   name: "Gas Natural"
@@ -81,8 +80,8 @@
   retention: 3y
   unit: "USD/MMBtu"
   description: "Precio del gas natural"
-  provider_primary: eia
-  provider_secondary: stooq
+  provider_primary: stooq
+  provider_secondary: eia
 
 - id: uranium
   name: "Uranio"
@@ -115,7 +114,6 @@
   unit: "USD/lb"
   description: "Precio del cobre"
   provider_primary: stooq
-  provider_secondary: alpha_vantage
 
 - id: lithium
   name: "Litio"

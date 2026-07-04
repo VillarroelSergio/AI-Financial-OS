@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { X } from "lucide-react";
+import { useCategories } from "@/lib/hooks/useCategories";
 import type { BudgetCreate } from "@/lib/api/budgets";
 
 interface Props {
@@ -8,6 +9,7 @@ interface Props {
 }
 
 export default function BudgetFormModal({ onSubmit, onClose }: Props) {
+  const { categories } = useCategories();
   const [categoryId, setCategoryId] = useState("");
   const [amount, setAmount] = useState("");
   const [threshold, setThreshold] = useState("80");
@@ -35,14 +37,18 @@ export default function BudgetFormModal({ onSubmit, onClose }: Props) {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-1.5">
-            <label className="text-xs text-stone">ID de categoría</label>
-            <input
+            <label className="text-xs text-stone">Categoría</label>
+            <select
               value={categoryId}
               onChange={e => setCategoryId(e.target.value)}
-              placeholder="ej. cat-alimentacion"
-              className="w-full rounded-lg bg-white/5 px-3 py-2.5 text-sm text-on-dark placeholder:text-stone focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded-lg bg-white/5 px-3 py-2.5 text-sm text-on-dark focus:outline-none focus:ring-1 focus:ring-primary"
               required
-            />
+            >
+              <option value="">Selecciona una categoría</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
           </div>
 
           <div className="space-y-1.5">

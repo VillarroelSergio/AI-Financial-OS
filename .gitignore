@@ -6,11 +6,18 @@ node_modules/
 # Build outputs
 dist/
 dist-ssr/
+release/
 *.local
 
 # Tauri
 apps/desktop/src-tauri/target/
 apps/desktop/src-tauri/gen/
+apps/desktop/src-tauri/binaries/backend/*
+!apps/desktop/src-tauri/binaries/backend/.gitkeep
+
+# PyInstaller (build de release del backend)
+backend/build/
+backend/*.spec.bak
 
 # Python
 __pycache__/
@@ -39,4 +46,10 @@ backend/data/
 # OS
 .DS_Store
 Thumbs.db
-*.json
+
+# Graphify semantic cache (regenerated, not product code) — solo GRAPH_REPORT.md se versiona
+graphify-out/*
+!graphify-out/GRAPH_REPORT.md
+
+# POC excluida del release (ver docs/PRE_RELEASE_AUDIT.md HYG-1)
+market-data-poc/
