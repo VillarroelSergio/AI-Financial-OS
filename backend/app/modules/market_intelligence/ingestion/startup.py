@@ -1,6 +1,7 @@
 """Lanza ingesta en background una vez al arrancar la app."""
 from __future__ import annotations
 
+import time
 from datetime import datetime, timezone
 from threading import Thread
 
@@ -8,6 +9,9 @@ from app.core.duckdb import is_in_memory
 from app.modules.market_intelligence.ingestion.runner import run_ingestion
 
 _status: dict = {"status": "idle", "last_run": None, "count": 0, "results": []}
+
+# ponytail: intervalo fijo de re-ingesta; configurable si algún proveedor lo pide.
+REINGEST_INTERVAL_SECONDS = 6 * 3600
 
 
 def get_ingest_status() -> dict:
@@ -26,35 +30,41 @@ def get_ingest_status() -> dict:
     return status
 
 
-def launch_startup_ingest() -> None:
-    """Lanza la ingesta de indicadores visibles en dashboard en un daemon thread."""
-    def _run() -> None:
-        _status["status"] = "running"
+def _run_once() -> None:
+    _status["status"] = "running"
+    try:
+        # Limpieza previa: observaciones macro estampadas bajo bonos/commodities
+        # por fallbacks antiguos (causa de indicadores clonados en Economía).
+        from app.modules.market_intelligence.storage import repository
         try:
-            # Limpieza previa: observaciones macro estampadas bajo bonos/commodities
-            # por fallbacks antiguos (causa de indicadores clonados en Economía).
-            from app.modules.market_intelligence.storage import repository
-            try:
-                repository.purge_mismatched_macro_observations()
-            except Exception:  # noqa: BLE001 — la purga nunca debe impedir la ingesta
-                pass
-            summary = run_ingestion(dashboard=True)
-            _status["count"] = summary.success
-            _status["results"] = [
-                {
-                    "indicator": r.catalog_id,
-                    "category": r.indicator.category,
-                    "provider": r.provider_used,
-                    "success": r.adapter_result.success,
-                    "fallback_used": r.fallback_used,
-                    "error": r.adapter_result.error,
-                }
-                for r in summary.results
-            ]
-            _status["status"] = "done"
-        except Exception as exc:
-            _status["error"] = str(exc)
-            _status["status"] = "error"
-        _status["last_run"] = datetime.now(timezone.utc).isoformat()
+            repository.purge_mismatched_macro_observations()
+        except Exception:  # noqa: BLE001 — la purga nunca debe impedir la ingesta
+            pass
+        summary = run_ingestion(dashboard=True)
+        _status["count"] = summary.success
+        _status["results"] = [
+            {
+                "indicator": r.catalog_id,
+                "category": r.indicator.category,
+                "provider": r.provider_used,
+                "success": r.adapter_result.success,
+                "fallback_used": r.fallback_used,
+                "error": r.adapter_result.error,
+            }
+            for r in summary.results
+        ]
+        _status["status"] = "done"
+    except Exception as exc:
+        _status["error"] = str(exc)
+        _status["status"] = "error"
+    _status["last_run"] = datetime.now(timezone.utc).isoformat()
 
-    Thread(target=_run, daemon=True).start()
+
+def launch_startup_ingest() -> None:
+    """Ingesta al arrancar y re-ingesta cada 6 h mientras la app viva."""
+    def _loop() -> None:
+        while True:
+            _run_once()
+            time.sleep(REINGEST_INTERVAL_SECONDS)
+
+    Thread(target=_loop, daemon=True).start()

@@ -1,8 +1,10 @@
+import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
 from app.core import database as db_module
 from app.core.database import create_tables
@@ -38,6 +40,23 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         from app.seeds.settings import seed_settings
         seed_categories(db)
         seed_settings(db)
+
+        # Previews abandonados: batches 'validated' de hace más de 7 días y sus filas.
+        from datetime import datetime, timedelta, timezone
+
+        from app.models.import_batch import ImportBatch, ImportRow
+
+        cutoff = datetime.now(timezone.utc) - timedelta(days=7)
+        stale_ids = [
+            b.id
+            for b in db.query(ImportBatch).filter(
+                ImportBatch.status == "validated", ImportBatch.created_at < cutoff
+            )
+        ]
+        if stale_ids:
+            db.query(ImportRow).filter(ImportRow.import_batch_id.in_(stale_ids)).delete()
+            db.query(ImportBatch).filter(ImportBatch.id.in_(stale_ids)).delete()
+            db.commit()
     finally:
         db.close()
 
@@ -60,6 +79,22 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def require_api_token(request: Request, call_next):
+    # Solo se exige si el launcher configuró token (producción empaquetada).
+    # /health queda abierto: el launcher lo usa para saber cuándo está listo.
+    # Se lee de os.environ en cada request para ser testeable y no cachear un
+    # token que el launcher inyecta después del import.
+    token = os.environ.get("FINOS_API_TOKEN")
+    if token and request.url.path != "/health" and request.method != "OPTIONS":
+        if request.headers.get("x-api-token") != token:
+            return JSONResponse(
+                status_code=401,
+                content={"error": {"code": "UNAUTHORIZED", "message": "Token de API inválido", "details": {}}},
+            )
+    return await call_next(request)
 
 
 @app.get("/health")

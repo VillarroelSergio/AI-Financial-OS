@@ -73,6 +73,14 @@ class ReconciliationReport:
 
 def _compute_quality_state(h: HoldingOut) -> tuple[QualityState, bool]:
     """Returns (quality_state, requires_fx)."""
+    # INV-6: los fondos se valoran con snapshots manuales → `manual`; las cuentas
+    # remuneradas con el motor determinista → `confirmed` (fuente calculada, sin precio
+    # de mercado). Se clasifican por tipo de activo antes que por frescura de precio.
+    if h.asset.asset_type == "fund":
+        return QualityState.MANUAL, False
+    if h.asset.asset_type == "savings_account":
+        return QualityState.CONFIRMED, False
+
     if h.is_mock:
         return QualityState.MANUAL, False
 
@@ -110,6 +118,8 @@ def _group_weights(items: list[tuple[str, float]], total: float) -> list[WeightI
 
 
 def compute_reconciliation(holdings: list[HoldingOut]) -> ReconciliationReport:
+    # Las cuentas remuneradas tienen su propio panel (interés/saldo/total); fuera de Calidad.
+    holdings = [h for h in holdings if h.asset.asset_type != "savings_account"]
     if not holdings:
         return ReconciliationReport(
             generated_at=datetime.now(timezone.utc),

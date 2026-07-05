@@ -36,6 +36,41 @@ def ingest_status() -> dict:
     return get_ingest_status()
 
 
+@router.get("/rates/ecb-deposit-facility")
+def get_ecb_deposit_facility(
+    from_: str | None = Query(default=None, alias="from"),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Histórico del tipo de facilidad de depósito del BCE (spec §3, interno).
+
+    Sirve el cache de `ReferenceRateObservation`; si está vacío, ingesta primero."""
+    from datetime import date
+
+    from app.models.investment import ReferenceRateObservation
+    from app.modules.investments.reference_rate_service import ECB_DFR, ingest_deposit_facility_history
+
+    if db.query(ReferenceRateObservation).filter(ReferenceRateObservation.rate_id == ECB_DFR).count() == 0:
+        try:
+            ingest_deposit_facility_history(db)
+        except Exception:  # noqa: BLE001 — sin red, se devuelve lo que haya (vacío)
+            pass
+
+    q = db.query(ReferenceRateObservation).filter(ReferenceRateObservation.rate_id == ECB_DFR)
+    if from_:
+        try:
+            q = q.filter(ReferenceRateObservation.effective_date >= date.fromisoformat(from_))
+        except ValueError:
+            pass
+    rows = q.order_by(ReferenceRateObservation.effective_date.asc()).all()
+    return {
+        "rate_id": ECB_DFR,
+        "observations": [
+            {"date": r.effective_date.isoformat(), "rate": str(r.rate), "source": r.source}
+            for r in rows
+        ],
+    }
+
+
 @router.get("/snapshot/macro", response_model=MacroSnapshotOut)
 def get_macro_snapshot():
     return service.get_macro_snapshot()

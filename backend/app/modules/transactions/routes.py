@@ -34,6 +34,8 @@ def list_transactions(
     to_date: str | None = Query(None),
     type: str | None = Query(None),
     source: str | None = Query(None),
+    limit: int | None = Query(None, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
 ) -> list[Transaction]:
     q = db.query(Transaction)
@@ -49,7 +51,12 @@ def list_transactions(
         q = q.filter(Transaction.type == type)
     if source:
         q = q.filter(Transaction.source == source)
-    return _stamp_account_names(db, q.order_by(Transaction.date.desc()).all())
+    q = q.order_by(Transaction.date.desc())
+    if offset:
+        q = q.offset(offset)
+    if limit is not None:
+        q = q.limit(limit)
+    return _stamp_account_names(db, q.all())
 
 
 @router.post("/currency-reassign")
@@ -177,6 +184,17 @@ def update_transaction(tx_id: str, payload: TransactionUpdate, db: Session = Dep
         )
     for field, value in payload.model_dump(exclude_none=True).items():
         setattr(tx, field, value)
+    # Corrección manual de categoría: se aprende como regla permanente por comercio.
+    if payload.category_id is not None and tx.description:
+        from app.models.merchant_rule import MerchantRule
+        from app.modules.imports.auto_categorizer import _normalize
+
+        merchant = _normalize(tx.description)
+        rule = db.query(MerchantRule).filter(MerchantRule.merchant == merchant).first()
+        if rule:
+            rule.category_id = payload.category_id
+        else:
+            db.add(MerchantRule(merchant=merchant, category_id=payload.category_id))
     db.commit()
     db.refresh(tx)
     return _stamp_account_names(db, [tx])[0]

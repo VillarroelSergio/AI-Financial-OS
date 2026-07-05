@@ -13,7 +13,7 @@ from app.models.category import Category
 from app.models.household_bill import HouseholdBill
 from app.models.import_batch import ImportBatch, ImportRow
 from app.models.transaction import Transaction
-from app.modules.imports.auto_categorizer import auto_category
+from app.modules.imports.auto_categorizer import auto_category, learned_category
 from app.modules.imports.bill_classifier import SERVICE_LABELS, classify_bill
 from app.modules.imports.schemas import ConfirmImport, ImportBatchOut
 from app.modules.imports.format_profiles import PROFILES, detect_profile
@@ -25,6 +25,17 @@ from app.modules.imports.service import (
 )
 
 router = APIRouter()
+
+
+_TRANSFER_HINT = re.compile(
+    r"traspaso|transferencia|transfer|recarga|top.?up|revolut|bizum enviado"
+    r"|savings vault|^to |^from |envio a|enviado a",
+    re.IGNORECASE,
+)
+
+
+def _looks_like_transfer(description: str) -> bool:
+    return bool(_TRANSFER_HINT.search(description or ""))
 
 
 def fail(status: int, code: str, message: str) -> HTTPException:
@@ -53,11 +64,18 @@ async def preview(
         mapping = dict(profile.mapping)
     else:
         mapping = {"date": columns[0], "amount": columns[1] if len(columns) > 1 else ""}
+    file_hash = hashlib.sha256(content).hexdigest()
+    previous = (
+        db.query(ImportBatch)
+        .filter(ImportBatch.file_hash == file_hash, ImportBatch.status == "imported")
+        .order_by(ImportBatch.created_at.desc())
+        .first()
+    )
     batch = ImportBatch(
         source_name=profile.name if profile else "Genérico",
         source_type=profile.source_type if profile else "generic_csv",
         file_name=file.filename or "import.csv",
-        file_hash=hashlib.sha256(content).hexdigest(),
+        file_hash=file_hash,
         rows_total=len(rows),
         mapping_json=dumps(mapping),
     )
@@ -66,6 +84,9 @@ async def preview(
     result_rows, warning_count, invalid_count, skipped_count = [], 0, 0, 0
     # Hasta 100 filas por estado, para que los filtros del preview siempre tengan muestra.
     shown_by_status: dict[str, int] = {}
+    occurrence_counts: dict[str, int] = {}
+    # 1ª pasada: normaliza todas las filas (dedupe se resuelve luego en un solo query).
+    processed: list[tuple] = []
     for number, raw in enumerate(rows, 2):
         skipped_reason = None
         if profile and profile.status_column:
@@ -73,19 +94,37 @@ async def preview(
             if state and state not in profile.status_allowed:
                 skipped_reason = f"Operación no completada ({state})"
         normalized, errors, warnings = normalize_row(raw, mapping, profile)
+        # Ocurrencia n>0 del mismo movimiento dentro del archivo: re-normaliza con
+        # sufijo para no auto-descartarse como duplicado (dos cafés iguales el mismo día).
+        occ = occurrence_counts.get(normalized["duplicate_hash"], 0)
+        occurrence_counts[normalized["duplicate_hash"]] = occ + 1
+        if occ:
+            normalized, errors, warnings = normalize_row(raw, mapping, profile, occurrence=occ)
         # Archivos sin columna de categoría: se infiere por el comercio.
         if not normalized["category"] and normalized["type"] != "transfer":
-            normalized["category"] = auto_category(normalized["description"]) or ""
+            normalized["category"] = (
+                learned_category(db, normalized["description"])
+                or auto_category(normalized["description"])
+                or ""
+            )
         if not skipped_reason and not errors and normalized["type"] == "expense":
             bill = classify_bill(normalized["description"])
             if bill:
                 warnings.append(f"Factura detectada: {SERVICE_LABELS[bill[0]]} · {bill[1]}")
-        duplicate = (
-            db.query(Transaction)
-            .filter(Transaction.external_id == normalized["duplicate_hash"])
-            .first()
-            is not None
+        processed.append((number, raw, normalized, errors, warnings, skipped_reason))
+
+    # Dedupe en un solo query con IN, troceado por el límite de variables de SQLite.
+    all_hashes = [n["duplicate_hash"] for _, _, n, _, _, _ in processed]
+    existing_hashes: set[str] = set()
+    for chunk_start in range(0, len(all_hashes), 500):
+        chunk = all_hashes[chunk_start : chunk_start + 500]
+        existing_hashes.update(
+            h for (h,) in db.query(Transaction.external_id).filter(Transaction.external_id.in_(chunk))
         )
+
+    # 2ª pasada: clasifica y crea los ImportRow (misma salida que antes).
+    for number, raw, normalized, errors, warnings, skipped_reason in processed:
+        duplicate = normalized["duplicate_hash"] in existing_hashes
         if skipped_reason:
             status = "skipped"
             skipped_count += 1
@@ -133,6 +172,9 @@ async def preview(
         "warnings_count": warning_count,
         "preview_rows": result_rows,
         "mapping": mapping,
+        "already_imported_at": previous.completed_at.isoformat()
+        if previous and previous.completed_at
+        else None,
     }
 
 
@@ -157,9 +199,16 @@ def confirm(batch_id: str, payload: ConfirmImport, db: Session = Depends(get_db)
     imported = 0
     bills_created = 0
     new_txs: list[Transaction] = []
+    occurrence_counts: dict[str, int] = {}
     for row in rows:
         raw = json.loads(row.raw_payload_json)
         normalized, errors, _ = normalize_row(raw, mapping, profile)
+        # Mismo contador de ocurrencias que el preview (mismo orden de filas) para
+        # que los hashes coincidan. Se incrementa para TODAS las filas.
+        occ = occurrence_counts.get(normalized["duplicate_hash"], 0)
+        occurrence_counts[normalized["duplicate_hash"]] = occ + 1
+        if occ:
+            normalized, errors, _ = normalize_row(raw, mapping, profile, occurrence=occ)
         if errors or row.status != "valid":
             continue
         if currency_override:
@@ -183,7 +232,11 @@ def confirm(batch_id: str, payload: ConfirmImport, db: Session = Depends(get_db)
             normalized["category"] = SERVICE_LABELS[bill[0]]
         # Archivos sin columna de categoría: se infiere por el comercio.
         if not normalized["category"] and normalized["type"] != "transfer":
-            normalized["category"] = auto_category(normalized["description"]) or ""
+            normalized["category"] = (
+                learned_category(db, normalized["description"])
+                or auto_category(normalized["description"])
+                or ""
+            )
         category = None
         if normalized["category"]:
             category = db.query(Category).filter(Category.name == normalized["category"]).first()
@@ -240,6 +293,7 @@ def confirm(batch_id: str, payload: ConfirmImport, db: Session = Depends(get_db)
                         amount=amount_abs,
                         currency=normalized["currency"],
                         category_id=category.id if category else None,
+                        import_batch_id=batch.id,
                         paid_at=bill_date,
                         notes=f"Detectada en importación: {normalized['description']}",
                     )
@@ -251,27 +305,45 @@ def confirm(batch_id: str, payload: ConfirmImport, db: Session = Depends(get_db)
     db.flush()  # asigna ids a las nuevas transacciones antes de emparejar traspasos
     # Traspasos entre cuentas: un movimiento con contrapartida de importe opuesto
     # en otra cuenta (±3 días) no es ingreso ni gasto; ambos pasan a "transfer".
-    # ponytail: emparejado exacto por importe; si hacen falta comisiones intermedias, ampliar aquí.
+    # ponytail: emparejado por importe exacto + indicio textual; si aparecen traspasos sin indicio, pasar a confirmación manual en el preview.
     transfers = 0
     used_ids: set[str] = set()
-    for tx in new_txs:
-        if tx.type not in ("income", "expense"):
-            continue
-        tx_date = date_cls.fromisoformat(tx.date)
-        lo = (tx_date - timedelta(days=3)).isoformat()
-        hi = (tx_date + timedelta(days=3)).isoformat()
-        counterpart = (
+    # Precarga de candidatos en un solo query (evita N+1) y emparejado en Python.
+    if new_txs:
+        dates = [date_cls.fromisoformat(t.date) for t in new_txs]
+        lo = (min(dates) - timedelta(days=3)).isoformat()
+        hi = (max(dates) + timedelta(days=3)).isoformat()
+        amounts = {-t.amount for t in new_txs}
+        candidates = (
             db.query(Transaction)
             .filter(
-                Transaction.account_id != tx.account_id,
-                Transaction.amount == -tx.amount,
-                Transaction.currency == tx.currency,
+                Transaction.amount.in_(list(amounts)),
                 Transaction.type.in_(["income", "expense"]),
                 Transaction.date >= lo,
                 Transaction.date <= hi,
-                ~Transaction.id.in_(used_ids),
             )
-            .first()
+            .all()
+        )
+    else:
+        candidates = []
+    for tx in new_txs:
+        if tx.type not in ("income", "expense") or tx.id in used_ids:
+            continue
+        tx_date = date_cls.fromisoformat(tx.date)
+        counterpart = next(
+            (
+                c
+                for c in candidates
+                if c.id != tx.id
+                and c.id not in used_ids
+                and c.account_id != tx.account_id
+                and c.amount == -tx.amount
+                and c.currency == tx.currency
+                and c.type in ("income", "expense")
+                and abs((date_cls.fromisoformat(c.date) - tx_date).days) <= 3
+                and (_looks_like_transfer(tx.description) or _looks_like_transfer(c.description))
+            ),
+            None,
         )
         if counterpart is not None:
             tx.type = "transfer"
@@ -300,9 +372,17 @@ def rollback(batch_id: str, db: Session = Depends(get_db)) -> dict:
     if not batch or batch.status != "imported":
         raise fail(409, "INVALID_STATE", "Solo se puede revertir una importación completada")
     deleted = db.query(Transaction).filter(Transaction.import_batch_id == batch_id).delete()
+    bills_removed = (
+        db.query(HouseholdBill).filter(HouseholdBill.import_batch_id == batch_id).delete()
+    )
     db.query(ImportRow).filter(ImportRow.import_batch_id == batch_id).update({"status": "valid"})
     batch.status = "rolled_back"
     batch.rows_imported = 0
     batch.completed_at = datetime.now(timezone.utc)
     db.commit()
-    return {"import_batch_id": batch.id, "status": batch.status, "rows_removed": deleted}
+    return {
+        "import_batch_id": batch.id,
+        "status": batch.status,
+        "rows_removed": deleted,
+        "bills_removed": bills_removed,
+    }

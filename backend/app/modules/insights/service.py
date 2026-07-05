@@ -11,7 +11,10 @@ from app.modules.insights.constants import DEFAULT_LIMIT
 from app.modules.insights.rules.cashflow_rules import cashflow_alert_insight
 from app.modules.insights.rules.data_quality_rules import data_quality_insights
 from app.modules.insights.rules.goal_rules import goal_progress_insights
-from app.modules.insights.rules.investment_rules import investment_allocation_insight
+from app.modules.insights.rules.investment_rules import (
+    fund_stale_valuation_insight,
+    investment_allocation_insight,
+)
 from app.modules.insights.rules.macro_rules import macro_context_insights
 from app.modules.insights.rules.market_rules import market_context_insights
 from app.modules.insights.rules.net_worth_rules import net_worth_change_insight
@@ -65,6 +68,7 @@ def _all_insights(db: Session, period: str) -> list[InsightOut]:
         lambda: cashflow_alert_insight(db, period),
         lambda: net_worth_change_insight(db, period),
         lambda: investment_allocation_insight(db, period),
+        lambda: fund_stale_valuation_insight(db, period),
         lambda: goal_progress_insights(db, period),
         lambda: market_context_insights(db, period),
         lambda: macro_context_insights(db, period),

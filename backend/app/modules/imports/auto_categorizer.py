@@ -189,9 +189,26 @@ KEYWORD_CATEGORIES: dict[str, str] = {
 }
 
 
+# Palabras genéricas cortas que solo casan como token exacto: por prefijo
+# producen falsos positivos ("dia" → "diagnóstico", "bar" → "Barbería").
+EXACT_TOKEN_KEYWORDS = {"dia", "suma", "bar", "cafe", "film", "disco", "metro", "emt"}
+
+
 def _normalize(text: str) -> str:
     text = unicodedata.normalize("NFKD", text.casefold())
     return "".join(c for c in text if not unicodedata.combining(c))
+
+
+def learned_category(db, description: str) -> str | None:
+    """Nombre de categoría aprendida de correcciones manuales, o None."""
+    from app.models.category import Category
+    from app.models.merchant_rule import MerchantRule
+
+    rule = db.query(MerchantRule).filter(MerchantRule.merchant == _normalize(description)).first()
+    if rule is None:
+        return None
+    category = db.query(Category).filter(Category.id == rule.category_id).first()
+    return category.name if category else None
 
 
 def auto_category(description: str) -> str | None:
@@ -201,6 +218,9 @@ def auto_category(description: str) -> str | None:
     for keyword, category in KEYWORD_CATEGORIES.items():
         if " " in keyword or "." in keyword:
             if keyword in normalized:
+                return category
+        elif keyword in EXACT_TOKEN_KEYWORDS:
+            if keyword in tokens:
                 return category
         elif any(token.startswith(keyword) for token in tokens):
             return category

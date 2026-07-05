@@ -80,6 +80,23 @@
   description: "PMI compuesto manufacturero + servicios"
   provider_primary: eurostat
 
+- id: deposit_facility_eurozone
+  name: "Tipo Facilidad de Depósito BCE"
+  category: macro
+  subcategory: policy_rate
+  country: EA
+  region: Eurozone
+  frequency: daily
+  priority: high
+  dashboard: false
+  ai: true
+  historical: 30y
+  retention: 30y
+  unit: "%"
+  description: "Tipo de la facilidad de depósito del BCE — referencia para cuentas remuneradas"
+  provider_primary: ecb
+  provider_secondary: fred
+
 - id: consumer_confidence_eurozone
   name: "Confianza Consumidor Eurozona"
   category: macro

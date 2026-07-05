@@ -21,6 +21,7 @@ class HouseholdBill(Base):
     amount: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
     currency: Mapped[str] = mapped_column(String, nullable=False, default="EUR")
     category_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    import_batch_id: Mapped[str | None] = mapped_column(String, nullable=True)
     is_recurring: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     due_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     paid_at: Mapped[date | None] = mapped_column(Date, nullable=True)

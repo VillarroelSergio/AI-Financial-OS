@@ -101,6 +101,7 @@ export interface ImportPreview {
   import_batch_id: string; source_type: string; detected_source: string | null; columns: string[];
   rows_total: number; rows_valid: number; rows_invalid: number; rows_skipped: number;
   warnings_count: number; preview_rows: ImportPreviewRow[]; mapping: Record<string, string>;
+  already_imported_at: string | null;
 }
 
 export interface ImportBatch {
@@ -192,6 +193,8 @@ export interface InvestmentSummary {
   currency: string;
   by_account: AccountSummary[];
   last_updated: string | null;
+  pending_valuation_count: number;
+  pending_valuation_invested: string;
 }
 
 export interface PriceRefreshResult {

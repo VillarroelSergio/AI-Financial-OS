@@ -195,6 +195,58 @@ created_at
 updated_at
 ```
 
+### FundValuationSnapshot
+
+Valor manual de un fondo en una fecha (modal "Actualizar valor"). Un snapshot por
+`(holding_id, date)` — constraint único. Rendimiento en t = market_value(t) − contributed_total(t).
+
+```txt
+id
+holding_id            -> holdings.id (asset_type=fund, price_source=manual)
+date
+market_value          # valor total de la posición (Decimal)
+contributed_total     # aportado acumulado a esa fecha, opcional
+currency
+source                # manual | import
+note
+created_at
+updated_at
+```
+
+### SavingsAccountConfig
+
+Configuración del motor de intereses de una cuenta remunerada. Una config por
+`account_id` (Account type=savings) — constraint único. Los movimientos son
+`Transaction` tipo `transfer` sobre la cuenta (sin tabla nueva).
+
+```txt
+id
+account_id            -> accounts.id
+opened_at
+rate_source           # ecb_deposit_facility | fixed | manual
+fixed_rate            # % anual (solo fixed | manual)
+spread_bps            # puntos básicos sobre la referencia
+compounding           # monthly (V1)
+created_at
+updated_at
+```
+
+### ReferenceRateObservation
+
+Histórico de un tipo de referencia macro cacheado en el SQLite de la app (poblado
+desde ECB SDMX, fallback FRED). Una observación por `(rate_id, effective_date)` —
+constraint único. El motor de intereses lo lee vía `get_rate_on` y funciona offline
+una vez ingestado.
+
+```txt
+id
+rate_id               # p.ej. ECB_DFR
+effective_date        # fecha desde la que aplica el tipo
+rate                  # % anual (Decimal)
+source                # ecb | fred
+retrieved_at
+```
+
 ## Objetivos
 
 ### Goal

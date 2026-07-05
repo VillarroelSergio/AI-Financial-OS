@@ -8,6 +8,16 @@ import { useGoals } from "@/lib/hooks/useGoals";
 import { useInsights } from "@/features/insights/hooks/useInsights";
 import { formatCurrency } from "@/lib/formatters/currency";
 
+function CardSkeleton({ rows = 3 }: { rows?: number }) {
+  return (
+    <div className="animate-pulse space-y-2 py-2">
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className="h-4 rounded bg-surface-elevated" />
+      ))}
+    </div>
+  );
+}
+
 function SectionCard({ title, more, children }: { title: string; more: string; children: React.ReactNode }) {
   return (
     <div className="premium-card rounded-lg p-5">
@@ -25,23 +35,23 @@ function SectionCard({ title, more, children }: { title: string; more: string; c
 export default function DashboardPage() {
   const navigate = useNavigate();
   const { data: overview, loading } = useOverview();
-  const { holdings } = useHoldings();
+  const { holdings, loading: holdingsLoading } = useHoldings();
   const { summary } = useInvestmentSummary();
-  const { transactions } = useTransactions();
-  const { goals } = useGoals();
-  const { data: insightsData } = useInsights();
+  const { transactions, loading: txLoading } = useTransactions({ limit: 5 });
+  const { goals, loading: goalsLoading } = useGoals();
+  const { data: insightsData, loading: insightsLoading } = useInsights();
 
   if (loading) return <LoadingState label="Cargando tu resumen" />;
 
   const activeInvestments = holdings.filter((h) => !h.is_mock).length;
   const returnPct = summary?.return_percent ?? 0;
-  const recent = transactions.slice(0, 5);
+  const recent = transactions;
   const insights = (insightsData?.insights ?? []).slice(0, 2);
 
   return (
     <div className="p-8 max-w-[1500px] mx-auto space-y-6">
       <PageHeader
-        eyebrow="Private command center"
+        eyebrow="Centro de control privado"
         title="Dashboard"
         description="Monitorea tus finanzas, inversiones y gastos."
       />
@@ -56,7 +66,7 @@ export default function DashboardPage() {
       <div className="dashboard-grid">
         <div className="col-span-8 space-y-6">
           <SectionCard title="Últimos movimientos" more="/finances?tab=movimientos">
-            {recent.length === 0 ? (
+            {txLoading ? <CardSkeleton rows={5} /> : recent.length === 0 ? (
               <div className="py-8 text-center">
                 <ReceiptText className="mx-auto mb-3 text-stone" />
                 <p className="font-semibold">No tienes movimientos recientes</p>
@@ -78,7 +88,7 @@ export default function DashboardPage() {
           </SectionCard>
 
           <SectionCard title="Portafolio de inversiones" more="/investments">
-            {activeInvestments === 0 ? (
+            {holdingsLoading ? <CardSkeleton rows={3} /> : activeInvestments === 0 ? (
               <div className="py-8 text-center">
                 <BarChart2 className="mx-auto mb-3 text-stone" />
                 <p className="font-semibold">Aún no tienes inversiones</p>
@@ -100,7 +110,8 @@ export default function DashboardPage() {
             <button onClick={() => navigate("/goals")} className="flex w-full items-center gap-2 rounded-lg border border-dashed border-hairline-dark px-3 py-2.5 text-sm text-stone hover:border-primary hover:text-on-dark">
               <Target size={14} /> Nuevo objetivo
             </button>
-            {goals.slice(0, 2).map((g) => (
+            {goalsLoading && <CardSkeleton rows={2} />}
+            {!goalsLoading && goals.slice(0, 2).map((g) => (
               <div key={g.id} className="mt-2 rounded-lg border border-hairline-dark bg-black/20 px-3 py-2.5">
                 <p className="text-sm font-medium">{g.name}</p>
                 <p className="mt-0.5 text-xs text-stone">
@@ -111,7 +122,7 @@ export default function DashboardPage() {
           </SectionCard>
 
           <SectionCard title="Insights" more="/insights">
-            {insights.length === 0 ? (
+            {insightsLoading ? <CardSkeleton rows={2} /> : insights.length === 0 ? (
               <p className="py-4 text-sm text-stone">Cuando haya suficientes datos verás aquí recomendaciones basadas en tus finanzas.</p>
             ) : (
               insights.map((i) => (

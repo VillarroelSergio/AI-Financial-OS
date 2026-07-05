@@ -7,7 +7,7 @@ import type { ImportBatch, ImportPreview } from "@/lib/types";
 
 const steps = ["Archivo y cuenta", "Validacion", "Confirmacion", "Resumen"];
 const KNOWN_FORMATS = ["Monefy CSV", "Revolut CSV", "BBVA XLSX", "CSV / Excel generico"];
-const demo: ImportPreview = { import_batch_id: "demo", source_type: "revolut", detected_source: "Revolut", columns: ["Fecha de inicio", "Descripción", "Importe"], rows_total: 24, rows_valid: 22, rows_invalid: 1, rows_skipped: 1, warnings_count: 2, mapping: {}, preview_rows: [
+const demo: ImportPreview = { import_batch_id: "demo", source_type: "revolut", detected_source: "Revolut", columns: ["Fecha de inicio", "Descripción", "Importe"], rows_total: 24, rows_valid: 22, rows_invalid: 1, rows_skipped: 1, warnings_count: 2, mapping: {}, already_imported_at: null, preview_rows: [
   { row_number: 2, date: "2026-06-21", account: "", category: "", amount: "-42.30", currency: "EUR", description: "Mercadona", status: "valid", errors: [], warnings: [] },
   { row_number: 3, date: "2026-06-22", account: "", category: "", amount: "2100.00", currency: "EUR", description: "Nomina", status: "valid", errors: [], warnings: [] },
   { row_number: 4, date: "2026-06-22", account: "", category: "", amount: "-18.00", currency: "EUR", description: "Pago con tarjeta", status: "skipped", errors: ["Operación no completada (REVERTED)"], warnings: [] },
@@ -104,6 +104,14 @@ export default function ImportsPage() {
 
       {preview && !result && (
         <>
+          {preview.already_imported_at && (
+            <div className="rounded-lg border border-accent-warning/40 bg-accent-warning/10 p-3">
+              <p className="text-body-sm text-accent-warning">
+                Este archivo ya se importó el {new Date(preview.already_imported_at).toLocaleDateString("es-ES")}.
+                Si continúas, los movimientos ya existentes se marcarán como duplicados.
+              </p>
+            </div>
+          )}
           <section className="premium-card rounded-lg overflow-hidden">
             <div className="p-5 flex flex-wrap items-center gap-3 border-b border-hairline-dark">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-accent-teal/40 bg-accent-teal/10 px-3 py-1 text-xs text-accent-teal"><Check size={12} />Formato detectado: {preview.detected_source ?? "Generico"}</span>

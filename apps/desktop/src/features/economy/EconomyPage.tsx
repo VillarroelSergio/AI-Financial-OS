@@ -132,6 +132,14 @@ export default function EconomyPage() {
         actions={<span className="rounded-lg border border-hairline-dark bg-white/[.035] px-3 py-2 text-xs text-stone">{generatedAt ? `Actualizado ${generatedAt}` : "Dato en cache"}</span>}
       />
 
+      {ingestStatus?.last_run && (
+        <p className="text-caption text-stone">
+          Datos actualizados: {new Date(ingestStatus.last_run).toLocaleString("es-ES", {
+            day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
+          })}
+        </p>
+      )}
+
       {loading && <LoadingSkeleton isIngesting={isIngesting} />}
 
       {!loading && isIngesting && (

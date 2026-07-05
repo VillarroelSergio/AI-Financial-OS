@@ -6,15 +6,25 @@ from app.models.document import Document, DocumentChunk
 from app.models.goal import Goal
 from app.models.household_bill import HouseholdBill
 from app.models.import_batch import ImportBatch, ImportRow
-from app.models.investment import Holding, InvestmentAsset, InvestmentOperation
+from app.models.investment import (
+    FundValuationSnapshot,
+    Holding,
+    HoldingValueHistory,
+    InvestmentAsset,
+    InvestmentOperation,
+    ReferenceRateObservation,
+    SavingsAccountConfig,
+)
+from app.models.merchant_rule import MerchantRule
 from app.models.recurring_transaction import RecurringTransaction
 from app.models.settings import AppSetting
 from app.models.transaction import Transaction
 
 __all__ = [
     "Account", "Category", "Goal", "ImportBatch", "ImportRow",
-    "InvestmentAsset", "Holding", "InvestmentOperation",
-    "Transaction", "AppSetting", "Budget", "RecurringTransaction", "HouseholdBill",
+    "InvestmentAsset", "Holding", "HoldingValueHistory", "InvestmentOperation",
+    "FundValuationSnapshot", "SavingsAccountConfig", "ReferenceRateObservation",
+    "Transaction", "AppSetting", "Budget", "RecurringTransaction", "HouseholdBill", "MerchantRule",
     "Document", "DocumentChunk",
     "AIConversation", "AIMessage", "AIToolCall",
 ]

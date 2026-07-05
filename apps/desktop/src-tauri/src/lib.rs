@@ -33,7 +33,11 @@ mod backend {
 
     /// Lanza financial-backend.exe desde resources. Devuelve None si ya hay
     /// una instancia sirviendo /health (no se lanza duplicado).
-    pub fn spawn(resource_dir: &std::path::Path) -> Result<Option<Child>, String> {
+    ///
+    /// Caso borde: si ya hay un backend vivo, tendrá OTRO token de sesión y la
+    /// app no podrá autenticarse contra él. Es el mismo escenario degradado que
+    /// hoy (proceso duplicado); se acepta y se documenta aquí.
+    pub fn spawn(resource_dir: &std::path::Path, token: &str) -> Result<Option<Child>, String> {
         if health_ok() {
             return Ok(None);
         }
@@ -41,7 +45,8 @@ mod backend {
         let mut cmd = Command::new(&exe);
         cmd.current_dir(exe.parent().unwrap())
             .env("APP_ENV", "production")
-            .env("BACKEND_PORT", PORT.to_string());
+            .env("BACKEND_PORT", PORT.to_string())
+            .env("FINOS_API_TOKEN", token);
         #[cfg(windows)]
         {
             use std::os::windows::process::CommandExt;
@@ -74,16 +79,34 @@ mod backend {
     }
 }
 
+/// Token de sesión compartido entre launcher, backend y frontend.
+struct ApiToken(String);
+
+/// 32 bytes aleatorios en hex. Fuente criptográfica del SO vía getrandom.
+fn generate_token() -> String {
+    let mut bytes = [0u8; 32];
+    getrandom::getrandom(&mut bytes).expect("no hay fuente de aleatoriedad");
+    bytes.iter().map(|b| format!("{b:02x}")).collect()
+}
+
+#[tauri::command]
+fn get_api_token(state: tauri::State<ApiToken>) -> String {
+    state.0.clone()
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    let token = generate_token();
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
-        .setup(|_app| {
+        .manage(ApiToken(token.clone()))
+        .invoke_handler(tauri::generate_handler![get_api_token])
+        .setup(move |_app| {
             #[cfg(not(debug_assertions))]
             {
                 use tauri::Manager;
                 let resource_dir = _app.path().resource_dir()?;
-                if let Some(child) = backend::spawn(&resource_dir)
+                if let Some(child) = backend::spawn(&resource_dir, &token)
                     .map_err(std::io::Error::other)?
                 {
                     _app.manage(backend::BackendProcess(std::sync::Mutex::new(Some(child))));
@@ -91,6 +114,10 @@ pub fn run() {
                 // Bloquea antes de crear la ventana: /health 200 ⇒ ventana interactiva.
                 backend::wait_until_healthy().map_err(std::io::Error::other)?;
             }
+            // En dev no hay backend empaquetado; el token existe pero el backend
+            // de desarrollo no lo exige.
+            #[cfg(debug_assertions)]
+            let _ = &token;
             Ok(())
         })
         .build(tauri::generate_context!())

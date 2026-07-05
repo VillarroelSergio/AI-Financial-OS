@@ -26,8 +26,30 @@ def get_db() -> Generator[Session, None, None]:
 
 def create_tables() -> None:
     import app.models  # noqa: F401 — registers models with Base
+    _migrate_investment_domain()  # antes de create_all: recrea tablas nuevas con esquema de spec
     Base.metadata.create_all(bind=engine)
     _migrate_transactions_scope()
+    _migrate_household_bills_batch()
+
+
+def _migrate_investment_domain() -> None:
+    """INV-2/4: si las tablas nuevas existen con esquema previo (pre-spec), se recrean.
+    Son tablas nuevas de este ciclo, sin datos productivos → drop seguro."""
+    expected_col = {
+        "savings_account_configs": "account_id",   # antes: holding_id
+        "fund_valuation_snapshots": "market_value",  # antes: value
+    }
+    with engine.begin() as connection:
+        for table, col in expected_col.items():
+            cols = {row[1] for row in connection.exec_driver_sql(f"PRAGMA table_info({table})")}
+            if cols and col not in cols:
+                connection.exec_driver_sql(f"DROP TABLE {table}")
+        # Nº participaciones + valor liquidativo (opcionales) para el peso de fondos.
+        fund_cols = {row[1] for row in connection.exec_driver_sql("PRAGMA table_info(fund_valuation_snapshots)")}
+        if fund_cols and "units" not in fund_cols:
+            connection.exec_driver_sql("ALTER TABLE fund_valuation_snapshots ADD COLUMN units NUMERIC")
+        if fund_cols and "nav" not in fund_cols:
+            connection.exec_driver_sql("ALTER TABLE fund_valuation_snapshots ADD COLUMN nav NUMERIC")
 
 
 def _migrate_transactions_scope() -> None:
@@ -59,3 +81,13 @@ def _migrate_transactions_scope() -> None:
         connection.exec_driver_sql(
             "UPDATE transactions SET analytics_scope='excluded' WHERE type='transfer'"
         )
+
+
+def _migrate_household_bills_batch() -> None:
+    """Enlaza facturas detectadas con su importación para poder revertirlas."""
+    with engine.begin() as connection:
+        cols = {row[1] for row in connection.exec_driver_sql("PRAGMA table_info(household_bills)")}
+        if cols and "import_batch_id" not in cols:
+            connection.exec_driver_sql(
+                "ALTER TABLE household_bills ADD COLUMN import_batch_id TEXT"
+            )

@@ -168,6 +168,7 @@ def normalize_row(
     raw: dict[str, str],
     mapping: dict[str, str | None],
     profile: FormatProfile | None = None,
+    occurrence: int = 0,
 ) -> tuple[dict, list[str], list[str]]:
     date_formats = profile.date_formats if profile else ("%d/%m/%Y",)
     fee_column = profile.fee_column if profile else None
@@ -223,6 +224,10 @@ def normalize_row(
     duplicate_key = "|".join(
         [date, str(amount), description.casefold().strip(), category.casefold().strip()]
     )
+    # Ocurrencia n>0 dentro del mismo archivo: sufijo para no colisionar con la
+    # primera. La ocurrencia 0 conserva el hash histórico (retrocompatible).
+    if occurrence:
+        duplicate_key += f"|{occurrence}"
     normalized["duplicate_hash"] = hashlib.sha256(duplicate_key.encode()).hexdigest()
     return normalized, errors, warnings
 

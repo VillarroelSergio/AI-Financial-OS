@@ -202,7 +202,7 @@ export default function RootLayout() {
           className="relative hidden h-14 shrink-0 items-center justify-between px-6 lg:flex"
           style={{ borderBottom: "1px solid var(--border-soft)", color: "var(--text-secondary)" }}
         >
-          <span style={{ fontSize: "17px", lineHeight: "1.21", letterSpacing: "-0.22px" }}>Private command center</span>
+          <span style={{ fontSize: "17px", lineHeight: "1.21", letterSpacing: "-0.22px" }}>Centro de control privado</span>
           {showCopilot && (
             <button
               onClick={() => setCopilotOpen((open) => !open)}

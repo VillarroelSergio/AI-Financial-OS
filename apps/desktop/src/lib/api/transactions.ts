@@ -19,6 +19,8 @@ export interface TransactionFilters {
   from_date?: string;
   to_date?: string;
   type?: string;
+  limit?: number;
+  offset?: number;
 }
 
 export const fetchTransactions = (filters?: TransactionFilters) =>

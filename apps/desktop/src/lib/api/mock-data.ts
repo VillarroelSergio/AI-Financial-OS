@@ -150,6 +150,8 @@ const mockInvestmentSummary: InvestmentSummary = {
   currency: "EUR",
   by_account: [{ account_id: "mock-acc-tr-savings", value: "5000.00", invested: "5000.00" }],
   last_updated: null,
+  pending_valuation_count: 0,
+  pending_valuation_invested: "0.00",
 };
 
 const mockReconciliation: import("./investments").ReconciliationReport = {
