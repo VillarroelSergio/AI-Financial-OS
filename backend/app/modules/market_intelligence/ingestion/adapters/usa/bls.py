@@ -37,6 +37,10 @@ class BLSAdapter(BaseAdapter):
     category = "macro"
     region = "USA"
     requires_api_key = False
+    # Solo sirve la tasa de paro (LNS14000000). El catálogo lo declaraba primario
+    # de cpi/core_cpi/nfp, pero fetch() ignora el id y devolvía siempre paro →
+    # allowlist honesta para que el orquestador no lo use como clon. Series CPI/NFP: ECO-2.
+    supported_indicators = {"unemployment_usa": {}}
 
     def fetch(self) -> AdapterResult:
         metadata = _metadata()

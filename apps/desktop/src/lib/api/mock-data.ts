@@ -586,11 +586,45 @@ const mockPersonalImpact = {
 };
 
 const mockIngestStatus = {
-  status: "done",
-  last_run: "2026-07-01T09:00:00Z",
-  count: 24,
-  results: [],
+  current: null,
+  last_run: {
+    run_id: "mock",
+    finished_at: "2026-07-01T09:00:00Z",
+    total: 24,
+    success: 24,
+    failed: 0,
+    fallbacks_used: 0,
+    results: [],
+  },
   storage: "file",
+};
+
+// ECO-6: el mock replica el agrupado temático que ahora hace el backend.
+const MOCK_THEME: Record<string, string> = {
+  inflation: "Inflación", interest_rates: "Tipos de interés", employment: "Empleo",
+  gdp: "Actividad", industrial: "Actividad", consumption: "Actividad", housing: "Actividad",
+  pmi: "Confianza y PMI", sentiment: "Confianza y PMI", fiscal: "Cuentas públicas", monetary: "Cuentas públicas",
+};
+const MOCK_THEME_ORDER = ["Inflación", "Tipos de interés", "Empleo", "Actividad", "Confianza y PMI", "Cuentas públicas", "Otros"];
+function mockGroupByTheme(points: { subcategory?: string }[]) {
+  const groups: Record<string, unknown[]> = {};
+  for (const p of points) (groups[MOCK_THEME[p.subcategory ?? ""] ?? "Otros"] ??= []).push(p);
+  return { themes: MOCK_THEME_ORDER.filter((t) => groups[t]).map((t) => ({ theme: t, indicators: groups[t] })) };
+}
+const mockEconomyOverview = {
+  status: mockMacroSnapshot.status,
+  generated_at: mockMacroSnapshot.generated_at,
+  warnings: mockMacroSnapshot.warnings,
+  global_indicators: [...mockMacroSnapshot.spain, ...mockMacroSnapshot.usa].slice(0, 4),
+  regions: {
+    ES: mockGroupByTheme(mockMacroSnapshot.spain),
+    EA: mockGroupByTheme(mockMacroSnapshot.eurozone),
+    US: mockGroupByTheme(mockMacroSnapshot.usa),
+  },
+  impact: mockPersonalImpact,
+  bonds: mockBondSnapshot,
+  forex: mockForexSnapshot,
+  personal_economy: null,
 };
 
 export function getMockResponse<T>(path: string, init?: RequestInit): T {
@@ -748,6 +782,7 @@ export function getMockResponse<T>(path: string, init?: RequestInit): T {
   if (clean === "/api/market-intelligence/snapshot/bonds") return mockBondSnapshot as T;
   if (clean === "/api/market-intelligence/snapshot/forex") return mockForexSnapshot as T;
   if (clean === "/api/market-intelligence/personal-impact") return mockPersonalImpact as T;
+  if (clean === "/api/market-intelligence/economy/overview") return mockEconomyOverview as T;
   if (clean === "/api/market-intelligence/ingest-status") return mockIngestStatus as T;
   if (path.startsWith("/api/markets/quotes")) {
     const catParam = path.includes("?category=")

@@ -81,3 +81,28 @@ def test_skips_adapter_that_does_not_support_indicator():
     orch = ProviderOrchestrator([primary, secondary])
     result = orch.fetch_indicator(_make_indicator("primary", secondary="secondary"))
     assert result.provider_used == "secondary"
+
+
+def test_breaker_opens_after_repeated_failures_and_resets_on_success():
+    # ECO-5: tras `breaker_threshold` fallos seguidos el primary se salta (no se vuelve a
+    # llamar) y se cae a fallback; un éxito posterior cierra el circuito.
+    primary = _make_adapter("primary", success=False, provider_id="primary")
+    secondary = _make_adapter("secondary", success=True, provider_id="secondary")
+    orch = ProviderOrchestrator([primary, secondary], breaker_threshold=2)
+    ind = _make_indicator("primary", secondary="secondary")
+
+    orch.fetch_indicator(ind)  # fallo 1
+    orch.fetch_indicator(ind)  # fallo 2 → abre circuito
+    primary.fetch.reset_mock()
+    result = orch.fetch_indicator(ind)
+    assert result.provider_used == "secondary"
+    primary.fetch.assert_not_called()  # circuito abierto: no se reintenta
+
+    # el primary se recupera → un éxito debe cerrar el circuito y volver a preferirlo
+    primary.fetch.return_value = AdapterResult(
+        provider="primary", success=True, records=[], error=None,
+        latency_ms=10.0, raw_sample=None, metadata=_make_meta("primary"),
+    )
+    orch._failures.clear()  # simula el reset del siguiente tick (nueva instancia por-run)
+    result = orch.fetch_indicator(ind)
+    assert result.provider_used == "primary"

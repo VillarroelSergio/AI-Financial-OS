@@ -15,7 +15,7 @@ from app.modules.market_intelligence.storage.migrations import run_migrations
 def duck(monkeypatch):
     conn = duckdb.connect(":memory:")
     run_migrations(conn)
-    monkeypatch.setattr("app.modules.market_intelligence.api.impact.get_duckdb", lambda: conn)
+    # ECO-4: impact.py ya no toca get_duckdb; lee vía repository/macro_series (única puerta).
     monkeypatch.setattr("app.modules.market_intelligence.storage.repository.get_duckdb", lambda: conn)
     monkeypatch.setattr(repository, "_migrations_run", True)
     yield conn
@@ -25,8 +25,9 @@ def duck(monkeypatch):
 def test_get_mi_data_reads_real_tables(duck):
     """Regresión: impact.py consultaba tablas (mi_macro, mi_quotes...) e ids inexistentes."""
     duck.execute(
-        "INSERT INTO mi_macro_observations (id, catalog_item_id, value, retrieved_at) VALUES "
-        "('1', 'ipc_general', 2.8, '2026-06-01'), ('2', 'tipo_bce', 2.15, '2026-06-01')"
+        "INSERT INTO mi_macro_observations (id, catalog_item_id, value, period, frequency, retrieved_at) VALUES "
+        "('1', 'ipc_general', 2.8, '2026-06', 'monthly', '2026-06-01'), "
+        "('2', 'tipo_bce', 2.15, '2026-06', 'monthly', '2026-06-01')"
     )
     duck.execute(
         "INSERT INTO mi_currency_rates (id, catalog_item_id, rate, date) VALUES ('3', 'eur_usd', 1.13, '2026-06-30')"

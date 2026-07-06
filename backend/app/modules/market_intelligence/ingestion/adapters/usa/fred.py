@@ -31,16 +31,18 @@ _YIELD_SERIES = {
     "DGS30": "30Y",
 }
 
-# Mapping: catalog_item_id → which FRED series to fetch
-# Indicators not listed here are served by other primary providers; FRED is fallback
+# Mapping: catalog_item_id → which FRED series to fetch.
+# ECO-2: cpi/core_cpi/gdp/nfp/retail/housing se cubren aquí (BLS/BEA/Census no emiten
+# valor). Series y unidades verificadas contra fredgraph.csv en vivo (2026-07-06).
+# CPI/Core-CPI usan la transformación pc1 (variación % interanual) → unidad "%".
 _INDICATOR_SERIES: dict[str, list[str]] = {
     "unemployment_usa": ["UNRATE"],
-    "cpi_usa": [],           # primary: BLS; FRED fallback serves generic CPI not modelled here
-    "core_cpi_usa": [],      # primary: BLS
-    "gdp_usa": [],           # primary: BEA
-    "nfp_usa": [],           # primary: BLS
-    "retail_sales_usa": [],  # primary: Census
-    "housing_starts_usa": [],  # primary: Census
+    "cpi_usa": ["CPIAUCSL_PC1"],       # YoY % (transformation=pc1)
+    "core_cpi_usa": ["CPILFESL_PC1"],  # YoY % (transformation=pc1)
+    "gdp_usa": ["GDP"],                # nivel, USD bn, trimestral
+    "nfp_usa": ["PAYEMS"],             # nóminas no agrícolas, miles (nivel)
+    "retail_sales_usa": ["RSAFS"],     # ventas minoristas, USD mn
+    "housing_starts_usa": ["HOUST"],   # viviendas iniciadas, miles
     "fed_funds_rate": ["FEDFUNDS"],
     "industrial_production_usa": ["INDPRO"],  # FRED INDPRO series
     "consumer_sentiment_usa": ["UMCSENT"],    # U of Michigan via FRED
@@ -54,15 +56,32 @@ _SERIES_UNITS: dict[str, str] = {
     "INDPRO": "index",
     "UMCSENT": "index",
     "M2SL": "USD bn",
+    "CPIAUCSL_PC1": "%",
+    "CPILFESL_PC1": "%",
+    "GDP": "USD bn",
+    "PAYEMS": "thousands",
+    "RSAFS": "USD mn",
+    "HOUST": "thousands",
 }
+
+# Frecuencia real por serie (default mensual); GDP es trimestral.
+_SERIES_FREQ: dict[str, str] = {"GDP": "quarterly"}
+
+_FREDGRAPH = "https://fred.stlouisfed.org/graph/fredgraph.csv?id="
 
 # URLs for the extra series (not available via the simple fredgraph.csv endpoint in all cases)
 _SERIES_URLS: dict[str, str] = {
     "UNRATE": _UNRATE_URL,
     "FEDFUNDS": _FEDFUNDS_URL,
-    "INDPRO": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=INDPRO",
-    "UMCSENT": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=UMCSENT",
-    "M2SL": "https://fred.stlouisfed.org/graph/fredgraph.csv?id=M2SL",
+    "INDPRO": f"{_FREDGRAPH}INDPRO",
+    "UMCSENT": f"{_FREDGRAPH}UMCSENT",
+    "M2SL": f"{_FREDGRAPH}M2SL",
+    "CPIAUCSL_PC1": f"{_FREDGRAPH}CPIAUCSL&transformation=pc1",
+    "CPILFESL_PC1": f"{_FREDGRAPH}CPILFESL&transformation=pc1",
+    "GDP": f"{_FREDGRAPH}GDP",
+    "PAYEMS": f"{_FREDGRAPH}PAYEMS",
+    "RSAFS": f"{_FREDGRAPH}RSAFS",
+    "HOUST": f"{_FREDGRAPH}HOUST",
 }
 
 # Yield series are only fetched when indicator_id is None (health check) or a bond catalog item
@@ -100,14 +119,21 @@ def _metadata() -> ProviderMetadata:
 
 
 def _parse_fred_csv(
-    text: str, indicator_id: str, name: str, source_url: str, n: int = 3, unit: str = "%"
+    text: str, indicator_id: str, name: str, source_url: str, n: int = 3,
+    unit: str = "%", frequency: str = "monthly",
 ) -> list[MacroIndicator]:
     reader = csv.DictReader(io.StringIO(text))
     records: list[MacroIndicator] = []
-    fields = [field for field in (reader.fieldnames or []) if field and field.upper() != "DATE"]
-    value_columns = ["VALUE"] if "VALUE" in fields else fields
+    # ECO-3: la columna de fecha de fredgraph.csv es `observation_date` (no `DATE`).
+    # Leerla mal dejaba period="" y colaba la fecha como columna de valor. Se detecta
+    # el nombre real para que period salga poblado (luego el repository lo normaliza).
+    fieldnames = [f for f in (reader.fieldnames or []) if f]
+    date_col = next((f for f in fieldnames if f.lower() in ("date", "observation_date")),
+                    fieldnames[0] if fieldnames else "observation_date")
+    value_fields = [f for f in fieldnames if f != date_col]
+    value_columns = ["VALUE"] if "VALUE" in value_fields else value_fields
     for row in reader:
-        date_str = row.get("DATE", "")
+        date_str = row.get(date_col, "")
         for column in value_columns:
             raw = row.get(column, "")
             if not raw or raw.strip() == ".":
@@ -130,7 +156,7 @@ def _parse_fred_csv(
                     value=value,
                     unit=unit,
                     period=date_str,
-                    frequency="monthly",
+                    frequency=frequency,
                 )
             )
     return records[-n:]
@@ -261,7 +287,11 @@ class FREDAdapter(BaseAdapter):
                     response.raise_for_status()
                     raw_sample = raw_sample or {"preview": response.text[:500]}
                     records.extend(
-                        _parse_fred_csv(response.text, series_id, name, url, unit=_SERIES_UNITS.get(series_id, "%"))
+                        _parse_fred_csv(
+                            response.text, series_id, name, url,
+                            unit=_SERIES_UNITS.get(series_id, "%"),
+                            frequency=_SERIES_FREQ.get(series_id, "monthly"),
+                        )
                     )
                 except Exception as exc:
                     logger.warning("FRED fetch error for %s (%s): %s", indicator_id, series_id, exc)

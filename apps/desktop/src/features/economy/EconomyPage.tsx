@@ -9,34 +9,8 @@ import ImpactCard from "./components/ImpactCard";
 import PersonalEconomySection from "./components/PersonalEconomySection";
 import RatesAndDebtSection from "./components/RatesAndDebtSection";
 
-// Agrupación temática por subcategoría del catálogo
-const THEME_BY_SUBCATEGORY: Record<string, string> = {
-  inflation: "Inflación",
-  interest_rates: "Tipos de interés",
-  employment: "Empleo",
-  gdp: "Actividad",
-  industrial: "Actividad",
-  consumption: "Actividad",
-  housing: "Actividad",
-  pmi: "Confianza y PMI",
-  sentiment: "Confianza y PMI",
-  fiscal: "Cuentas públicas",
-  monetary: "Cuentas públicas",
-};
-const THEME_ORDER = [
-  "Inflación",
-  "Tipos de interés",
-  "Empleo",
-  "Actividad",
-  "Confianza y PMI",
-  "Cuentas públicas",
-  "Otros",
-];
-
-// Ids preferidos para el snapshot global (lo más relevante para un usuario en España)
-const GLOBAL_PICK = ["ipc_general", "euribor_12m", "tipo_bce", "fed_funds_rate"];
-
-// Orden de severidad para destacar comparativas accionables primero
+// ECO-6: la agrupación temática y el snapshot global ahora los resuelve el backend
+// (GET economy/overview). Aquí solo queda el orden de severidad de comparativas.
 const SIGNAL_RANK: Record<ImpactComparative["signal"], number> = {
   negative: 0,
   warning: 1,
@@ -64,28 +38,15 @@ function LoadingSkeleton({ isIngesting }: { isIngesting: boolean }) {
   );
 }
 
-function groupByTheme(indicators: MacroDataPointMI[]): Array<[string, MacroDataPointMI[]]> {
-  const groups = new Map<string, MacroDataPointMI[]>();
-  for (const ind of indicators) {
-    const theme = THEME_BY_SUBCATEGORY[ind.subcategory ?? ""] ?? "Otros";
-    if (!groups.has(theme)) groups.set(theme, []);
-    groups.get(theme)!.push(ind);
-  }
-  return THEME_ORDER.filter((t) => groups.has(t)).map((t) => [t, groups.get(t)!]);
-}
-
 export default function EconomyPage() {
-  const { macro, impact, bonds, forex, personalEconomy, ingestStatus, loading, error } = useEconomyMI();
+  const { overview, ingestStatus, loading, error } = useEconomyMI();
   const [activeRegion, setActiveRegion] = useState<RegionTab>("ES");
   const [showSecondary, setShowSecondary] = useState(false);
 
-  const availableRegions = macro
-    ? ([
-        macro.spain.length > 0 ? "ES" : null,
-        macro.eurozone.length > 0 ? "EA" : null,
-        macro.usa.length > 0 ? "US" : null,
-      ].filter(Boolean) as RegionTab[])
-    : (["ES"] as RegionTab[]);
+  const regions = overview?.regions ?? {};
+  const availableRegions = (["ES", "EA", "US"] as RegionTab[]).filter(
+    (r) => (regions[r]?.themes.length ?? 0) > 0
+  );
 
   useEffect(() => {
     if (availableRegions.length > 0 && !availableRegions.includes(activeRegion)) {
@@ -95,29 +56,37 @@ export default function EconomyPage() {
 
   useEffect(() => setShowSecondary(false), [activeRegion]);
 
-  const isIngesting = ingestStatus?.status === "running" || ingestStatus?.status === "idle";
-  const activeRegionData = macro ? activeRegion === "ES" ? macro.spain : activeRegion === "EA" ? macro.eurozone : macro.usa : [];
+  const isIngesting = ingestStatus?.phase === "running";
+  const activeThemes = regions[activeRegion]?.themes ?? [];
+  const activeIndicators = activeThemes.flatMap((t) => t.indicators);
 
-  // EEUU a mínimos: solo indicadores críticos por defecto; el resto tras "mostrar más"
+  // EEUU a mínimos: solo indicadores críticos por defecto; el resto tras "mostrar más".
   const visiblePriorities = activeRegion === "US" ? ["critical"] : ["critical", "high"];
-  const primary = activeRegionData.filter((i) => visiblePriorities.includes(i.priority ?? "medium"));
-  const secondary = activeRegionData.filter((i) => !visiblePriorities.includes(i.priority ?? "medium"));
-  const shown = showSecondary ? activeRegionData : primary.length > 0 ? primary : activeRegionData;
-  const themedGroups = useMemo(() => groupByTheme(shown), [shown]);
+  const isPrimary = (i: MacroDataPointMI) => visiblePriorities.includes(i.priority ?? "medium");
+  const secondary = activeIndicators.filter((i) => !isPrimary(i));
+  const hasPrimary = activeIndicators.some(isPrimary);
 
-  const allIndicators = macro ? [...macro.spain, ...macro.eurozone, ...macro.usa] : [];
-  const globalIndicators = [
-    ...GLOBAL_PICK.map((id) => allIndicators.find((i) => i.catalog_item_id === id)).filter(
-      (i): i is MacroDataPointMI => Boolean(i)
-    ),
-    ...allIndicators.filter((i) => !GLOBAL_PICK.includes(i.catalog_item_id)),
-  ].slice(0, 4);
+  // El backend ya agrupó por tema; aquí solo filtramos por prioridad para el "mostrar más".
+  const themedGroups = useMemo(
+    () =>
+      activeThemes
+        .map((t): [string, MacroDataPointMI[]] => [
+          t.theme,
+          showSecondary || !hasPrimary ? t.indicators : t.indicators.filter(isPrimary),
+        ])
+        .filter(([, inds]) => inds.length > 0),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [activeThemes, showSecondary, hasPrimary, activeRegion]
+  );
 
-  const generatedAt = macro?.generated_at
-    ? new Date(macro.generated_at).toLocaleString("es-ES", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })
+  const globalIndicators = overview?.global_indicators ?? [];
+  const spainIndicators = (regions.ES?.themes ?? []).flatMap((t) => t.indicators);
+
+  const generatedAt = overview?.generated_at
+    ? new Date(overview.generated_at).toLocaleString("es-ES", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })
     : null;
 
-  const comparatives = impact?.comparatives ?? [];
+  const comparatives = overview?.impact.comparatives ?? [];
   const withData = comparatives
     .filter((c) => c.signal !== "no_data")
     .sort((a, b) => SIGNAL_RANK[a.signal] - SIGNAL_RANK[b.signal]);
@@ -132,9 +101,9 @@ export default function EconomyPage() {
         actions={<span className="rounded-lg border border-hairline-dark bg-white/[.035] px-3 py-2 text-xs text-stone">{generatedAt ? `Actualizado ${generatedAt}` : "Dato en cache"}</span>}
       />
 
-      {ingestStatus?.last_run && (
+      {ingestStatus?.last_run_at && (
         <p className="text-caption text-stone">
-          Datos actualizados: {new Date(ingestStatus.last_run).toLocaleString("es-ES", {
+          Datos actualizados: {new Date(ingestStatus.last_run_at).toLocaleString("es-ES", {
             day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
           })}
         </p>
@@ -161,7 +130,7 @@ export default function EconomyPage() {
         />
       )}
 
-      {!loading && macro && (
+      {!loading && overview && (
         <>
           {globalIndicators.length > 0 && (
             <section className="space-y-3">
@@ -175,16 +144,16 @@ export default function EconomyPage() {
             </section>
           )}
 
-          <PersonalEconomySection data={personalEconomy} macroSpain={macro.spain} />
+          <PersonalEconomySection data={overview.personal_economy} macroSpain={spainIndicators} />
 
-          <RatesAndDebtSection bonds={bonds} forex={forex} />
+          <RatesAndDebtSection bonds={overview.bonds} forex={overview.forex} />
 
           <section className="premium-card rounded-lg p-5">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-caption text-mute uppercase tracking-widest">Indicadores por region</h2>
               <RegionTabs active={activeRegion} onSelect={setActiveRegion} availableRegions={availableRegions} />
             </div>
-            {activeRegionData.length > 0 ? (
+            {activeIndicators.length > 0 ? (
               <div className="space-y-5">
                 {themedGroups.map(([theme, indicators]) => (
                   <div key={theme} className="space-y-2">

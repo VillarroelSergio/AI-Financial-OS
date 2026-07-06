@@ -7,7 +7,8 @@ import type {
   BondSnapshotMI,
   PersonalImpactMI,
   PersonalEconomyMI,
-  IngestStatus,
+  EconomyOverviewMI,
+  IngestStatusRaw,
 } from "@/lib/types/market-intelligence";
 
 export const getMacroSnapshot = () =>
@@ -28,5 +29,8 @@ export const getPersonalImpact = () =>
 export const getPersonalEconomy = () =>
   api.get<PersonalEconomyMI>("/api/market-intelligence/personal-economy");
 
+export const getEconomyOverview = () =>
+  api.get<EconomyOverviewMI>("/api/market-intelligence/economy/overview");
+
 export const getIngestStatus = () =>
-  api.get<IngestStatus>("/api/market-intelligence/ingest-status");
+  api.get<IngestStatusRaw>("/api/market-intelligence/ingest-status");

@@ -1,26 +1,35 @@
-"""Lanza ingesta en background una vez al arrancar la app."""
+"""ECO-5: ingesta en background con scheduler por frecuencia.
+
+Un tick horario ingesta SOLO los items cuyo `last_success + frequency` ha vencido
+(scheduler.due_item_ids), en vez de refetchear todo cada 6 h. El estado de /ingest-status
+distingue la corrida en curso de la última completada, protegido con lock.
+"""
 from __future__ import annotations
 
 import time
 from datetime import datetime, timezone
-from threading import Thread
+from threading import Lock, Thread
 
 from app.core.duckdb import is_in_memory
+from app.modules.market_intelligence.catalog.loader import CatalogLoader
+from app.modules.market_intelligence.ingestion import scheduler
 from app.modules.market_intelligence.ingestion.runner import run_ingestion
 
-_status: dict = {"status": "idle", "last_run": None, "count": 0, "results": []}
+# Frecuencia del tick. El refresco real lo decide el scheduler por item; el tick solo debe
+# ser lo bastante fino para no retrasar una serie diaria más de una hora.
+TICK_SECONDS = 3600
 
-# ponytail: intervalo fijo de re-ingesta; configurable si algún proveedor lo pide.
-REINGEST_INTERVAL_SECONDS = 6 * 3600
+_lock = Lock()
+_status: dict = {"current": None, "last_run": None}
 
 
 def get_ingest_status() -> dict:
     from app.modules.market_intelligence.ingestion.runner import ADAPTER_LOAD_ERRORS
 
-    status = _status.copy()
+    with _lock:
+        status = {"current": _status["current"], "last_run": _status["last_run"]}
     if ADAPTER_LOAD_ERRORS:
         status["adapter_load_errors"] = dict(ADAPTER_LOAD_ERRORS)
-    # El fallback en memoria significa que nada persiste: avisar siempre.
     status["storage"] = "memory" if is_in_memory() else "file"
     if status["storage"] == "memory":
         status["storage_warning"] = (
@@ -30,41 +39,64 @@ def get_ingest_status() -> dict:
     return status
 
 
-def _run_once() -> None:
-    _status["status"] = "running"
-    try:
-        # Limpieza previa: observaciones macro estampadas bajo bonos/commodities
-        # por fallbacks antiguos (causa de indicadores clonados en Economía).
-        from app.modules.market_intelligence.storage import repository
-        try:
-            repository.purge_mismatched_macro_observations()
-        except Exception:  # noqa: BLE001 — la purga nunca debe impedir la ingesta
-            pass
-        summary = run_ingestion(dashboard=True)
-        _status["count"] = summary.success
-        _status["results"] = [
+def _summary_to_status(summary) -> dict:
+    return {
+        "run_id": summary.run_id,
+        "started_at": summary.started_at.isoformat(),
+        "finished_at": summary.finished_at.isoformat(),
+        "total": summary.total,
+        "success": summary.success,
+        "failed": summary.failed,
+        "fallbacks_used": summary.fallbacks_used,
+        "results": [
             {
                 "indicator": r.catalog_id,
                 "category": r.indicator.category,
                 "provider": r.provider_used,
-                "success": r.adapter_result.success,
+                "status": "ok" if r.adapter_result.success else "error",
                 "fallback_used": r.fallback_used,
                 "error": r.adapter_result.error,
             }
             for r in summary.results
-        ]
-        _status["status"] = "done"
+        ],
+    }
+
+
+def _run_due() -> None:
+    from app.modules.market_intelligence.storage import repository
+
+    now = datetime.now(timezone.utc)
+    indicators = [i for i in CatalogLoader().load_all() if i.dashboard]
+    try:
+        state = repository.get_ingest_state()
+    except Exception:
+        state = {}
+    due = scheduler.due_item_ids(indicators, state, now)
+    if not due:
+        return  # nada vencido → ninguna llamada de red este tick
+
+    with _lock:
+        _status["current"] = {
+            "started_at": now.isoformat(), "in_progress": True, "due_count": len(due),
+        }
+    try:
+        summary = run_ingestion(dashboard=True, item_ids=due)
+        with _lock:
+            _status["last_run"] = _summary_to_status(summary)
     except Exception as exc:
-        _status["error"] = str(exc)
-        _status["status"] = "error"
-    _status["last_run"] = datetime.now(timezone.utc).isoformat()
+        with _lock:
+            _status["last_run"] = {"error": str(exc), "finished_at":
+                                   datetime.now(timezone.utc).isoformat()}
+    finally:
+        with _lock:
+            _status["current"] = None
 
 
 def launch_startup_ingest() -> None:
-    """Ingesta al arrancar y re-ingesta cada 6 h mientras la app viva."""
+    """Tick de ingesta por frecuencia mientras la app viva (primer tick inmediato)."""
     def _loop() -> None:
         while True:
-            _run_once()
-            time.sleep(REINGEST_INTERVAL_SECONDS)
+            _run_due()
+            time.sleep(TICK_SECONDS)
 
     Thread(target=_loop, daemon=True).start()

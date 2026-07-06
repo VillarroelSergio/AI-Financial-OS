@@ -18,6 +18,7 @@ from app.models.account import Account
 from app.models.category import Category
 from app.models.investment import Holding, InvestmentAsset
 from app.models.transaction import Transaction
+from app.modules.market_intelligence.api import macro_series
 from app.modules.market_intelligence.storage import repository
 
 
@@ -27,28 +28,10 @@ def _month_shift(day: date, months: int) -> str:
     return f"{total // 12}-{total % 12 + 1:02d}"
 
 
-def _macro_series(catalog_id: str) -> list[tuple[str, float]]:
-    try:
-        return repository.get_macro_history(max_points=30).get(catalog_id, [])
-    except Exception:
-        return []
-
-
 def _latest_and_year_ago(catalog_id: str) -> tuple[float | None, float | None]:
-    points = _macro_series(catalog_id)
-    if not points:
-        return None, None
-    latest_period, latest_value = points[-1]
-    year_ago = None
-    # Los periodos de DuckDB pueden venir malformados ("2021-", fechas sueltas…):
-    # sin un YYYY-MM válido devolvemos solo el último valor, nunca un 500.
-    match = re.match(r"(\d{4})-(\d{2})", str(latest_period))
-    if match:
-        target = f"{int(match.group(1)) - 1}-{match.group(2)}"
-        for period, value in points:
-            if str(period)[:7] <= target:
-                year_ago = value
-    return latest_value, year_ago
+    # ECO-4: lectura unificada. Los periodos ya vienen canónicos (ECO-3), así que no hay
+    # parcheo defensivo aquí: macro_series compara periodo con periodo.
+    return macro_series.latest(catalog_id), macro_series.value_year_ago(catalog_id)
 
 
 # ──────────────────────────────────────────────────────────────
@@ -215,6 +198,16 @@ def _strip_accents(text: str) -> str:
     return "".join(c for c in text if not unicodedata.combining(c))
 
 
+def keyword_hits(title: str, keywords: list[str]) -> list[str]:
+    """ECO-4: keywords que aparecen como PALABRA COMPLETA en el título (acentos aparte).
+
+    Antes era subcadena: "bce"/"ipc"/"smi" colaban dentro de otras palabras
+    (p. ej. "bce" en "bceuropeo"). \\b lo evita sin perder los aciertos reales.
+    """
+    t = _strip_accents(title)
+    return [k for k in keywords if re.search(rf"\b{re.escape(k)}\b", t)]
+
+
 def _relevant_news(db: Session, limit: int = 6) -> list[dict]:
     keywords = list(_BASE_KEYWORDS)
     assets = (
@@ -233,8 +226,7 @@ def _relevant_news(db: Session, limit: int = 6) -> list[dict]:
         return []
     scored = []
     for row in rows:
-        title = _strip_accents(str(row.get("title") or ""))
-        hits = [k for k in keywords if k in title]
+        hits = keyword_hits(str(row.get("title") or ""), keywords)
         if hits:
             scored.append((len(hits), row, hits))
     scored.sort(key=lambda s: str(s[1].get("published_at") or ""), reverse=True)

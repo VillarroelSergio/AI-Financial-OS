@@ -7,6 +7,7 @@ from app.modules.market_intelligence.api import service
 from app.modules.market_intelligence.api.schemas import (
     AiDatasheetOut,
     BondSnapshotOut,
+    EconomyOverviewOut,
     ForexSnapshotOut,
     MacroSnapshotOut,
     MarketSnapshotOut,
@@ -43,17 +44,13 @@ def get_ecb_deposit_facility(
 ) -> dict:
     """Histórico del tipo de facilidad de depósito del BCE (spec §3, interno).
 
-    Sirve el cache de `ReferenceRateObservation`; si está vacío, ingesta primero."""
+    ECO-3: solo lectura. Un GET nunca ingesta (regla "leer nunca ingesta"); la ingesta
+    programada del módulo de inversiones rellena `ReferenceRateObservation`. Si aún no hay
+    dato, se devuelve `status: no_data` en vez de disparar red en el request."""
     from datetime import date
 
     from app.models.investment import ReferenceRateObservation
-    from app.modules.investments.reference_rate_service import ECB_DFR, ingest_deposit_facility_history
-
-    if db.query(ReferenceRateObservation).filter(ReferenceRateObservation.rate_id == ECB_DFR).count() == 0:
-        try:
-            ingest_deposit_facility_history(db)
-        except Exception:  # noqa: BLE001 — sin red, se devuelve lo que haya (vacío)
-            pass
+    from app.modules.investments.reference_rate_service import ECB_DFR
 
     q = db.query(ReferenceRateObservation).filter(ReferenceRateObservation.rate_id == ECB_DFR)
     if from_:
@@ -64,11 +61,19 @@ def get_ecb_deposit_facility(
     rows = q.order_by(ReferenceRateObservation.effective_date.asc()).all()
     return {
         "rate_id": ECB_DFR,
+        "status": "ok" if rows else "no_data",
         "observations": [
             {"date": r.effective_date.isoformat(), "rate": str(r.rate), "source": r.source}
             for r in rows
         ],
     }
+
+
+@router.get("/economy/overview", response_model=EconomyOverviewOut)
+def get_economy_overview(db: Session = Depends(get_db)):
+    """ECO-6: vista agregada de Economía en una sola llamada (macro agrupado + impacto +
+    bonos + forex + economía personal)."""
+    return service.get_economy_overview(db)
 
 
 @router.get("/snapshot/macro", response_model=MacroSnapshotOut)

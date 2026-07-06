@@ -17,6 +17,9 @@ class WorldBankAdapter(BaseAdapter):
     category = "macro"
     region = "Global"
     requires_api_key = False
+    # Solo sirve PIB España (NY.GDP.MKTP.CN, nivel EUR bn). Estaba como fallback de
+    # gdp_usa y otros → devolvía PIB España para todos (clon). allowlist honesta.
+    supported_indicators = {"pib_spain": {}}
 
     def fetch(self) -> AdapterResult:
         metadata = self._make_metadata(base_url=_URL, method="api", license="CC BY 4.0")

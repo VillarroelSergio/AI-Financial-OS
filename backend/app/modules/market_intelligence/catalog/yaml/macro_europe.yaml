@@ -1,3 +1,6 @@
+# Campos historical:/retention: son metadatos RESERVADOS para ECO-5 (scheduler y
+# job de retención). Hoy nadie los consume; no borrar hasta implementar ECO-5.
+
 - id: inflation_eurozone
   name: "Inflación Eurozona"
   category: macro
@@ -12,8 +15,8 @@
   retention: 5y
   unit: "%"
   description: "HICP inflación Eurozona"
-  provider_primary: ecb
-  provider_secondary: eurostat
+  # ECO-2: ecb sirve tasas de política (DFR/MRR), no HICP; Eurostat es la fuente real.
+  provider_primary: eurostat
 
 - id: gdp_eurozone
   name: "PIB Eurozona"
@@ -64,21 +67,8 @@
   description: "Índice producción industrial Eurozona"
   provider_primary: eurostat
 
-- id: pmi_eurozone
-  name: "PMI Compuesto Eurozona"
-  category: macro
-  subcategory: pmi
-  country: EA
-  region: Eurozone
-  frequency: monthly
-  priority: medium
-  dashboard: true
-  ai: true
-  historical: 5y
-  retention: 2y
-  unit: "index"
-  description: "PMI compuesto manufacturero + servicios"
-  provider_primary: eurostat
+# ECO-2: pmi_eurozone eliminado — PMI es de S&P Global (licencia de pago); Eurostat
+# no lo publica. Fuera de alcance, no habrá proveedor gratuito.
 
 - id: deposit_facility_eurozone
   name: "Tipo Facilidad de Depósito BCE"
@@ -111,5 +101,5 @@
   retention: 2y
   unit: "index"
   description: "Índice de confianza del consumidor europeo"
-  provider_primary: european_commission
-  provider_secondary: eurostat
+  # ECO-2: european_commission no emite valor; Eurostat sirve el agregado EA21 (ei_bsco_m).
+  provider_primary: eurostat

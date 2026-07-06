@@ -20,6 +20,7 @@ EXPECTED_TABLES = [
     "mi_provider_health_logs",
     "mi_data_quality_checks",
     "mi_ai_datasheets",
+    "mi_ingest_state",
 ]
 
 

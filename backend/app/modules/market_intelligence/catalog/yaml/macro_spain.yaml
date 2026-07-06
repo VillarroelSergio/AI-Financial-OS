@@ -1,3 +1,6 @@
+# Campos historical:/retention: son metadatos RESERVADOS para ECO-5 (scheduler y
+# job de retención). Hoy nadie los consume; no borrar hasta implementar ECO-5.
+
 - id: ipc_general
   name: "IPC General España"
   category: macro
@@ -30,8 +33,123 @@
   retention: 5y
   unit: "%"
   description: "IPC excluida energía y alimentos no elaborados"
+  # ECO-2: ine.py solo implementa ipc_general; el core lo sirve Eurostat (HICP TOT_X_NRG_FOOD).
+  provider_primary: eurostat
+
+# IPC desglosado por grupos ECOICOP (variación anual) — INE tabla 76125. Muestra la
+# inflación que de verdad te afecta por cesta de gasto. Solo INE los publica → sin secundario.
+- id: ipc_alimentacion
+  name: "IPC Alimentación"
+  category: macro
+  subcategory: inflation
+  country: ES
+  region: Spain
+  frequency: monthly
+  priority: high
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "%"
+  description: "IPC grupo Alimentos y bebidas no alcohólicas (variación anual)"
   provider_primary: ine
-  provider_secondary: eurostat
+
+- id: ipc_vivienda
+  name: "IPC Vivienda y suministros"
+  category: macro
+  subcategory: inflation
+  country: ES
+  region: Spain
+  frequency: monthly
+  priority: high
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "%"
+  description: "IPC grupo Vivienda, agua, electricidad, gas y otros combustibles (variación anual)"
+  provider_primary: ine
+
+- id: ipc_transporte
+  name: "IPC Transporte"
+  category: macro
+  subcategory: inflation
+  country: ES
+  region: Spain
+  frequency: monthly
+  priority: medium
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "%"
+  description: "IPC grupo Transporte (variación anual)"
+  provider_primary: ine
+
+- id: ipc_restauracion
+  name: "IPC Restaurantes y hoteles"
+  category: macro
+  subcategory: inflation
+  country: ES
+  region: Spain
+  frequency: monthly
+  priority: medium
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "%"
+  description: "IPC grupo Restaurantes y servicios de alojamiento (variación anual)"
+  provider_primary: ine
+
+- id: ipv_spain
+  name: "Precio de la Vivienda (IPV)"
+  category: macro
+  subcategory: housing
+  country: ES
+  region: Spain
+  frequency: quarterly
+  priority: high
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "%"
+  description: "Índice de Precios de Vivienda, general nacional (variación anual)"
+  provider_primary: ine
+
+# Hipotecas: proxy fincas urbanas (INE no expone serie 'sobre viviendas' limpia en su API).
+- id: hipotecas_numero_spain
+  name: "Hipotecas (número)"
+  category: macro
+  subcategory: housing
+  country: ES
+  region: Spain
+  frequency: monthly
+  priority: medium
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "hipotecas"
+  description: "Número de hipotecas constituidas sobre fincas urbanas (nacional, mensual)"
+  provider_primary: ine
+
+- id: hipotecas_importe_spain
+  name: "Hipotecas (importe)"
+  category: macro
+  subcategory: housing
+  country: ES
+  region: Spain
+  frequency: monthly
+  priority: medium
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "EUR bn"
+  description: "Importe de hipotecas constituidas sobre fincas urbanas (nacional, mensual)"
+  provider_primary: ine
 
 - id: pib_spain
   name: "PIB España"
@@ -68,6 +186,38 @@
   provider_primary: ine
   provider_secondary: eurostat
 
+- id: coste_laboral_spain
+  name: "Coste Laboral por Trabajador"
+  category: macro
+  subcategory: employment
+  country: ES
+  region: Spain
+  frequency: quarterly
+  priority: medium
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "€"
+  description: "Coste laboral total por trabajador y mes, total economía (ETCL, secciones B-S)"
+  provider_primary: ine
+
+- id: comercio_minorista_spain
+  name: "Comercio Minorista"
+  category: macro
+  subcategory: consumption
+  country: ES
+  region: Spain
+  frequency: monthly
+  priority: medium
+  dashboard: true
+  ai: true
+  historical: 10y
+  retention: 5y
+  unit: "%"
+  description: "Índice de Comercio al por Menor, general (variación anual)"
+  provider_primary: ine
+
 - id: euribor_3m
   name: "Euribor 3 meses"
   category: macro
@@ -82,9 +232,9 @@
   retention: 5y
   unit: "%"
   description: "Tipo de referencia hipotecas variables"
-  provider_primary: bde
-  provider_secondary: ecb
-  provider_fallback: fred
+  # ECO-2: bde no sirve Euríbor (su allowlist son claves internas, no catalog ids). El BCE
+  # lo publica en su dataset FM, pero solo mensual (el daily fue discontinuado).
+  provider_primary: ecb
 
 - id: euribor_12m
   name: "Euribor 12 meses"
@@ -100,9 +250,8 @@
   retention: 5y
   unit: "%"
   description: "Tipo de referencia hipotecas anuales"
-  provider_primary: bde
-  provider_secondary: ecb
-  provider_fallback: fred
+  # ECO-2: ver euribor_3m — servido por el BCE (mensual), no por bde.
+  provider_primary: ecb
 
 - id: tipo_bce
   name: "Tipo de interés BCE"
@@ -135,40 +284,11 @@
   retention: 3y
   unit: "index"
   description: "Índice de producción industrial"
-  provider_primary: ine
-  provider_secondary: eurostat
+  # ECO-2: ine.py no implementa esta serie; Eurostat la sirve (sts_inpr_m, índice 2021=100).
+  provider_primary: eurostat
 
-- id: pmi_manufacturero_spain
-  name: "PMI Manufacturero España"
-  category: macro
-  subcategory: pmi
-  country: ES
-  region: Spain
-  frequency: monthly
-  priority: medium
-  dashboard: true
-  ai: true
-  historical: 5y
-  retention: 2y
-  unit: "index"
-  description: "Purchasing Managers Index manufacturero"
-  provider_primary: ine
-
-- id: pmi_servicios_spain
-  name: "PMI Servicios España"
-  category: macro
-  subcategory: pmi
-  country: ES
-  region: Spain
-  frequency: monthly
-  priority: medium
-  dashboard: true
-  ai: true
-  historical: 5y
-  retention: 2y
-  unit: "index"
-  description: "Purchasing Managers Index servicios"
-  provider_primary: ine
+# ECO-2: PMI España (manufacturero/servicios) eliminados — solo los publica
+# S&P Global (licencia de pago, fuera de alcance). No habrá proveedor gratuito.
 
 - id: confianza_consumidor_spain
   name: "Confianza del Consumidor España"
@@ -184,8 +304,9 @@
   retention: 2y
   unit: "index"
   description: "Índice de confianza del consumidor"
-  provider_primary: european_commission
-  provider_secondary: eurostat
+  # ECO-2: european_commission (PublicDatasetAdapter) no emite valor; Eurostat sirve el
+  # indicador DG-ECFIN (ei_bsco_m, balance).
+  provider_primary: eurostat
 
 - id: deficit_spain
   name: "Déficit Público España"

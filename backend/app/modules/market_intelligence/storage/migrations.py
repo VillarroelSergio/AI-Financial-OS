@@ -243,6 +243,20 @@ _DDL_STATEMENTS = [
         generated_at    TIMESTAMP DEFAULT current_timestamp
     )
     """,
+    # ECO-5: última ingesta por item — base del scheduler por frecuencia (solo refetch
+    # cuando last_success + frequency ha vencido) y del estado estructurado de /ingest-status.
+    """
+    CREATE TABLE IF NOT EXISTS mi_ingest_state (
+        catalog_item_id TEXT PRIMARY KEY,
+        frequency       TEXT,
+        last_status     TEXT,
+        provider_used   TEXT,
+        fallback_used   BOOLEAN DEFAULT false,
+        last_run_id     TEXT,
+        last_run_at     TIMESTAMP,
+        last_success_at TIMESTAMP
+    )
+    """,
 ]
 
 
