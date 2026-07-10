@@ -28,9 +28,13 @@ institution
 currency
 current_balance
 is_active
+is_liability            # D6: pasivo explícito (hipoteca, préstamo). Resta del patrimonio neto.
 created_at
 updated_at
 ```
+
+> `mortgage` se migra a `is_liability=true` por defecto; el resto a `false`. Un saldo
+> negativo transitorio (descubierto) NO reclasifica la cuenta; el flag es explícito y editable.
 
 Ejemplos:
 
@@ -461,3 +465,30 @@ Campos principales:
 - `notes`: observaciones manuales.
 
 El resumen agrupa por proveedor y servicio, compara contra la factura anterior, marca subidas anomalas y estima el proximo recibo. La carga PDF/captura queda fuera del alcance inicial y se mantiene como evolucion futura local-first.
+
+### NetWorthSnapshot (INS-3, D2/D7)
+
+Foto mensual del patrimonio para el histórico y el Balance General. Idempotente por mes (DELETE+INSERT), creada solo mediante el cierre de mes asistido (nunca automática).
+
+```txt
+id
+month                  # YYYY-MM (indexado)
+snapshot_date
+total_assets
+total_liabilities
+net_worth
+breakdown_json         # composición por clase de activo
+data_state             # complete | partial
+missing_items_json     # qué faltaba si se cerró como parcial
+currency
+created_at
+```
+
+### InsightDismissal (INS-3, D3)
+
+Insights descartados por el usuario. Migra el antiguo `dismissed_insights.json` a SQLite (script one-shot reversible que renombra el JSON a `.migrated`). Clave `insight_id` (determinista por periodo → el descarte sobrevive a reinicios).
+
+```txt
+insight_id             # PK, p.ej. insight_2026-06_savings_rate
+dismissed_at
+```

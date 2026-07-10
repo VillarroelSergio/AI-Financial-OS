@@ -24,6 +24,7 @@ from app.modules.investments.price_coverage_routes import router as price_covera
 from app.modules.investments.reconciliation_routes import router as reconciliation_router
 from app.modules.investments.routes import router as investments_router
 from app.modules.market_intelligence.api.routes import router as market_intelligence_router
+from app.modules.net_worth.routes import router as net_worth_router
 from app.modules.rag.routes import router as rag_router
 from app.modules.recurring.routes import router as recurring_router
 from app.modules.security.routes import router as security_router
@@ -34,6 +35,8 @@ from app.modules.transactions.routes import router as transactions_router
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     create_tables()
+    from app.modules.insights import repository as insights_repo
+    insights_repo._migrate_legacy_json()  # D3: dismissals JSON → SQLite (one-shot)
     db = db_module.SessionLocal()
     try:
         from app.seeds.categories import seed_categories
@@ -113,6 +116,7 @@ app.include_router(reconciliation_router, prefix="/api/investments", tags=["inve
 app.include_router(portfolio_import_router, prefix="/api/investments/import", tags=["investments"])
 app.include_router(goals_router, prefix="/api/goals", tags=["goals"])
 app.include_router(insights_router, prefix="/api/insights", tags=["insights"])
+app.include_router(net_worth_router, prefix="/api/net-worth", tags=["net_worth"])
 app.include_router(ai_router, prefix="/api/ai", tags=["ai"])
 app.include_router(rag_router, prefix="/api/rag", tags=["rag"])
 app.include_router(security_router, prefix="/api/security", tags=["security"])

@@ -6,10 +6,8 @@ from decimal import Decimal
 from sqlalchemy.orm import Session
 
 from app.models.investment import FundValuationSnapshot, Holding, InvestmentAsset
-
-# Un fondo cuya última valoración manual supera este umbral se considera desactualizado.
-FUND_STALE_DAYS = 90
 from app.modules.insights.constants import HIGH_CONCENTRATION_THRESHOLD
+from app.modules.insights.formatting import fmt_pct, round_dec
 from app.modules.insights.schemas import (
     DataStatus,
     InsightActionOut,
@@ -20,6 +18,9 @@ from app.modules.insights.schemas import (
     InsightType,
 )
 from app.modules.insights.scoring import compute_confidence, compute_priority
+
+# Un fondo cuya última valoración manual supera este umbral se considera desactualizado.
+FUND_STALE_DAYS = 90
 
 
 def investment_allocation_insight(db: Session, period: str) -> list[InsightOut]:
@@ -50,6 +51,7 @@ def investment_allocation_insight(db: Session, period: str) -> list[InsightOut]:
     if missing_price:
         insights.append(InsightOut(
             id=f"insight_{period}_investment_missing_prices",
+            dedupe_key=f"holdings_no_price_{period}",
             type=InsightType.investment_allocation,
             severity=InsightSeverity.info,
             title="Posiciones sin precio actualizado",
@@ -72,23 +74,26 @@ def investment_allocation_insight(db: Session, period: str) -> list[InsightOut]:
         name = asset.name if asset else "Activo desconocido"
         values.append((name, mv if mv > 0 else Decimal("0")))
 
+    # Concentración de CARTERA DE MERCADO (INS-B4/D1): solo tiene sentido con ≥2 posiciones;
+    # con una única posición el 100% es trivial y el copy sería engañoso.
     total = sum(v for _, v in values)
-    if total > 0:
+    if total > 0 and len(values) >= 2:
         for name, val in values:
-            pct = val / total * 100
+            pct = round_dec(val / total * 100, 1)
             if pct > HIGH_CONCENTRATION_THRESHOLD:
                 insights.append(InsightOut(
-                    id=f"insight_{period}_investment_concentration_{name[:20]}",
-                    type=InsightType.investment_allocation,
+                    id=f"insight_{period}_portfolio_concentration_{name[:20]}",
+                    dedupe_key=f"portfolio_concentration_{period}",
+                    type=InsightType.portfolio_concentration,
                     severity=InsightSeverity.info,
-                    title="Concentración elevada en un activo",
-                    summary=f"{name} representa el {float(pct):.0f}% de tu cartera. Puedes revisar la distribución antes de tomar nuevas decisiones.",
+                    title="Concentración elevada en tu cartera de mercado",
+                    summary=f"{name} representa el {fmt_pct(pct)} de tu cartera de mercado. Puedes revisar la distribución antes de tomar nuevas decisiones.",
                     period=period,
                     impact_area="inversiones",
                     confidence=compute_confidence("complete"),
                     priority=compute_priority("info", "complete", 50.0),
                     data_status=DataStatus.complete,
-                    primary_metric=InsightMetricOut(label="Concentración", value=round(float(pct), 1), unit="%"),
+                    primary_metric=InsightMetricOut(label="Concentración", value=float(pct), unit="%", precision=1),
                     sources=[InsightSourceOut(type="investments", label="Inversiones", period=period, updated_at=now_iso)],
                     actions=[InsightActionOut(label="Ver inversiones", target="/investments", params={})],
                     created_at=now_iso,

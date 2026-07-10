@@ -7,6 +7,7 @@ import { useTransactions } from "@/lib/hooks/useTransactions";
 import { useGoals } from "@/lib/hooks/useGoals";
 import { useInsights } from "@/features/insights/hooks/useInsights";
 import { formatCurrency } from "@/lib/formatters/currency";
+import BalanceGeneralPanel from "./components/BalanceGeneralPanel";
 
 function CardSkeleton({ rows = 3 }: { rows?: number }) {
   return (
@@ -62,6 +63,8 @@ export default function DashboardPage() {
         <div className="col-span-3"><KpiCard label="Inversiones activas" value={String(activeInvestments)} hint="Posiciones reales" icon={BarChart2} /></div>
         <div className="col-span-3"><KpiCard label="Rendimiento" value={`${returnPct >= 0 ? "+" : ""}${returnPct.toFixed(1)}%`} hint="Cartera de inversión" icon={TrendingUp} positive={returnPct >= 0} /></div>
       </div>
+
+      <BalanceGeneralPanel />
 
       <div className="dashboard-grid">
         <div className="col-span-8 space-y-6">

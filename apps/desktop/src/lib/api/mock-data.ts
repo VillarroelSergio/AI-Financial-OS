@@ -11,6 +11,7 @@ const mockAccounts: Account[] = [
     currency: "EUR",
     current_balance: "12450.00",
     is_active: true,
+    is_liability: false,
     created_at: "2024-01-01T00:00:00",
     updated_at: "2024-01-01T00:00:00",
   },
@@ -22,6 +23,7 @@ const mockAccounts: Account[] = [
     currency: "EUR",
     current_balance: "28900.00",
     is_active: true,
+    is_liability: false,
     created_at: "2024-01-01T00:00:00",
     updated_at: "2024-01-01T00:00:00",
   },
@@ -33,6 +35,7 @@ const mockAccounts: Account[] = [
     currency: "EUR",
     current_balance: "350.00",
     is_active: true,
+    is_liability: false,
     created_at: "2024-01-01T00:00:00",
     updated_at: "2024-01-01T00:00:00",
   },
@@ -44,6 +47,7 @@ const mockAccounts: Account[] = [
     currency: "EUR",
     current_balance: "3515.61",
     is_active: true,
+    is_liability: false,
     created_at: "2024-01-01T00:00:00",
     updated_at: "2026-06-23T10:00:00",
   },
@@ -55,6 +59,7 @@ const mockAccounts: Account[] = [
     currency: "EUR",
     current_balance: "5569.69",
     is_active: true,
+    is_liability: false,
     created_at: "2024-01-01T00:00:00",
     updated_at: "2026-06-23T10:00:00",
   },
@@ -66,6 +71,7 @@ const mockAccounts: Account[] = [
     currency: "EUR",
     current_balance: "5000.00",
     is_active: true,
+    is_liability: false,
     created_at: "2025-01-01T00:00:00",
     updated_at: "2026-06-23T10:00:00",
   },
@@ -798,6 +804,33 @@ export function getMockResponse<T>(path: string, init?: RequestInit): T {
       ? mockMarketQuotes.filter((q) => q.category === catParam)
       : mockMarketQuotes;
     return quotes as unknown as T;
+  }
+
+  if (clean.startsWith("/api/net-worth/balance-sheet")) {
+    return {
+      month: "2026-07", currency: "EUR",
+      assets: [
+        { key: "liquidez", label: "Liquidez", amount: "12500.00" },
+        { key: "cartera", label: "Cartera de mercado", amount: "28000.00" },
+      ],
+      liabilities: [{ key: "mortgage", label: "Hipoteca", amount: "85000.00" }],
+      total_assets: "40500.00", total_liabilities: "85000.00", net_worth: "-44500.00",
+      portfolio_cost: "25000.00", portfolio_gain: "3000.00", net_worth_change: "1200.00",
+    } as T;
+  }
+  if (clean.startsWith("/api/net-worth/snapshot-readiness")) {
+    return {
+      month: "2026-07", ready: false, snapshot_exists: false, snapshot_state: null,
+      items: [
+        { key: "movimientos", label: "Movimientos del mes", status: "ok", detail: "", cta_route: "/imports" },
+        { key: "saldos", label: "Saldos de cuentas", status: "stale", detail: "2 cuenta(s) sin actualizar este mes.", cta_route: "/accounts" },
+        { key: "fondos", label: "Valoración de fondos", status: "ok", detail: "", cta_route: "/investments" },
+        { key: "precios", label: "Precios de posiciones cotizadas", status: "ok", detail: "", cta_route: "/investments" },
+      ],
+    } as T;
+  }
+  if (clean.startsWith("/api/net-worth/snapshots")) {
+    return [] as unknown as T;
   }
 
   throw new Error(`[mock] No mock defined for: ${path}`);

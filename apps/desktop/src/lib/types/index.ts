@@ -28,6 +28,7 @@ export interface Account {
   currency: string;
   current_balance: string;
   is_active: boolean;
+  is_liability: boolean;
   created_at: string;
   updated_at: string;
 }

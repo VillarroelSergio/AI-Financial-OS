@@ -6,6 +6,7 @@ from app.models.document import Document, DocumentChunk
 from app.models.goal import Goal
 from app.models.household_bill import HouseholdBill
 from app.models.import_batch import ImportBatch, ImportRow
+from app.models.insight_dismissal import InsightDismissal
 from app.models.investment import (
     FundValuationSnapshot,
     Holding,
@@ -16,6 +17,7 @@ from app.models.investment import (
     SavingsAccountConfig,
 )
 from app.models.merchant_rule import MerchantRule
+from app.models.net_worth_snapshot import NetWorthSnapshot
 from app.models.recurring_transaction import RecurringTransaction
 from app.models.settings import AppSetting
 from app.models.transaction import Transaction
@@ -27,4 +29,5 @@ __all__ = [
     "Transaction", "AppSetting", "Budget", "RecurringTransaction", "HouseholdBill", "MerchantRule",
     "Document", "DocumentChunk",
     "AIConversation", "AIMessage", "AIToolCall",
+    "InsightDismissal", "NetWorthSnapshot",
 ]

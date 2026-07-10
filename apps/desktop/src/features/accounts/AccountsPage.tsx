@@ -24,6 +24,7 @@ const EMPTY_FORM: AccountCreate = {
   type: "bank",
   currency: "EUR",
   current_balance: "0.00",
+  is_liability: false,
 };
 
 export default function AccountsPage() {
@@ -58,6 +59,7 @@ export default function AccountsPage() {
       institution: account.institution ?? "",
       currency: account.currency,
       current_balance: account.current_balance,
+      is_liability: account.is_liability,
     });
     setShowForm(true);
   };
@@ -132,6 +134,10 @@ export default function AccountsPage() {
               <span className="text-caption text-stone">Institucion</span>
               <input className="w-full bg-white/[.035] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary" value={form.institution ?? ""} onChange={(e) => setForm((f) => ({ ...f, institution: e.target.value }))} placeholder="Opcional" />
             </label>
+            <label className="flex items-center gap-sm col-span-2 cursor-pointer">
+              <input type="checkbox" checked={form.is_liability ?? false} onChange={(e) => setForm((f) => ({ ...f, is_liability: e.target.checked }))} />
+              <span className="text-caption text-stone">Es un pasivo (hipoteca, préstamo, deuda) — resta del patrimonio neto</span>
+            </label>
           </div>
           <div className="flex gap-sm justify-end">
             <button type="button" onClick={resetForm} className="mercury-button px-lg py-sm rounded-lg text-body-sm transition-colors">Cancelar</button>
@@ -151,9 +157,12 @@ export default function AccountsPage() {
             return (
               <div key={account.id} className="premium-card rounded-lg p-xl grid grid-cols-[1fr_auto] gap-lg">
                 <div>
-                  <p className="text-body-md text-on-dark">{account.name}</p>
+                  <p className="text-body-md text-on-dark">
+                    {account.name}
+                    {account.is_liability && <span className="ml-sm rounded-full bg-accent-danger/10 px-2 py-0.5 text-caption text-accent-danger align-middle">Pasivo</span>}
+                  </p>
                   <p className="text-caption text-stone mt-xs">{ACCOUNT_TYPE_LABELS[account.type] ?? account.type}{account.institution ? ` · ${account.institution}` : ""}</p>
-                  <p className="text-caption text-stone mt-xs">{share.toFixed(1)}% sobre liquidez total · Incluida en patrimonio neto</p>
+                  <p className="text-caption text-stone mt-xs">{share.toFixed(1)}% sobre liquidez total · {account.is_liability ? "Resta del patrimonio neto" : "Incluida en patrimonio neto"}</p>
                 </div>
                 <div className="flex items-center gap-xl">
                   <div className="text-right">

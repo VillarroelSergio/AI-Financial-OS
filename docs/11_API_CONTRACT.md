@@ -851,6 +851,23 @@ Response: {
 }
 ```
 
+## Patrimonio (net_worth, INS-4)
+
+Servicios deterministas sin IA. Importes como string decimal. Snapshots solo se crean por acción explícita del usuario (cierre de mes asistido); nunca automáticos.
+
+```txt
+GET  /api/net-worth/balance-sheet?month=YYYY-MM
+GET  /api/net-worth/snapshots?from=YYYY-MM&to=YYYY-MM
+GET  /api/net-worth/snapshot-readiness?month=YYYY-MM
+POST /api/net-worth/snapshots            {month, force_partial: bool}
+```
+
+`GET /balance-sheet` → activos por clase (liquidez, remuneradas, efectivo de inversión, cartera, fondos, otros), pasivos por cuenta `is_liability`, `net_worth = total_assets − total_liabilities`, `net_worth_change` vs snapshot del mes anterior (o `null`), `portfolio_cost`/`portfolio_gain`.
+
+`GET /snapshot-readiness` → checklist derivada de la frescura de datos: `items[{key,label,status: ok|stale|missing,detail,cta_route}]`, `ready` (todos ok), `snapshot_exists`, `snapshot_state`.
+
+`POST /snapshots` → 201 con el snapshot; `data_state=complete` si todo está ok, `partial` (con `missing_items`) si `force_partial=true`. Idempotente por mes (DELETE+INSERT). **409** si faltan elementos y `force_partial=false`.
+
 ## Error format
 
 ```json

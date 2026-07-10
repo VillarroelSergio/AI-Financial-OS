@@ -1,6 +1,6 @@
 from collections.abc import Generator
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, event
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 from app.core.config import settings
@@ -10,6 +10,15 @@ engine = create_engine(
     connect_args={"check_same_thread": False},
 )
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
+
+@event.listens_for(Session, "after_commit")
+def _invalidate_insights_cache(_session: Session) -> None:
+    """D4: cualquier escritura (tx, cuentas, holdings, presupuestos, snapshots…)
+    invalida la caché de insights desde un único punto. Las lecturas no hacen
+    commit, así que no la tocan."""
+    from app.modules.insights import cache
+    cache.invalidate()
 
 
 class Base(DeclarativeBase):
@@ -30,6 +39,21 @@ def create_tables() -> None:
     Base.metadata.create_all(bind=engine)
     _migrate_transactions_scope()
     _migrate_household_bills_batch()
+    _migrate_account_liability()
+
+
+def _migrate_account_liability() -> None:
+    """D6: pasivo explícito en cuentas. Hipotecas → is_liability=1 por defecto."""
+    with engine.begin() as connection:
+        cols = {row[1] for row in connection.exec_driver_sql("PRAGMA table_info(accounts)")}
+        if not cols or "is_liability" in cols:
+            return
+        connection.exec_driver_sql(
+            "ALTER TABLE accounts ADD COLUMN is_liability BOOLEAN DEFAULT 0"
+        )
+        connection.exec_driver_sql(
+            "UPDATE accounts SET is_liability=1 WHERE type='mortgage'"
+        )
 
 
 def _migrate_investment_domain() -> None:
