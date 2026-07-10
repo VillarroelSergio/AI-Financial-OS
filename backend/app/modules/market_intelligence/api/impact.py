@@ -146,6 +146,7 @@ def _get_personal_data(db: Session) -> dict:
 
     return {
         "total_balance": total_balance,
+        "best_savings_rate": _best_savings_rate(db),
         "monthly_income": monthly_income,
         "monthly_expense": monthly_expense,
         "savings_rate": savings_rate,
@@ -159,6 +160,16 @@ def _get_personal_data(db: Session) -> dict:
     }
 
 
+def _best_savings_rate(db: Session) -> float | None:
+    """Mejor tipo remunerado vigente entre las cuentas de ahorro configuradas (INV-4).
+    None si el usuario no tiene ninguna → la comparativa 'Letras vs tu ahorro' se omite."""
+    from app.models.investment import SavingsAccountConfig
+    from app.modules.investments.savings_service import current_annual_rate
+
+    rates = [float(current_annual_rate(db, cfg)) for cfg in db.query(SavingsAccountConfig).all()]
+    return max(rates) if rates else None
+
+
 # ──────────────────────────────────────────────────────────────
 # MI data queries (DuckDB)
 # ──────────────────────────────────────────────────────────────
@@ -168,6 +179,9 @@ _MI_EMPTY = {
     "brent": None, "spain_10y": None, "germany_10y": None, "risk_premium_bps": None,
     "ipc_subyacente": None, "confianza_consumidor_spain": None, "index_avg_change_1y": None,
     "euribor_12m_year_ago": None, "brent_change_1y": None,
+    "pool_electrico": None, "pool_electrico_year_ago": None,
+    "letras_12m": None,
+    "ipc_alimentacion": None, "ipc_vivienda": None, "ipc_transporte": None,
 }
 
 
@@ -208,6 +222,12 @@ def _get_mi_data() -> dict:
         "index_avg_change_1y": index_avg,
         "euribor_12m_year_ago": macro_series.value_year_ago("euribor_12m"),
         "brent_change_1y": repository.get_price_change_1y("brent"),
+        "pool_electrico": macro_series.latest("precio_electricidad_spain"),
+        "pool_electrico_year_ago": macro_series.value_year_ago("precio_electricidad_spain"),
+        "letras_12m": macro_series.latest("letras_12m"),
+        "ipc_alimentacion": macro_series.latest("ipc_alimentacion"),
+        "ipc_vivienda": macro_series.latest("ipc_vivienda"),
+        "ipc_transporte": macro_series.latest("ipc_transporte"),
     }
 
 
@@ -251,6 +271,75 @@ def _build_comparatives(personal: dict, mi: dict) -> list[ImpactComparative]:
             signal=signal1,
             signal_text=text1,
             source_ids=["ipc_general"],
+        ))
+
+    # 1a. Inflación de TU cesta (Propuesta Nivel-1): IPC ponderado por tu gasto real por
+    # categoría vs el IPC general. Cada categoría con gasto Y subgrupo IPC disponible pondera
+    # con su subgrupo; el gasto restante (o sin subgrupo) se imputa al IPC general. Solo se
+    # muestra si hay gasto clasificado (si no, la cesta = IPC general y no aporta nada).
+    monthly_exp_total = personal.get("monthly_expense") or 0.0
+    _basket = [  # (gasto €/mes del bucket, IPC anual del subgrupo)
+        (personal.get("food_home_monthly") or 0.0, mi.get("ipc_alimentacion")),
+        (personal.get("home_monthly") or 0.0, mi.get("ipc_vivienda")),
+        (personal.get("transport_monthly") or 0.0, mi.get("ipc_transporte")),
+    ]
+    classified = sum(spend for spend, sub in _basket if sub is not None and spend > 0)
+    if monthly_exp_total > 0 and classified > 0:
+        if ipc is None:
+            signal1a, text1a, personal_infl = "no_data", _NO_DATA_TEXT, None
+        else:
+            # Media ponderada: subgrupos donde hay gasto+dato; el resto del gasto al IPC general.
+            weighted = sum(spend * sub for spend, sub in _basket if sub is not None and spend > 0)
+            rest = max(monthly_exp_total - classified, 0.0)
+            personal_infl = (weighted + rest * ipc) / monthly_exp_total
+            signal1a = compute_signal(personal_infl, ipc, higher_is_better=False)
+            if personal_infl > ipc:
+                text1a = f"Tu cesta sufre más inflación que la media ({_fmt(personal_infl)} vs {_fmt(ipc)})"
+            else:
+                text1a = f"Tu cesta inflaciona menos que la media ({_fmt(personal_infl)} vs {_fmt(ipc)})"
+            extra = monthly_exp_total * (personal_infl - ipc) / 100
+            if abs(extra) >= C.MIN_EUR_PER_MONTH_TO_SHOW:
+                verbo = "te cuesta" if extra > 0 else "te ahorra"
+                text1a += f" · {verbo} ~{abs(extra):,.0f} €/mes frente a la media"
+        comparatives.append(ImpactComparative(
+            id="basket_inflation",
+            title="La inflación de tu cesta",
+            description="IPC ponderado por tu gasto real en alimentación, vivienda y transporte frente al IPC general. Si tu cesta pesa más en categorías que suben, sufres más inflación que la media.",
+            market_value=ipc,
+            market_label=f"IPC General: {_fmt(ipc)}",
+            personal_value=personal_infl,
+            personal_label=f"Tu cesta: {_fmt(personal_infl)}",
+            signal=signal1a,
+            signal_text=text1a,
+            source_ids=["ipc_general", "ipc_alimentacion", "ipc_vivienda", "ipc_transporte"],
+        ))
+
+    # 1b. Letras vs tu ahorro remunerado (Propuesta ECO-2b — solo si tiene cuenta remunerada).
+    letras = mi.get("letras_12m")
+    my_rate = personal.get("best_savings_rate")
+    if my_rate is not None:
+        if letras is None:
+            signal1b, text1b = "no_data", _NO_DATA_TEXT
+        else:
+            signal1b = compute_signal(my_rate, letras, higher_is_better=True)
+            if my_rate >= letras:
+                text1b = "Tu cuenta remunerada renta más que las Letras 12M"
+            else:
+                text1b = "Las Letras 12M rentan más que tu cuenta remunerada"
+                gain = balance * (letras - my_rate) / 100
+                if gain / 12 >= C.MIN_EUR_PER_MONTH_TO_SHOW:
+                    text1b += f" · Cambiar a Letras rentaría ~{gain:,.0f} €/año sobre tu efectivo"
+        comparatives.append(ImpactComparative(
+            id="letras_vs_savings",
+            title="Letras del Tesoro vs tu ahorro",
+            description="Tipo marginal de la última subasta de Letras a 12 meses frente al tipo de tu cuenta remunerada. Las Letras son el producto de ahorro minorista de referencia en España.",
+            market_value=letras,
+            market_label=f"Letras 12M: {_fmt(letras)}",
+            personal_value=my_rate,
+            personal_label=f"Tu cuenta: {_fmt(my_rate)}",
+            signal=signal1b,
+            signal_text=text1b,
+            source_ids=["letras_12m"],
         ))
 
     # 2. Tipo BCE vs meses de liquidez (aplica si conocemos gastos)
@@ -428,6 +517,39 @@ def _build_comparatives(personal: dict, mi: dict) -> list[ImpactComparative]:
             signal=signal7b,
             signal_text=text7b,
             source_ids=["brent"],
+        ))
+
+    # 7c. Luz: pool eléctrico vs tu gasto en Casa (Propuesta ECO-2b — el dato real del pool
+    # sustituye al proxy Brent de 7b para electricidad). Degrada a no_data hasta que haya
+    # histórico suficiente para la variación interanual.
+    pool = mi.get("pool_electrico")
+    pool_ya = mi.get("pool_electrico_year_ago")
+    if home > 0:
+        pool_yoy = ((pool - pool_ya) / pool_ya * 100) if pool is not None and pool_ya not in (None, 0) else None
+        if pool is None:
+            signal7c, text7c = "no_data", _NO_DATA_TEXT
+        elif pool_yoy is None:
+            signal7c = "neutral"
+            text7c = f"Pool eléctrico en {pool:,.0f} €/MWh — sin histórico aún para la variación interanual"
+        elif pool_yoy > C.ENERGY_YOY_UP:
+            signal7c = "warning"
+            text7c = f"El pool eléctrico sube {_fmt(pool_yoy, '%', 1)} interanual — presión sobre tu factura de luz"
+        elif pool_yoy < C.ENERGY_YOY_DOWN:
+            signal7c = "positive"
+            text7c = f"El pool eléctrico baja {_fmt(abs(pool_yoy), '%', 1)} interanual — alivio en tu factura de luz"
+        else:
+            signal7c, text7c = "neutral", "Precio del pool eléctrico estable en el último año"
+        comparatives.append(ImpactComparative(
+            id="electricity_pool_vs_home",
+            title="Luz: pool eléctrico vs tu gasto en Casa",
+            description="Precio medio mensual del mercado spot eléctrico (pool mayorista) frente a tu gasto en el hogar. El pool es el componente que más mueve la factura de la luz.",
+            market_value=pool,
+            market_label=f"Pool eléctrico: {_fmt(pool, ' €/MWh', 0)}",
+            personal_value=home,
+            personal_label=f"Casa/mes: {_fmt(home, ' €', 0)}",
+            signal=signal7c,
+            signal_text=text7c,
+            source_ids=["precio_electricidad_spain"],
         ))
 
     # 8. Prima de riesgo España (informativo)

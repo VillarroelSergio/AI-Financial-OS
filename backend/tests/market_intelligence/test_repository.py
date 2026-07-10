@@ -1,7 +1,7 @@
+import sqlite3
 from datetime import datetime, timezone
 from unittest.mock import patch
 
-import duckdb
 import pytest
 
 from app.modules.market_intelligence.catalog.schemas import CatalogIndicator
@@ -17,17 +17,15 @@ from app.modules.market_intelligence.storage.migrations import run_migrations
 
 @pytest.fixture
 def in_memory_conn():
-    c = duckdb.connect(":memory:")
+    c = sqlite3.connect(":memory:", detect_types=sqlite3.PARSE_DECLTYPES, isolation_level=None)
     run_migrations(c)
     yield c
     c.close()
 
 
 @pytest.fixture(autouse=True)
-def patch_duckdb(in_memory_conn):
-    with patch("app.modules.market_intelligence.storage.repository.get_duckdb", return_value=in_memory_conn):
-        import app.modules.market_intelligence.storage.repository as repo
-        repo._migrations_run = True
+def patch_conn(in_memory_conn):
+    with patch("app.modules.market_intelligence.storage.repository.get_conn", return_value=in_memory_conn):
         yield
 
 

@@ -1,8 +1,8 @@
-"""ECO-5: estado de ingesta por item y job de retención (DuckDB en memoria)."""
+"""ECO-5: estado de ingesta por item y job de retención (SQLite en memoria, ECO-3b)."""
+import sqlite3
 from datetime import datetime, timezone
 from unittest.mock import patch
 
-import duckdb
 import pytest
 
 from app.modules.market_intelligence.storage import repository
@@ -11,10 +11,9 @@ from app.modules.market_intelligence.storage.migrations import run_migrations
 
 @pytest.fixture
 def conn():
-    c = duckdb.connect(":memory:")
+    c = sqlite3.connect(":memory:", detect_types=sqlite3.PARSE_DECLTYPES, isolation_level=None)
     run_migrations(c)
-    with patch("app.modules.market_intelligence.storage.repository.get_duckdb", return_value=c):
-        repository._migrations_run = True
+    with patch("app.modules.market_intelligence.storage.repository.get_conn", return_value=c):
         yield c
     c.close()
 

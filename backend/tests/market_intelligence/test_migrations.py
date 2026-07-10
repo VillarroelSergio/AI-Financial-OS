@@ -1,4 +1,5 @@
-import duckdb
+import sqlite3
+
 import pytest
 
 from app.modules.market_intelligence.storage.migrations import run_migrations
@@ -26,14 +27,20 @@ EXPECTED_TABLES = [
 
 @pytest.fixture
 def conn():
-    c = duckdb.connect(":memory:")
+    c = sqlite3.connect(":memory:")
     yield c
     c.close()
 
 
+def _tables(conn) -> set[str]:
+    return {r[0] for r in conn.execute(
+        "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'"
+    ).fetchall()}
+
+
 def test_migrations_create_all_tables(conn):
     run_migrations(conn)
-    existing = {row[0] for row in conn.execute("SHOW TABLES").fetchall()}
+    existing = _tables(conn)
     for table in EXPECTED_TABLES:
         assert table in existing, f"Missing table: {table}"
 
@@ -41,5 +48,4 @@ def test_migrations_create_all_tables(conn):
 def test_migrations_are_idempotent(conn):
     run_migrations(conn)
     run_migrations(conn)  # segunda vez no debe fallar
-    existing = {row[0] for row in conn.execute("SHOW TABLES").fetchall()}
-    assert len(existing) == len(EXPECTED_TABLES)
+    assert len(_tables(conn)) == len(EXPECTED_TABLES)

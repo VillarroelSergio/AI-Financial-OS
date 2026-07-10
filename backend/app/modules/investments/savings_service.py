@@ -65,6 +65,18 @@ def _annual_rate_for(db: Session | None, inputs: SavingsInputs, on_day: date) ->
     return inputs.fixed_rate if inputs.fixed_rate is not None else Decimal("0")
 
 
+def current_annual_rate(db: Session | None, config, on_day: date | None = None) -> Decimal:
+    """Tipo anual vigente hoy de una SavingsAccountConfig (seam para consumidores externos,
+    p.ej. la comparativa 'Letras vs tu ahorro' de Market Intelligence)."""
+    on_day = on_day or date.today()
+    inputs = SavingsInputs(
+        opened_at=config.opened_at or on_day, start_balance=Decimal("0"),
+        rate_source=config.rate_source, fixed_rate=config.fixed_rate,
+        spread_bps=config.spread_bps, account_id=config.account_id,
+    )
+    return _annual_rate_for(db, inputs, on_day)
+
+
 def _contributions_by_month(db: Session | None, inputs: SavingsInputs) -> dict[str, Decimal]:
     """Suma neta de transfers por mes 'YYYY-MM' sobre la Account (spec §2.2).
     El signo del importe marca aportación (+) o retirada (−)."""

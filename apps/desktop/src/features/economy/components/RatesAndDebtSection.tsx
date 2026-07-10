@@ -25,8 +25,8 @@ interface Props {
 function Tile({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
     <div className="rounded-xl border border-hairline-dark bg-surface-elevated p-4 flex flex-col gap-1" title={hint}>
-      <span className="text-caption text-stone truncate">{label}</span>
-      <span className="text-xl font-semibold tabular-nums text-on-dark">{value}</span>
+      <span className="text-sm text-stone truncate">{label}</span>
+      <span className="text-2xl font-semibold tabular-nums text-on-dark">{value}</span>
     </div>
   );
 }
@@ -51,7 +51,7 @@ export default function RatesAndDebtSection({ bonds, forex }: Props) {
 
   return (
     <section className="premium-card rounded-lg p-5 space-y-4">
-      <h2 className="text-caption text-mute uppercase tracking-widest">Tipos y deuda</h2>
+      <h2 className="text-sm text-mute uppercase tracking-widest">Tipos y deuda</h2>
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {curve.length >= 2 && (
           <div className="rounded-xl border border-hairline-dark bg-surface-elevated p-4">

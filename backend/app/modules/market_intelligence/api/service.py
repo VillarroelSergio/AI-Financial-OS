@@ -1,10 +1,9 @@
-"""Market Intelligence API service — lee desde DuckDB, nunca llama providers."""
+"""Market Intelligence API service — lee desde SQLite (ECO-3b), nunca llama providers."""
 from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
 
-from app.core.duckdb import is_in_memory
 from app.modules.market_intelligence.api.schemas import (
     AiDatasheetOut,
     BondSnapshotOut,
@@ -26,14 +25,9 @@ from app.modules.market_intelligence.storage import repository
 
 logger = logging.getLogger("market_intelligence.api")
 
-_MEMORY_WARNING = (
-    "Base analítica bloqueada por otro proceso: los datos de mercado no persisten "
-    "en esta sesión. Cierra procesos duplicados del backend y reinicia la app."
-)
-
-
 def _storage_warnings() -> list[str]:
-    return [_MEMORY_WARNING] if is_in_memory() else []
+    # ECO-3b: SQLite WAL no cae a memoria (no hay mono-escritor). Sin aviso de almacenamiento.
+    return []
 
 _catalog = CatalogLoader()
 _INDEX_CATALOG_IDS = {
@@ -194,22 +188,26 @@ def get_news_snapshot(limit: int = 20) -> NewsSnapshotOut:
 # ── ECO-6: overview agregado ──────────────────────────────────────────────────
 # Agrupación temática y "snapshot global" vivían en EconomyPage.tsx; se resuelven aquí
 # para que la UI reciba datos ya agrupados (DoD: lógica temática fuera del frontend).
+# Propuesta §3: temas que responden preguntas del usuario (no listas de series).
+# policy_rate ya no cae en "Otros" (fix §1). El agrupado vive aquí, en backend (ECO-6).
 _THEME_BY_SUBCATEGORY: dict[str, str] = {
-    "inflation": "Inflación",
-    "interest_rates": "Tipos de interés",
-    "employment": "Empleo",
-    "gdp": "Actividad",
-    "industrial": "Actividad",
-    "consumption": "Actividad",
-    "housing": "Actividad",
-    "pmi": "Confianza y PMI",
-    "sentiment": "Confianza y PMI",
-    "fiscal": "Cuentas públicas",
-    "monetary": "Cuentas públicas",
+    "inflation": "Precios y consumo",
+    "consumption": "Precios y consumo",
+    "sentiment": "Precios y consumo",
+    "housing": "Vivienda",
+    "interest_rates": "Ahorro y tipos",
+    "policy_rate": "Ahorro y tipos",
+    "monetary": "Ahorro y tipos",
+    "employment": "Empleo y salarios",
+    "energy": "Energía",
+    "gdp": "Actividad y cuentas públicas",
+    "industrial": "Actividad y cuentas públicas",
+    "fiscal": "Actividad y cuentas públicas",
+    "pmi": "Actividad y cuentas públicas",
 }
 _THEME_ORDER = [
-    "Inflación", "Tipos de interés", "Empleo", "Actividad",
-    "Confianza y PMI", "Cuentas públicas", "Otros",
+    "Precios y consumo", "Vivienda", "Ahorro y tipos", "Empleo y salarios",
+    "Energía", "Actividad y cuentas públicas", "Otros",
 ]
 _GLOBAL_PICK = ["ipc_general", "euribor_12m", "tipo_bce", "fed_funds_rate"]
 

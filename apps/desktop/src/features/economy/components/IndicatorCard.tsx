@@ -101,12 +101,12 @@ export default function IndicatorCard({ indicator, size = "default" }: Props) {
     >
       <div className="flex items-center justify-between gap-2">
         <span
-          className={`text-stone truncate ${size === "large" ? "text-body-sm" : "text-caption"}`}
+          className={`text-stone truncate ${size === "large" ? "text-base" : "text-sm"}`}
         >
           {title}
         </span>
         <span
-          className={`text-[10px] ${qualityColor} flex-shrink-0`}
+          className={`text-xs ${qualityColor} flex-shrink-0`}
           title={`Calidad: ${(indicator.quality_score * 100).toFixed(0)}%`}
         >
           ●
@@ -115,21 +115,27 @@ export default function IndicatorCard({ indicator, size = "default" }: Props) {
 
       <div
         className={`font-semibold tabular-nums flex items-center gap-2 flex-wrap ${
-          size === "large" ? "text-2xl" : "text-xl"
+          size === "large" ? "text-3xl" : "text-2xl"
         } ${isUnavailable ? "text-stone" : "text-on-dark"}`}
       >
         {valueStr}
         {hasDelta && (
           <span
-            className="text-[11px] font-medium text-stone tabular-nums"
+            className={`inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-sm font-semibold tabular-nums ${
+              delta > 0
+                ? "bg-emerald-500/15 text-emerald-400"
+                : delta < 0
+                ? "bg-rose-500/15 text-rose-400"
+                : "bg-white/10 text-stone"
+            }`}
             title={`Variación vs periodo anterior (${formatValue(indicator.previous_value, indicator.unit)})`}
           >
-            {delta > 0 ? "▲" : delta < 0 ? "▼" : "＝"}{" "}
+            {delta > 0 ? "▲" : delta < 0 ? "▼" : "＝"}
             {Math.abs(delta).toLocaleString("es-ES", { maximumFractionDigits: 2 })}
           </span>
         )}
         {indicator.data_status && indicator.data_status !== "ok" && (
-          <span className="rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide bg-white/10 text-stone">
+          <span className="rounded px-1.5 py-0.5 text-xs font-medium uppercase tracking-wide bg-white/10 text-stone">
             {STATUS_LABELS[indicator.data_status] ?? indicator.data_status}
           </span>
         )}
@@ -138,10 +144,10 @@ export default function IndicatorCard({ indicator, size = "default" }: Props) {
       {history.length >= 3 && <Sparkline values={history.map((p) => p.value)} />}
 
       {indicator.period && (
-        <div className="text-[10px] text-mute mt-auto pt-1 border-t border-hairline-dark flex items-center gap-2">
+        <div className="text-xs text-mute mt-auto pt-1 border-t border-hairline-dark flex items-center gap-2">
           <span>{indicator.period}</span>
           {stale && (
-            <span className="rounded px-1 py-px text-[9px] font-medium uppercase tracking-wide bg-amber-400/10 text-amber-400">
+            <span className="rounded px-1 py-px text-[10px] font-medium uppercase tracking-wide bg-amber-400/10 text-amber-400">
               Antiguo
             </span>
           )}

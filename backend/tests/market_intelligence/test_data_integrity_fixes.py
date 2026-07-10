@@ -1,7 +1,7 @@
 """Tests de integridad de datos MI: tablas reales, guard de persistencia, purga y unidades FRED."""
+import sqlite3
 from datetime import datetime, timezone
 
-import duckdb
 import pytest
 
 from app.modules.market_intelligence.api.impact import _get_mi_data
@@ -13,11 +13,11 @@ from app.modules.market_intelligence.storage.migrations import run_migrations
 
 @pytest.fixture
 def duck(monkeypatch):
-    conn = duckdb.connect(":memory:")
+    # detect_types → la columna DATE de precios históricos vuelve como date (get_price_change_1y).
+    conn = sqlite3.connect(":memory:", detect_types=sqlite3.PARSE_DECLTYPES, isolation_level=None)
     run_migrations(conn)
-    # ECO-4: impact.py ya no toca get_duckdb; lee vía repository/macro_series (única puerta).
-    monkeypatch.setattr("app.modules.market_intelligence.storage.repository.get_duckdb", lambda: conn)
-    monkeypatch.setattr(repository, "_migrations_run", True)
+    # ECO-4: impact.py ya no toca la conexión; lee vía repository/macro_series (única puerta).
+    monkeypatch.setattr("app.modules.market_intelligence.storage.repository.get_conn", lambda: conn)
     yield conn
     conn.close()
 

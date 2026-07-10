@@ -218,6 +218,21 @@
   description: "Índice de Comercio al por Menor, general (variación anual)"
   provider_primary: ine
 
+# ECO-2b (Propuesta): pool eléctrico spot (media mensual), cruce con gasto en suministros.
+- id: precio_electricidad_spain
+  name: "Precio pool eléctrico"
+  category: macro
+  subcategory: energy
+  country: ES
+  region: Spain
+  frequency: monthly
+  priority: medium
+  dashboard: true
+  ai: true
+  unit: "€/MWh"
+  description: "Precio medio mensual del mercado spot eléctrico (pool mayorista OMIE)"
+  provider_primary: ree
+
 - id: euribor_3m
   name: "Euribor 3 meses"
   category: macro
@@ -252,6 +267,93 @@
   description: "Tipo de referencia hipotecas anuales"
   # ECO-2: ver euribor_3m — servido por el BCE (mensual), no por bde.
   provider_primary: ecb
+
+# ECO-2b (Propuesta): subastas del Tesoro. Letras = producto de ahorro minorista de
+# referencia (cruza con "Letras vs tu ahorro"). Bonos/Obligaciones: última subasta (plazo
+# rotativo); el tramo largo estable ya lo da el bono 10Y de mercado secundario.
+- id: letras_3m
+  name: "Letras del Tesoro 3M"
+  category: macro
+  subcategory: interest_rates
+  country: ES
+  region: Spain
+  frequency: monthly
+  priority: medium
+  dashboard: true
+  ai: true
+  unit: "%"
+  description: "Tipo de interés marginal de la última subasta de Letras a 3 meses"
+  provider_primary: tesoro
+
+- id: letras_6m
+  name: "Letras del Tesoro 6M"
+  category: macro
+  subcategory: interest_rates
+  country: ES
+  region: Spain
+  frequency: monthly
+  priority: medium
+  dashboard: true
+  ai: true
+  unit: "%"
+  description: "Tipo de interés marginal de la última subasta de Letras a 6 meses"
+  provider_primary: tesoro
+
+- id: letras_9m
+  name: "Letras del Tesoro 9M"
+  category: macro
+  subcategory: interest_rates
+  country: ES
+  region: Spain
+  frequency: monthly
+  priority: low
+  dashboard: true
+  ai: true
+  unit: "%"
+  description: "Tipo de interés marginal de la última subasta de Letras a 9 meses"
+  provider_primary: tesoro
+
+- id: letras_12m
+  name: "Letras del Tesoro 12M"
+  category: macro
+  subcategory: interest_rates
+  country: ES
+  region: Spain
+  frequency: monthly
+  priority: high
+  dashboard: true
+  ai: true
+  unit: "%"
+  description: "Tipo de interés marginal de la última subasta de Letras a 12 meses"
+  provider_primary: tesoro
+
+- id: bono_estado_subasta
+  name: "Bono del Estado (última subasta)"
+  category: macro
+  subcategory: interest_rates
+  country: ES
+  region: Spain
+  frequency: monthly
+  priority: low
+  dashboard: true
+  ai: true
+  unit: "%"
+  description: "Tipo marginal de la última subasta de Bonos del Estado (plazo rotativo, en el nombre)"
+  provider_primary: tesoro
+
+- id: obligacion_estado_subasta
+  name: "Obligación del Estado (última subasta)"
+  category: macro
+  subcategory: interest_rates
+  country: ES
+  region: Spain
+  frequency: monthly
+  priority: low
+  dashboard: true
+  ai: true
+  unit: "%"
+  description: "Tipo marginal de la última subasta de Obligaciones del Estado (plazo rotativo, en el nombre)"
+  provider_primary: tesoro
 
 - id: tipo_bce
   name: "Tipo de interés BCE"

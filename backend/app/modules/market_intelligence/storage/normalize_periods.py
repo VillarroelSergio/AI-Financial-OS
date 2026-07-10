@@ -14,24 +14,18 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from app.core.config import settings
-from app.core.duckdb import is_in_memory
 from app.modules.market_intelligence.storage import repository
 
 
 def main() -> int:
-    db_path = Path(settings.DUCKDB_PATH)
+    db_path = Path(settings.MI_SQLITE_PATH)
     if db_path.exists():
         stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
         backup = db_path.with_suffix(db_path.suffix + f".bak-{stamp}")
         shutil.copy2(db_path, backup)
         print(f"Backup: {backup}")
     else:
-        print(f"Aviso: no existe {db_path} (se creará en memoria).")
-
-    if is_in_memory():
-        print("ERROR: DuckDB en memoria (otro proceso tiene el lock). Cierra el "
-              "backend y reintenta — nada se normalizó de forma persistente.")
-        return 1
+        print(f"Aviso: no existe {db_path}.")
 
     changed = repository.normalize_stored_periods()
     print(f"Periodos normalizados: macro={changed['macro_observations']}, "

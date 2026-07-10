@@ -12,22 +12,16 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from app.core.config import settings
-from app.core.duckdb import is_in_memory
 from app.modules.market_intelligence.storage import repository
 
 
 def main() -> int:
-    db_path = Path(settings.DUCKDB_PATH)
+    db_path = Path(settings.MI_SQLITE_PATH)
     if db_path.exists():
         stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
         backup = db_path.with_suffix(db_path.suffix + f".bak-{stamp}")
         shutil.copy2(db_path, backup)
         print(f"Backup: {backup}")
-
-    if is_in_memory():
-        print("ERROR: DuckDB en memoria (otro proceso tiene el lock). Cierra el "
-              "backend y reintenta — nada se podó de forma persistente.")
-        return 1
 
     deleted = repository.apply_retention()
     print(f"Retención aplicada: macro/normalized={deleted['macro_rows']}, "

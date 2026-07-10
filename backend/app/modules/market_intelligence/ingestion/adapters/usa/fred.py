@@ -97,7 +97,12 @@ _CATALOG_TO_FRED_SERIES: dict[str, tuple[str, str]] = {
     "us_5y":  ("DGS5",  "5Y"),
     "us_10y": ("DGS10", "10Y"),
     "us_30y": ("DGS30", "30Y"),
+    # Deuda soberana euro vía FRED (OCDE): ecb no la sirve y bde la baja como macro.
+    "spain_10y":   ("IRLTLT01ESM156N", "10Y"),
+    "germany_10y": ("IRLTLT01DEM156N", "10Y"),
 }
+# País por catalog id para no etiquetar como US los bonos europeos.
+_YIELD_COUNTRY: dict[str, str] = {"spain_10y": "ES", "germany_10y": "DE"}
 
 
 def _metadata() -> ProviderMetadata:
@@ -162,12 +167,14 @@ def _parse_fred_csv(
     return records[-n:]
 
 
-def _parse_yield_csv(text: str, series_id: str, maturity: str, source_url: str) -> list[YieldCurvePoint]:
+def _parse_yield_csv(
+    text: str, series_id: str, maturity: str, source_url: str, country: str = "US"
+) -> list[YieldCurvePoint]:
     reader = csv.DictReader(io.StringIO(text))
     field = series_id if series_id in (reader.fieldnames or []) else "VALUE"
     last: YieldCurvePoint | None = None
     for row in reader:
-        date_str = row.get("DATE", "")
+        date_str = row.get("DATE") or row.get("observation_date") or ""
         raw = row.get(field, "")
         if not raw or raw.strip() == ".":
             continue
@@ -179,13 +186,13 @@ def _parse_yield_csv(text: str, series_id: str, maturity: str, source_url: str) 
             provider="FRED",
             source=source_url,
             retrieved_at=datetime.now(timezone.utc),
-            country="US",
-            region="USA",
+            country=country,
+            region="USA" if country == "US" else "Europe",
             confidence_score=0.95,
             maturity=maturity,
             yield_value=value,
             date=datetime.fromisoformat(date_str).date() if date_str else None,
-            currency="USD",
+            currency="USD" if country == "US" else "EUR",
         )
     return [last] if last else []
 
@@ -249,7 +256,10 @@ class FREDAdapter(BaseAdapter):
                 response = requests.get(url, headers=_HEADERS, timeout=10)
                 response.raise_for_status()
                 raw_sample = {"yield_preview": response.text[:500]}
-                records.extend(_parse_yield_csv(response.text, series_id, maturity, url))
+                records.extend(_parse_yield_csv(
+                    response.text, series_id, maturity, url,
+                    country=_YIELD_COUNTRY.get(indicator_id, "US"),
+                ))
             except Exception as exc:
                 errors.append(f"{series_id}: {exc}")
 

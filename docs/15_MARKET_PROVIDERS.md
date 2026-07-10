@@ -20,7 +20,7 @@ Catalog YAML
   -> ProviderOrchestrator
   -> adapters por region/proveedor
   -> QualityEngine
-  -> Repository DuckDB (`mi_*`)
+  -> Repository SQLite (`mi_*`)
   -> API `/api/market-intelligence/*`
   -> UI y AI datasheet
 ```
@@ -85,20 +85,18 @@ Checks principales:
 
 ## Persistencia
 
-Market Intelligence persiste en DuckDB mediante `app.core.duckdb.get_duckdb()`.
+Market Intelligence persiste en **SQLite WAL** (`data/market_intelligence.db`) mediante
+`app.modules.market_intelligence.storage.db.get_conn()` (ECO-3b; antes DuckDB).
 Las tablas del modulo usan prefijo `mi_*`.
 
 Reglas importantes:
 
-- No usar `duckdb.connect()` directo fuera del singleton.
+- Usar `get_conn()` (conexion unica compartida, WAL, autocommit) — no abrir `sqlite3.connect()` directo.
 - Usar escrituras idempotentes con checksums cuando aplique.
-- Para lecturas latest, preferir ventanas con `QUALIFY ROW_NUMBER()`.
+- Para lecturas latest, usar subconsulta `ROW_NUMBER() OVER (...)` con `rn = 1` (SQLite no tiene `QUALIFY`).
 - No consultar proveedores live desde la IA; la IA consume datasheets y endpoints backend.
-- **DuckDB solo admite un proceso escritor.** Si el archivo esta bloqueado por otro
-  proceso, `get_duckdb()` cae a una BD en memoria: la ingesta no persiste y las
-  lecturas ven una BD vacia. `is_in_memory()` expone ese estado y tanto
-  `ingest-status` (`storage`/`storage_warning`) como los snapshots (warning) lo
-  avisan al usuario. Evita arrancar dos backends a la vez.
+- WAL admite lectores concurrentes con el escritor, asi que no hay fallback a memoria ni
+  aviso de almacenamiento: `ingest-status` reporta siempre `storage: file`.
 
 Notas de adapters:
 

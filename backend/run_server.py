@@ -31,6 +31,7 @@ def _configure_production_env() -> None:
     os.environ.setdefault("APP_ENV", "production")
     os.environ.setdefault("DATABASE_URL", f"sqlite:///{(data_dir / 'financial.db').as_posix()}")
     os.environ.setdefault("DUCKDB_PATH", str(data_dir / "analytics.duckdb"))
+    os.environ.setdefault("MI_SQLITE_PATH", str(data_dir / "market_intelligence.db"))
 
 
 def main() -> None:

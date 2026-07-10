@@ -49,13 +49,8 @@ def test_failure_error_includes_reason_per_provider():
     assert "secondary: no disponible" in result.adapter_result.error
 
 
-def test_ingest_status_reports_storage_mode(monkeypatch):
+def test_ingest_status_reports_storage_mode():
+    # ECO-3b: SQLite WAL, sin fallback a memoria → siempre "file", sin aviso.
     status = get_ingest_status()
-    assert status["storage"] in ("file", "memory")
-
-    monkeypatch.setattr(
-        "app.modules.market_intelligence.ingestion.startup.is_in_memory", lambda: True
-    )
-    status = get_ingest_status()
-    assert status["storage"] == "memory"
-    assert "no persisten" in status["storage_warning"]
+    assert status["storage"] == "file"
+    assert "storage_warning" not in status

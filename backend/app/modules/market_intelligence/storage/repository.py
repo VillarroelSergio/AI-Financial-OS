@@ -9,7 +9,6 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from app.core.duckdb import get_duckdb
 from app.modules.market_intelligence.catalog.loader import CatalogLoader
 from app.modules.market_intelligence.ingestion.models import (
     BondYield,
@@ -22,11 +21,10 @@ from app.modules.market_intelligence.ingestion.models import (
 )
 from app.modules.market_intelligence.ingestion.orchestrator import CatalogFetchResult
 from app.modules.market_intelligence.quality.schemas import QualityResult
-from app.modules.market_intelligence.storage.migrations import run_migrations
+from app.modules.market_intelligence.storage.db import get_conn
 
 logger = logging.getLogger("market_intelligence.repository")
 
-_migrations_run = False
 _catalog = CatalogLoader()
 
 # Tipos de registro admisibles por categoría de catálogo. Evita que un fallback
@@ -106,12 +104,7 @@ def _record_matches_catalog(catalog_item_id: str, record) -> bool:
 
 
 def _conn():
-    global _migrations_run
-    c = get_duckdb()
-    if not _migrations_run:
-        run_migrations(c)
-        _migrations_run = True
-    return c
+    return get_conn()
 
 
 def _now() -> datetime:
@@ -493,8 +486,11 @@ def get_latest_macro_all() -> list[dict]:
     conn = _conn()
     rows = conn.execute("""
         SELECT catalog_item_id, indicator_id, country, period, value, unit, provider_id, quality_score, retrieved_at
-        FROM mi_macro_observations
-        QUALIFY ROW_NUMBER() OVER (PARTITION BY catalog_item_id ORDER BY retrieved_at DESC) = 1
+        FROM (
+            SELECT catalog_item_id, indicator_id, country, period, value, unit, provider_id, quality_score, retrieved_at,
+                   ROW_NUMBER() OVER (PARTITION BY catalog_item_id ORDER BY retrieved_at DESC) rn
+            FROM mi_macro_observations
+        ) WHERE rn = 1
     """).fetchall()
     cols = ["catalog_item_id", "indicator_id", "country", "period", "value", "unit",
             "provider_id", "quality_score", "retrieved_at"]
@@ -509,10 +505,12 @@ def get_macro_history(max_points: int = 13) -> dict[str, list[tuple[str, float]]
     """
     conn = _conn()
     rows = conn.execute("""
-        SELECT catalog_item_id, period, value
-        FROM mi_macro_observations
-        WHERE value IS NOT NULL AND period IS NOT NULL AND period != ''
-        QUALIFY ROW_NUMBER() OVER (PARTITION BY catalog_item_id, period ORDER BY retrieved_at DESC) = 1
+        SELECT catalog_item_id, period, value FROM (
+            SELECT catalog_item_id, period, value,
+                   ROW_NUMBER() OVER (PARTITION BY catalog_item_id, period ORDER BY retrieved_at DESC) rn
+            FROM mi_macro_observations
+            WHERE value IS NOT NULL AND period IS NOT NULL AND period != ''
+        ) WHERE rn = 1
         ORDER BY catalog_item_id, period
     """).fetchall()
     history: dict[str, list[tuple[str, float]]] = {}
@@ -525,8 +523,11 @@ def get_latest_quotes() -> list[dict]:
     conn = _conn()
     rows = conn.execute("""
         SELECT catalog_item_id, symbol, asset_type, price, change_pct, currency, observed_at, provider_id, quality_score
-        FROM mi_market_quotes
-        QUALIFY ROW_NUMBER() OVER (PARTITION BY catalog_item_id ORDER BY observed_at DESC) = 1
+        FROM (
+            SELECT catalog_item_id, symbol, asset_type, price, change_pct, currency, observed_at, provider_id, quality_score,
+                   ROW_NUMBER() OVER (PARTITION BY catalog_item_id ORDER BY observed_at DESC) rn
+            FROM mi_market_quotes
+        ) WHERE rn = 1
     """).fetchall()
     cols = ["catalog_item_id", "symbol", "asset_type", "price", "change_pct",
             "currency", "observed_at", "provider_id", "quality_score"]
@@ -537,8 +538,11 @@ def get_latest_forex() -> list[dict]:
     conn = _conn()
     rows = conn.execute("""
         SELECT catalog_item_id, base_currency, quote_currency, rate, date, provider_id, quality_score
-        FROM mi_currency_rates
-        QUALIFY ROW_NUMBER() OVER (PARTITION BY catalog_item_id ORDER BY date DESC) = 1
+        FROM (
+            SELECT catalog_item_id, base_currency, quote_currency, rate, date, provider_id, quality_score,
+                   ROW_NUMBER() OVER (PARTITION BY catalog_item_id ORDER BY date DESC) rn
+            FROM mi_currency_rates
+        ) WHERE rn = 1
     """).fetchall()
     cols = ["catalog_item_id", "base_currency", "quote_currency", "rate", "date",
             "provider_id", "quality_score"]
@@ -549,8 +553,11 @@ def get_latest_bonds() -> list[dict]:
     conn = _conn()
     rows = conn.execute("""
         SELECT catalog_item_id, country, maturity, yield_value, date, provider_id, quality_score
-        FROM mi_bond_yields
-        QUALIFY ROW_NUMBER() OVER (PARTITION BY catalog_item_id ORDER BY date DESC) = 1
+        FROM (
+            SELECT catalog_item_id, country, maturity, yield_value, date, provider_id, quality_score,
+                   ROW_NUMBER() OVER (PARTITION BY catalog_item_id ORDER BY date DESC) rn
+            FROM mi_bond_yields
+        ) WHERE rn = 1
     """).fetchall()
     cols = ["catalog_item_id", "country", "maturity", "yield_value", "date",
             "provider_id", "quality_score"]
@@ -561,8 +568,11 @@ def get_latest_commodities() -> list[dict]:
     conn = _conn()
     rows = conn.execute("""
         SELECT catalog_item_id, symbol, name, price, unit, currency, observed_at, provider_id, quality_score
-        FROM mi_commodities
-        QUALIFY ROW_NUMBER() OVER (PARTITION BY catalog_item_id ORDER BY observed_at DESC) = 1
+        FROM (
+            SELECT catalog_item_id, symbol, name, price, unit, currency, observed_at, provider_id, quality_score,
+                   ROW_NUMBER() OVER (PARTITION BY catalog_item_id ORDER BY observed_at DESC) rn
+            FROM mi_commodities
+        ) WHERE rn = 1
     """).fetchall()
     cols = ["catalog_item_id", "symbol", "name", "price", "unit", "currency",
             "observed_at", "provider_id", "quality_score"]
@@ -623,18 +633,18 @@ def apply_retention(now: datetime | None = None) -> dict[str, int]:
             continue
         cutoff_year = now.year - years
         for table in ("mi_macro_observations", "mi_normalized_records"):
-            # ECO-5: DuckDB .rowcount es poco fiable en DELETE; contamos con RETURNING.
-            macro_deleted += len(conn.execute(
+            # SQLite (ECO-3b): .rowcount es fiable en DELETE; GLOB reemplaza a regexp_matches.
+            macro_deleted += conn.execute(
                 f"DELETE FROM {table} WHERE catalog_item_id = ? "
-                f"AND regexp_matches(period, '^[0-9]{{4}}') "
-                f"AND CAST(substr(period, 1, 4) AS INTEGER) < ? RETURNING 1",
+                f"AND period GLOB '[0-9][0-9][0-9][0-9]*' "
+                f"AND CAST(substr(period, 1, 4) AS INTEGER) < ?",
                 [item.id, cutoff_year],
-            ).fetchall())
+            ).rowcount
         cutoff_date = (now - timedelta(days=365 * years)).date()
-        price_deleted += len(conn.execute(
-            "DELETE FROM mi_historical_prices WHERE catalog_item_id = ? AND date < ? RETURNING 1",
+        price_deleted += conn.execute(
+            "DELETE FROM mi_historical_prices WHERE catalog_item_id = ? AND date < ?",
             [item.id, cutoff_date],
-        ).fetchall())
+        ).rowcount
     logger.info("apply_retention: macro/normalized=%d prices=%d", macro_deleted, price_deleted)
     return {"macro_rows": macro_deleted, "price_rows": price_deleted}
 

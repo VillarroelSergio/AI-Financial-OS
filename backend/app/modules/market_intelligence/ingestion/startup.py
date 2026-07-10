@@ -10,7 +10,6 @@ import time
 from datetime import datetime, timezone
 from threading import Lock, Thread
 
-from app.core.duckdb import is_in_memory
 from app.modules.market_intelligence.catalog.loader import CatalogLoader
 from app.modules.market_intelligence.ingestion import scheduler
 from app.modules.market_intelligence.ingestion.runner import run_ingestion
@@ -30,12 +29,7 @@ def get_ingest_status() -> dict:
         status = {"current": _status["current"], "last_run": _status["last_run"]}
     if ADAPTER_LOAD_ERRORS:
         status["adapter_load_errors"] = dict(ADAPTER_LOAD_ERRORS)
-    status["storage"] = "memory" if is_in_memory() else "file"
-    if status["storage"] == "memory":
-        status["storage_warning"] = (
-            "La base analítica está bloqueada por otro proceso; los datos de mercado "
-            "no persisten en esta sesión. Cierra procesos duplicados del backend y reinicia."
-        )
+    status["storage"] = "file"  # ECO-3b: SQLite WAL, sin fallback a memoria
     return status
 
 

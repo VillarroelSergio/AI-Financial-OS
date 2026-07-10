@@ -601,11 +601,17 @@ const mockIngestStatus = {
 
 // ECO-6: el mock replica el agrupado temático que ahora hace el backend.
 const MOCK_THEME: Record<string, string> = {
-  inflation: "Inflación", interest_rates: "Tipos de interés", employment: "Empleo",
-  gdp: "Actividad", industrial: "Actividad", consumption: "Actividad", housing: "Actividad",
-  pmi: "Confianza y PMI", sentiment: "Confianza y PMI", fiscal: "Cuentas públicas", monetary: "Cuentas públicas",
+  inflation: "Precios y consumo", consumption: "Precios y consumo", sentiment: "Precios y consumo",
+  housing: "Vivienda",
+  interest_rates: "Ahorro y tipos", policy_rate: "Ahorro y tipos", monetary: "Ahorro y tipos",
+  employment: "Empleo y salarios", energy: "Energía",
+  gdp: "Actividad y cuentas públicas", industrial: "Actividad y cuentas públicas",
+  fiscal: "Actividad y cuentas públicas", pmi: "Actividad y cuentas públicas",
 };
-const MOCK_THEME_ORDER = ["Inflación", "Tipos de interés", "Empleo", "Actividad", "Confianza y PMI", "Cuentas públicas", "Otros"];
+const MOCK_THEME_ORDER = [
+  "Precios y consumo", "Vivienda", "Ahorro y tipos", "Empleo y salarios",
+  "Energía", "Actividad y cuentas públicas", "Otros",
+];
 function mockGroupByTheme(points: { subcategory?: string }[]) {
   const groups: Record<string, unknown[]> = {};
   for (const p of points) (groups[MOCK_THEME[p.subcategory ?? ""] ?? "Otros"] ??= []).push(p);
