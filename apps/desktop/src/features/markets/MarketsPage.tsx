@@ -29,7 +29,7 @@ export default function MarketsPage() {
   const [activeTab, setActiveTab] = useState<Tab>("indices");
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
-  const isIngesting = ingestStatus?.status === "running" || ingestStatus?.status === "idle";
+  const isIngesting = ingestStatus?.phase === "running";
 
   const ingestFailures = (categories: string[]) =>
     (ingestStatus?.results ?? []).filter((r) => !r.success && categories.includes(r.category));

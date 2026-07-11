@@ -7,6 +7,7 @@ from app.modules.market_intelligence.api import service
 from app.modules.market_intelligence.api.schemas import (
     AiDatasheetOut,
     BondSnapshotOut,
+    EconomyOverviewOut,
     ForexSnapshotOut,
     MacroSnapshotOut,
     MarketSnapshotOut,
@@ -23,10 +24,56 @@ def get_personal_impact(db: Session = Depends(get_db)):
     return compute_personal_impact(db)
 
 
+@router.get("/personal-economy")
+def get_personal_economy(db: Session = Depends(get_db)) -> dict:
+    """Cruce macro↔finanzas personales: inflación propia, salario real, Euríbor, fiscal."""
+    from app.modules.market_intelligence.api.personal_economy import compute_personal_economy
+    return compute_personal_economy(db)
+
+
 @router.get("/ingest-status")
 def ingest_status() -> dict:
     from app.modules.market_intelligence.ingestion.startup import get_ingest_status
     return get_ingest_status()
+
+
+@router.get("/rates/ecb-deposit-facility")
+def get_ecb_deposit_facility(
+    from_: str | None = Query(default=None, alias="from"),
+    db: Session = Depends(get_db),
+) -> dict:
+    """Histórico del tipo de facilidad de depósito del BCE (spec §3, interno).
+
+    ECO-3: solo lectura. Un GET nunca ingesta (regla "leer nunca ingesta"); la ingesta
+    programada del módulo de inversiones rellena `ReferenceRateObservation`. Si aún no hay
+    dato, se devuelve `status: no_data` en vez de disparar red en el request."""
+    from datetime import date
+
+    from app.models.investment import ReferenceRateObservation
+    from app.modules.investments.reference_rate_service import ECB_DFR
+
+    q = db.query(ReferenceRateObservation).filter(ReferenceRateObservation.rate_id == ECB_DFR)
+    if from_:
+        try:
+            q = q.filter(ReferenceRateObservation.effective_date >= date.fromisoformat(from_))
+        except ValueError:
+            pass
+    rows = q.order_by(ReferenceRateObservation.effective_date.asc()).all()
+    return {
+        "rate_id": ECB_DFR,
+        "status": "ok" if rows else "no_data",
+        "observations": [
+            {"date": r.effective_date.isoformat(), "rate": str(r.rate), "source": r.source}
+            for r in rows
+        ],
+    }
+
+
+@router.get("/economy/overview", response_model=EconomyOverviewOut)
+def get_economy_overview(db: Session = Depends(get_db)):
+    """ECO-6: vista agregada de Economía en una sola llamada (macro agrupado + impacto +
+    bonos + forex + economía personal)."""
+    return service.get_economy_overview(db)
 
 
 @router.get("/snapshot/macro", response_model=MacroSnapshotOut)

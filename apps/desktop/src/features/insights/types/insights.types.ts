@@ -6,16 +6,31 @@ export type InsightType =
   | "cashflow_alert"
   | "net_worth_change"
   | "investment_allocation"
+  | "portfolio_concentration"
+  | "wealth_concentration"
   | "goal_progress"
   | "market_context"
   | "macro_context"
-  | "data_quality";
+  | "data_quality"
+  // INS-5 (Lote 1: planificación)
+  | "budget_alert"
+  | "upcoming_cashflow"
+  | "recurring_creep"
+  | "household_bill_anomaly"
+  | "snapshot_pending"
+  // INS-6 (Lote 2: tendencias y patrimonio)
+  | "savings_rate_trend"
+  | "category_trend"
+  | "emergency_fund_coverage"
+  | "real_return";
+export type InsightClass = "signal" | "context" | "data_quality";
 export type DataStatus = "complete" | "partial" | "insufficient" | "empty" | "error";
 
 export interface InsightMetric {
   label: string;
   value: number;
   unit: string;
+  precision?: number;
 }
 
 export interface InsightSource {
@@ -35,6 +50,8 @@ export interface InsightAction {
 export interface Insight {
   id: string;
   type: InsightType;
+  insight_class: InsightClass;
+  dedupe_key: string;
   severity: InsightSeverity;
   title: string;
   summary: string;

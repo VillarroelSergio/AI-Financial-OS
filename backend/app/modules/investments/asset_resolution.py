@@ -224,60 +224,21 @@ def search_assets(query: str, max_results: int = 6) -> list[TickerCandidate]:
 
 
 def resolve_asset(asset_name: str) -> AssetResolution:
-    """Resolve an asset name to a ticker candidate."""
+    """Resolve an asset name or ticker to a candidate.
+
+    Reutiliza `search_assets` (registro conocido + fallback a yfinance) para que
+    cualquier ticker real del mundo se reconozca aquí igual que en el buscador,
+    no solo los 19 nombres de empresa hardcodeados en _KNOWN.
+    """
     key = _normalize(asset_name)
+    if not key:
+        return AssetResolution(asset_name=asset_name, candidates=[], selected=None, status="unavailable")
 
-    # Exact match
-    if key in _KNOWN:
-        candidate = _KNOWN[key]
-        if candidate.requires_confirmation:
-            return AssetResolution(
-                asset_name=asset_name,
-                candidates=[candidate],
-                selected=None,
-                status="ambiguous",
-            )
-        return AssetResolution(
-            asset_name=asset_name,
-            candidates=[candidate],
-            selected=candidate,
-            status="resolved",
-        )
+    candidates = search_assets(asset_name)
+    if not candidates:
+        return AssetResolution(asset_name=asset_name, candidates=[], selected=None, status="unavailable")
 
-    # Substring match: key appears inside a known key
-    seen: set[str] = set()
-    matches: list[TickerCandidate] = []
-    for k, c in _KNOWN.items():
-        if key in k and c.ticker not in seen:
-            seen.add(c.ticker)
-            matches.append(c)
-
-    if len(matches) == 1:
-        candidate = matches[0]
-        if candidate.requires_confirmation:
-            return AssetResolution(
-                asset_name=asset_name,
-                candidates=[candidate],
-                selected=None,
-                status="ambiguous",
-            )
-        return AssetResolution(
-            asset_name=asset_name,
-            candidates=matches,
-            selected=matches[0],
-            status="resolved",
-        )
-    if len(matches) > 1:
-        return AssetResolution(
-            asset_name=asset_name,
-            candidates=matches,
-            selected=None,
-            status="ambiguous",
-        )
-
-    return AssetResolution(
-        asset_name=asset_name,
-        candidates=[],
-        selected=None,
-        status="unavailable",
-    )
+    top = candidates[0]
+    if top.requires_confirmation:
+        return AssetResolution(asset_name=asset_name, candidates=candidates, selected=None, status="ambiguous")
+    return AssetResolution(asset_name=asset_name, candidates=candidates, selected=top, status="resolved")

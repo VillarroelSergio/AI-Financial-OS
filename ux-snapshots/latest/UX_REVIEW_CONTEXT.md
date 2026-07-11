@@ -1,6 +1,6 @@
 # UX Review Context - AI Financial OS
 
-> Generated: 2026-07-03T13:12:49.160Z
+> Generated: 2026-07-06T13:47:45.232Z
 > Viewports: desktop 1440x900
 > Data: mock (no datos reales de usuario)
 
@@ -17,7 +17,7 @@ Para regenerar desktop/tablet/mobile: `npm run snapshots:responsive`.
 
 | Archivo | Pantalla | Viewport | Estado | Descripcion |
 |---------|----------|----------|--------|-------------|
-| `welcome.png` | Welcome | desktop | mock_data | Guía inicial de bienvenida con pasos de carga de datos |
+| `finances-cuentas.png` | Movimientos y cuentas | desktop | mock_data | Vista principal de cuentas con pestañas de movimientos, gastos, planificación e importar |
 | `investments-tracking.png` | Position Tracking | desktop | mock_data | Seguimiento de posiciones: evolución de cada acción desde el precio de entrada |
 | `overview.png` | Overview | desktop | mock_data | Dashboard principal con patrimonio neto, liquidez, inversiones y métricas del mes |
 | `spending.png` | Spending | desktop | mock_data | Análisis de gastos mensual con pie chart por categoría y desglose |

@@ -135,10 +135,11 @@ class TestRepositoryValueNumericZero:
         assert fixed_value == 0.0, f"Fixed logic must preserve 0.0, got {fixed_value}"
 
 
-# ── MacroSnapshot service — repeated value detection ─────────────────────────
+# ── MacroSnapshot service — clones cut at source (ECO-1) ─────────────────────
 
 class TestMacroSnapshotRepeatedValues:
-    """get_macro_snapshot must detect and warn about indicators sharing the same value+period."""
+    """La clonación (P1) se corta en origen (allowlists honestas en los adapters),
+    así que la lectura ya NO detecta, avisa ni filtra por 'valores repetidos'."""
 
     def _make_row(self, catalog_id: str, value: float, country: str = "US", region_hint: str = "usa") -> dict:
         return {
@@ -153,10 +154,11 @@ class TestMacroSnapshotRepeatedValues:
             "retrieved_at": datetime.now(timezone.utc).isoformat(),
         }
 
-    def test_identical_values_trigger_warning(self):
+    def test_identical_values_no_longer_filtered_or_warned(self):
         from app.modules.market_intelligence.api.service import get_macro_snapshot
 
-        # Simulate 3 USA indicators all sharing the same value (the bug scenario)
+        # Aun compartiendo valor, los 3 indicadores se conservan y no hay warning:
+        # la integridad se garantiza en ingesta, no parcheando la lectura.
         shared_value = 4.1
         rows = [
             self._make_row("unemployment_usa", shared_value),
@@ -170,9 +172,8 @@ class TestMacroSnapshotRepeatedValues:
         ):
             snapshot = get_macro_snapshot()
 
-        assert any("repetidos" in w or "repeated" in w.lower() for w in snapshot.warnings), (
-            f"Expected a repeated-values warning, got: {snapshot.warnings}"
-        )
+        assert len(snapshot.usa) == 3
+        assert not any("repetid" in w.lower() or "repeated" in w.lower() for w in snapshot.warnings)
 
     def test_distinct_values_no_warning(self):
         from app.modules.market_intelligence.api.service import get_macro_snapshot

@@ -154,3 +154,26 @@ class PersonalImpactOut(BaseModel):
     generated_at: str
     comparatives: list[ImpactComparative] = []
     warnings: list[str] = []
+
+
+# ── ECO-6: overview agregado (1 request en vez de 5; agrupado temático en backend) ──
+
+class ThemedGroupOut(BaseModel):
+    theme: str
+    indicators: list[MacroDataPoint] = []
+
+
+class RegionBlockOut(BaseModel):
+    themes: list[ThemedGroupOut] = []
+
+
+class EconomyOverviewOut(BaseModel):
+    status: str = "empty"
+    generated_at: str
+    warnings: list[str] = []
+    global_indicators: list[MacroDataPoint] = []
+    regions: dict[str, RegionBlockOut] = {}  # "ES" | "EA" | "US"
+    impact: PersonalImpactOut
+    bonds: BondSnapshotOut
+    forex: ForexSnapshotOut
+    personal_economy: dict = {}

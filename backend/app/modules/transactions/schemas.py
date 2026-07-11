@@ -15,6 +15,11 @@ class TransactionCreate(BaseModel):
     notes: str | None = None
 
 
+class ScopeUpdate(BaseModel):
+    scope: str  # personal | excluded | pending
+    linked_transaction_id: str | None = None
+
+
 class CurrencyReassign(BaseModel):
     from_currency: str
     to_currency: str
@@ -45,6 +50,8 @@ class TransactionOut(BaseModel):
     source_name: str | None
     external_id: str | None
     import_batch_id: str | None
+    analytics_scope: str = "personal"
+    linked_transaction_id: str | None = None
     notes: str | None
     created_at: datetime
     updated_at: datetime

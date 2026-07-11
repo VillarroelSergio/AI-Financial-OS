@@ -136,6 +136,11 @@ class OECDAdapter(BaseAdapter):
     category = "macro"
     region = "Global"
     requires_api_key = False
+    # Solo sirve PIB España (QoQ %). Estaba como secondary/fallback de muchos macro
+    # → devolvía PIB España para todos (clon). allowlist honesta = {pib_spain}.
+    # ponytail: OECD da % QoQ pero pib_spain declara "EUR bn"; incoherencia de unidad
+    # a resolver en ECO-4 (World Bank, EUR bn nivel, es el secondary y gana primero).
+    supported_indicators = {"pib_spain": {}}
 
     def fetch(self) -> AdapterResult:
         metadata = _metadata()

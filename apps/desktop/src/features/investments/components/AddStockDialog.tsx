@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { createAsset, createHolding } from "@/lib/api/investments";
+import { useEffect, useState } from "react";
+import { Search } from "lucide-react";
+import { createAsset, createHolding, searchAssetCandidates, type AssetSearchCandidate } from "@/lib/api/investments";
 
 interface AddStockDialogProps {
   open: boolean;
@@ -17,6 +18,35 @@ export default function AddStockDialog({ open, accountId, onClose, onSuccess }: 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [candidates, setCandidates] = useState<AssetSearchCandidate[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [showCandidates, setShowCandidates] = useState(false);
+
+  // Búsqueda con debounce (registro conocido + yfinance) igual que en HoldingEditor,
+  // para que el usuario elija el ticker correcto en vez de escribirlo a ciegas.
+  useEffect(() => {
+    if (name.trim().length < 2 || !showCandidates) return;
+    const timer = setTimeout(async () => {
+      setSearching(true);
+      try {
+        setCandidates(await searchAssetCandidates(name.trim()));
+      } catch {
+        setCandidates([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [name, showCandidates]);
+
+  const pickCandidate = (c: AssetSearchCandidate) => {
+    setName(c.name);
+    setTicker(c.ticker);
+    setCurrency(c.currency || currency);
+    setShowCandidates(false);
+    setCandidates([]);
+  };
+
   if (!open) return null;
 
   const reset = () => {
@@ -25,6 +55,8 @@ export default function AddStockDialog({ open, accountId, onClose, onSuccess }: 
     setQuantity("");
     setAvgPrice("");
     setError(null);
+    setCandidates([]);
+    setShowCandidates(false);
   };
 
   const handleClose = () => {
@@ -89,15 +121,36 @@ export default function AddStockDialog({ open, accountId, onClose, onSuccess }: 
               </select>
             </div>
           </div>
-          <div>
+          <div className="relative">
             <label className="text-caption text-stone block mb-xs">Nombre</label>
-            <input
-              className="w-full bg-canvas-dark border border-hairline-dark rounded-md px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="Telefónica"
-              required
-            />
+            <div className="relative">
+              <input
+                className="w-full bg-canvas-dark border border-hairline-dark rounded-md px-md py-sm pr-8 text-body-sm text-on-dark focus:outline-none focus:border-primary"
+                value={name}
+                onChange={e => { setName(e.target.value); setShowCandidates(true); }}
+                placeholder="Busca: Iberdrola, Apple, AAPL, IBE.MC..."
+                autoComplete="off"
+                required
+              />
+              <Search size={14} className={`absolute right-2.5 top-1/2 -translate-y-1/2 ${searching ? "text-primary-bright animate-pulse" : "text-stone"}`} />
+            </div>
+            {showCandidates && candidates.length > 0 && (
+              <ul className="absolute z-20 mt-1 w-full rounded-md border border-hairline-dark bg-surface-elevated shadow-lg overflow-hidden">
+                {candidates.map((c) => (
+                  <li key={c.ticker}>
+                    <button
+                      type="button"
+                      onClick={() => pickCandidate(c)}
+                      className="w-full px-md py-sm text-left hover:bg-white/[.06]"
+                    >
+                      <span className="text-body-sm text-on-dark">{c.name}</span>
+                      <span className="ml-2 text-caption text-stone">{c.ticker} · {c.exchange}{c.currency ? ` · ${c.currency}` : ""}</span>
+                      {c.requires_confirmation && <p className="text-caption text-amber-200 mt-0.5">{c.confirmation_note}</p>}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-md">
             <div>

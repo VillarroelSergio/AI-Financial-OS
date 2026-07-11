@@ -84,6 +84,7 @@ def data_quality_insights(db: Session, period: str) -> list[InsightOut]:
     if holdings_no_price > 0:
         insights.append(InsightOut(
             id=f"insight_{period}_dq_holdings_no_price",
+            dedupe_key=f"holdings_no_price_{period}",
             type=InsightType.data_quality,
             severity=InsightSeverity.info,
             title="Posiciones sin precio actualizado",

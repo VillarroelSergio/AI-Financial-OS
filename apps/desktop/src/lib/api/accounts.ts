@@ -7,6 +7,7 @@ export interface AccountCreate {
   institution?: string;
   currency?: string;
   current_balance?: string;
+  is_liability?: boolean;
 }
 
 export interface AccountUpdate {
@@ -16,6 +17,7 @@ export interface AccountUpdate {
   currency?: string;
   current_balance?: string;
   is_active?: boolean;
+  is_liability?: boolean;
 }
 
 export const fetchAccounts = () => api.get<Account[]>("/api/accounts");

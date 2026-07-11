@@ -27,8 +27,26 @@ class CatalogFetchResult:
 
 
 class ProviderOrchestrator:
-    def __init__(self, adapters: list[BaseAdapter]):
+    # ECO-5: circuit breaker por-run. Un proveedor caído sirve a muchos indicadores; sin
+    # esto cada indicador se come su timeout. Tras `breaker_threshold` fallos seguidos lo
+    # saltamos el resto del run y caemos a fallback. El estado vive en la instancia, así que
+    # se resetea en cada tick — el propio tick horario actúa de "media apertura" (vuelve a
+    # sondear el primario una vez).
+    # ponytail: estado en memoria por-run; basta con ticks horarios. Persistir sólo si se
+    # quiere recordar el corte entre ticks.
+    def __init__(self, adapters: list[BaseAdapter], breaker_threshold: int = 2):
         self._adapters = adapters
+        self._breaker_threshold = breaker_threshold
+        self._failures: dict[str, int] = {}
+
+    def _breaker_open(self, provider_id: str) -> bool:
+        return self._failures.get(provider_id, 0) >= self._breaker_threshold
+
+    def _record_failure(self, provider_id: str) -> None:
+        self._failures[provider_id] = self._failures.get(provider_id, 0) + 1
+
+    def _record_success(self, provider_id: str) -> None:
+        self._failures.pop(provider_id, None)
 
     def _get_adapter(self, provider_id: str) -> BaseAdapter | None:
         return next(
@@ -56,6 +74,10 @@ class ProviderOrchestrator:
                 logger.debug("No adapter found for provider '%s'", provider_id)
                 attempts.append(f"{provider_id}: sin adapter registrado")
                 continue
+            if self._breaker_open(provider_id):
+                logger.info("Provider '%s' circuito abierto; se salta este run", provider_id)
+                attempts.append(f"{provider_id}: circuito abierto (fallos repetidos)")
+                continue
             if not adapter.is_available():
                 logger.info("Provider '%s' not available (API key missing?)", provider_id)
                 attempts.append(f"{provider_id}: no disponible (¿API key ausente?)")
@@ -71,6 +93,7 @@ class ProviderOrchestrator:
                     result = adapter.fetch()
             except Exception as exc:
                 logger.warning("Adapter '%s' raised exception: %s", provider_id, exc)
+                self._record_failure(provider_id)
                 attempts.append(f"{provider_id}: {exc}")
                 continue
             logger.info(
@@ -79,6 +102,7 @@ class ProviderOrchestrator:
                 result.latency_ms,
             )
             if result.success:
+                self._record_success(provider_id)
                 return CatalogFetchResult(
                     indicator=indicator,
                     adapter_result=result,
@@ -86,6 +110,7 @@ class ProviderOrchestrator:
                     fallback_used=(provider_id != indicator.provider_primary),
                     catalog_id=indicator.id,
                 )
+            self._record_failure(provider_id)
             attempts.append(f"{provider_id}: {result.error or 'sin datos'}")
 
         _empty_meta = ProviderMetadata(

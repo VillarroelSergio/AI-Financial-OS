@@ -9,20 +9,51 @@ Reglas:
 from __future__ import annotations
 
 from datetime import date, datetime, timedelta, timezone
+from decimal import Decimal
 
 from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
-from app.core.duckdb import get_duckdb
 from app.models.account import Account
 from app.models.category import Category
 from app.models.investment import Holding
 from app.models.transaction import Transaction
+from app.modules.market_intelligence.api import constants as C
+from app.modules.market_intelligence.api import macro_series
 from app.modules.market_intelligence.api.schemas import ImpactComparative, PersonalImpactOut
+from app.modules.market_intelligence.storage import repository
+
+# ECO-4: buckets de gasto → categorías canónicas del sistema (seeds/categories.py), con
+# substrings de fallback documentados para categorías creadas por el usuario. Sustituye el
+# matching por subcadena suelta ("casa", "alimentaci") que podía colar coincidencias falsas.
+_CATEGORY_BUCKETS: dict[str, dict[str, list[str]]] = {
+    "transport": {"canonical": ["Transporte"], "fallback": ["gasolina", "combustible"]},
+    "food": {"canonical": ["Alimentación"], "fallback": ["aliment"]},
+    "home": {"canonical": ["Casa"], "fallback": ["hogar", "suministro"]},
+}
 
 # ──────────────────────────────────────────────────────────────
 # Signal helper
 # ──────────────────────────────────────────────────────────────
+
+def weighted_portfolio_return(holdings) -> float | None:
+    """ECO-4: retorno de cartera PONDERADO por valor de posición.
+
+    Media simple = sesgo: una posición de 100 € pesaba igual que una de 50.000 €. Aquí
+    (Σ valor_mercado − Σ coste) / Σ coste. Decimal en todo el cálculo (regla del proyecto:
+    nada de float en dinero). None si no hay coste base positivo.
+    """
+    cost_basis = Decimal("0")
+    market_val = Decimal("0")
+    for h in holdings:
+        if h.average_price is None or h.quantity is None or h.current_price is None or h.average_price <= 0:
+            continue
+        cost_basis += h.average_price * h.quantity
+        market_val += h.current_price * h.quantity
+    if cost_basis <= 0:
+        return None
+    return float((market_val - cost_basis) / cost_basis * 100)
+
 
 def compute_signal(personal: float | None, threshold: float, higher_is_better: bool) -> str:
     if personal is None:
@@ -68,16 +99,8 @@ def _get_personal_data(db: Session) -> dict:
     if monthly_expense > 0:
         months_covered = total_balance / monthly_expense
 
-    # Portfolio average return % across all holdings with current_price
     holdings = db.query(Holding).filter(Holding.current_price.isnot(None)).all()
-    portfolio_return: float | None = None
-    if holdings:
-        returns = [
-            (float(h.current_price) - float(h.average_price)) / float(h.average_price) * 100
-            for h in holdings
-            if float(h.average_price) > 0
-        ]
-        portfolio_return = sum(returns) / len(returns) if returns else None
+    portfolio_return = weighted_portfolio_return(holdings)
 
     # Total debt from loan/mortgage/credit accounts (negative balances stored as negative)
     total_debt = abs(float(
@@ -89,16 +112,19 @@ def _get_personal_data(db: Session) -> dict:
         .scalar() or 0
     ))
 
-    def _cat_monthly(keywords: list[str]) -> float:
-        """Average monthly expense for transactions in categories matching any keyword."""
-        keyword_filters = [func.lower(Category.name).contains(k.lower()) for k in keywords]
+    def _cat_monthly(bucket: str) -> float:
+        """Gasto mensual medio del bucket: categoría canónica (match exacto) o fallback."""
+        spec = _CATEGORY_BUCKETS[bucket]
+        name_l = func.lower(Category.name)
+        filters = [name_l == c.lower() for c in spec["canonical"]]
+        filters += [name_l.contains(fb.lower()) for fb in spec["fallback"]]
         txns = (
             db.query(func.sum(Transaction.amount))
             .join(Category, Transaction.category_id == Category.id, isouter=True)
             .filter(
                 Transaction.amount < 0,
                 Transaction.date >= cutoff,
-                or_(*keyword_filters),
+                or_(*filters),
             )
             .scalar()
         )
@@ -114,11 +140,13 @@ def _get_personal_data(db: Session) -> dict:
         .scalar() or 0
     )) / 3
 
-    transport_monthly = _cat_monthly(["transporte", "gasolina"])
-    food_home_monthly = _cat_monthly(["alimentaci"])
+    transport_monthly = _cat_monthly("transport")
+    food_home_monthly = _cat_monthly("food")
+    home_monthly = _cat_monthly("home")
 
     return {
         "total_balance": total_balance,
+        "best_savings_rate": _best_savings_rate(db),
         "monthly_income": monthly_income,
         "monthly_expense": monthly_expense,
         "savings_rate": savings_rate,
@@ -128,7 +156,18 @@ def _get_personal_data(db: Session) -> dict:
         "usd_monthly_expense": usd_monthly,
         "transport_monthly": transport_monthly,
         "food_home_monthly": food_home_monthly,
+        "home_monthly": home_monthly,
     }
+
+
+def _best_savings_rate(db: Session) -> float | None:
+    """Mejor tipo remunerado vigente entre las cuentas de ahorro configuradas (INV-4).
+    None si el usuario no tiene ninguna → la comparativa 'Letras vs tu ahorro' se omite."""
+    from app.models.investment import SavingsAccountConfig
+    from app.modules.investments.savings_service import current_annual_rate
+
+    rates = [float(current_annual_rate(db, cfg)) for cfg in db.query(SavingsAccountConfig).all()]
+    return max(rates) if rates else None
 
 
 # ──────────────────────────────────────────────────────────────
@@ -139,70 +178,56 @@ _MI_EMPTY = {
     "ipc_general": None, "tipo_bce": None, "euribor_12m": None, "eur_usd": None,
     "brent": None, "spain_10y": None, "germany_10y": None, "risk_premium_bps": None,
     "ipc_subyacente": None, "confianza_consumidor_spain": None, "index_avg_change_1y": None,
+    "euribor_12m_year_ago": None, "brent_change_1y": None,
+    "pool_electrico": None, "pool_electrico_year_ago": None,
+    "letras_12m": None,
+    "ipc_alimentacion": None, "ipc_vivienda": None, "ipc_transporte": None,
 }
 
 
 def _get_mi_data() -> dict:
-    duck = get_duckdb()
+    """ECO-4: sin SQL crudo. Lecturas macro vía `macro_series`; el resto vía helpers del
+    repository (única puerta al almacén)."""
+    def _num(v) -> float | None:
+        return float(v) if v is not None else None
 
-    def _scalar(table: str, val_col: str, cid: str, order_col: str) -> float | None:
-        try:
-            row = duck.execute(
-                f"SELECT {val_col} FROM {table} WHERE catalog_item_id = ? "
-                f"ORDER BY {order_col} DESC LIMIT 1",
-                [cid],
-            ).fetchone()
-            return float(row[0]) if row and row[0] is not None else None
-        except Exception:
-            return None
+    forex = {r["catalog_item_id"]: r for r in repository.get_latest_forex()}
+    bonds = {r["catalog_item_id"]: r for r in repository.get_latest_bonds()}
+    quotes = {r["catalog_item_id"]: r for r in repository.get_latest_quotes()}
+    commodities = {r["catalog_item_id"]: r for r in repository.get_latest_commodities()}
 
-    def _macro(cid: str) -> float | None:
-        return _scalar("mi_macro_observations", "value", cid, "retrieved_at")
+    spain_10y = _num(bonds.get("spain_10y", {}).get("yield_value"))
+    germany_10y = _num(bonds.get("germany_10y", {}).get("yield_value"))
+    spread = (spain_10y - germany_10y) * 100 if spain_10y is not None and germany_10y is not None else None
 
-    def _index_change_1y(cid: str) -> float | None:
-        """Variación % a ~12 meses desde el histórico de precios."""
-        try:
-            rows = duck.execute(
-                "SELECT date, close FROM mi_historical_prices "
-                "WHERE catalog_item_id = ? AND close IS NOT NULL ORDER BY date",
-                [cid],
-            ).fetchall()
-        except Exception:
-            return None
-        if len(rows) < 2:
-            return None
-        last_date, last_close = rows[-1]
-        target = last_date - timedelta(days=365)
-        base = min(rows, key=lambda r: abs((r[0] - target).days))
-        # Sin al menos ~9 meses de histórico la cifra no es comparable a "1 año"
-        if (last_date - base[0]).days < 270 or not base[1]:
-            return None
-        return (float(last_close) - float(base[1])) / float(base[1]) * 100
+    brent = _num(quotes.get("brent", {}).get("price"))
+    if brent is None:
+        brent = _num(commodities.get("brent", {}).get("price"))
 
-    index_changes = [_index_change_1y(cid) for cid in ("sp500", "ibex35", "eurostoxx50")]
+    index_changes = [repository.get_price_change_1y(cid) for cid in ("sp500", "ibex35", "eurostoxx50")]
     valid = [v for v in index_changes if v is not None]
     index_avg = sum(valid) / len(valid) if valid else None
 
-    spain_10y = _scalar("mi_bond_yields", "yield_value", "spain_10y", "date")
-    germany_10y = _scalar("mi_bond_yields", "yield_value", "germany_10y", "date")
-    spread = (spain_10y - germany_10y) * 100 if spain_10y is not None and germany_10y is not None else None
-
-    brent = _scalar("mi_market_quotes", "price", "brent", "observed_at")
-    if brent is None:
-        brent = _scalar("mi_commodities", "price", "brent", "observed_at")
-
     return {
-        "ipc_general": _macro("ipc_general"),
-        "tipo_bce": _macro("tipo_bce"),
-        "euribor_12m": _macro("euribor_12m"),
-        "eur_usd": _scalar("mi_currency_rates", "rate", "eur_usd", "date"),
+        "ipc_general": macro_series.latest("ipc_general"),
+        "tipo_bce": macro_series.latest("tipo_bce"),
+        "euribor_12m": macro_series.latest("euribor_12m"),
+        "eur_usd": _num(forex.get("eur_usd", {}).get("rate")),
         "brent": brent,
         "spain_10y": spain_10y,
         "germany_10y": germany_10y,
         "risk_premium_bps": spread,
-        "ipc_subyacente": _macro("ipc_subyacente"),
-        "confianza_consumidor_spain": _macro("confianza_consumidor_spain"),
+        "ipc_subyacente": macro_series.latest("ipc_subyacente"),
+        "confianza_consumidor_spain": macro_series.latest("confianza_consumidor_spain"),
         "index_avg_change_1y": index_avg,
+        "euribor_12m_year_ago": macro_series.value_year_ago("euribor_12m"),
+        "brent_change_1y": repository.get_price_change_1y("brent"),
+        "pool_electrico": macro_series.latest("precio_electricidad_spain"),
+        "pool_electrico_year_ago": macro_series.value_year_ago("precio_electricidad_spain"),
+        "letras_12m": macro_series.latest("letras_12m"),
+        "ipc_alimentacion": macro_series.latest("ipc_alimentacion"),
+        "ipc_vivienda": macro_series.latest("ipc_vivienda"),
+        "ipc_transporte": macro_series.latest("ipc_transporte"),
     }
 
 
@@ -233,7 +258,7 @@ def _build_comparatives(personal: dict, mi: dict) -> list[ImpactComparative]:
             signal1 = compute_signal(sav, ipc, higher_is_better=True)
             text1 = "Estás por encima de la inflación" if sav > ipc else "Tu ahorro no supera la inflación"
             drag = balance * ipc / 100 / 12
-            if drag >= 1:
+            if drag >= C.MIN_EUR_PER_MONTH_TO_SHOW:
                 text1 += f" · La inflación cuesta ~{drag:,.0f} €/mes a tu efectivo"
         comparatives.append(ImpactComparative(
             id="inflation_vs_savings",
@@ -248,6 +273,75 @@ def _build_comparatives(personal: dict, mi: dict) -> list[ImpactComparative]:
             source_ids=["ipc_general"],
         ))
 
+    # 1a. Inflación de TU cesta (Propuesta Nivel-1): IPC ponderado por tu gasto real por
+    # categoría vs el IPC general. Cada categoría con gasto Y subgrupo IPC disponible pondera
+    # con su subgrupo; el gasto restante (o sin subgrupo) se imputa al IPC general. Solo se
+    # muestra si hay gasto clasificado (si no, la cesta = IPC general y no aporta nada).
+    monthly_exp_total = personal.get("monthly_expense") or 0.0
+    _basket = [  # (gasto €/mes del bucket, IPC anual del subgrupo)
+        (personal.get("food_home_monthly") or 0.0, mi.get("ipc_alimentacion")),
+        (personal.get("home_monthly") or 0.0, mi.get("ipc_vivienda")),
+        (personal.get("transport_monthly") or 0.0, mi.get("ipc_transporte")),
+    ]
+    classified = sum(spend for spend, sub in _basket if sub is not None and spend > 0)
+    if monthly_exp_total > 0 and classified > 0:
+        if ipc is None:
+            signal1a, text1a, personal_infl = "no_data", _NO_DATA_TEXT, None
+        else:
+            # Media ponderada: subgrupos donde hay gasto+dato; el resto del gasto al IPC general.
+            weighted = sum(spend * sub for spend, sub in _basket if sub is not None and spend > 0)
+            rest = max(monthly_exp_total - classified, 0.0)
+            personal_infl = (weighted + rest * ipc) / monthly_exp_total
+            signal1a = compute_signal(personal_infl, ipc, higher_is_better=False)
+            if personal_infl > ipc:
+                text1a = f"Tu cesta sufre más inflación que la media ({_fmt(personal_infl)} vs {_fmt(ipc)})"
+            else:
+                text1a = f"Tu cesta inflaciona menos que la media ({_fmt(personal_infl)} vs {_fmt(ipc)})"
+            extra = monthly_exp_total * (personal_infl - ipc) / 100
+            if abs(extra) >= C.MIN_EUR_PER_MONTH_TO_SHOW:
+                verbo = "te cuesta" if extra > 0 else "te ahorra"
+                text1a += f" · {verbo} ~{abs(extra):,.0f} €/mes frente a la media"
+        comparatives.append(ImpactComparative(
+            id="basket_inflation",
+            title="La inflación de tu cesta",
+            description="IPC ponderado por tu gasto real en alimentación, vivienda y transporte frente al IPC general. Si tu cesta pesa más en categorías que suben, sufres más inflación que la media.",
+            market_value=ipc,
+            market_label=f"IPC General: {_fmt(ipc)}",
+            personal_value=personal_infl,
+            personal_label=f"Tu cesta: {_fmt(personal_infl)}",
+            signal=signal1a,
+            signal_text=text1a,
+            source_ids=["ipc_general", "ipc_alimentacion", "ipc_vivienda", "ipc_transporte"],
+        ))
+
+    # 1b. Letras vs tu ahorro remunerado (Propuesta ECO-2b — solo si tiene cuenta remunerada).
+    letras = mi.get("letras_12m")
+    my_rate = personal.get("best_savings_rate")
+    if my_rate is not None:
+        if letras is None:
+            signal1b, text1b = "no_data", _NO_DATA_TEXT
+        else:
+            signal1b = compute_signal(my_rate, letras, higher_is_better=True)
+            if my_rate >= letras:
+                text1b = "Tu cuenta remunerada renta más que las Letras 12M"
+            else:
+                text1b = "Las Letras 12M rentan más que tu cuenta remunerada"
+                gain = balance * (letras - my_rate) / 100
+                if gain / 12 >= C.MIN_EUR_PER_MONTH_TO_SHOW:
+                    text1b += f" · Cambiar a Letras rentaría ~{gain:,.0f} €/año sobre tu efectivo"
+        comparatives.append(ImpactComparative(
+            id="letras_vs_savings",
+            title="Letras del Tesoro vs tu ahorro",
+            description="Tipo marginal de la última subasta de Letras a 12 meses frente al tipo de tu cuenta remunerada. Las Letras son el producto de ahorro minorista de referencia en España.",
+            market_value=letras,
+            market_label=f"Letras 12M: {_fmt(letras)}",
+            personal_value=my_rate,
+            personal_label=f"Tu cuenta: {_fmt(my_rate)}",
+            signal=signal1b,
+            signal_text=text1b,
+            source_ids=["letras_12m"],
+        ))
+
     # 2. Tipo BCE vs meses de liquidez (aplica si conocemos gastos)
     bce = mi.get("tipo_bce")
     months = personal.get("months_covered")
@@ -255,10 +349,10 @@ def _build_comparatives(personal: dict, mi: dict) -> list[ImpactComparative]:
         if bce is None:
             signal2, text2 = "no_data", _NO_DATA_TEXT
         else:
-            signal2 = "positive" if months >= 3 else "negative"
-            text2 = "Tienes colchón suficiente" if months >= 3 else "Liquidez por debajo del mínimo recomendado"
+            signal2 = "positive" if months >= C.LIQUIDITY_MIN_MONTHS else "negative"
+            text2 = "Tienes colchón suficiente" if months >= C.LIQUIDITY_MIN_MONTHS else "Liquidez por debajo del mínimo recomendado"
             opportunity = balance * bce / 100 / 12
-            if opportunity >= 1:
+            if opportunity >= C.MIN_EUR_PER_MONTH_TO_SHOW:
                 text2 += f" · A tipo BCE tu efectivo podría rentar ~{opportunity:,.0f} €/mes"
         comparatives.append(ImpactComparative(
             id="rates_vs_liquidity",
@@ -298,9 +392,9 @@ def _build_comparatives(personal: dict, mi: dict) -> list[ImpactComparative]:
     # 4. Poder adquisitivo (informativo, siempre que haya IPC)
     if ipc is None:
         signal4, text4 = "no_data", _NO_DATA_TEXT
-    elif ipc < 2.0:
+    elif ipc < C.INFLATION_BCE_TARGET:
         signal4, text4 = "positive", "Inflación en objetivo BCE"
-    elif ipc > 3.0:
+    elif ipc > C.INFLATION_HIGH:
         signal4, text4 = "negative", f"Inflación en {_fmt(ipc)} — reduce poder de compra"
     else:
         signal4, text4 = "neutral", f"Inflación moderada ({_fmt(ipc)})"
@@ -323,10 +417,20 @@ def _build_comparatives(personal: dict, mi: dict) -> list[ImpactComparative]:
     if debt > 0:
         if euribor is None:
             signal5, text5 = "no_data", _NO_DATA_TEXT
-        elif euribor < 3.0:
+        elif euribor < C.EURIBOR_COMFORT_MAX:
             signal5, text5 = "positive", "Euríbor en zona razonable"
         else:
             signal5, text5 = "warning", "Euríbor elevado — revisa tu hipoteca variable"
+        # Cuantificación: variación anual del Euríbor aplicada a tu deuda pendiente.
+        euribor_ya = mi.get("euribor_12m_year_ago")
+        if euribor is not None and euribor_ya is not None:
+            monthly_delta = debt * (euribor - euribor_ya) / 100 / 12
+            if abs(monthly_delta) >= C.MIN_EUR_PER_MONTH_TO_SHOW:
+                direction = "encarece" if monthly_delta > 0 else "abarata"
+                text5 += (
+                    f" · La variación anual del Euríbor ({euribor_ya:.2f}%→{euribor:.2f}%) "
+                    f"{direction} tu revisión ~{abs(monthly_delta):,.0f} €/mes (aprox.)"
+                )
         comparatives.append(ImpactComparative(
             id="euribor_vs_mortgage",
             title="Euríbor vs tu deuda hipotecaria",
@@ -347,7 +451,7 @@ def _build_comparatives(personal: dict, mi: dict) -> list[ImpactComparative]:
         if eurusd is None:
             signal6, text6 = "no_data", _NO_DATA_TEXT
         else:
-            signal6 = compute_signal(eurusd, 1.10, higher_is_better=True)
+            signal6 = compute_signal(eurusd, C.EURUSD_STRONG_EURO, higher_is_better=True)
             text6 = ("Euro fuerte — buen momento para compras en USD"
                      if signal6 == "positive" else "Euro débil frente al dólar")
         comparatives.append(ImpactComparative(
@@ -369,9 +473,9 @@ def _build_comparatives(personal: dict, mi: dict) -> list[ImpactComparative]:
     if transport > 0:
         if brent is None:
             signal7, text7 = "no_data", _NO_DATA_TEXT
-        elif brent < 80:
+        elif brent < C.BRENT_FAVORABLE:
             signal7, text7 = "positive", "Precio del petróleo favorable"
-        elif brent > 90:
+        elif brent > C.BRENT_HIGH:
             signal7, text7 = "negative", "Petróleo elevado — puede encarecer combustibles"
         else:
             signal7, text7 = "neutral", "Petróleo en rango medio"
@@ -388,13 +492,73 @@ def _build_comparatives(personal: dict, mi: dict) -> list[ImpactComparative]:
             source_ids=["brent"],
         ))
 
+    # 7b. Energía vs tu gasto en Casa (solo si hay gasto en hogar)
+    brent_yoy = mi.get("brent_change_1y")
+    home = personal.get("home_monthly") or 0.0
+    if home > 0:
+        if brent_yoy is None:
+            signal7b, text7b = "no_data", _NO_DATA_TEXT
+        elif brent_yoy > C.ENERGY_YOY_UP:
+            signal7b = "warning"
+            text7b = f"La energía sube {_fmt(brent_yoy, '%', 1)} interanual — vigila luz y gas en tu gasto de Casa"
+        elif brent_yoy < C.ENERGY_YOY_DOWN:
+            signal7b = "positive"
+            text7b = f"La energía baja {_fmt(abs(brent_yoy), '%', 1)} interanual — alivio en los suministros del hogar"
+        else:
+            signal7b, text7b = "neutral", "Precio de la energía estable en el último año"
+        comparatives.append(ImpactComparative(
+            id="energy_vs_home",
+            title="Energía vs tu gasto en Casa",
+            description="Variación interanual del Brent como proxy del coste energético frente a tu gasto mensual en el hogar (luz, gas, suministros).",
+            market_value=brent_yoy,
+            market_label=f"Energía (12 meses): {_fmt(brent_yoy, '%', 1)}",
+            personal_value=home,
+            personal_label=f"Casa/mes: {_fmt(home, ' €', 0)}",
+            signal=signal7b,
+            signal_text=text7b,
+            source_ids=["brent"],
+        ))
+
+    # 7c. Luz: pool eléctrico vs tu gasto en Casa (Propuesta ECO-2b — el dato real del pool
+    # sustituye al proxy Brent de 7b para electricidad). Degrada a no_data hasta que haya
+    # histórico suficiente para la variación interanual.
+    pool = mi.get("pool_electrico")
+    pool_ya = mi.get("pool_electrico_year_ago")
+    if home > 0:
+        pool_yoy = ((pool - pool_ya) / pool_ya * 100) if pool is not None and pool_ya not in (None, 0) else None
+        if pool is None:
+            signal7c, text7c = "no_data", _NO_DATA_TEXT
+        elif pool_yoy is None:
+            signal7c = "neutral"
+            text7c = f"Pool eléctrico en {pool:,.0f} €/MWh — sin histórico aún para la variación interanual"
+        elif pool_yoy > C.ENERGY_YOY_UP:
+            signal7c = "warning"
+            text7c = f"El pool eléctrico sube {_fmt(pool_yoy, '%', 1)} interanual — presión sobre tu factura de luz"
+        elif pool_yoy < C.ENERGY_YOY_DOWN:
+            signal7c = "positive"
+            text7c = f"El pool eléctrico baja {_fmt(abs(pool_yoy), '%', 1)} interanual — alivio en tu factura de luz"
+        else:
+            signal7c, text7c = "neutral", "Precio del pool eléctrico estable en el último año"
+        comparatives.append(ImpactComparative(
+            id="electricity_pool_vs_home",
+            title="Luz: pool eléctrico vs tu gasto en Casa",
+            description="Precio medio mensual del mercado spot eléctrico (pool mayorista) frente a tu gasto en el hogar. El pool es el componente que más mueve la factura de la luz.",
+            market_value=pool,
+            market_label=f"Pool eléctrico: {_fmt(pool, ' €/MWh', 0)}",
+            personal_value=home,
+            personal_label=f"Casa/mes: {_fmt(home, ' €', 0)}",
+            signal=signal7c,
+            signal_text=text7c,
+            source_ids=["precio_electricidad_spain"],
+        ))
+
     # 8. Prima de riesgo España (informativo)
     spread = mi.get("risk_premium_bps")
     if spread is None:
         signal8, text8 = "no_data", _NO_DATA_TEXT
-    elif spread < 100:
+    elif spread < C.RISK_PREMIUM_LOW:
         signal8, text8 = "positive", "Prima de riesgo controlada"
-    elif spread > 200:
+    elif spread > C.RISK_PREMIUM_HIGH:
         signal8, text8 = "negative", "Prima de riesgo elevada"
     else:
         signal8, text8 = "neutral", "Prima de riesgo en rango medio"
@@ -465,7 +629,8 @@ def _build_comparatives(personal: dict, mi: dict) -> list[ImpactComparative]:
         if confidence is None:
             signal11, text11 = "no_data", _NO_DATA_TEXT
         else:
-            min_months = 6.0 if confidence < 90 else 3.0
+            min_months = (C.LIQUIDITY_MIN_MONTHS_LOW_CONFIDENCE
+                          if confidence < C.CONSUMER_CONFIDENCE_LOW else C.LIQUIDITY_MIN_MONTHS)
             signal11 = "positive" if months >= min_months else "negative"
             text11 = (f"Liquidez suficiente (mínimo recomendado: {min_months:.0f} meses)"
                       if signal11 == "positive" else f"Aumenta tu colchón a {min_months:.0f} meses")
@@ -501,7 +666,7 @@ def compute_personal_impact(db: Session) -> PersonalImpactOut:
             "total_balance": 0.0, "monthly_income": 0.0, "monthly_expense": 0.0,
             "savings_rate": None, "months_covered": None, "portfolio_return": None,
             "total_debt": 0.0, "usd_monthly_expense": 0.0,
-            "transport_monthly": 0.0, "food_home_monthly": 0.0,
+            "transport_monthly": 0.0, "food_home_monthly": 0.0, "home_monthly": 0.0,
         }
 
     try:

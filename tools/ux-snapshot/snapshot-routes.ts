@@ -9,11 +9,11 @@ export interface SnapshotRoute {
 
 export const snapshotRoutes: SnapshotRoute[] = [
   {
-    path: "/welcome",
-    filename: "welcome.png",
-    screenName: "Welcome",
+    path: "/finances",
+    filename: "finances-cuentas.png",
+    screenName: "Movimientos y cuentas",
     state: "mock_data",
-    description: "Guía inicial de bienvenida con pasos de carga de datos",
+    description: "Vista principal de cuentas con pestañas de movimientos, gastos, planificación e importar",
     requiresInteraction: false,
   },
   {

@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from decimal import Decimal
 
 from sqlalchemy.orm import Session
 
-from app.models.investment import Holding, InvestmentAsset
+from app.models.investment import FundValuationSnapshot, Holding, InvestmentAsset
 from app.modules.insights.constants import HIGH_CONCENTRATION_THRESHOLD
+from app.modules.insights.formatting import fmt_pct, round_dec
 from app.modules.insights.schemas import (
     DataStatus,
     InsightActionOut,
@@ -17,6 +18,9 @@ from app.modules.insights.schemas import (
     InsightType,
 )
 from app.modules.insights.scoring import compute_confidence, compute_priority
+
+# Un fondo cuya última valoración manual supera este umbral se considera desactualizado.
+FUND_STALE_DAYS = 90
 
 
 def investment_allocation_insight(db: Session, period: str) -> list[InsightOut]:
@@ -47,6 +51,7 @@ def investment_allocation_insight(db: Session, period: str) -> list[InsightOut]:
     if missing_price:
         insights.append(InsightOut(
             id=f"insight_{period}_investment_missing_prices",
+            dedupe_key=f"holdings_no_price_{period}",
             type=InsightType.investment_allocation,
             severity=InsightSeverity.info,
             title="Posiciones sin precio actualizado",
@@ -69,26 +74,79 @@ def investment_allocation_insight(db: Session, period: str) -> list[InsightOut]:
         name = asset.name if asset else "Activo desconocido"
         values.append((name, mv if mv > 0 else Decimal("0")))
 
+    # Concentración de CARTERA DE MERCADO (INS-B4/D1): solo tiene sentido con ≥2 posiciones;
+    # con una única posición el 100% es trivial y el copy sería engañoso.
     total = sum(v for _, v in values)
-    if total > 0:
+    if total > 0 and len(values) >= 2:
         for name, val in values:
-            pct = val / total * 100
+            pct = round_dec(val / total * 100, 1)
             if pct > HIGH_CONCENTRATION_THRESHOLD:
                 insights.append(InsightOut(
-                    id=f"insight_{period}_investment_concentration_{name[:20]}",
-                    type=InsightType.investment_allocation,
+                    id=f"insight_{period}_portfolio_concentration_{name[:20]}",
+                    dedupe_key=f"portfolio_concentration_{period}",
+                    type=InsightType.portfolio_concentration,
                     severity=InsightSeverity.info,
-                    title="Concentración elevada en un activo",
-                    summary=f"{name} representa el {float(pct):.0f}% de tu cartera. Puedes revisar la distribución antes de tomar nuevas decisiones.",
+                    title="Concentración elevada en tu cartera de mercado",
+                    summary=f"{name} representa el {fmt_pct(pct)} de tu cartera de mercado. Puedes revisar la distribución antes de tomar nuevas decisiones.",
                     period=period,
                     impact_area="inversiones",
                     confidence=compute_confidence("complete"),
                     priority=compute_priority("info", "complete", 50.0),
                     data_status=DataStatus.complete,
-                    primary_metric=InsightMetricOut(label="Concentración", value=round(float(pct), 1), unit="%"),
+                    primary_metric=InsightMetricOut(label="Concentración", value=float(pct), unit="%", precision=1),
                     sources=[InsightSourceOut(type="investments", label="Inversiones", period=period, updated_at=now_iso)],
                     actions=[InsightActionOut(label="Ver inversiones", target="/investments", params={})],
                     created_at=now_iso,
                 ))
 
+    return insights
+
+
+def fund_stale_valuation_insight(db: Session, period: str) -> list[InsightOut]:
+    """Fondos cuya última valoración manual está desactualizada (INV-3).
+
+    Anima a usar 'Actualizar valor' para que los KPIs reflejen el valor real."""
+    now_iso = datetime.now(timezone.utc).isoformat()
+    today = date.today()
+    funds = (
+        db.query(Holding, InvestmentAsset)
+        .join(InvestmentAsset, InvestmentAsset.id == Holding.asset_id)
+        .filter(InvestmentAsset.asset_type == "fund")
+        .all()
+    )
+    insights: list[InsightOut] = []
+    for holding, asset in funds:
+        latest = (
+            db.query(FundValuationSnapshot)
+            .filter(FundValuationSnapshot.holding_id == holding.id)
+            .order_by(FundValuationSnapshot.as_of_date.desc())
+            .first()
+        )
+        age_days = (today - latest.as_of_date).days if latest else None
+        if latest is not None and age_days < FUND_STALE_DAYS:
+            continue  # valoración reciente: nada que avisar
+
+        if latest is None:
+            summary = f"{asset.name} no tiene ninguna valoración registrada. Usa 'Actualizar valor' para reflejar su valor real."
+            metric = InsightMetricOut(label="Sin valoración", value=0.0, unit="días")
+        else:
+            summary = f"La última valoración de {asset.name} tiene {age_days} días. Actualiza su valor para KPIs precisos."
+            metric = InsightMetricOut(label="Antigüedad", value=float(age_days), unit="días")
+
+        insights.append(InsightOut(
+            id=f"insight_{period}_fund_stale_{holding.id[:8]}",
+            type=InsightType.investment_allocation,
+            severity=InsightSeverity.warning,
+            title="Fondo con valoración desactualizada",
+            summary=summary,
+            period=period,
+            impact_area="inversiones",
+            confidence=compute_confidence("partial"),
+            priority=compute_priority("warning", "partial", 55.0),
+            data_status=DataStatus.partial,
+            primary_metric=metric,
+            sources=[InsightSourceOut(type="investments", label="Inversiones", period=period, updated_at=now_iso)],
+            actions=[InsightActionOut(label="Actualizar valor", target="/investments", params={"holding_id": holding.id})],
+            created_at=now_iso,
+        ))
     return insights

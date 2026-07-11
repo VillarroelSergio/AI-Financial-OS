@@ -14,8 +14,9 @@ def test_get_macro_snapshot_returns_valid_schema():
     assert isinstance(result.warnings, list)
 
 
-def test_get_macro_snapshot_marks_repeated_values_for_review():
-    # Use real catalog IDs so _region_for resolves "spain" correctly
+def test_get_macro_snapshot_keeps_all_values():
+    # ECO-1: la clonación (P1) se corta en origen (allowlists honestas en adapters),
+    # así que la lectura ya NO filtra ni degrada indicadores por compartir valor.
     rows = [
         {
             "catalog_item_id": "ipc_general",
@@ -54,10 +55,10 @@ def test_get_macro_snapshot_marks_repeated_values_for_review():
     with patch("app.modules.market_intelligence.api.service.repository.get_latest_macro_all", return_value=rows):
         result = service.get_macro_snapshot()
 
-    # Repeated items are filtered out to avoid showing misleading data in the UI
-    assert result.status == "empty"
-    assert result.warnings
-    assert result.spain == []
+    # Sin filtro de "repetidos": los 3 items españoles se conservan.
+    assert result.status == "partial"  # solo hay región spain
+    assert {p.catalog_item_id for p in result.spain} == {"ipc_general", "ipc_subyacente", "pib_spain"}
+    assert not any("repetid" in w.lower() for w in result.warnings)
 
 
 def test_get_forex_snapshot_returns_valid_schema():

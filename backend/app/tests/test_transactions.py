@@ -17,6 +17,27 @@ CSV_USD = (
 )
 
 
+def test_list_transactions_respects_limit_and_offset(client):
+    acc = client.post(
+        "/api/accounts", json={"name": "Test", "type": "checking", "currency": "EUR"}
+    ).json()
+    for i in range(5):
+        client.post(
+            "/api/transactions",
+            json={
+                "account_id": acc["id"],
+                "date": f"2026-03-0{i + 1}",
+                "description": f"tx{i}",
+                "amount": "-1.00",
+                "type": "expense",
+            },
+        )
+    assert len(client.get("/api/transactions?limit=2").json()) == 2
+    page2 = client.get("/api/transactions?limit=2&offset=2").json()
+    assert len(page2) == 2
+    assert page2[0]["description"] != client.get("/api/transactions?limit=2").json()[0]["description"]
+
+
 def test_transactions_include_account_name_even_if_account_inactive(client):
     _import_monefy(client, CSV_USD)
     accounts = client.get("/api/accounts").json()
