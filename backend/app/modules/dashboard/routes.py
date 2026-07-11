@@ -69,7 +69,14 @@ def get_overview(db: Session = Depends(get_db)) -> OverviewOut:
     net_worth = sum(balances.values(), Decimal("0")) + portfolio_value
 
     month_prefix = datetime.now(timezone.utc).strftime("%Y-%m")
-    month_txs = db.query(Transaction).filter(Transaction.date.like(f"{month_prefix}%")).all()
+    month_txs = (
+        db.query(Transaction)
+        .filter(
+            Transaction.date.like(f"{month_prefix}%"),
+            Transaction.analytics_scope == "personal",
+        )
+        .all()
+    )
 
     monthly_income = sum((t.amount for t in month_txs if t.type == "income"), Decimal("0"))
     monthly_expense = abs(sum((t.amount for t in month_txs if t.type == "expense"), Decimal("0")))
@@ -110,7 +117,11 @@ def get_spending_monthly(
 
     txs = (
         db.query(Transaction)
-        .filter(Transaction.date >= f"{prefixes[0]}-01", Transaction.date <= f"{prefixes[-1]}-31")
+        .filter(
+            Transaction.date >= f"{prefixes[0]}-01",
+            Transaction.date <= f"{prefixes[-1]}-31",
+            Transaction.analytics_scope == "personal",
+        )
         .all()
     )
     by_month: dict[str, dict[str, Decimal]] = {p: {"income": Decimal("0"), "expense": Decimal("0")} for p in prefixes}
@@ -149,7 +160,14 @@ def get_spending(
 ) -> SpendingOut:
     period_prefix, period_type, days_in_period = _period_filter(month, year)
 
-    txs = db.query(Transaction).filter(Transaction.date.like(f"{period_prefix}%")).all()
+    txs = (
+        db.query(Transaction)
+        .filter(
+            Transaction.date.like(f"{period_prefix}%"),
+            Transaction.analytics_scope == "personal",
+        )
+        .all()
+    )
 
     total_income = sum((t.amount for t in txs if t.type == "income"), Decimal("0"))
     expense_txs = [t for t in txs if t.type == "expense"]
@@ -197,7 +215,14 @@ def get_spending_category_detail(
     db: Session = Depends(get_db),
 ) -> CategorySpendingDetailOut:
     period_prefix, period_type, _days_in_period = _period_filter(month, year)
-    period_txs = db.query(Transaction).filter(Transaction.date.like(f"{period_prefix}%")).all()
+    period_txs = (
+        db.query(Transaction)
+        .filter(
+            Transaction.date.like(f"{period_prefix}%"),
+            Transaction.analytics_scope == "personal",
+        )
+        .all()
+    )
     expense_txs = [t for t in period_txs if t.type == "expense"]
     total_expense = abs(sum((t.amount for t in expense_txs), Decimal("0")))
 

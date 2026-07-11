@@ -24,3 +24,6 @@ export const refreshInsights = (period?: string): Promise<InsightsSummary> =>
 
 export const dismissInsight = (insightId: string): Promise<{ insight_id: string; dismissed_at: string }> =>
   api.post(`/api/insights/${insightId}/dismiss`, {});
+
+export const restoreInsight = (insightId: string): Promise<{ insight_id: string; restored: boolean }> =>
+  api.post(`/api/insights/${insightId}/restore`, {});

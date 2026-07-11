@@ -80,8 +80,8 @@
   retention: 5y
   unit: "%"
   description: "Rendimiento Bund alemán 10 años"
-  provider_primary: ecb
-  provider_secondary: fred
+  provider_primary: fred
+  provider_secondary: ecb
 
 - id: spain_10y
   name: "Bono Español 10Y"
@@ -97,5 +97,5 @@
   retention: 5y
   unit: "%"
   description: "Rendimiento bono del Estado español 10 años"
-  provider_primary: bde
-  provider_secondary: ecb
+  provider_primary: fred
+  provider_secondary: bde

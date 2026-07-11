@@ -180,7 +180,59 @@ omite filas inválidas o duplicadas al confirmar y conserva el lote tras un roll
 
 ### POST `/api/investments/holdings`
 
+### POST `/api/investments/holdings/merge`
+
+Fusiona dos posiciones duplicadas (misma cuenta + activo). Body `{ source_id, target_id }`:
+suma cantidades, recalcula precio medio ponderado, reasigna histórico y operaciones al
+target y borra el source. `422` si `source_id == target_id`.
+
 ### GET `/api/investments/reconciliation`
+
+Estado de calidad por posición (INV-6): fondos → `manual`, cuentas remuneradas →
+`confirmed` (fuente calculada), acciones/ETF por frescura de precio de mercado.
+
+### GET `/api/investments/holdings/portfolio-evolution`
+
+Serie mensual agregada `{ series: [{ month: "YYYY-MM", value }], currency }` (INV-6).
+Combina, por mes y con forward-fill, fondos (snapshots), cuentas remuneradas (motor
+determinista) y resto (histórico guardado o market_value). Solo datos en BD, sin red.
+
+> `GET /api/investments/summary` incluye `pending_valuation_count` y
+> `pending_valuation_invested`: posiciones sin valor de mercado, excluidas de los KPIs de
+> rentabilidad en vez de contarse como pérdida.
+
+### Fondos (INV-3)
+
+```txt
+POST   /api/investments/funds                          # alta: name, account_id, contributed, value, date
+GET    /api/investments/funds/{holding_id}/snapshots
+POST   /api/investments/funds/{holding_id}/snapshots   # { date, market_value, contributed_total? } — upsert por fecha
+PUT    /api/investments/funds/snapshots/{id}
+DELETE /api/investments/funds/snapshots/{id}
+```
+
+### Cuentas remuneradas (INV-4)
+
+```txt
+POST   /api/investments/savings                        # alta: account_id | new_account_name, opened_at, balance, rate_source, spread_bps, fixed_rate?
+GET    /api/investments/savings/{account_id}/projection  # serie mensual + total_interest (+ estimated)
+GET    /api/investments/savings/{account_id}           # config actual (para el formulario de edición)
+PUT    /api/investments/savings/{account_id}           # editar config (sincroniza TAE/fecha del holding)
+DELETE /api/investments/savings/{account_id}           # borrar config (el borrado de la cuenta borra config + holding)
+```
+
+Motor determinista (Decimal): interés compuesto mensual, tipo vigente el último día del
+mes (BCE facilidad de depósito + spread_bps, o fijo). Aportaciones/retiradas = `Transaction`
+tipo `transfer` sobre la cuenta. Modo inverso V1: si solo se conoce el saldo actual, se
+retro-calcula el inicial (`estimated=true`).
+
+### Tipo BCE (interno)
+
+```txt
+GET    /api/market-intelligence/rates/ecb-deposit-facility?from=YYYY-MM-DD
+```
+Sirve el cache `ReferenceRateObservation` (ECB SDMX, fallback FRED); ingesta bajo demanda
+si está vacío. La UI de cuentas lo consume vía backend, nunca directamente.
 
 Returns on-demand portfolio reconciliation report with quality states, allocation weights, and concentration alerts.
 
@@ -798,6 +850,23 @@ Response: {
   "base_projected_date": "2028-06-29"
 }
 ```
+
+## Patrimonio (net_worth, INS-4)
+
+Servicios deterministas sin IA. Importes como string decimal. Snapshots solo se crean por acción explícita del usuario (cierre de mes asistido); nunca automáticos.
+
+```txt
+GET  /api/net-worth/balance-sheet?month=YYYY-MM
+GET  /api/net-worth/snapshots?from=YYYY-MM&to=YYYY-MM
+GET  /api/net-worth/snapshot-readiness?month=YYYY-MM
+POST /api/net-worth/snapshots            {month, force_partial: bool}
+```
+
+`GET /balance-sheet` → activos por clase (liquidez, remuneradas, efectivo de inversión, cartera, fondos, otros), pasivos por cuenta `is_liability`, `net_worth = total_assets − total_liabilities`, `net_worth_change` vs snapshot del mes anterior (o `null`), `portfolio_cost`/`portfolio_gain`.
+
+`GET /snapshot-readiness` → checklist derivada de la frescura de datos: `items[{key,label,status: ok|stale|missing,detail,cta_route}]`, `ready` (todos ok), `snapshot_exists`, `snapshot_state`.
+
+`POST /snapshots` → 201 con el snapshot; `data_state=complete` si todo está ok, `partial` (con `missing_items`) si `force_partial=true`. Idempotente por mes (DELETE+INSERT). **409** si faltan elementos y `force_partial=false`.
 
 ## Error format
 

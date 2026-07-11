@@ -21,9 +21,29 @@ class InsightType(str, Enum):
     cashflow_alert = "cashflow_alert"
     net_worth_change = "net_worth_change"
     investment_allocation = "investment_allocation"
+    portfolio_concentration = "portfolio_concentration"
+    wealth_concentration = "wealth_concentration"
     goal_progress = "goal_progress"
     market_context = "market_context"
     macro_context = "macro_context"
+    data_quality = "data_quality"
+    # INS-5 (Lote 1: planificación)
+    budget_alert = "budget_alert"
+    upcoming_cashflow = "upcoming_cashflow"
+    recurring_creep = "recurring_creep"
+    household_bill_anomaly = "household_bill_anomaly"
+    snapshot_pending = "snapshot_pending"
+    # INS-6 (Lote 2: tendencias y patrimonio)
+    savings_rate_trend = "savings_rate_trend"
+    category_trend = "category_trend"
+    emergency_fund_coverage = "emergency_fund_coverage"
+    real_return = "real_return"
+
+
+class InsightClass(str, Enum):
+    """Taxonomía de tres clases (INS-2): trata cada insight distinto en la UI."""
+    signal = "signal"
+    context = "context"
     data_quality = "data_quality"
 
 
@@ -39,6 +59,7 @@ class InsightMetricOut(BaseModel):
     label: str
     value: float
     unit: str = ""
+    precision: int = 0  # decimales con que el frontend formatea este valor
 
 
 class InsightSourceOut(BaseModel):
@@ -58,6 +79,8 @@ class InsightActionOut(BaseModel):
 class InsightOut(BaseModel):
     id: str
     type: InsightType
+    insight_class: InsightClass = InsightClass.signal
+    dedupe_key: str = ""  # clave canónica de deduplicación; si vacía, se usa `id`
     severity: InsightSeverity
     title: str
     summary: str

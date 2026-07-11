@@ -49,7 +49,7 @@ IA local opcional (get_insights_summary tool)
 | `monthly_comparison` | Gasto/ahorro vs mes anterior |
 | `savings_rate` | Tasa de ahorro del mes |
 | `cashflow_alert` | Gastos > Ingresos |
-| `net_worth_change` | Variación de patrimonio |
+| `net_worth_change` | Variación REAL de patrimonio entre los dos últimos snapshots mensuales (INS-4). Sin ≥2 snapshots no emite nada — el insight estático desapareció. |
 | `investment_allocation` | Concentración o precios faltantes |
 | `goal_progress` | Progreso vs ritmo esperado |
 | `market_context` | Variaciones relevantes en índices |
@@ -75,6 +75,7 @@ priority = severity_score * 0.35
 | GET | `/api/insights/data-quality` | Solo insights de calidad |
 | POST | `/api/insights/refresh` | Recalcular insights |
 | POST | `/api/insights/{id}/dismiss` | Descartar insight |
+| POST | `/api/insights/{id}/restore` | Deshacer un descarte (undo, INS-7) |
 
 ## Integración con IA
 
@@ -82,6 +83,11 @@ Tool: `get_insights_summary`
 - Llama al servicio determinista
 - La IA puede explicar, pero no recalcular ni inventar insights
 - System prompt actualizado para usar la tool cuando se pregunte por alertas o revisión mensual
+
+Tool: `get_balance_sheet` (INS-8, solo lectura)
+- Envuelve `net_worth.service.build_balance_sheet` (activos, pasivos, patrimonio)
+- La IA **explica y contextualiza** las cifras, nunca las recalcula ni inventa; cita los mismos importes
+- El botón "Preguntar a la IA" de cada señal abre el asistente con el insight como contexto
 
 ## Estados de datos
 
@@ -109,15 +115,26 @@ cd backend && uv run pytest app/tests/test_insights_api.py -v
 cd apps/desktop && npx tsc --noEmit
 ```
 
+## Caché (INS-3, D4)
+
+Respuestas calculadas memoizadas en memoria de proceso (dict + timestamp) con TTL 1h,
+clave por mes (`cache.py`). Invalidación desde un único punto: un listener `after_commit`
+de SQLAlchemy limpia la caché ante **cualquier** escritura (transacciones, cuentas,
+holdings, presupuestos, creación de snapshots…). Las lecturas no hacen commit, así que
+no la tocan. `refresh` y `dismiss` invalidan además explícitamente.
+
+## Patrimonio y cierre de mes (INS-4)
+
+`net_worth_change` se calcula sobre `net_worth_snapshots`. Los snapshots se crean por el
+**cierre de mes asistido** en Resumen (submódulo `net_worth`, endpoints `/api/net-worth/*`),
+nunca de forma automática. Ver `11_API_CONTRACT.md`.
+
 ## Limitaciones actuales
 
-- Net worth change requiere histórico de saldos que no se captura aún (devuelve `partial`)
+- Rentabilidad real (nominal − IPC) y rentabilidad de intereses aún no están en el balance (INS-6)
 - Market/macro insights dependen de que haya datos ingestados en DuckDB
-- Dismissals persisten en JSON junto a la base de datos SQLite
 
 ## Próximos pasos
 
-- Persistir snapshots de patrimonio para calcular cambio real mes a mes
-- Caché de insights calculados con TTL de 1 hora
+- Nuevos insights Lote 1/2 (INS-5/INS-6): budget_alert, recurring_creep, savings_rate_trend, real_return…
 - Tests de frontend con Vitest/Testing Library
-- UX snapshots automáticos

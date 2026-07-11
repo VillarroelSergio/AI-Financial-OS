@@ -1,3 +1,6 @@
+# Campos historical:/retention: son metadatos RESERVADOS para ECO-5 (scheduler y
+# job de retención). Hoy nadie los consume; no borrar hasta implementar ECO-5.
+
 - id: cpi_usa
   name: "CPI USA"
   category: macro
@@ -12,6 +15,7 @@
   retention: 5y
   unit: "%"
   description: "Consumer Price Index USA"
+  # ECO-2: bls es la fuente canónica pero aún no implementa esta serie; fred la sirve.
   provider_primary: bls
   provider_secondary: fred
 
@@ -29,6 +33,7 @@
   retention: 5y
   unit: "%"
   description: "CPI excluida energía y alimentos"
+  # ECO-2: bls es la fuente canónica pero aún no implementa esta serie; fred la sirve.
   provider_primary: bls
   provider_secondary: fred
 
@@ -46,9 +51,8 @@
   retention: 5y
   unit: "USD bn"
   description: "Gross Domestic Product USA"
-  provider_primary: bea
-  provider_secondary: fred
-  provider_fallback: world_bank
+  # ECO-2: bea (PublicDatasetAdapter) no emite valor; fred sirve la serie GDP real.
+  provider_primary: fred
 
 - id: unemployment_usa
   name: "Desempleo USA"
@@ -64,6 +68,7 @@
   retention: 5y
   unit: "%"
   description: "Unemployment rate USA"
+  # ECO-2: bls es la fuente canónica pero aún no implementa esta serie; fred la sirve.
   provider_primary: bls
   provider_secondary: fred
 
@@ -97,6 +102,7 @@
   retention: 3y
   unit: "thousands"
   description: "Nóminas no agrícolas"
+  # ECO-2: bls es la fuente canónica pero aún no implementa esta serie; fred la sirve.
   provider_primary: bls
   provider_secondary: fred
 
@@ -114,8 +120,8 @@
   retention: 3y
   unit: "USD mn"
   description: "Ventas al por menor"
-  provider_primary: census
-  provider_secondary: fred
+  # ECO-2: census (PublicDatasetAdapter) no emite valor; fred sirve RSAFS.
+  provider_primary: fred
 
 - id: housing_starts_usa
   name: "Housing Starts USA"
@@ -131,8 +137,8 @@
   retention: 3y
   unit: "thousands"
   description: "Inicio de construcción de viviendas"
-  provider_primary: census
-  provider_secondary: fred
+  # ECO-2: census (PublicDatasetAdapter) no emite valor; fred sirve HOUST.
+  provider_primary: fred
 
 - id: industrial_production_usa
   name: "Producción Industrial USA"
@@ -174,7 +180,7 @@
   region: USA
   frequency: monthly
   priority: medium
-  dashboard: false
+  dashboard: true
   ai: true
   historical: 10y
   retention: 5y

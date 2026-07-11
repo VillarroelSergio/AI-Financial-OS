@@ -1,13 +1,19 @@
 import { formatCurrency } from "@/lib/formatters/currency";
 import type { HoldingEnriched } from "@/lib/types";
+import PositionMenu, { type MenuItem } from "./PositionMenu";
 
 interface HoldingRowProps {
   holding: HoldingEnriched;
+  canMerge?: boolean;
   onEdit?: (holding: HoldingEnriched) => void;
   onDelete?: (holding: HoldingEnriched) => void;
+  onMerge?: (holding: HoldingEnriched) => void;
+  onHistory?: (holding: HoldingEnriched) => void;
+  onFundValue?: (holding: HoldingEnriched) => void;
 }
 
-export default function HoldingRow({ holding, onEdit, onDelete }: HoldingRowProps) {
+export default function HoldingRow({ holding, canMerge, onEdit, onDelete, onMerge, onHistory, onFundValue }: HoldingRowProps) {
+  const isFund = holding.asset_type === "fund";
   const pct = holding.return_percent;
   const isPositive = pct !== null && pct >= 0;
   const updated = holding.current_price_updated_at
@@ -16,6 +22,13 @@ export default function HoldingRow({ holding, onEdit, onDelete }: HoldingRowProp
         month: "2-digit",
       })
     : null;
+
+  const items: MenuItem[] = [];
+  if (onEdit) items.push({ label: "Editar", onClick: () => onEdit(holding) });
+  if (isFund && onFundValue) items.push({ label: "Actualizar valor", onClick: () => onFundValue(holding) });
+  else if (onHistory) items.push({ label: "Historial", onClick: () => onHistory(holding) });
+  if (canMerge && onMerge) items.push({ label: "Fusionar duplicado", onClick: () => onMerge(holding) });
+  if (onDelete) items.push({ label: "Eliminar", onClick: () => onDelete(holding), danger: true });
 
   return (
     <div className="flex items-center justify-between py-sm gap-md">
@@ -48,10 +61,7 @@ export default function HoldingRow({ holding, onEdit, onDelete }: HoldingRowProp
             {pct.toFixed(1)}%
           </span>
         )}
-        <div className="flex flex-col gap-xs">
-          {onEdit && <button onClick={() => onEdit(holding)} className="text-caption text-stone hover:text-on-dark">Editar</button>}
-          {onDelete && <button onClick={() => onDelete(holding)} className="text-caption text-stone hover:text-accent-danger">Eliminar</button>}
-        </div>
+        {items.length > 0 && <PositionMenu items={items} />}
       </div>
     </div>
   );

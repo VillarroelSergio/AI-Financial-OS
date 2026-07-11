@@ -1,11 +1,18 @@
+import { formatCurrency } from "@/lib/formatters/currency";
 import type { InsightMetric as InsightMetricType } from "../types/insights.types";
 
+function esNumber(value: number, decimals: number): string {
+  return value.toLocaleString("es-ES", { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+
 export function InsightMetric({ metric, large = false }: { metric: InsightMetricType; large?: boolean }) {
+  // Formato es-ES único, con la precisión que declara el backend (INS-F1).
+  const decimals = metric.precision ?? (metric.unit === "%" ? 1 : 0);
   const valueStr = metric.unit === "%"
-    ? `${metric.value.toFixed(1)}%`
+    ? `${esNumber(metric.value, decimals)} %`
     : metric.unit === "EUR"
-      ? `${metric.value.toLocaleString("es-ES", { minimumFractionDigits: 0, maximumFractionDigits: 0 })} €`
-      : `${metric.value} ${metric.unit}`.trim();
+      ? formatCurrency(metric.value)
+      : `${esNumber(metric.value, decimals)} ${metric.unit}`.trim();
 
   return (
     <div className="rounded-lg bg-white/5 px-3 py-2">

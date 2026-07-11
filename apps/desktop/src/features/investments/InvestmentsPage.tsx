@@ -6,14 +6,22 @@ import MetricCard from "@/components/ui/MetricCard";
 import Spinner from "@/components/ui/Spinner";
 import { useAccounts } from "@/lib/hooks/useAccounts";
 import { useHoldings, useInvestmentSummary, useRefreshPrices } from "@/lib/hooks/useInvestments";
+import { mergeHoldings, deleteSavings } from "@/lib/api/investments";
 import { formatCurrency } from "@/lib/formatters/currency";
 import DistributionChart from "./components/DistributionChart";
-import PositionsTabs from "./components/PositionsTabs";
+import PortfolioByTypeCards from "./components/PortfolioByTypeCards";
+import PortfolioEvolutionChart from "./components/PortfolioEvolutionChart";
+import PositionsTable from "./components/PositionsTable";
+import SavingsSummaryPanel from "./components/SavingsSummaryPanel";
 import ManualNavDialog from "./components/ManualNavDialog";
 import AddStockDialog from "./components/AddStockDialog";
 import AddFundDialog from "./components/AddFundDialog";
 import AddSavingsDialog from "./components/AddSavingsDialog";
 import HoldingEditor from "./components/HoldingEditor";
+import HoldingHistoryDialog from "./components/HoldingHistoryDialog";
+import FundValuationDialog from "./components/FundValuationDialog";
+import SavingsDetailDialog from "./components/SavingsDetailDialog";
+import SavingsEditDialog from "./components/SavingsEditDialog";
 import ReconciliationTab from "@/features/investments/reconciliation/ReconciliationTab";
 import type { HoldingEnriched } from "@/lib/types";
 
@@ -38,6 +46,10 @@ export default function InvestmentsPage() {
   const [addSavings, setAddSavings] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingHolding, setEditingHolding] = useState<HoldingEnriched | null>(null);
+  const [historyHolding, setHistoryHolding] = useState<HoldingEnriched | null>(null);
+  const [fundHolding, setFundHolding] = useState<HoldingEnriched | null>(null);
+  const [savingsHolding, setSavingsHolding] = useState<HoldingEnriched | null>(null);
+  const [savingsEditHolding, setSavingsEditHolding] = useState<HoldingEnriched | null>(null);
   const [activeTab, setActiveTab] = useState<"posiciones" | "reconciliacion">(initialTab);
 
   const navigate = useNavigate();
@@ -83,12 +95,50 @@ export default function InvestmentsPage() {
     setEditorOpen(true);
   };
   const openEdit = (holding: HoldingEnriched) => {
+    // Las cuentas remuneradas editan su configuración (tipo/TAE), no el holding genérico.
+    if (holding.asset.asset_type === "savings_account") {
+      setSavingsEditHolding(holding);
+      return;
+    }
     setEditingHolding(holding);
     setEditorOpen(true);
   };
   const deleteHolding = async (holding: HoldingEnriched) => {
+    // Al borrar una cuenta remunerada hay que borrar también su config, si no la cuenta
+    // queda "ya configurada" y no se puede volver a dar de alta (409).
+    if (holding.asset.asset_type === "savings_account") {
+      await deleteSavings(holding.account_id).catch(() => {});
+    }
     await remove(holding.id);
     onRefreshAll();
+  };
+
+  // Duplicados: mismo activo (ticker o nombre) en la misma cuenta. Se fusiona el de
+  // menor valor dentro del mayor para conservar la posición principal (BUG-INV-1).
+  const dupGroups = Object.values(
+    holdings.reduce<Record<string, HoldingEnriched[]>>((acc, h) => {
+      const key = `${h.account_id}::${(h.symbol || h.display_name || "").toLowerCase()}`;
+      (acc[key] ||= []).push(h);
+      return acc;
+    }, {}),
+  ).filter((g) => g.length > 1);
+
+  const mergeGroup = async (group: HoldingEnriched[]) => {
+    const byValue = [...group].sort(
+      (a, b) => Number(b.market_value ?? 0) - Number(a.market_value ?? 0),
+    );
+    const target = byValue[0];
+    for (const src of byValue.slice(1)) {
+      await mergeHoldings(src.id, target.id);
+    }
+    onRefreshAll();
+  };
+
+  // Fusionar desde el menú de una fila: fusiona todo su grupo de duplicados.
+  const mergeableIds = new Set(dupGroups.flatMap((g) => g.map((h) => h.id)));
+  const mergeHolding = (holding: HoldingEnriched) => {
+    const group = dupGroups.find((g) => g.some((h) => h.id === holding.id));
+    if (group) mergeGroup(group);
   };
 
   return (
@@ -195,6 +245,14 @@ export default function InvestmentsPage() {
               Anadir activo
             </button>
           }
+          secondaryAction={
+            <button
+              onClick={() => setAddSavings(true)}
+              className="mercury-button px-lg py-sm rounded-md text-body-sm"
+            >
+              + Cuenta de ahorro
+            </button>
+          }
         />
       ) : activeTab === "posiciones" ? (
         <>
@@ -212,25 +270,57 @@ export default function InvestmentsPage() {
             </div>
           )}
 
-          {/* Chart + positions */}
-          <div className="grid grid-cols-5 gap-xl">
-            <div className="col-span-3">
-              <DistributionChart holdings={realHoldings} accountNames={accountNames} />
+          {summary && summary.pending_valuation_count > 0 && (
+            <p className="text-caption text-mute -mt-md">
+              {summary.pending_valuation_count} posición(es) sin valorar ({formatCurrency(summary.pending_valuation_invested)} aportado) no se incluyen en la rentabilidad hasta que tengan valor.
+            </p>
+          )}
+
+          <PortfolioByTypeCards holdings={realHoldings} />
+
+          <PortfolioEvolutionChart />
+
+          {dupGroups.length > 0 && (
+            <div className="premium-card rounded-lg p-lg flex items-center justify-between gap-md">
+              <p className="text-caption text-stone">
+                Se detectaron {dupGroups.length} posición(es) duplicada(s). Fusiónalas para no contar el coste dos veces.
+              </p>
+              <div className="flex shrink-0 gap-sm">
+                {dupGroups.map((g, i) => (
+                  <button
+                    key={i}
+                    onClick={() => mergeGroup(g)}
+                    className="mercury-button rounded-lg px-md py-xs text-caption"
+                  >
+                    Fusionar {g[0].symbol || g[0].display_name}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="col-span-2">
-              <PositionsTabs
-                holdings={holdings}
-                trAccountIds={trAccounts.map((a) => a.id)}
-                finizensAccountIds={finizensAccounts.map((a) => a.id)}
-                ahorroAccountIds={ahorroAccounts.map((a) => a.id)}
-                onAddStock={openAdd}
-                onAddFund={() => setAddFund(true)}
-                onAddSavings={() => setAddSavings(true)}
-                onEdit={openEdit}
-                onDelete={deleteHolding}
-              />
-            </div>
-          </div>
+          )}
+
+          <DistributionChart holdings={realHoldings} accountNames={accountNames} />
+
+          <PositionsTable
+            holdings={realHoldings.filter((h) => h.asset.asset_type !== "savings_account")}
+            accountNames={accountNames}
+            mergeableIds={mergeableIds}
+            onAddStock={openAdd}
+            onAddFund={() => setAddFund(true)}
+            onEdit={openEdit}
+            onDelete={deleteHolding}
+            onMerge={mergeHolding}
+            onHistory={setHistoryHolding}
+            onFundValue={setFundHolding}
+          />
+
+          <SavingsSummaryPanel
+            holdings={realHoldings.filter((h) => h.asset.asset_type === "savings_account")}
+            onAddSavings={() => setAddSavings(true)}
+            onEdit={openEdit}
+            onDelete={deleteHolding}
+            onDetail={setSavingsHolding}
+          />
         </>
       ) : (
         <ReconciliationTab />
@@ -246,6 +336,7 @@ export default function InvestmentsPage() {
       <AddFundDialog
         open={addFund}
         accountId={finizensId}
+        accounts={accounts}
         onClose={() => setAddFund(false)}
         onSuccess={onRefreshAll}
       />
@@ -254,6 +345,25 @@ export default function InvestmentsPage() {
         accountId={ahorroId}
         onClose={() => setAddSavings(false)}
         onSuccess={onRefreshAll}
+      />
+      <HoldingHistoryDialog
+        holding={historyHolding}
+        onClose={() => setHistoryHolding(null)}
+        onChanged={onRefreshAll}
+      />
+      <FundValuationDialog
+        holding={fundHolding}
+        onClose={() => setFundHolding(null)}
+        onChanged={onRefreshAll}
+      />
+      <SavingsDetailDialog
+        holding={savingsHolding}
+        onClose={() => setSavingsHolding(null)}
+      />
+      <SavingsEditDialog
+        holding={savingsEditHolding}
+        onClose={() => setSavingsEditHolding(null)}
+        onSaved={onRefreshAll}
       />
       <ManualNavDialog
         open={navHoldings.length > 0}

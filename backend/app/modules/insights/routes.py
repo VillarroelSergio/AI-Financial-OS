@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.modules.insights import repository, service
+from app.modules.insights import cache, repository, service
 from app.modules.insights.schemas import (
     AnomaliesOut,
     DismissInsightOut,
@@ -70,6 +70,7 @@ def refresh_insights(
     db: Session = Depends(get_db),
 ) -> InsightsSummaryOut:
     _validate_period(period)
+    cache.invalidate(period)  # refresh explícito: fuerza recálculo (D4)
     return service.get_insights(db, period)
 
 
@@ -78,4 +79,15 @@ def dismiss_insight(insight_id: str) -> DismissInsightOut:
     if not insight_id or len(insight_id) > 200:
         raise HTTPException(status_code=422, detail="Invalid insight_id")
     dismissed_at = repository.dismiss(insight_id)
+    cache.invalidate()  # D4: el descarte cambia lo que se muestra
     return DismissInsightOut(insight_id=insight_id, dismissed_at=dismissed_at)
+
+
+@router.post("/{insight_id}/restore")
+def restore_insight(insight_id: str) -> dict:
+    """INS-7: deshace un descarte (undo) para que el insight vuelva a mostrarse."""
+    if not insight_id or len(insight_id) > 200:
+        raise HTTPException(status_code=422, detail="Invalid insight_id")
+    repository.restore(insight_id)
+    cache.invalidate()
+    return {"insight_id": insight_id, "restored": True}

@@ -19,6 +19,8 @@ export interface TransactionFilters {
   from_date?: string;
   to_date?: string;
   type?: string;
+  limit?: number;
+  offset?: number;
 }
 
 export const fetchTransactions = (filters?: TransactionFilters) =>
@@ -46,4 +48,41 @@ export const reassignCurrency = (fromCurrency: string, toCurrency: string, previ
     from_currency: fromCurrency,
     to_currency: toCurrency,
     preview,
+  });
+
+export interface ReconciliationSuggestion {
+  id: string;
+  date: string;
+  description: string;
+  amount: string;
+  category_id: string | null;
+  score: number;
+}
+
+export interface ReconciliationItem {
+  transaction: Transaction;
+  account_name: string | null;
+  suggestion: ReconciliationSuggestion | null;
+}
+
+export interface ReconciliationStats {
+  auto_linked: number;
+  categories_propagated: number;
+  suggestions: number;
+}
+
+export const fetchReconciliation = () =>
+  api.get<ReconciliationItem[]>("/api/transactions/reconciliation");
+
+export const runReconciliation = () =>
+  api.post<ReconciliationStats>("/api/transactions/reconcile", {});
+
+export const resolveScope = (
+  id: string,
+  scope: "personal" | "excluded" | "pending",
+  linkedTransactionId?: string
+) =>
+  api.patch<Transaction>(`/api/transactions/${id}/scope`, {
+    scope,
+    linked_transaction_id: linkedTransactionId,
   });

@@ -110,8 +110,11 @@ def run_ingestion(
     priority: str | None = None,
     dashboard: bool = False,
     dry_run: bool = False,
+    item_ids: list[str] | None = None,
 ) -> IngestionSummary:
-    """Ejecuta la ingesta completa o filtrada y persiste en DuckDB."""
+    """Ejecuta la ingesta completa o filtrada y persiste en DuckDB.
+
+    `item_ids`: restringe a esos catalog ids (lo usa el scheduler por frecuencia)."""
     # Lazy imports — these modules may not exist yet (Tasks 6-7)
     try:
         from app.modules.market_intelligence.quality.engine import QualityEngine
@@ -136,6 +139,9 @@ def run_ingestion(
         indicators = [i for i in indicators if i.dashboard]
     if priority:
         indicators = [i for i in indicators if i.priority == priority]
+    if item_ids is not None:
+        wanted = set(item_ids)
+        indicators = [i for i in indicators if i.id in wanted]
 
     adapters = build_adapters()
     orchestrator = ProviderOrchestrator(adapters)
@@ -150,6 +156,7 @@ def run_ingestion(
     with ThreadPoolExecutor(max_workers=8) as pool:
         fetched = list(pool.map(orchestrator.fetch_indicator, indicators))
 
+    now = datetime.now(timezone.utc)
     for indicator, result in zip(indicators, fetched):
         results.append(result)
 
@@ -170,6 +177,18 @@ def run_ingestion(
                     latency_ms=int(result.adapter_result.latency_ms),
                     error_message=result.adapter_result.error,
                 )
+
+        # ECO-5: estado por item (base del scheduler por frecuencia).
+        if not dry_run and repo is not None:
+            repo.record_ingest_result(
+                catalog_item_id=indicator.id,
+                frequency=indicator.frequency,
+                status="ok" if result.adapter_result.success else "error",
+                provider_used=result.provider_used,
+                fallback_used=result.fallback_used,
+                run_id=run_id,
+                at=now,
+            )
 
         logger.info(
             "run=%s indicator=%s provider=%s success=%s fallback=%s",

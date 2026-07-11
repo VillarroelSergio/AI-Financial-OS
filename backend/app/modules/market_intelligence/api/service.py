@@ -1,14 +1,14 @@
-"""Market Intelligence API service — lee desde DuckDB, nunca llama providers."""
+"""Market Intelligence API service — lee desde SQLite (ECO-3b), nunca llama providers."""
 from __future__ import annotations
 
 import logging
 from datetime import datetime, timezone
 
-from app.core.duckdb import is_in_memory
 from app.modules.market_intelligence.api.schemas import (
     AiDatasheetOut,
     BondSnapshotOut,
     BondYieldOut,
+    EconomyOverviewOut,
     ForexRateOut,
     ForexSnapshotOut,
     MacroDataPoint,
@@ -17,20 +17,17 @@ from app.modules.market_intelligence.api.schemas import (
     NewsItemOut,
     NewsSnapshotOut,
     QuoteOut,
+    RegionBlockOut,
+    ThemedGroupOut,
 )
 from app.modules.market_intelligence.catalog.loader import CatalogLoader
 from app.modules.market_intelligence.storage import repository
 
 logger = logging.getLogger("market_intelligence.api")
 
-_MEMORY_WARNING = (
-    "Base analítica bloqueada por otro proceso: los datos de mercado no persisten "
-    "en esta sesión. Cierra procesos duplicados del backend y reinicia la app."
-)
-
-
 def _storage_warnings() -> list[str]:
-    return [_MEMORY_WARNING] if is_in_memory() else []
+    # ECO-3b: SQLite WAL no cae a memoria (no hay mono-escritor). Sin aviso de almacenamiento.
+    return []
 
 _catalog = CatalogLoader()
 _INDEX_CATALOG_IDS = {
@@ -81,12 +78,9 @@ def get_macro_snapshot() -> MacroSnapshotOut:
     except Exception:
         macro_history = {}
     spain, eurozone, usa = [], [], []
-    seen_values: dict[tuple[str | None, float | None, str | None], set[str]] = {}
     for r in rows:
         catalog_id = str(r.get("catalog_item_id", ""))
         region = _region_for(catalog_id)
-        key = (region, r.get("value"), r.get("period"))
-        seen_values.setdefault(key, set()).add(catalog_id)
         payload = {k: v for k, v in r.items() if k in MacroDataPoint.model_fields}
         payload["retrieved_at"] = str(r.get("retrieved_at", "")) if r.get("retrieved_at") else None
         payload["data_status"] = _status_for(r)
@@ -111,22 +105,9 @@ def get_macro_snapshot() -> MacroSnapshotOut:
             eurozone.append(point)
         elif region == "usa":
             usa.append(point)
+    # ECO-1: la detección de "valores repetidos" en lectura era un parche del bug de
+    # clonación (P1), ya cortado en origen con allowlists honestas en los adapters.
     warnings = _storage_warnings() + _warn(rows)
-    repeated = [
-        ids for (region, value, period), ids in seen_values.items()
-        if region and value is not None and period and len(ids) >= 3
-    ]
-    if repeated:
-        warnings.append("Se han detectado indicadores macro con valores repetidos; revisa fuente y fecha antes de usarlos.")
-        repeated_ids = {catalog_id for ids in repeated for catalog_id in ids}
-        for point in [*spain, *eurozone, *usa]:
-            if point.catalog_item_id in repeated_ids:
-                point.data_status = "requires_review"
-                point.quality_score = min(point.quality_score, 0.4)
-        # Remove repeated/polluted indicators so the UI doesn't show misleading data
-        spain = [p for p in spain if p.catalog_item_id not in repeated_ids]
-        eurozone = [p for p in eurozone if p.catalog_item_id not in repeated_ids]
-        usa = [p for p in usa if p.catalog_item_id not in repeated_ids]
     all_items = [*spain, *eurozone, *usa]
     status = "ok" if spain and eurozone and usa else "partial" if all_items else "empty"
     return MacroSnapshotOut(status=status, spain=spain, eurozone=eurozone, usa=usa, generated_at=_now(), warnings=warnings)
@@ -202,6 +183,71 @@ def get_news_snapshot(limit: int = 20) -> NewsSnapshotOut:
         category=r.get("category"), provider_id=r.get("provider_id"),
     ) for r in rows]
     return NewsSnapshotOut(items=items, generated_at=_now())
+
+
+# ── ECO-6: overview agregado ──────────────────────────────────────────────────
+# Agrupación temática y "snapshot global" vivían en EconomyPage.tsx; se resuelven aquí
+# para que la UI reciba datos ya agrupados (DoD: lógica temática fuera del frontend).
+# Propuesta §3: temas que responden preguntas del usuario (no listas de series).
+# policy_rate ya no cae en "Otros" (fix §1). El agrupado vive aquí, en backend (ECO-6).
+_THEME_BY_SUBCATEGORY: dict[str, str] = {
+    "inflation": "Precios y consumo",
+    "consumption": "Precios y consumo",
+    "sentiment": "Precios y consumo",
+    "housing": "Vivienda",
+    "interest_rates": "Ahorro y tipos",
+    "policy_rate": "Ahorro y tipos",
+    "monetary": "Ahorro y tipos",
+    "employment": "Empleo y salarios",
+    "energy": "Energía",
+    "gdp": "Actividad y cuentas públicas",
+    "industrial": "Actividad y cuentas públicas",
+    "fiscal": "Actividad y cuentas públicas",
+    "pmi": "Actividad y cuentas públicas",
+}
+_THEME_ORDER = [
+    "Precios y consumo", "Vivienda", "Ahorro y tipos", "Empleo y salarios",
+    "Energía", "Actividad y cuentas públicas", "Otros",
+]
+_GLOBAL_PICK = ["ipc_general", "euribor_12m", "tipo_bce", "fed_funds_rate"]
+
+
+def _group_by_theme(points: list[MacroDataPoint]) -> RegionBlockOut:
+    groups: dict[str, list[MacroDataPoint]] = {}
+    for p in points:
+        theme = _THEME_BY_SUBCATEGORY.get(p.subcategory or "", "Otros")
+        groups.setdefault(theme, []).append(p)
+    themes = [ThemedGroupOut(theme=t, indicators=groups[t]) for t in _THEME_ORDER if t in groups]
+    return RegionBlockOut(themes=themes)
+
+
+def get_economy_overview(db) -> EconomyOverviewOut:
+    """ECO-6: colapsa los 5 requests de EconomyPage en uno; agrupa por tema en backend."""
+    from app.modules.market_intelligence.api.impact import compute_personal_impact
+    from app.modules.market_intelligence.api.personal_economy import compute_personal_economy
+
+    macro = get_macro_snapshot()
+    all_points = [*macro.spain, *macro.eurozone, *macro.usa]
+    by_id = {p.catalog_item_id: p for p in all_points}
+    picked = [by_id[i] for i in _GLOBAL_PICK if i in by_id]
+    rest = [p for p in all_points if p.catalog_item_id not in _GLOBAL_PICK]
+    global_indicators = (picked + rest)[:4]
+
+    return EconomyOverviewOut(
+        status=macro.status,
+        generated_at=macro.generated_at,
+        warnings=macro.warnings,
+        global_indicators=global_indicators,
+        regions={
+            "ES": _group_by_theme(macro.spain),
+            "EA": _group_by_theme(macro.eurozone),
+            "US": _group_by_theme(macro.usa),
+        },
+        impact=compute_personal_impact(db),
+        bonds=get_bond_snapshot(),
+        forex=get_forex_snapshot(),
+        personal_economy=compute_personal_economy(db),
+    )
 
 
 def get_ai_datasheet(scope: str = "daily") -> AiDatasheetOut:

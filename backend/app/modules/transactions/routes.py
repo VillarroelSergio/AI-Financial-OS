@@ -9,6 +9,7 @@ from app.models.transaction import Transaction
 from app.modules.security.service import create_backup
 from app.modules.transactions.schemas import (
     CurrencyReassign,
+    ScopeUpdate,
     TransactionCreate,
     TransactionOut,
     TransactionUpdate,
@@ -33,6 +34,8 @@ def list_transactions(
     to_date: str | None = Query(None),
     type: str | None = Query(None),
     source: str | None = Query(None),
+    limit: int | None = Query(None, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
     db: Session = Depends(get_db),
 ) -> list[Transaction]:
     q = db.query(Transaction)
@@ -48,7 +51,12 @@ def list_transactions(
         q = q.filter(Transaction.type == type)
     if source:
         q = q.filter(Transaction.source == source)
-    return _stamp_account_names(db, q.order_by(Transaction.date.desc()).all())
+    q = q.order_by(Transaction.date.desc())
+    if offset:
+        q = q.offset(offset)
+    if limit is not None:
+        q = q.limit(limit)
+    return _stamp_account_names(db, q.all())
 
 
 @router.post("/currency-reassign")
@@ -76,6 +84,87 @@ def reassign_currency(payload: CurrencyReassign, db: Session = Depends(get_db)) 
     }
 
 
+@router.post("/reconcile")
+def run_reconciliation(db: Session = Depends(get_db)) -> dict:
+    """Empareja movimientos bancarios pendientes con sus gastos Monefy."""
+    from app.modules.imports.reconciliation import reconcile
+
+    stats = reconcile(db)
+    db.commit()
+    return stats
+
+
+@router.get("/reconciliation")
+def reconciliation_review(db: Session = Depends(get_db)) -> list[dict]:
+    """Movimientos bancarios pendientes de revisar, con su mejor candidato Monefy."""
+    from app.modules.imports.reconciliation import find_matches
+
+    matches = {m.bank_tx.id: m for m in find_matches(db)}
+    pending = (
+        db.query(Transaction)
+        .filter(
+            Transaction.analytics_scope == "pending",
+            Transaction.type.in_(["income", "expense"]),
+        )
+        .order_by(Transaction.date.desc())
+        .all()
+    )
+    _stamp_account_names(db, pending)
+    result = []
+    for tx in pending:
+        match = matches.get(tx.id)
+        result.append(
+            {
+                "transaction": TransactionOut.model_validate(tx).model_dump(),
+                "account_name": tx.account_name,
+                "suggestion": {
+                    "id": match.monefy_tx.id,
+                    "date": match.monefy_tx.date,
+                    "description": match.monefy_tx.description,
+                    "amount": str(match.monefy_tx.amount),
+                    "category_id": match.monefy_tx.category_id,
+                    "score": round(match.score, 2),
+                }
+                if match
+                else None,
+            }
+        )
+    return result
+
+
+@router.patch("/{tx_id}/scope", response_model=TransactionOut)
+def resolve_scope(tx_id: str, payload: ScopeUpdate, db: Session = Depends(get_db)) -> Transaction:
+    """Resolución manual: contar como personal, excluir o enlazar con un gasto Monefy."""
+    tx = db.query(Transaction).filter(Transaction.id == tx_id).first()
+    if not tx:
+        raise HTTPException(
+            status_code=404,
+            detail={"error": {"code": "NOT_FOUND", "message": "Movimiento no encontrado", "details": {}}},
+        )
+    if payload.scope not in ("personal", "excluded", "pending"):
+        raise HTTPException(
+            status_code=422,
+            detail={"error": {"code": "INVALID_SCOPE", "message": "Scope debe ser personal, excluded o pending", "details": {}}},
+        )
+    tx.analytics_scope = payload.scope
+    if payload.linked_transaction_id:
+        linked = (
+            db.query(Transaction).filter(Transaction.id == payload.linked_transaction_id).first()
+        )
+        if not linked:
+            raise HTTPException(
+                status_code=422,
+                detail={"error": {"code": "INVALID_LINK", "message": "El movimiento enlazado no existe", "details": {}}},
+            )
+        tx.linked_transaction_id = linked.id
+        tx.analytics_scope = "excluded"
+        if linked.category_id and not tx.category_id:
+            tx.category_id = linked.category_id
+    db.commit()
+    db.refresh(tx)
+    return _stamp_account_names(db, [tx])[0]
+
+
 @router.post("", response_model=TransactionOut, status_code=201)
 def create_transaction(payload: TransactionCreate, db: Session = Depends(get_db)) -> Transaction:
     tx = Transaction(**payload.model_dump(), source="manual")
@@ -95,6 +184,17 @@ def update_transaction(tx_id: str, payload: TransactionUpdate, db: Session = Dep
         )
     for field, value in payload.model_dump(exclude_none=True).items():
         setattr(tx, field, value)
+    # Corrección manual de categoría: se aprende como regla permanente por comercio.
+    if payload.category_id is not None and tx.description:
+        from app.models.merchant_rule import MerchantRule
+        from app.modules.imports.auto_categorizer import _normalize
+
+        merchant = _normalize(tx.description)
+        rule = db.query(MerchantRule).filter(MerchantRule.merchant == merchant).first()
+        if rule:
+            rule.category_id = payload.category_id
+        else:
+            db.add(MerchantRule(merchant=merchant, category_id=payload.category_id))
     db.commit()
     db.refresh(tx)
     return _stamp_account_names(db, [tx])[0]

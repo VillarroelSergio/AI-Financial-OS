@@ -12,11 +12,9 @@ OUTPUT_DIR = Path("output/market-intelligence")
 
 
 def cmd_init_db() -> None:
-    from app.core.duckdb import get_duckdb
-    from app.modules.market_intelligence.storage.migrations import run_migrations
-    conn = get_duckdb()
-    run_migrations(conn)
-    console.print("[green]OK[/green] DuckDB tables created")
+    from app.modules.market_intelligence.storage.db import get_conn
+    get_conn()  # abre la BD y corre migraciones
+    console.print("[green]OK[/green] SQLite tables created")
 
 
 def cmd_catalog_show() -> None:
@@ -70,8 +68,8 @@ def cmd_update(category: str | None = None, priority: str | None = None, dry_run
 
 
 def cmd_quality() -> None:
-    from app.core.duckdb import get_duckdb
-    conn = get_duckdb()
+    from app.modules.market_intelligence.storage.db import get_conn
+    conn = get_conn()
     rows = conn.execute(
         "SELECT provider_id, status, COUNT(*) as count FROM mi_provider_health_logs GROUP BY provider_id, status ORDER BY provider_id"
     ).fetchall()

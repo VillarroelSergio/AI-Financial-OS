@@ -1,25 +1,27 @@
-import type { InsightType, InsightSeverity } from "../types/insights.types";
+import type { InsightType } from "../types/insights.types";
 
 const TYPES: { value: InsightType | ""; label: string }[] = [
   { value: "", label: "Todos los tipos" },
   { value: "spending_anomaly", label: "Gasto anómalo" },
   { value: "monthly_comparison", label: "Comparativa mensual" },
   { value: "savings_rate", label: "Tasa de ahorro" },
+  { value: "savings_rate_trend", label: "Tendencia de ahorro" },
+  { value: "category_trend", label: "Tendencia por categoría" },
   { value: "cashflow_alert", label: "Flujo de caja" },
+  { value: "upcoming_cashflow", label: "Vencimientos próximos" },
+  { value: "budget_alert", label: "Presupuestos" },
+  { value: "recurring_creep", label: "Gasto recurrente" },
+  { value: "household_bill_anomaly", label: "Facturas del hogar" },
   { value: "net_worth_change", label: "Patrimonio" },
+  { value: "emergency_fund_coverage", label: "Colchón de emergencia" },
+  { value: "wealth_concentration", label: "Concentración" },
+  { value: "real_return", label: "Rentabilidad real" },
   { value: "investment_allocation", label: "Inversiones" },
   { value: "goal_progress", label: "Objetivos" },
   { value: "market_context", label: "Mercado" },
   { value: "macro_context", label: "Macro" },
+  { value: "snapshot_pending", label: "Cierre de mes" },
   { value: "data_quality", label: "Calidad de datos" },
-];
-
-const SEVERITIES: { value: InsightSeverity | ""; label: string }[] = [
-  { value: "", label: "Toda severidad" },
-  { value: "positive", label: "Positivo" },
-  { value: "info", label: "Información" },
-  { value: "warning", label: "Atención" },
-  { value: "critical", label: "Crítico" },
 ];
 
 const AREAS = [
@@ -35,9 +37,8 @@ const AREAS = [
 
 interface InsightFiltersProps {
   type: InsightType | "";
-  severity: InsightSeverity | "";
   impactArea: string;
-  onChange: (updates: { type?: InsightType | ""; severity?: InsightSeverity | ""; impactArea?: string }) => void;
+  onChange: (updates: { type?: InsightType | ""; impactArea?: string }) => void;
 }
 
 function Select({ value, options, onChange }: { value: string; options: { value: string; label: string }[]; onChange: (v: string) => void }) {
@@ -53,11 +54,12 @@ function Select({ value, options, onChange }: { value: string; options: { value:
   );
 }
 
-export function InsightFilters({ type, severity, impactArea, onChange }: InsightFiltersProps) {
+// INS-7 / INS-F2: la severidad se filtra con chips clicables en la página; aquí quedan
+// el tipo y el área (§3: "chips de severidad + dropdown de área").
+export function InsightFilters({ type, impactArea, onChange }: InsightFiltersProps) {
   return (
     <div className="flex flex-wrap gap-2">
       <Select value={type} options={TYPES} onChange={(v) => onChange({ type: v as InsightType | "" })} />
-      <Select value={severity} options={SEVERITIES} onChange={(v) => onChange({ severity: v as InsightSeverity | "" })} />
       <Select value={impactArea} options={AREAS} onChange={(v) => onChange({ impactArea: v })} />
     </div>
   );

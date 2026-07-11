@@ -11,7 +11,8 @@ class Settings(BaseSettings):
 
     APP_ENV: str = "development"
     DATABASE_URL: str = "sqlite:///./data/financial.db"
-    DUCKDB_PATH: str = "./data/analytics.duckdb"
+    DUCKDB_PATH: str = "./data/analytics.duckdb"  # financial_knowledge (fuera de ECO-3b)
+    MI_SQLITE_PATH: str = "./data/market_intelligence.db"  # ECO-3b: MI migrado a SQLite WAL
 
     # ── AI Assistant ──────────────────────────────────────────────────────────
     AI_ASSISTANT_ENABLED: bool = True

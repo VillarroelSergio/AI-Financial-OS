@@ -40,7 +40,7 @@
   region: Global
   frequency: daily
   priority: low
-  dashboard: false
+  dashboard: true
   ai: false
   historical: 2y
   retention: 1y
@@ -56,7 +56,7 @@
   region: Global
   frequency: daily
   priority: low
-  dashboard: false
+  dashboard: true
   ai: false
   historical: 2y
   retention: 1y

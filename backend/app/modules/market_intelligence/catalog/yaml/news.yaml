@@ -57,7 +57,7 @@
   region: Global
   frequency: realtime
   priority: medium
-  dashboard: false
+  dashboard: true
   ai: true
   historical: 30d
   retention: 30d

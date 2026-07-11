@@ -34,12 +34,20 @@ def create_backup(source_url: str | None = None) -> dict:
     destination = backup_dir() / f"financial-{timestamp}.db"
     shutil.copy2(source, destination)
     stat = destination.stat()
+    _prune_backups(keep=20)
     return {
         "filename": destination.name,
         "path": str(destination),
         "size_bytes": stat.st_size,
         "created_at": datetime.fromtimestamp(stat.st_ctime, tz=timezone.utc),
     }
+
+
+def _prune_backups(keep: int) -> None:
+    """Retiene los `keep` backups más recientes; el resto se borra."""
+    paths = sorted(backup_dir().glob("financial-*.db"), reverse=True)
+    for path in paths[keep:]:
+        path.unlink(missing_ok=True)
 
 
 def list_backups() -> list[dict]:

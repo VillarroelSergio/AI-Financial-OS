@@ -113,6 +113,56 @@ export interface PersonalImpactMI {
   warnings: string[];
 }
 
+export interface PersonalInflationCategoryMI {
+  category: string;
+  current: number;
+  previous: number;
+  yoy_pct: number | null;
+}
+
+export interface PersonalEconomyMI {
+  generated_at: string;
+  personal_inflation: {
+    user_yoy_pct: number | null;
+    ipc_general: number | null;
+    ipc_subyacente: number | null;
+    current_total: number;
+    previous_total: number;
+    by_category: PersonalInflationCategoryMI[];
+  };
+  real_salary: {
+    monthly_now: number | null;
+    monthly_year_ago: number | null;
+    nominal_yoy_pct: number | null;
+    ipc: number | null;
+    real_yoy_pct: number | null;
+  };
+  savings: {
+    idle_liquidity: number;
+    tipo_bce: number | null;
+    potential_monthly: number | null;
+  };
+  euribor: {
+    value: number | null;
+    year_ago: number | null;
+    history: { period: string; value: number }[];
+  };
+  fiscal_calendar: {
+    date: string;
+    label: string;
+    audience: "todos" | "autonomos";
+    days_left: number;
+  }[];
+  relevant_news: {
+    id: string;
+    title: string | null;
+    published_at: string;
+    source_name: string | null;
+    url: string | null;
+    matched: string[];
+  }[];
+}
+
 export interface IngestResultDetail {
   indicator: string;
   category: string;
@@ -122,11 +172,42 @@ export interface IngestResultDetail {
   error: string | null;
 }
 
-export interface IngestStatus {
-  status: "idle" | "running" | "done" | "error";
-  last_run: string | null;
-  count: number;
-  results?: IngestResultDetail[];
+// ECO-5: forma cruda que devuelve GET /ingest-status (current/last_run).
+export interface IngestStatusRaw {
+  current: { started_at: string; in_progress: boolean; due_count: number } | null;
+  last_run: {
+    run_id?: string;
+    finished_at?: string;
+    total?: number;
+    success?: number;
+    failed?: number;
+    fallbacks_used?: number;
+    results?: { indicator: string; category: string; provider: string; status: string; fallback_used: boolean; error: string | null }[];
+    error?: string;
+  } | null;
   storage?: "file" | "memory";
   storage_warning?: string;
+  adapter_load_errors?: Record<string, string>;
+}
+
+// ECO-6: VM normalizada que consume la UI (el hook la deriva de IngestStatusRaw).
+export interface IngestStatus {
+  phase: "idle" | "running" | "done" | "error";
+  running: boolean;
+  last_run_at: string | null;
+  results: IngestResultDetail[];
+  storage?: "file" | "memory";
+  storage_warning?: string;
+}
+
+export interface EconomyOverviewMI {
+  status: "ok" | "partial" | "empty" | "error";
+  generated_at: string;
+  warnings: string[];
+  global_indicators: MacroDataPointMI[];
+  regions: Record<string, { themes: { theme: string; indicators: MacroDataPointMI[] }[] }>;
+  impact: PersonalImpactMI;
+  bonds: BondSnapshotMI;
+  forex: ForexSnapshotMI;
+  personal_economy: PersonalEconomyMI;
 }

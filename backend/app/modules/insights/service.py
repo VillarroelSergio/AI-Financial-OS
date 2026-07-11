@@ -2,27 +2,49 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from decimal import Decimal
 
 from sqlalchemy.orm import Session
 
 from app.models.transaction import Transaction
-from app.modules.insights import repository
+from app.modules.insights import cache, repository
 from app.modules.insights.constants import DEFAULT_LIMIT
+from app.modules.insights.formatting import fmt_eur, fmt_pct, savings_rate_dec
+from app.modules.insights.rules.budget_rules import budget_alert_insights
 from app.modules.insights.rules.cashflow_rules import cashflow_alert_insight
 from app.modules.insights.rules.data_quality_rules import data_quality_insights
 from app.modules.insights.rules.goal_rules import goal_progress_insights
-from app.modules.insights.rules.investment_rules import investment_allocation_insight
+from app.modules.insights.rules.investment_rules import (
+    fund_stale_valuation_insight,
+    investment_allocation_insight,
+)
 from app.modules.insights.rules.macro_rules import macro_context_insights
 from app.modules.insights.rules.market_rules import market_context_insights
-from app.modules.insights.rules.net_worth_rules import net_worth_change_insight
+from app.modules.insights.rules.net_worth_rules import (
+    net_worth_change_insight,
+    wealth_concentration_insight,
+)
+from app.modules.insights.rules.planning_rules import (
+    household_bill_anomaly_insights,
+    recurring_creep_insight,
+    snapshot_pending_insight,
+    upcoming_cashflow_insight,
+)
 from app.modules.insights.rules.spending_rules import (
     monthly_comparison_insights,
     savings_rate_insight,
     spending_anomaly_insights,
 )
+from app.modules.insights.rules.trend_rules import (
+    category_trend_insights,
+    emergency_fund_coverage_insight,
+    real_return_insight,
+    savings_rate_trend_insight,
+)
 from app.modules.insights.schemas import (
     AnomaliesOut,
     DataStatus,
+    InsightClass,
     InsightOut,
     InsightSourceOut,
     InsightsSummaryCountOut,
@@ -30,6 +52,32 @@ from app.modules.insights.schemas import (
     MonthlyReviewOut,
 )
 from app.modules.insights.scoring import sort_and_limit
+
+# Taxonomía única (INS-2): la clase se deriva del tipo en un solo punto, no en cada regla.
+_CONTEXT_TYPES = {"savings_rate", "market_context", "macro_context", "wealth_concentration",
+                  "real_return", "savings_rate_trend"}
+# snapshot_pending es un aviso de dato incompleto (INS-5), no una señal accionable.
+_DATA_QUALITY_TYPES = {"data_quality", "snapshot_pending"}
+
+
+def _classify(insight: InsightOut) -> InsightOut:
+    if insight.type.value in _DATA_QUALITY_TYPES:
+        insight.insight_class = InsightClass.data_quality
+    elif insight.type.value in _CONTEXT_TYPES:
+        insight.insight_class = InsightClass.context
+    else:
+        insight.insight_class = InsightClass.signal
+    return insight
+
+
+def _dedupe(insights: list[InsightOut]) -> list[InsightOut]:
+    """Conserva una instancia por `dedupe_key` (o `id`), la de mayor prioridad. (INS-B3)."""
+    best: dict[str, InsightOut] = {}
+    for i in insights:
+        key = i.dedupe_key or i.id
+        if key not in best or i.priority > best[key].priority:
+            best[key] = i
+    return list(best.values())
 
 
 def _current_period() -> str:
@@ -57,6 +105,9 @@ def _make_summary(insights: list[InsightOut]) -> InsightsSummaryCountOut:
 
 
 def _all_insights(db: Session, period: str) -> list[InsightOut]:
+    cached = cache.get(period)
+    if cached is not None:
+        return cached  # type: ignore[return-value]
     all_ins: list[InsightOut] = []
     for rule_fn in [
         lambda: spending_anomaly_insights(db, period),
@@ -64,17 +115,30 @@ def _all_insights(db: Session, period: str) -> list[InsightOut]:
         lambda: savings_rate_insight(db, period),
         lambda: cashflow_alert_insight(db, period),
         lambda: net_worth_change_insight(db, period),
+        lambda: wealth_concentration_insight(db, period),
         lambda: investment_allocation_insight(db, period),
+        lambda: fund_stale_valuation_insight(db, period),
         lambda: goal_progress_insights(db, period),
         lambda: market_context_insights(db, period),
         lambda: macro_context_insights(db, period),
         lambda: data_quality_insights(db, period),
+        # INS-5 (Lote 1: planificación)
+        lambda: budget_alert_insights(db, period),
+        lambda: upcoming_cashflow_insight(db, period),
+        lambda: recurring_creep_insight(db, period),
+        lambda: household_bill_anomaly_insights(db, period),
+        lambda: snapshot_pending_insight(db, period),
+        # INS-6 (Lote 2: tendencias y patrimonio)
+        lambda: savings_rate_trend_insight(db, period),
+        lambda: category_trend_insights(db, period),
+        lambda: emergency_fund_coverage_insight(db, period),
+        lambda: real_return_insight(db, period),
     ]:
         try:
             all_ins.extend(rule_fn())
         except Exception:
             pass
-    return all_ins
+    return cache.set(period, _dedupe([_classify(i) for i in all_ins]))
 
 
 def get_insights(
@@ -120,10 +184,11 @@ def get_monthly_review(db: Session, period: str | None = None) -> MonthlyReviewO
     p = period or _current_period()
 
     txs = db.query(Transaction).filter(Transaction.date.like(f"{p}%")).all()
-    income = sum(float(t.amount) for t in txs if t.type == "income")
-    expense = abs(sum(float(t.amount) for t in txs if t.type == "expense"))
+    income = sum((t.amount for t in txs if t.type == "income"), Decimal("0"))
+    expense = abs(sum((t.amount for t in txs if t.type == "expense"), Decimal("0")))
     savings = income - expense
-    savings_rate = round(savings / income * 100, 2) if income > 0 else 0.0
+    # Misma definición y redondeo que la regla savings_rate (INS-B1): una sola cifra.
+    savings_rate = savings_rate_dec(income, expense)
 
     if income == 0 and expense == 0:
         data_status = DataStatus.empty
@@ -137,10 +202,10 @@ def get_monthly_review(db: Session, period: str | None = None) -> MonthlyReviewO
         data_status = DataStatus.complete
         if savings_rate >= 20:
             headline = "Este mes mantienes una situación financiera sólida."
-            summary = f"Has ahorrado {savings:.0f} €, con una tasa de ahorro del {savings_rate:.1f}%."
+            summary = f"Has ahorrado {fmt_eur(savings)}, con una tasa de ahorro del {fmt_pct(savings_rate)}."
         elif savings_rate >= 0:
             headline = "Este mes cierras con ahorro positivo."
-            summary = f"Has ahorrado {savings:.0f} € con una tasa del {savings_rate:.1f}%."
+            summary = f"Has ahorrado {fmt_eur(savings)} con una tasa del {fmt_pct(savings_rate)}."
         else:
             headline = "Este mes los gastos superan los ingresos registrados."
             summary = "Puedes revisar si faltan ingresos por importar o si hubo gastos extraordinarios."

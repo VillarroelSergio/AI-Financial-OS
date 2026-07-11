@@ -16,6 +16,7 @@ from app.modules.insights.constants import (
     SPENDING_ANOMALY_MIN_CURRENT_EUR,
     SPENDING_ANOMALY_MULTIPLIER,
 )
+from app.modules.insights.formatting import fmt_eur, fmt_pct, round_dec, savings_rate_dec
 from app.modules.insights.schemas import (
     DataStatus,
     InsightActionOut,
@@ -114,7 +115,8 @@ def spending_anomaly_insights(db: Session, period: str) -> list[InsightOut]:
         if current_amt <= baseline_avg * SPENDING_ANOMALY_MULTIPLIER:
             continue
 
-        pct_increase = float(diff / baseline_avg * 100) if baseline_avg > 0 else 0.0
+        # Cifra única (INS-B2): copy y métrica muestran exactamente el mismo %.
+        pct_increase = round_dec(diff / baseline_avg * 100, 1) if baseline_avg > 0 else Decimal("0.0")
         cat_name = categories.get(cat_id or "", "Sin categoría")
 
         if pct_increase >= 50:
@@ -132,17 +134,17 @@ def spending_anomaly_insights(db: Session, period: str) -> list[InsightOut]:
             type=InsightType.spending_anomaly,
             severity=severity,
             title=f"Gasto en {cat_name} superior a tu media",
-            summary=f"Este mes has gastado un {pct_increase:.0f}% más en {cat_name} que tu media reciente.",
-            detail=f"La comparación usa los últimos {len(baseline_vals)} meses con datos. El incremento absoluto es de {float(diff):.0f} €.",
+            summary=f"Este mes has gastado un {fmt_pct(pct_increase)} más en {cat_name} que tu media reciente.",
+            detail=f"La comparación usa los últimos {len(baseline_vals)} meses con datos. El incremento absoluto es de {fmt_eur(diff)}.",
             period=period,
             impact_area="spending",
             confidence=confidence,
             priority=priority,
             data_status=DataStatus.complete,
-            primary_metric=InsightMetricOut(label="Incremento", value=round(pct_increase, 1), unit="%"),
+            primary_metric=InsightMetricOut(label="Incremento", value=float(pct_increase), unit="%", precision=1),
             secondary_metrics=[
-                InsightMetricOut(label="Gasto actual", value=float(current_amt), unit="EUR"),
-                InsightMetricOut(label="Media reciente", value=float(baseline_avg), unit="EUR"),
+                InsightMetricOut(label="Gasto actual", value=float(current_amt), unit="EUR", precision=2),
+                InsightMetricOut(label="Media reciente", value=float(baseline_avg), unit="EUR", precision=2),
             ],
             sources=[InsightSourceOut(type="transactions", label="Movimientos", period=period, updated_at=now_iso)],
             actions=[InsightActionOut(label=f"Ver gastos de {cat_name}", target="/spending", params={"category": cat_name, "period": period})],
@@ -181,7 +183,7 @@ def monthly_comparison_insights(db: Session, period: str) -> list[InsightOut]:
             type=InsightType.monthly_comparison,
             severity=severity,
             title="Gasto mensual distinto al mes anterior",
-            summary=f"Has gastado {abs(float(expense_delta)):.0f} € {'más' if expense_delta > 0 else 'menos'} que el mes anterior ({expense_delta_pct:+.0f}%).",
+            summary=f"Has gastado {fmt_eur(abs(expense_delta))} {'más' if expense_delta > 0 else 'menos'} que el mes anterior ({'+' if expense_delta_pct >= 0 else ''}{fmt_pct(round_dec(expense_delta_pct, 0), 0)}).",
             period=period,
             impact_area="spending",
             confidence=compute_confidence("complete"),
@@ -204,7 +206,7 @@ def monthly_comparison_insights(db: Session, period: str) -> list[InsightOut]:
             type=InsightType.monthly_comparison,
             severity=severity,
             title="Cambio en ahorro mensual",
-            summary=f"Tu ahorro {'ha bajado' if savings_delta < 0 else 'ha subido'} {abs(float(savings_delta)):.0f} € respecto al mes anterior.",
+            summary=f"Tu ahorro {'ha bajado' if savings_delta < 0 else 'ha subido'} {fmt_eur(abs(savings_delta))} respecto al mes anterior.",
             period=period,
             impact_area="spending",
             confidence=compute_confidence("complete"),
@@ -244,20 +246,21 @@ def savings_rate_insight(db: Session, period: str) -> list[InsightOut]:
         )]
 
     savings = income - expense
-    rate = float(savings / income * 100)
+    # Cifra única y determinista (INS-B1): la misma que consume el review y el frontend.
+    rate = savings_rate_dec(income, expense)
 
     if rate >= 30:
         severity, impact = InsightSeverity.positive, 60.0
-        summary = f"Has ahorrado el {rate:.1f}% de tus ingresos. Excelente tasa de ahorro."
+        summary = f"Has ahorrado el {fmt_pct(rate)} de tus ingresos. Excelente tasa de ahorro."
     elif rate >= 15:
         severity, impact = InsightSeverity.info, 50.0
-        summary = f"Tu tasa de ahorro este mes es del {rate:.1f}%. Es positiva."
+        summary = f"Tu tasa de ahorro este mes es del {fmt_pct(rate)}. Es positiva."
     elif rate >= 0:
         severity, impact = InsightSeverity.warning, 65.0
-        summary = f"Tu tasa de ahorro es del {rate:.1f}%. Puedes revisar si hay margen para mejorarla."
+        summary = f"Tu tasa de ahorro es del {fmt_pct(rate)}. Puedes revisar si hay margen para mejorarla."
     else:
         severity, impact = InsightSeverity.warning, 75.0
-        summary = f"Tus gastos superan tus ingresos ({rate:.1f}%). Puedes revisar si faltan ingresos por importar."
+        summary = f"Tus gastos superan tus ingresos ({fmt_pct(rate)}). Puedes revisar si faltan ingresos por importar."
 
     return [InsightOut(
         id=f"insight_{period}_savings_rate",
@@ -270,11 +273,11 @@ def savings_rate_insight(db: Session, period: str) -> list[InsightOut]:
         confidence=compute_confidence("complete"),
         priority=compute_priority(severity.value, "complete", impact),
         data_status=DataStatus.complete,
-        primary_metric=InsightMetricOut(label="Tasa de ahorro", value=round(rate, 1), unit="%"),
+        primary_metric=InsightMetricOut(label="Tasa de ahorro", value=float(rate), unit="%", precision=1),
         secondary_metrics=[
-            InsightMetricOut(label="Ingresos", value=float(income), unit="EUR"),
-            InsightMetricOut(label="Gastos", value=float(expense), unit="EUR"),
-            InsightMetricOut(label="Ahorro", value=float(savings), unit="EUR"),
+            InsightMetricOut(label="Ingresos", value=float(income), unit="EUR", precision=2),
+            InsightMetricOut(label="Gastos", value=float(expense), unit="EUR", precision=2),
+            InsightMetricOut(label="Ahorro", value=float(savings), unit="EUR", precision=2),
         ],
         sources=[InsightSourceOut(type="transactions", label="Movimientos", period=period, updated_at=now_iso)],
         actions=[InsightActionOut(label="Ver gastos", target="/spending", params={"period": period})],

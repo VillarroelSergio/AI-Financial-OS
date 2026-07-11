@@ -170,10 +170,6 @@ async function main(): Promise<void> {
 
   const browser = await chromium.launch({ headless: !headed });
   const context = await browser.newContext({ viewport: VIEWPORTS[selectedViewports[0]] });
-  // Marca la guía inicial como vista para que "/" no redirija a /welcome en las capturas
-  await context.addInitScript(
-    `localStorage.setItem("welcome-seen-version", ${JSON.stringify(pkg.version)});`,
-  );
   const page = await context.newPage();
 
   const screenshots: ScreenshotMeta[] = [];

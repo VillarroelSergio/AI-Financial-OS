@@ -58,8 +58,8 @@ FastAPI Backend
  └─ Security / Settings
 
 Storage
- ├─ SQLite: datos principales
- ├─ DuckDB: analítica y consultas agregadas
+ ├─ SQLite: datos principales + Market Intelligence (`mi_*`, WAL, ECO-3b)
+ ├─ DuckDB: analítica de financial_knowledge
  ├─ ChromaDB: embeddings y documentos futuros
  └─ File Storage: imports/documentos
 ```
@@ -175,19 +175,18 @@ CSV importado
 
 SQLite será la fuente transaccional principal.
 
-DuckDB se usará para:
+DuckDB queda restringido a `financial_knowledge` (analítica, consultas temporales, procesamiento de CSV, datasets para dashboards).
 
-- Agregaciones analíticas.
-- Consultas temporales complejas.
-- Procesamiento de CSV.
-- Preparación de datasets para dashboards.
-- Persistencia de datos de mercado, macro y noticias en Market Intelligence (tablas `mi_*`).
+> **ECO-3b:** Market Intelligence (tablas `mi_*`) migró de DuckDB a **SQLite WAL** (`data/market_intelligence.db`).
+> Motivo: DuckDB es mono-escritor y cae a memoria si un segundo proceso abre el archivo; WAL elimina esa fragilidad y el volumen (~72 indicadores, decenas de filas/día) hace irrelevante la ventaja columnar.
 
-**Reglas DuckDB:**
-- Siempre acceder via el singleton `app.core.duckdb.get_duckdb()` — nunca `duckdb.connect()` directo en producción.
-- Upserts con DELETE + INSERT (DuckDB no soporta `INSERT OR REPLACE`).
-- Latest reads con `QUALIFY ROW_NUMBER() OVER (PARTITION BY ... ORDER BY ... DESC) = 1` (no `DISTINCT ON`).
-- No duplicar lógica de negocio en DuckDB si ya existe en servicios deterministas.
+**Reglas Market Intelligence (SQLite):**
+- Acceder via `app.modules.market_intelligence.storage.db.get_conn()` — conexión única compartida, WAL, autocommit.
+- Upserts con DELETE + INSERT.
+- Latest reads con subconsulta `ROW_NUMBER() OVER (...)` filtrando `rn = 1` (SQLite no tiene `QUALIFY`).
+
+**Reglas DuckDB (solo financial_knowledge):**
+- Acceder via el singleton `app.core.duckdb.get_duckdb()` — nunca `duckdb.connect()` directo en producción.
 
 ## Market Intelligence
 
@@ -200,7 +199,7 @@ Catalog YAML
  → ProviderOrchestrator
  → AdapterResult
  → QualityEngine
- → Repository DuckDB (`mi_*`)
+ → Repository SQLite (`mi_*`)
  → API `/api/market-intelligence/*`
  → React UI / AI datasheet
 ```

@@ -11,6 +11,7 @@ const mockAccounts: Account[] = [
     currency: "EUR",
     current_balance: "12450.00",
     is_active: true,
+    is_liability: false,
     created_at: "2024-01-01T00:00:00",
     updated_at: "2024-01-01T00:00:00",
   },
@@ -22,6 +23,7 @@ const mockAccounts: Account[] = [
     currency: "EUR",
     current_balance: "28900.00",
     is_active: true,
+    is_liability: false,
     created_at: "2024-01-01T00:00:00",
     updated_at: "2024-01-01T00:00:00",
   },
@@ -33,6 +35,7 @@ const mockAccounts: Account[] = [
     currency: "EUR",
     current_balance: "350.00",
     is_active: true,
+    is_liability: false,
     created_at: "2024-01-01T00:00:00",
     updated_at: "2024-01-01T00:00:00",
   },
@@ -44,6 +47,7 @@ const mockAccounts: Account[] = [
     currency: "EUR",
     current_balance: "3515.61",
     is_active: true,
+    is_liability: false,
     created_at: "2024-01-01T00:00:00",
     updated_at: "2026-06-23T10:00:00",
   },
@@ -55,6 +59,7 @@ const mockAccounts: Account[] = [
     currency: "EUR",
     current_balance: "5569.69",
     is_active: true,
+    is_liability: false,
     created_at: "2024-01-01T00:00:00",
     updated_at: "2026-06-23T10:00:00",
   },
@@ -66,6 +71,7 @@ const mockAccounts: Account[] = [
     currency: "EUR",
     current_balance: "5000.00",
     is_active: true,
+    is_liability: false,
     created_at: "2025-01-01T00:00:00",
     updated_at: "2026-06-23T10:00:00",
   },
@@ -80,11 +86,11 @@ const mockCategories: Category[] = [
 ];
 
 const mockTransactions: Transaction[] = [
-  { id: "tx-1", account_id: "mock-acc-1", account_name: "Cuenta demo", category_id: "cat-1", date: "2026-06-20", description: "Mercadona", amount: "-87.40", currency: "EUR", converted_amount: null, converted_currency: null, type: "expense", source: "manual", source_name: null, external_id: null, import_batch_id: null, notes: null, created_at: "2026-06-20T10:00:00", updated_at: "2026-06-20T10:00:00" },
-  { id: "tx-2", account_id: "mock-acc-1", account_name: "Cuenta demo", category_id: "cat-2", date: "2026-06-19", description: "Renfe AVE Madrid", amount: "-42.50", currency: "EUR", converted_amount: null, converted_currency: null, type: "expense", source: "manual", source_name: null, external_id: null, import_batch_id: null, notes: null, created_at: "2026-06-19T10:00:00", updated_at: "2026-06-19T10:00:00" },
-  { id: "tx-3", account_id: "mock-acc-1", account_name: "Cuenta demo", category_id: "cat-3", date: "2026-06-18", description: "Netflix", amount: "-15.99", currency: "EUR", converted_amount: null, converted_currency: null, type: "expense", source: "manual", source_name: null, external_id: null, import_batch_id: null, notes: null, created_at: "2026-06-18T10:00:00", updated_at: "2026-06-18T10:00:00" },
-  { id: "tx-4", account_id: "mock-acc-1", account_name: "Cuenta demo", category_id: "cat-4", date: "2026-06-15", description: "Alquiler junio", amount: "-950.00", currency: "EUR", converted_amount: null, converted_currency: null, type: "expense", source: "manual", source_name: null, external_id: null, import_batch_id: null, notes: null, created_at: "2026-06-15T10:00:00", updated_at: "2026-06-15T10:00:00" },
-  { id: "tx-5", account_id: "mock-acc-1", account_name: "Cuenta demo", category_id: "cat-5", date: "2026-06-01", description: "Nómina junio", amount: "2800.00", currency: "EUR", converted_amount: null, converted_currency: null, type: "income", source: "manual", source_name: null, external_id: null, import_batch_id: null, notes: null, created_at: "2026-06-01T10:00:00", updated_at: "2026-06-01T10:00:00" },
+  { id: "tx-1", account_id: "mock-acc-1", account_name: "Cuenta demo", category_id: "cat-1", date: "2026-06-20", description: "Mercadona", amount: "-87.40", currency: "EUR", converted_amount: null, converted_currency: null, type: "expense", source: "manual", source_name: null, external_id: null, import_batch_id: null, analytics_scope: "personal" as const, linked_transaction_id: null, notes: null, created_at: "2026-06-20T10:00:00", updated_at: "2026-06-20T10:00:00" },
+  { id: "tx-2", account_id: "mock-acc-1", account_name: "Cuenta demo", category_id: "cat-2", date: "2026-06-19", description: "Renfe AVE Madrid", amount: "-42.50", currency: "EUR", converted_amount: null, converted_currency: null, type: "expense", source: "manual", source_name: null, external_id: null, import_batch_id: null, analytics_scope: "personal" as const, linked_transaction_id: null, notes: null, created_at: "2026-06-19T10:00:00", updated_at: "2026-06-19T10:00:00" },
+  { id: "tx-3", account_id: "mock-acc-1", account_name: "Cuenta demo", category_id: "cat-3", date: "2026-06-18", description: "Netflix", amount: "-15.99", currency: "EUR", converted_amount: null, converted_currency: null, type: "expense", source: "manual", source_name: null, external_id: null, import_batch_id: null, analytics_scope: "personal" as const, linked_transaction_id: null, notes: null, created_at: "2026-06-18T10:00:00", updated_at: "2026-06-18T10:00:00" },
+  { id: "tx-4", account_id: "mock-acc-1", account_name: "Cuenta demo", category_id: "cat-4", date: "2026-06-15", description: "Alquiler junio", amount: "-950.00", currency: "EUR", converted_amount: null, converted_currency: null, type: "expense", source: "manual", source_name: null, external_id: null, import_batch_id: null, analytics_scope: "personal" as const, linked_transaction_id: null, notes: null, created_at: "2026-06-15T10:00:00", updated_at: "2026-06-15T10:00:00" },
+  { id: "tx-5", account_id: "mock-acc-1", account_name: "Cuenta demo", category_id: "cat-5", date: "2026-06-01", description: "Nómina junio", amount: "2800.00", currency: "EUR", converted_amount: null, converted_currency: null, type: "income", source: "manual", source_name: null, external_id: null, import_batch_id: null, analytics_scope: "personal" as const, linked_transaction_id: null, notes: null, created_at: "2026-06-01T10:00:00", updated_at: "2026-06-01T10:00:00" },
 ];
 
 const mockOverview: DashboardOverview = {
@@ -150,6 +156,8 @@ const mockInvestmentSummary: InvestmentSummary = {
   currency: "EUR",
   by_account: [{ account_id: "mock-acc-tr-savings", value: "5000.00", invested: "5000.00" }],
   last_updated: null,
+  pending_valuation_count: 0,
+  pending_valuation_invested: "0.00",
 };
 
 const mockReconciliation: import("./investments").ReconciliationReport = {
@@ -584,11 +592,51 @@ const mockPersonalImpact = {
 };
 
 const mockIngestStatus = {
-  status: "done",
-  last_run: "2026-07-01T09:00:00Z",
-  count: 24,
-  results: [],
+  current: null,
+  last_run: {
+    run_id: "mock",
+    finished_at: "2026-07-01T09:00:00Z",
+    total: 24,
+    success: 24,
+    failed: 0,
+    fallbacks_used: 0,
+    results: [],
+  },
   storage: "file",
+};
+
+// ECO-6: el mock replica el agrupado temático que ahora hace el backend.
+const MOCK_THEME: Record<string, string> = {
+  inflation: "Precios y consumo", consumption: "Precios y consumo", sentiment: "Precios y consumo",
+  housing: "Vivienda",
+  interest_rates: "Ahorro y tipos", policy_rate: "Ahorro y tipos", monetary: "Ahorro y tipos",
+  employment: "Empleo y salarios", energy: "Energía",
+  gdp: "Actividad y cuentas públicas", industrial: "Actividad y cuentas públicas",
+  fiscal: "Actividad y cuentas públicas", pmi: "Actividad y cuentas públicas",
+};
+const MOCK_THEME_ORDER = [
+  "Precios y consumo", "Vivienda", "Ahorro y tipos", "Empleo y salarios",
+  "Energía", "Actividad y cuentas públicas", "Otros",
+];
+function mockGroupByTheme(points: { subcategory?: string }[]) {
+  const groups: Record<string, unknown[]> = {};
+  for (const p of points) (groups[MOCK_THEME[p.subcategory ?? ""] ?? "Otros"] ??= []).push(p);
+  return { themes: MOCK_THEME_ORDER.filter((t) => groups[t]).map((t) => ({ theme: t, indicators: groups[t] })) };
+}
+const mockEconomyOverview = {
+  status: mockMacroSnapshot.status,
+  generated_at: mockMacroSnapshot.generated_at,
+  warnings: mockMacroSnapshot.warnings,
+  global_indicators: [...mockMacroSnapshot.spain, ...mockMacroSnapshot.usa].slice(0, 4),
+  regions: {
+    ES: mockGroupByTheme(mockMacroSnapshot.spain),
+    EA: mockGroupByTheme(mockMacroSnapshot.eurozone),
+    US: mockGroupByTheme(mockMacroSnapshot.usa),
+  },
+  impact: mockPersonalImpact,
+  bonds: mockBondSnapshot,
+  forex: mockForexSnapshot,
+  personal_economy: null,
 };
 
 export function getMockResponse<T>(path: string, init?: RequestInit): T {
@@ -746,6 +794,7 @@ export function getMockResponse<T>(path: string, init?: RequestInit): T {
   if (clean === "/api/market-intelligence/snapshot/bonds") return mockBondSnapshot as T;
   if (clean === "/api/market-intelligence/snapshot/forex") return mockForexSnapshot as T;
   if (clean === "/api/market-intelligence/personal-impact") return mockPersonalImpact as T;
+  if (clean === "/api/market-intelligence/economy/overview") return mockEconomyOverview as T;
   if (clean === "/api/market-intelligence/ingest-status") return mockIngestStatus as T;
   if (path.startsWith("/api/markets/quotes")) {
     const catParam = path.includes("?category=")
@@ -755,6 +804,33 @@ export function getMockResponse<T>(path: string, init?: RequestInit): T {
       ? mockMarketQuotes.filter((q) => q.category === catParam)
       : mockMarketQuotes;
     return quotes as unknown as T;
+  }
+
+  if (clean.startsWith("/api/net-worth/balance-sheet")) {
+    return {
+      month: "2026-07", currency: "EUR",
+      assets: [
+        { key: "liquidez", label: "Liquidez", amount: "12500.00" },
+        { key: "cartera", label: "Cartera de mercado", amount: "28000.00" },
+      ],
+      liabilities: [{ key: "mortgage", label: "Hipoteca", amount: "85000.00" }],
+      total_assets: "40500.00", total_liabilities: "85000.00", net_worth: "-44500.00",
+      portfolio_cost: "25000.00", portfolio_gain: "3000.00", net_worth_change: "1200.00",
+    } as T;
+  }
+  if (clean.startsWith("/api/net-worth/snapshot-readiness")) {
+    return {
+      month: "2026-07", ready: false, snapshot_exists: false, snapshot_state: null,
+      items: [
+        { key: "movimientos", label: "Movimientos del mes", status: "ok", detail: "", cta_route: "/imports" },
+        { key: "saldos", label: "Saldos de cuentas", status: "stale", detail: "2 cuenta(s) sin actualizar este mes.", cta_route: "/accounts" },
+        { key: "fondos", label: "Valoración de fondos", status: "ok", detail: "", cta_route: "/investments" },
+        { key: "precios", label: "Precios de posiciones cotizadas", status: "ok", detail: "", cta_route: "/investments" },
+      ],
+    } as T;
+  }
+  if (clean.startsWith("/api/net-worth/snapshots")) {
+    return [] as unknown as T;
   }
 
   throw new Error(`[mock] No mock defined for: ${path}`);

@@ -87,6 +87,9 @@ export const updateHolding = (id: string, data: HoldingUpdate) =>
 export const deleteHolding = (id: string) =>
   api.delete<void>(`/api/investments/holdings/${id}`);
 
+export const mergeHoldings = (sourceId: string, targetId: string) =>
+  api.post<HoldingEnriched>("/api/investments/holdings/merge", { source_id: sourceId, target_id: targetId });
+
 export interface HoldingPerformancePoint {
   date: string;
   price: number;
@@ -99,7 +102,7 @@ export interface HoldingPerformance {
   currency: string;
   entry_date: string;
   entry_price: number;
-  entry_source: "operation" | "holding";
+  entry_source: "operation" | "holding" | "history" | "fund_snapshot";
   current_price: number;
   change_pct: number | null;
   series: HoldingPerformancePoint[];
@@ -107,6 +110,117 @@ export interface HoldingPerformance {
 
 export const getHoldingPerformance = (holdingId: string) =>
   api.get<HoldingPerformance>(`/api/investments/holdings/${holdingId}/performance`);
+
+export interface HoldingValueHistoryEntry {
+  id: string;
+  holding_id: string;
+  price: string;
+  currency: string;
+  source: string;
+  recorded_at: string;
+}
+
+export const getHoldingHistory = (holdingId: string) =>
+  api.get<HoldingValueHistoryEntry[]>(`/api/investments/holdings/${holdingId}/history`);
+
+export const addHoldingHistory = (holdingId: string, data: { price: string; currency?: string; recorded_at?: string }) =>
+  api.post<HoldingValueHistoryEntry>(`/api/investments/holdings/${holdingId}/history`, data);
+
+export const updateHoldingHistory = (holdingId: string, entryId: string, data: { price?: string; recorded_at?: string }) =>
+  api.patch<HoldingValueHistoryEntry>(`/api/investments/holdings/${holdingId}/history/${entryId}`, data);
+
+export const deleteHoldingHistory = (holdingId: string, entryId: string) =>
+  api.delete<void>(`/api/investments/holdings/${holdingId}/history/${entryId}`);
+
+// ── Fondos (INV-3, spec §3) ─────────────────────────────────────────────────
+
+export interface FundValuationSnapshot {
+  id: string;
+  holding_id: string;
+  date: string;
+  market_value: string;
+  contributed_total: string | null;
+  units: string | null;
+  nav: string | null;
+  currency: string;
+  source: string;
+  note: string | null;
+  created_at: string;
+}
+
+export const createFund = (data: {
+  name: string; account_id: string; contributed: string; value: string; date: string;
+  units?: string | null; nav?: string | null; currency?: string;
+}) => api.post<HoldingEnriched>("/api/investments/funds", data);
+
+export const getFundSnapshots = (holdingId: string) =>
+  api.get<FundValuationSnapshot[]>(`/api/investments/funds/${holdingId}/snapshots`);
+
+export const addFundSnapshot = (
+  holdingId: string,
+  data: { date: string; market_value: string; contributed_total?: string; units?: string | null; nav?: string | null; currency?: string; note?: string },
+) =>
+  api.post<FundValuationSnapshot>(`/api/investments/funds/${holdingId}/snapshots`, data);
+
+export const updateFundSnapshot = (
+  snapshotId: string,
+  data: { date?: string; market_value?: string; contributed_total?: string; note?: string },
+) =>
+  api.put<FundValuationSnapshot>(`/api/investments/funds/snapshots/${snapshotId}`, data);
+
+export const deleteFundSnapshot = (snapshotId: string) =>
+  api.delete<void>(`/api/investments/funds/snapshots/${snapshotId}`);
+
+// ── Cuentas remuneradas (INV-4, spec §3) ────────────────────────────────────
+
+export interface SavingsSchedulePoint {
+  month: string;
+  balance_start: string;
+  annual_rate: string;
+  interest: string;
+  contributions: string;
+  balance_end: string;
+}
+
+export interface SavingsProjection {
+  points: SavingsSchedulePoint[];
+  total_interest: string;
+  total_contributions: string;
+  current_balance: string;
+  current_rate: string | null;
+  estimated: boolean;
+}
+
+export const createSavings = (data: {
+  account_id?: string; new_account_name?: string; institution?: string;
+  opened_at: string; balance: string; rate_source?: string; fixed_rate?: string; spread_bps?: number;
+}) => api.post<unknown>("/api/investments/savings", data);
+
+export const getSavingsProjection = (accountId: string, asOf?: string) =>
+  api.get<SavingsProjection>(
+    `/api/investments/savings/${accountId}/projection${asOf ? `?as_of=${asOf}` : ""}`,
+  );
+
+export interface SavingsConfig {
+  id: string;
+  account_id: string;
+  opened_at: string | null;
+  rate_source: string;
+  fixed_rate: string | null;
+  spread_bps: number;
+  compounding: string;
+}
+
+export const getSavingsConfig = (accountId: string) =>
+  api.get<SavingsConfig>(`/api/investments/savings/${accountId}`);
+
+export const updateSavings = (
+  accountId: string,
+  data: { opened_at?: string; rate_source?: string; fixed_rate?: string | null; spread_bps?: number },
+) => api.put<SavingsConfig>(`/api/investments/savings/${accountId}`, data);
+
+export const deleteSavings = (accountId: string) =>
+  api.delete<void>(`/api/investments/savings/${accountId}`);
 
 export const getOperations = (accountId?: string) =>
   api.get<InvestmentOperation[]>(
@@ -118,6 +232,16 @@ export const createOperation = (data: OperationCreate) =>
 
 export const getSummary = () =>
   api.get<InvestmentSummary>("/api/investments/summary");
+
+export interface PortfolioEvolutionPoint {
+  month: string;
+  value: number;
+}
+
+export const getPortfolioEvolution = () =>
+  api.get<{ series: PortfolioEvolutionPoint[]; currency: string }>(
+    "/api/investments/holdings/portfolio-evolution",
+  );
 
 export const refreshPrices = () =>
   api.post<PriceRefreshResult>("/api/investments/prices/refresh", {});
