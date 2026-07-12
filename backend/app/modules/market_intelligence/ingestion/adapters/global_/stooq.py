@@ -7,7 +7,11 @@ from datetime import datetime, timezone
 import requests
 
 from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter
-from app.modules.market_intelligence.ingestion.models import AdapterResult, MarketQuote
+from app.modules.market_intelligence.ingestion.models import (
+    AdapterResult,
+    HistoricalPrice,
+    MarketQuote,
+)
 
 _SOURCES = {
     "sp500": {"symbol": "^SPX", "name": "S&P 500", "currency": "USD", "country": "US", "stooq": "%5Espx", "yahoo": "%5EGSPC"},
@@ -94,6 +98,52 @@ class StooqAdapter(BaseAdapter):
             },
             metadata=metadata,
         )
+
+
+def fetch_stooq_history(catalog_id: str, years: int | None = None) -> list[HistoricalPrice]:
+    """MKT-6: serie EOD completa para backfill manual bajo demanda, no en arranque.
+
+    Stooq bloquea su CSV diario con un reto JS, así que tomamos el histórico de la
+    Yahoo Chart API (el mismo fallback que `fetch` ya usa para el precio en vivo).
+
+    ponytail: solo índices/commodities. Cripto (CoinGecko) y forex (BCE SDMX)
+    quedan fuera hasta que sus adapters expongan histórico — otro lift, otro provider.
+    """
+    source = _SOURCES[catalog_id]
+    yrange = f"{years}y" if years else "max"
+    url = f"https://query1.finance.yahoo.com/v8/finance/chart/{source['yahoo']}?range={yrange}&interval=1d"
+    r = requests.get(url, headers=_FALLBACK_HEADERS, timeout=20)
+    r.raise_for_status()
+    result = (r.json().get("chart", {}).get("result") or [None])[0]
+    if not result:
+        raise ValueError("Yahoo Chart returned no result")
+    timestamps = result.get("timestamp") or []
+    quote = (result.get("indicators", {}).get("quote") or [{}])[0]
+    currency = result.get("meta", {}).get("currency") or source["currency"]
+    closes, opens = quote.get("close", []), quote.get("open", [])
+    highs, lows, volumes = quote.get("high", []), quote.get("low", []), quote.get("volume", [])
+    now = datetime.now(timezone.utc)
+    out: list[HistoricalPrice] = []
+    for i, ts in enumerate(timestamps):
+        c = closes[i] if i < len(closes) else None
+        if c is None:
+            continue
+        d = datetime.fromtimestamp(ts, tz=timezone.utc).date()
+        rec = HistoricalPrice(
+            provider="Yahoo", source=url, retrieved_at=now,
+            country=source["country"], region="Global",
+            symbol=source["symbol"], date=d,
+            open=float(opens[i] or 0) if i < len(opens) and opens[i] is not None else 0.0,
+            high=float(highs[i] or 0) if i < len(highs) and highs[i] is not None else 0.0,
+            low=float(lows[i] or 0) if i < len(lows) and lows[i] is not None else 0.0,
+            close=float(c),
+            volume=float(volumes[i] or 0) if i < len(volumes) and volumes[i] is not None else 0.0,
+        )
+        rec.currency = currency  # HistoricalPrice no tiene el campo; persist lee getattr
+        out.append(rec)
+    if not out:
+        raise ValueError("Yahoo Chart has no usable rows")
+    return out
 
 
 def _fetch_stooq_csv(catalog_id: str, source: dict, retrieved_at: datetime) -> MarketQuote:

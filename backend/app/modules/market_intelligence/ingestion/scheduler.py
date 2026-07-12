@@ -33,7 +33,9 @@ def is_due(indicator: CatalogIndicator, state: dict | None, now: datetime) -> bo
     last_success = state.get("last_success_at") if state else None
     if last_success is None:
         return True
-    if last_success.tzinfo is None:  # DuckDB puede devolver naive
+    if isinstance(last_success, str):  # SQLite guarda datetimes como texto ISO
+        last_success = datetime.fromisoformat(last_success)
+    if last_success.tzinfo is None:  # naive → asume UTC
         last_success = last_success.replace(tzinfo=timezone.utc)
     return now - last_success >= interval_for(indicator.frequency)
 

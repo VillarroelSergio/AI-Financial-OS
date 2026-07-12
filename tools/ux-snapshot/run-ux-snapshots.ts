@@ -8,9 +8,12 @@ import { snapshotRoutes } from "./snapshot-routes.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PROJECT_ROOT = path.resolve(__dirname, "../..");
 const DESKTOP_DIR = path.join(PROJECT_ROOT, "apps", "desktop");
-const OUTPUT_DIR = path.join(PROJECT_ROOT, "ux-snapshots", "latest");
-const SNAPSHOT_PORT = 1422;
+// Mock usa 1422; real usa 1420 porque es el único origen que el backend tiene en
+// su whitelist CORS (app.main.py). Con 1422 el navegador bloquearía los fetch.
+const REAL = process.argv.includes("--real");
+const SNAPSHOT_PORT = REAL ? 1420 : 1422;
 const BASE_URL = `http://localhost:${SNAPSHOT_PORT}`;
+const BACKEND_URL = process.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8010";
 
 const VIEWPORTS = {
   desktop: { width: 1440, height: 900 },
@@ -33,15 +36,19 @@ async function waitForServer(url: string, timeoutMs = 30_000): Promise<void> {
   throw new Error(`Server at ${url} did not respond within ${timeoutMs}ms`);
 }
 
-async function startVite(): Promise<ChildProcess> {
+async function startVite(useMock: boolean): Promise<ChildProcess> {
   const isWin = process.platform === "win32";
   const [viteCmd, viteArgs] = isWin
     ? (["cmd.exe", ["/c", "npx.cmd", "vite", "--port", String(SNAPSHOT_PORT), "--strictPort"]] as const)
     : (["npx", ["vite", "--port", String(SNAPSHOT_PORT), "--strictPort"]] as const);
 
+  // En modo real NO seteamos VITE_USE_MOCK_DATA → el frontend hace fetch al backend en 8010.
+  const env = useMock
+    ? { ...process.env, VITE_USE_MOCK_DATA: "true" }
+    : { ...process.env, VITE_USE_MOCK_DATA: "false", VITE_API_BASE_URL: BACKEND_URL };
   const proc = spawn(viteCmd, [...viteArgs], {
     cwd: DESKTOP_DIR,
-    env: { ...process.env, VITE_USE_MOCK_DATA: "true" },
+    env,
     stdio: "pipe",
   });
 
@@ -70,7 +77,7 @@ interface ScreenshotMeta {
   skip_reason?: string;
 }
 
-function generateMarkdown(screenshots: ScreenshotMeta[], generatedAt: string): string {
+function generateMarkdown(screenshots: ScreenshotMeta[], generatedAt: string, useMock: boolean): string {
   const captured = screenshots.filter((s) => s.captured);
   const skipped = screenshots.filter((s) => !s.captured);
   const viewportLabel = Array.from(
@@ -89,7 +96,7 @@ function generateMarkdown(screenshots: ScreenshotMeta[], generatedAt: string): s
 
 > Generated: ${generatedAt}
 > Viewports: ${viewportLabel}
-> Data: mock (no datos reales de usuario)
+> Data: ${useMock ? "mock (no datos reales de usuario)" : "REAL (backend en 8010, datos de usuario)"}
 
 ## Como usar estas capturas
 
@@ -148,7 +155,23 @@ async function stopVite(viteProc: ChildProcess): Promise<void> {
 
 async function main(): Promise<void> {
   const headed = process.argv.includes("--headed");
+  const real = REAL;
+  const useMock = !real;
+  const OUTPUT_DIR = path.join(PROJECT_ROOT, "ux-snapshots", real ? "real" : "latest");
   const responsive = process.argv.includes("--responsive");
+
+  if (real) {
+    try {
+      const res = await fetch(`${BACKEND_URL}/health`);
+      if (!res.ok) throw new Error(`status ${res.status}`);
+      console.log(`Backend real OK en ${BACKEND_URL}`);
+    } catch (e) {
+      throw new Error(
+        `Modo --real: el backend no responde en ${BACKEND_URL}/health (${String(e)}). ` +
+          `Arráncalo antes: cd backend && python run_server.py`,
+      );
+    }
+  }
   const viewportArg = process.argv.find((a) => a.startsWith("--viewport="));
   const viewportName = (viewportArg?.split("=")[1] ?? "desktop") as ViewportName;
   const filterArg = process.argv.find((a) => a.startsWith("--filter="));
@@ -164,8 +187,8 @@ async function main(): Promise<void> {
 
   await mkdir(OUTPUT_DIR, { recursive: true });
 
-  console.log("Arrancando Vite con mock data...");
-  const viteProc = await startVite();
+  console.log(useMock ? "Arrancando Vite con mock data..." : "Arrancando Vite contra backend real...");
+  const viteProc = await startVite(useMock);
   console.log(`Vite listo en ${BASE_URL}`);
 
   const browser = await chromium.launch({ headless: !headed });
@@ -237,12 +260,13 @@ async function main(): Promise<void> {
     viewport: VIEWPORTS[selectedViewports[0]],
     viewports: selectedViewports.map((name) => ({ name, ...VIEWPORTS[name] })),
     base_url: BASE_URL,
-    mock_data: true,
+    mock_data: useMock,
+    backend_url: real ? BACKEND_URL : null,
     screenshots,
   };
 
   await writeFile(path.join(OUTPUT_DIR, "metadata.json"), JSON.stringify(metadata, null, 2) + "\n");
-  await writeFile(path.join(OUTPUT_DIR, "UX_REVIEW_CONTEXT.md"), generateMarkdown(screenshots, generatedAt));
+  await writeFile(path.join(OUTPUT_DIR, "UX_REVIEW_CONTEXT.md"), generateMarkdown(screenshots, generatedAt, useMock));
 
   const capturedCount = screenshots.filter((s) => s.captured).length;
   console.log(`\n${capturedCount}/${activeRoutes.length * selectedViewports.length} capturas generadas en ${OUTPUT_DIR}`);

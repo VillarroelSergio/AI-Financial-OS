@@ -6,6 +6,8 @@
   "scripts": {
     "snapshots": "tsx run-ux-snapshots.ts",
     "snapshots:headed": "tsx run-ux-snapshots.ts --headed",
+    "snapshots:real": "tsx run-ux-snapshots.ts --real",
+    "snapshots:real:headed": "tsx run-ux-snapshots.ts --real --headed",
     "snapshots:responsive": "tsx run-ux-snapshots.ts --responsive",
     "snapshots:mercados": "tsx run-ux-snapshots.ts --filter=/markets",
     "snapshots:mercados:headed": "tsx run-ux-snapshots.ts --filter=/markets --headed",

@@ -8,6 +8,7 @@ Comandos disponibles:
     mi:catalog-show         Mostrar catálogo de indicadores
     mi:catalog-validate     Validar catálogo
     mi:update               Ejecutar ingesta de datos de mercado
+    mi:backfill-history     Backfill de precios EOD (catalog opc, --years=N; ej: mi:backfill-history indices --years=5)
     mi:quality              Mostrar salud de proveedores
     mi:snapshot             Generar snapshot de Market Intelligence
     mi:datasheet            Generar AI datasheet de Market Intelligence
@@ -49,6 +50,13 @@ def main() -> None:
         priority = sys.argv[3] if len(sys.argv) > 3 else None
         dry_run = "--dry-run" in sys.argv
         cmd_update(category=category, priority=priority, dry_run=dry_run)
+
+    elif cmd == "mi:backfill-history":
+        from app.modules.market_intelligence.cli.commands import cmd_backfill_history
+        catalog = next((a for a in sys.argv[2:] if not a.startswith("--")), None)
+        years_arg = next((a for a in sys.argv[2:] if a.startswith("--years=")), None)
+        years = int(years_arg.split("=", 1)[1]) if years_arg else 1
+        cmd_backfill_history(catalog=catalog, years=years)
 
     elif cmd == "mi:quality":
         from app.modules.market_intelligence.cli.commands import cmd_quality
