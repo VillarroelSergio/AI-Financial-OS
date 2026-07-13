@@ -9,6 +9,8 @@ import type {
   PersonalEconomyMI,
   EconomyOverviewMI,
   IngestStatusRaw,
+  InstrumentHistoryMI,
+  HistoryRange,
 } from "@/lib/types/market-intelligence";
 
 export const getMacroSnapshot = () =>
@@ -34,3 +36,13 @@ export const getEconomyOverview = () =>
 
 export const getIngestStatus = () =>
   api.get<IngestStatusRaw>("/api/market-intelligence/ingest-status");
+
+export const getInstrumentHistory = (code: string, range: HistoryRange = "max") =>
+  api.get<InstrumentHistoryMI>(
+    `/api/market-intelligence/history/${encodeURIComponent(code)}?range=${range}`
+  );
+
+export const getSparklines = (codes: string[], points = 30) =>
+  api.get<Record<string, number[]>>(
+    `/api/market-intelligence/sparklines?codes=${encodeURIComponent(codes.join(","))}&points=${points}`
+  );

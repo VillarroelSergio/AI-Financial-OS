@@ -11,9 +11,18 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.modules.ai.memory import conversation_repository as conv_repo
+from app.modules.ai.action_whitelist import is_allowed_action
+from app.modules.ai.prompts.guardrails import enforce_advice_guardrail, sanitize_response
 from app.modules.ai.prompts.system_prompt import get_system_prompt
 from app.modules.ai.providers import AIProvider, AIResponse, LMStudioProvider, OllamaProvider
-from app.modules.ai.schemas import ChatResponse, SourceOut, ToolCallOut
+from app.modules.ai.schemas import (
+    ChatResponse,
+    SourceOut,
+    StructuredAction,
+    StructuredFigure,
+    StructuredPayload,
+    ToolCallOut,
+)
 from app.modules.ai.tools.registry import tool_registry
 
 logger = logging.getLogger(__name__)
@@ -233,6 +242,10 @@ async def chat(
         except Exception:
             final_content = "He ejecutado el análisis pero no pude generar una respuesta. Inténtalo de nuevo."
 
+    # Clean model formatting quirks (emojis, HR separators) before persisting.
+    final_content = sanitize_response(final_content)
+    final_content = enforce_advice_guardrail(final_content)  # AI-4: nota si hay directivas de compra/venta
+
     # Deduplicate sources
     seen_sources: set[str] = set()
     unique_sources = []
@@ -267,7 +280,66 @@ async def chat(
         quality_score=overall_quality,
         provider=provider.name,
         model=model or settings.AI_DEFAULT_MODEL,
+        structured=_harvest_structured(all_tool_calls),
     )
+
+
+def _harvest_structured(tool_calls: list[ToolCallOut] | list[dict]) -> StructuredPayload | None:
+    """AI-1: extrae cifras y acciones DETERMINISTAS de los resultados de las tools
+    (nunca del texto del LLM). Reutiliza las formas ya tipadas InsightMetricOut
+    ({label,value,unit,precision}) y InsightActionOut ({label,target,params}). El
+    frontend las pinta como chips con formato numérico local. Acepta ToolCallOut
+    (respuesta viva) o dicts ya persistidos (recarga de conversación) para no
+    guardar una segunda copia: se regenera de los tool_calls almacenados."""
+    figures: list[StructuredFigure] = []
+    actions: list[StructuredAction] = []
+    fig_seen: set[str] = set()
+    act_seen: set[str] = set()
+
+    def add_figure(m: Any) -> None:
+        if not isinstance(m, dict) or "label" not in m or "value" not in m:
+            return
+        try:
+            value = float(m["value"])
+        except (TypeError, ValueError):
+            return
+        if m["label"] in fig_seen:
+            return
+        fig_seen.add(m["label"])
+        figures.append(StructuredFigure(
+            label=str(m["label"]), value=value,
+            unit=str(m.get("unit", "")), precision=int(m.get("precision", 0) or 0),
+        ))
+
+    def add_action(a: Any) -> None:
+        if not isinstance(a, dict) or not a.get("label") or not a.get("target"):
+            return
+        if not is_allowed_action(a["target"]):  # AI-4: descarta rutas desconocidas
+            return
+        key = f'{a["label"]}:{a["target"]}'
+        if key in act_seen:
+            return
+        act_seen.add(key)
+        actions.append(StructuredAction(
+            label=str(a["label"]), target=str(a["target"]),
+            params=a.get("params") if isinstance(a.get("params"), dict) else {},
+        ))
+
+    for tc in tool_calls:
+        result = (tc.result if isinstance(tc, ToolCallOut) else tc.get("result")) or {}
+        add_figure(result.get("primary_metric"))
+        for a in result.get("actions", []) or []:
+            add_action(a)
+        for ins in result.get("insights", []) or []:
+            if isinstance(ins, dict):
+                add_figure(ins.get("primary_metric"))
+                for a in ins.get("actions", []) or []:
+                    add_action(a)
+
+    if not figures and not actions:
+        return None
+    # ponytail: tope duro por si un tool devuelve decenas de insights.
+    return StructuredPayload(key_figures=figures[:6], actions=actions[:5])
 
 
 def _extract_title(message: str) -> str:
@@ -281,7 +353,7 @@ def _with_screen_context(message: str, context: dict[str, Any] | None) -> str:
     safe_context = {
         key: value
         for key, value in context.items()
-        if key in {"module", "route", "period", "visible_metrics", "data_status", "selected_entity", "suggested_action"}
+        if key in {"module", "route", "period", "visible_metrics", "data_status", "selected_entity", "suggested_action", "insight_id"}
     }
     return (
         "Contexto de pantalla de AI Financial OS. "

@@ -1,13 +1,15 @@
 import { useRef, useState } from "react";
-import { Send } from "lucide-react";
+import { Send, Square } from "lucide-react";
 
 interface Props {
   onSend: (message: string) => void;
   disabled?: boolean;
   placeholder?: string;
+  sending?: boolean;
+  onCancel?: () => void;
 }
 
-export default function AiMessageInput({ onSend, disabled, placeholder }: Props) {
+export default function AiMessageInput({ onSend, disabled, placeholder, sending, onCancel }: Props) {
   const [text, setText] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -46,14 +48,24 @@ export default function AiMessageInput({ onSend, disabled, placeholder }: Props)
           placeholder={placeholder ?? "Escribe tu pregunta..."}
           className="flex-1 resize-none bg-transparent px-2 py-2 text-body-sm text-on-dark placeholder:text-mute focus:outline-none disabled:opacity-50"
         />
-        <button
-          aria-label="Enviar mensaje"
-          onClick={submit}
-          disabled={!text.trim() || disabled}
-          className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-lg bg-primary text-white transition-colors hover:bg-primary-bright disabled:bg-white/[.05] disabled:text-mute"
-        >
-          <Send size={14} />
-        </button>
+        {sending && onCancel ? (
+          <button
+            aria-label="Detener respuesta"
+            onClick={onCancel}
+            className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-lg bg-accent-danger/80 text-white transition-colors hover:bg-accent-danger"
+          >
+            <Square size={12} fill="currentColor" />
+          </button>
+        ) : (
+          <button
+            aria-label="Enviar mensaje"
+            onClick={submit}
+            disabled={!text.trim() || disabled}
+            className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-lg bg-primary text-white transition-colors hover:bg-primary-bright disabled:bg-white/[.05] disabled:text-mute"
+          >
+            <Send size={14} />
+          </button>
+        )}
       </div>
     </div>
   );

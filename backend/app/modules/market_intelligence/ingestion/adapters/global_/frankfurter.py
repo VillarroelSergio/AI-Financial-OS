@@ -1,15 +1,48 @@
 """Frankfurter adapter - free ECB-backed FX rates."""
 import time
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 
 import requests
 
 from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter
-from app.modules.market_intelligence.ingestion.models import AdapterResult, CurrencyRate
+from app.modules.market_intelligence.ingestion.models import (
+    AdapterResult,
+    CurrencyRate,
+    HistoricalPrice,
+)
 
 _BASE_URL = "https://api.frankfurter.app"
 _PAIRS = ("USD", "GBP", "JPY", "CHF", "CAD", "AUD", "CNY")
 _HEADERS = {"User-Agent": "MarketDataPOC/0.1 contact@example.com"}
+
+
+def fetch_forex_history(catalog_id: str, years: int | None = None) -> list[HistoricalPrice]:
+    """MKT-6: serie diaria de un par FX desde Frankfurter (tipos de referencia del BCE).
+    El par sale del propio catalog_id (`eur_usd` → EUR→USD). Solo días hábiles, sin OHLC."""
+    base, quote = catalog_id.upper().split("_")
+    start = (date.today() - timedelta(days=365 * (years or 5))).isoformat()
+    end = date.today().isoformat()
+    url = f"{_BASE_URL}/{start}..{end}?from={base}&to={quote}"
+    r = requests.get(url, headers=_HEADERS, timeout=20)
+    r.raise_for_status()
+    rates = r.json().get("rates") or {}
+    now = datetime.now(timezone.utc)
+    out: list[HistoricalPrice] = []
+    for dstr in sorted(rates):
+        val = rates[dstr].get(quote)
+        if val is None:
+            continue
+        rec = HistoricalPrice(
+            provider="Frankfurter", source=url, retrieved_at=now,
+            country="GLOBAL", region="Global", symbol=catalog_id.upper(),
+            date=date.fromisoformat(dstr),
+            open=0.0, high=0.0, low=0.0, close=float(val), volume=0.0,
+        )
+        rec.currency = quote  # HistoricalPrice no tiene el campo; persist lee getattr
+        out.append(rec)
+    if not out:
+        raise ValueError("Frankfurter returned no rates")
+    return out
 
 
 class FrankfurterAdapter(BaseAdapter):

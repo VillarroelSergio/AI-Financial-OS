@@ -4,7 +4,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ChatMessageIn(BaseModel):
@@ -36,6 +36,27 @@ class SourceOut(BaseModel):
     quality_score: float | None = None
 
 
+# AI-1: cifras y acciones DETERMINISTAS extraídas de los resultados de las tools,
+# no del texto del LLM. El frontend las pinta con formato numérico local (mismo
+# principio que InsightOut: el backend nunca formatea números en copy).
+class StructuredFigure(BaseModel):
+    label: str
+    value: float
+    unit: str = ""
+    precision: int = 0
+
+
+class StructuredAction(BaseModel):
+    label: str
+    target: str
+    params: dict[str, Any] = Field(default_factory=dict)
+
+
+class StructuredPayload(BaseModel):
+    key_figures: list[StructuredFigure] = []
+    actions: list[StructuredAction] = []
+
+
 class ChatResponse(BaseModel):
     conversation_id: str
     message_id: str
@@ -45,6 +66,7 @@ class ChatResponse(BaseModel):
     quality_score: float | None = None
     provider: str | None = None
     model: str | None = None
+    structured: StructuredPayload | None = None
 
 
 class MessageOut(BaseModel):
@@ -56,6 +78,7 @@ class MessageOut(BaseModel):
     tool_calls: list[dict[str, Any]] | None = None
     sources: list[dict[str, Any]] | None = None
     quality_score: float | None = None
+    structured: StructuredPayload | None = None
     created_at: datetime
 
 
@@ -94,3 +117,24 @@ class ToolOut(BaseModel):
     description: str
     source_type: str
     returns_sources: bool
+
+
+# ── AI-3: Centro de Análisis (briefs proactivos) ───────────────────────────────
+
+class BriefGenerateRequest(BaseModel):
+    scope: str = "monthly_review"
+    period: str | None = None  # YYYY-MM; None = mes actual
+    provider: str | None = None
+    model: str | None = None
+
+
+class BriefOut(BaseModel):
+    id: str
+    scope: str
+    period: str
+    bundle: dict[str, Any]  # cifras cerradas deterministas (key_figures, signals, actions…)
+    narrative: str | None = None  # None si el LLM falló → frontend renderiza el bundle
+    data_state: str
+    provider: str | None = None
+    model: str | None = None
+    created_at: str | None = None

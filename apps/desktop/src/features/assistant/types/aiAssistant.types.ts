@@ -20,6 +20,7 @@ export interface AiMessage {
   tool_calls?: AiToolCall[];
   sources?: AiSource[];
   quality_score?: number;
+  structured?: AiStructured | null;
   created_at: string;
 }
 
@@ -41,6 +42,19 @@ export interface AiChatRequest {
   enable_tools?: boolean;
 }
 
+// AI-1: cifras/acciones deterministas extraídas de las tools (no del texto del LLM).
+export interface AiStructuredFigure {
+  label: string;
+  value: number;
+  unit: string; // "EUR" | "%" | ...
+  precision?: number;
+}
+
+export interface AiStructured {
+  key_figures: AiStructuredFigure[];
+  actions: AiBriefAction[];
+}
+
 export interface AiChatResponse {
   conversation_id: string;
   message_id: string;
@@ -50,6 +64,7 @@ export interface AiChatResponse {
   quality_score?: number;
   provider?: string;
   model?: string;
+  structured?: AiStructured | null;
 }
 
 export interface AiProviderStatus {
@@ -72,4 +87,48 @@ export interface AiTool {
   description: string;
   source_type: string;
   returns_sources: boolean;
+}
+
+// AI-3: Centro de Análisis (briefs proactivos)
+export interface AiKeyFigure {
+  label: string;
+  value: number;
+  unit: string; // "EUR" | "%" | ...
+}
+
+export interface AiBriefSignal {
+  title: string;
+  summary: string;
+  severity: string; // positive | info | warning | critical
+  type: string;
+}
+
+export interface AiBriefAction {
+  label: string;
+  target: string;
+  params: Record<string, unknown>;
+}
+
+export interface AiBriefBundle {
+  scope: string;
+  period: string;
+  headline: string;
+  summary: string;
+  data_state: string;
+  key_figures: AiKeyFigure[];
+  signals: AiBriefSignal[];
+  actions: AiBriefAction[];
+  sources: unknown[];
+}
+
+export interface AiBrief {
+  id: string;
+  scope: string;
+  period: string;
+  bundle: AiBriefBundle;
+  narrative: string | null; // null si el LLM falló → renderizar el bundle
+  data_state: string;
+  provider?: string;
+  model?: string;
+  created_at?: string;
 }

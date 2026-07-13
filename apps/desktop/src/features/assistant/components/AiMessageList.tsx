@@ -1,12 +1,64 @@
 import { useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { Bot, User } from "lucide-react";
+import { formatCurrency, formatNumber } from "@/lib/formatters/currency";
 import type { LocalMessage } from "../hooks/useAiConversation";
+import type { AiStructured, AiStructuredFigure } from "../types/aiAssistant.types";
 import AiToolTrace from "./AiToolTrace";
 import AiSourceBadge from "./AiSourceBadge";
+import Markdown from "./Markdown";
+
+// AI-5: sugerencias del empty-state. Si el usuario llega desde el copiloto de un
+// módulo, se pasan las de ese módulo (contextualCopilot); si no, estas genéricas.
+const FALLBACK_SUGGESTIONS = [
+  "¿Cómo voy este mes?",
+  "¿Qué señales macro hay?",
+  "¿Cómo está mi cartera?",
+];
 
 interface Props {
   messages: LocalMessage[];
   sending: boolean;
+  onPickSuggestion?: (text: string) => void;
+  suggestions?: string[];
+}
+
+function formatFigure(fig: AiStructuredFigure): string {
+  if (fig.unit === "EUR") return formatCurrency(fig.value);
+  if (fig.unit === "%") return `${fig.value.toFixed(fig.precision ?? 1)} %`;
+  return formatNumber(fig.value);
+}
+
+// AI-1: cifras y acciones deterministas (de las tools) bajo la respuesta del chat.
+function StructuredPanel({ data }: { data: AiStructured }) {
+  const navigate = useNavigate();
+  return (
+    <div className="mt-2 space-y-2">
+      {data.key_figures.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {data.key_figures.map((fig) => (
+            <div key={fig.label} className="rounded-lg bg-surface-elevated border border-hairline-dark px-3 py-1.5">
+              <p className="text-caption text-stone">{fig.label}</p>
+              <p className="text-body-sm text-on-dark font-medium">{formatFigure(fig)}</p>
+            </div>
+          ))}
+        </div>
+      )}
+      {data.actions.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {data.actions.map((act, i) => (
+            <button
+              key={i}
+              onClick={() => navigate(act.target)}
+              className="rounded-lg border border-hairline-dark bg-surface-elevated px-3 py-1.5 text-caption text-on-dark hover:border-primary/40"
+            >
+              {act.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function TypingIndicator() {
@@ -28,7 +80,8 @@ function TypingIndicator() {
   );
 }
 
-export default function AiMessageList({ messages, sending }: Props) {
+export default function AiMessageList({ messages, sending, onPickSuggestion, suggestions }: Props) {
+  const starterSuggestions = suggestions?.length ? suggestions : FALLBACK_SUGGESTIONS;
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -45,17 +98,15 @@ export default function AiMessageList({ messages, sending }: Props) {
             Pregunta sobre tu patrimonio, gastos, inversiones o señales de mercado.
           </p>
           <div className="flex flex-wrap gap-2 justify-center mt-4">
-            {[
-              "¿Cómo voy este mes?",
-              "¿Qué señales macro hay?",
-              "¿Cómo está mi cartera?",
-            ].map((s) => (
-              <span
+            {starterSuggestions.map((s) => (
+              <button
                 key={s}
-                className="text-caption px-3 py-1 rounded-full border border-hairline-dark text-stone"
+                onClick={() => onPickSuggestion?.(s)}
+                disabled={!onPickSuggestion}
+                className="text-caption px-3 py-1 rounded-full border border-hairline-dark text-stone transition-colors hover:border-primary/40 hover:text-on-dark disabled:cursor-default disabled:hover:border-hairline-dark disabled:hover:text-stone"
               >
                 {s}
-              </span>
+              </button>
             ))}
           </div>
         </div>
@@ -82,13 +133,19 @@ export default function AiMessageList({ messages, sending }: Props) {
           </div>
           <div className={`max-w-[80%] ${msg.role === "user" ? "items-end" : "items-start"} flex flex-col`}>
             <div
-              className={`rounded-xl px-4 py-3 text-body-sm whitespace-pre-wrap ${
+              className={`rounded-xl px-4 py-3 text-body-sm ${
                 msg.role === "user"
-                  ? "bg-primary-600 text-white"
+                  ? "bg-primary-600 text-white whitespace-pre-wrap"
                   : "bg-surface-elevated border border-hairline-dark text-on-dark"
               }`}
             >
-              {msg.content ?? (
+              {msg.content ? (
+                msg.role === "assistant" ? (
+                  <Markdown content={msg.content} />
+                ) : (
+                  msg.content
+                )
+              ) : (
                 <span className="text-stone italic">
                   {(msg.tool_calls?.length ?? 0) > 0 ? "Analizando datos…" : "Sin respuesta"}
                 </span>
@@ -96,6 +153,9 @@ export default function AiMessageList({ messages, sending }: Props) {
             </div>
             {msg.role === "assistant" && (
               <>
+                {msg.structured && (msg.structured.key_figures.length > 0 || msg.structured.actions.length > 0) && (
+                  <StructuredPanel data={msg.structured} />
+                )}
                 {msg.tool_calls && msg.tool_calls.length > 0 && (
                   <AiToolTrace toolCalls={msg.tool_calls} />
                 )}

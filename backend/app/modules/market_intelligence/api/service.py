@@ -250,6 +250,100 @@ def get_economy_overview(db) -> EconomyOverviewOut:
     )
 
 
+# ── MKT-6: ficha de instrumento (histórico EOD) ───────────────────────────────
+_RANGE_DAYS = {"1m": 30, "3m": 91, "6m": 182, "1y": 365, "5y": 1825}
+_RANGE_ORDER = ["1m", "3m", "6m", "1y", "5y"]
+_MAX_POINTS = 400  # downsampling: mantiene el gráfico fluido en rangos largos
+
+
+def _f(v) -> float | None:
+    """Trata 0/None como ausente para OHLC (Stooq puebla reales; 0.0 = sin dato)."""
+    return float(v) if v else None
+
+
+def _downsample(rows: list[dict], max_points: int) -> list[dict]:
+    if len(rows) <= max_points:
+        return rows
+    n = len(rows)
+    # Índices equiespaciados; primero=0, último=n-1 (el último dato nunca se pierde).
+    idx = sorted({round(i * (n - 1) / (max_points - 1)) for i in range(max_points)})
+    return [rows[i] for i in idx]
+
+
+def _compute_stats(all_rows: list[dict], selected: list[dict]) -> "HistoryStatsOut":
+    from datetime import timedelta
+
+    from app.modules.market_intelligence.api.schemas import HistoryStatsOut
+
+    last = all_rows[-1]
+    prev = all_rows[-2] if len(all_rows) >= 2 else None
+    cutoff52 = last["date"] - timedelta(days=365)
+    window = [r for r in all_rows if r["date"] >= cutoff52]
+    lows = [r["low"] for r in window if _f(r.get("low")) is not None] or [r["close"] for r in window]
+    highs = [r["high"] for r in window if _f(r.get("high")) is not None] or [r["close"] for r in window]
+    first_close = selected[0]["close"] if selected else last["close"]
+    change = ((last["close"] - first_close) / first_close * 100) if first_close else None
+    return HistoryStatsOut(
+        previous_close=_f(prev["close"]) if prev else None,
+        open=_f(last.get("open")),
+        day_low=_f(last.get("low")),
+        day_high=_f(last.get("high")),
+        week52_low=round(min(lows), 4) if lows else None,
+        week52_high=round(max(highs), 4) if highs else None,
+        range_change_pct=round(change, 2) if change is not None else None,
+        volume=int(last["volume"]) if last.get("volume") else None,
+    )
+
+
+def get_instrument_history(indicator_code: str, range_key: str = "max"):
+    """MKT-6: serie EOD + stats + rangos honestos derivados del span real (ECO-2)."""
+    from datetime import timedelta
+
+    from app.modules.market_intelligence.api.schemas import HistoryPointOut, InstrumentHistoryOut
+
+    item = _catalog.get_by_id(indicator_code)
+    name = item.name if item else None
+    region = item.country if item else None
+    rows = repository.read_historical(indicator_code)
+    if not rows:
+        return InstrumentHistoryOut(
+            indicator_code=indicator_code, name=name, region=region,
+            available_ranges=[], range=range_key, series=[],
+        )
+
+    first_date, last = rows[0]["date"], rows[-1]
+    span = (last["date"] - first_date).days
+    available = [r for r in _RANGE_ORDER if span >= _RANGE_DAYS[r]] + ["max"]
+    rk = range_key if range_key in available else "max"
+    if rk == "max":
+        selected = rows
+    else:
+        cutoff = last["date"] - timedelta(days=_RANGE_DAYS[rk])
+        selected = [r for r in rows if r["date"] >= cutoff] or rows
+
+    stats = _compute_stats(rows, selected)
+    series = _downsample(selected, _MAX_POINTS)
+    return InstrumentHistoryOut(
+        indicator_code=indicator_code, name=name, region=region,
+        currency=last.get("currency"), provider_id=last.get("provider_id"),
+        quality_score=round(float(last.get("quality_score") or 1.0), 2),
+        last_updated=last["date"].isoformat(), granularity="eod",
+        available_ranges=available, range=rk, stats=stats,
+        series=[
+            HistoryPointOut(
+                date=r["date"].isoformat(), close=float(r["close"]),
+                volume=int(r["volume"]) if r.get("volume") else None,
+            )
+            for r in series
+        ],
+    )
+
+
+def get_sparklines(codes: list[str], points: int = 30) -> dict[str, list[float]]:
+    """MKT-8: últimos N cierres por instrumento para mini-gráficas de fila. Solo lectura."""
+    return repository.read_sparklines(codes, points=max(2, min(points, 60)))
+
+
 def get_ai_datasheet(scope: str = "daily") -> AiDatasheetOut:
     try:
         from app.modules.market_intelligence.ai.datasheet import generate_ai_datasheet

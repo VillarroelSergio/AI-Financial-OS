@@ -128,6 +128,40 @@ class AiDatasheetOut(BaseModel):
     warnings: list[str] = []
 
 
+class HistoryPointOut(BaseModel):
+    date: str
+    close: float
+    volume: Optional[int] = None
+
+
+class HistoryStatsOut(BaseModel):
+    previous_close: Optional[float] = None
+    open: Optional[float] = None
+    day_low: Optional[float] = None
+    day_high: Optional[float] = None
+    week52_low: Optional[float] = None
+    week52_high: Optional[float] = None
+    range_change_pct: Optional[float] = None
+    volume: Optional[int] = None
+
+
+class InstrumentHistoryOut(BaseModel):
+    """MKT-6: serie histórica EOD de un instrumento. `available_ranges` se deriva del
+    span real de la serie (regla ECO-2: no se ofrecen rangos que la serie no cubre)."""
+    indicator_code: str
+    name: Optional[str] = None
+    region: Optional[str] = None
+    currency: Optional[str] = None
+    provider_id: Optional[str] = None
+    quality_score: float = 1.0
+    last_updated: Optional[str] = None
+    granularity: str = "eod"
+    available_ranges: list[str] = []
+    range: str = "max"
+    stats: HistoryStatsOut = HistoryStatsOut()
+    series: list[HistoryPointOut] = []
+
+
 class MarketIntelligenceSnapshotOut(BaseModel):
     generated_at: str
     macro: MacroSnapshotOut

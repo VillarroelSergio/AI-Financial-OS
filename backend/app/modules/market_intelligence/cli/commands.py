@@ -67,6 +67,25 @@ def cmd_update(category: str | None = None, priority: str | None = None, dry_run
     console.print(f"  Duration: {duration:.1f}s")
 
 
+def cmd_backfill_history(catalog: str | None = None, years: int = 1) -> None:
+    """MKT-6: backfill idempotente de precios EOD. Manual y bajo demanda (nunca en arranque).
+
+    catalog: familias separadas por coma (indices, commodities, crypto, forex). Default: todas.
+    Fuentes: Yahoo (índices/commodities), CoinGecko (cripto), Frankfurter/BCE (forex).
+    """
+    from app.modules.market_intelligence.ingestion.history_backfill import backfill_all
+
+    families = {w.strip() for w in catalog.split(",")} if catalog else None
+    console.print(f"[bold blue]Backfill histórico[/bold blue] — familias={sorted(families) if families else 'todas'} years={years}")
+
+    def _report(cid: str, ok: bool, detail: str) -> None:
+        tag = "[green]OK[/green]" if ok else "[red]FAIL[/red]"
+        console.print(f"  {tag} {cid}: {detail}")
+
+    total = backfill_all(years=years, families=families, on_result=_report)
+    console.print(f"\n[bold]Done[/bold] — {total} filas persistidas")
+
+
 def cmd_quality() -> None:
     from app.modules.market_intelligence.storage.db import get_conn
     conn = get_conn()

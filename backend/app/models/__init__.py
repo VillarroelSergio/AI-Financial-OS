@@ -1,5 +1,5 @@
 from app.models.account import Account
-from app.models.ai import AIConversation, AIMessage, AIToolCall
+from app.models.ai import AiBrief, AIConversation, AIMessage, AIToolCall
 from app.models.budget import Budget
 from app.models.category import Category
 from app.models.document import Document, DocumentChunk
@@ -28,6 +28,6 @@ __all__ = [
     "FundValuationSnapshot", "SavingsAccountConfig", "ReferenceRateObservation",
     "Transaction", "AppSetting", "Budget", "RecurringTransaction", "HouseholdBill", "MerchantRule",
     "Document", "DocumentChunk",
-    "AIConversation", "AIMessage", "AIToolCall",
+    "AIConversation", "AIMessage", "AIToolCall", "AiBrief",
     "InsightDismissal", "NetWorthSnapshot",
 ]

@@ -105,6 +105,36 @@ Una tarea se considera terminada si:
 - Validar navegación.
 - Validar estados vacíos.
 
+## UX Snapshots (Capturas automatizadas)
+
+Para verificar la UI en diferentes escenarios, usa la herramienta de snapshots desde `apps/desktop/`:
+
+**Modo Mock** (datos ficticios, sin backend):
+```txt
+npm run ux:snapshots        # headless
+npm run ux:snapshots:headed # con navegador visible
+```
+Salida: `ux-snapshots/latest/` (21 rutas, layout verification)
+
+**Modo Real** (con datos del usuario):
+```txt
+# Inicia backend primero: cd backend && python run_server.py
+npm run ux:snapshots:real        # headless
+npm run ux:snapshots:real:headed # con navegador visible
+```
+Salida: `ux-snapshots/real/` (mismas 21 rutas, datos reales)
+
+Ambos generan `metadata.json` + `UX_REVIEW_CONTEXT.md` para CI/análisis.
+
+Úsalo:
+- Antes de cerrar PR con cambios de UI.
+- Para detectar regresiones visuales.
+- Para documentar funcionalidades con datos reales.
+
+```txt
+npm run ux:report  # resumen de la última captura
+```
+
 ## Calidad
 
 Frontend:

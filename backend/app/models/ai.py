@@ -41,6 +41,25 @@ class AIMessage(Base):
     )
 
 
+class AiBrief(Base):
+    """AI-3: brief proactivo persistido. Idempotente por (scope, period) — patrón
+    DELETE+INSERT como los snapshots. `narrative` puede ser None si el LLM falló y
+    el frontend renderiza el bundle determinista directamente."""
+    __tablename__ = "ai_briefs"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    scope: Mapped[str] = mapped_column(String, nullable=False)  # monthly_review | ...
+    period: Mapped[str] = mapped_column(String, nullable=False)  # YYYY-MM
+    bundle_json: Mapped[str] = mapped_column(Text, nullable=False)
+    narrative: Mapped[str | None] = mapped_column(Text, nullable=True)
+    data_state: Mapped[str] = mapped_column(String, default="complete")
+    provider: Mapped[str | None] = mapped_column(String, nullable=True)
+    model: Mapped[str | None] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=lambda: datetime.now(timezone.utc)
+    )
+
+
 class AIToolCall(Base):
     __tablename__ = "ai_tool_calls"
 

@@ -261,6 +261,9 @@ _DDL_STATEMENTS = [
         last_success_at TEXT
     )
     """,
+    # MKT-6: la ficha de instrumento lee series por (catalog_item_id, date). Sin índice
+    # el GET escanea toda la tabla; con 5 años x decenas de instrumentos ya se nota.
+    "CREATE INDEX IF NOT EXISTS idx_hist_prices_item_date ON mi_historical_prices (catalog_item_id, date)",
 ]
 
 

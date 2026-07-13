@@ -10,6 +10,7 @@ import InvestmentsPage from "@/features/investments/InvestmentsPage";
 import PositionTrackingPage from "@/features/investments/tracking/PositionTrackingPage";
 import PortfolioImportPage from "@/features/investments/import/PortfolioImportPage";
 import MarketsPage from "@/features/markets/MarketsPage";
+import InstrumentDetailPage from "@/features/markets/detail/InstrumentDetailPage";
 import SettingsPage from "@/features/settings/SettingsPage";
 
 export default function App() {
@@ -29,6 +30,7 @@ export default function App() {
         <Route path="investments/import" element={<PortfolioImportPage />} />
         <Route path="economy" element={<EconomyPage />} />
         <Route path="markets" element={<MarketsPage />} />
+        <Route path="markets/:indicatorCode" element={<InstrumentDetailPage />} />
         <Route path="goals" element={<GoalsPage />} />
         <Route path="insights" element={<InsightsPage />} />
         <Route path="assistant" element={<AssistantPage />} />

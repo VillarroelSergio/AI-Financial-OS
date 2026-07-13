@@ -606,6 +606,74 @@ def get_price_change_1y(catalog_item_id: str) -> float | None:
     return (float(last_close) - float(base[1])) / float(base[1]) * 100
 
 
+def read_historical(catalog_item_id: str) -> list[dict]:
+    """MKT-6: serie EOD completa de un instrumento, ascendente por fecha. Solo lectura
+    (un GET nunca ingesta). `date` vuelve como objeto date (converter DATE de db.py)."""
+    conn = _conn()
+    rows = conn.execute(
+        "SELECT date, open, high, low, close, volume, currency, provider_id, quality_score "
+        "FROM mi_historical_prices WHERE catalog_item_id = ? AND close IS NOT NULL "
+        "ORDER BY date",
+        [catalog_item_id],
+    ).fetchall()
+    cols = ["date", "open", "high", "low", "close", "volume", "currency",
+            "provider_id", "quality_score"]
+    return [dict(zip(cols, r)) for r in rows]
+
+
+def historical_counts() -> dict[str, int]:
+    """MKT-6: nº de filas EOD por instrumento. Para el backfill 'solo faltantes' en arranque."""
+    rows = _conn().execute(
+        "SELECT catalog_item_id, COUNT(*) FROM mi_historical_prices GROUP BY catalog_item_id"
+    ).fetchall()
+    return {cid: n for cid, n in rows}
+
+
+def read_sparklines(catalog_item_ids: list[str], points: int = 30) -> dict[str, list[float]]:
+    """MKT-8: últimos N cierres por instrumento en una sola consulta (window function),
+    ascendentes por fecha. Para las mini-gráficas de fila. Solo lectura."""
+    if not catalog_item_ids:
+        return {}
+    placeholders = ",".join("?" * len(catalog_item_ids))
+    rows = _conn().execute(
+        f"""SELECT catalog_item_id, close FROM (
+              SELECT catalog_item_id, date, close,
+                ROW_NUMBER() OVER (PARTITION BY catalog_item_id ORDER BY date DESC) rn
+              FROM mi_historical_prices
+              WHERE catalog_item_id IN ({placeholders}) AND close IS NOT NULL
+            ) WHERE rn <= ? ORDER BY catalog_item_id, date""",
+        [*catalog_item_ids, points],
+    ).fetchall()
+    out: dict[str, list[float]] = {}
+    for cid, close in rows:
+        out.setdefault(cid, []).append(float(close))
+    return out
+
+
+def persist_historical_prices(
+    catalog_item_id: str, provider_id: str,
+    records: list[HistoricalPrice], quality_score: float = 1.0,
+) -> int:
+    """MKT-6: backfill idempotente de precios EOD (DELETE+INSERT por (item, symbol, date))."""
+    conn = _conn()
+    n = 0
+    for rec in records:
+        conn.execute(
+            "DELETE FROM mi_historical_prices WHERE catalog_item_id = ? AND symbol = ? AND date = ?",
+            [catalog_item_id, rec.symbol, rec.date],
+        )
+        conn.execute(
+            """INSERT INTO mi_historical_prices
+                (id, catalog_item_id, symbol, date, open, high, low, close, volume, currency, provider_id, quality_score)
+               VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            [_uid(), catalog_item_id, rec.symbol, rec.date,
+             rec.open, rec.high, rec.low, rec.close, rec.volume,
+             getattr(rec, "currency", "USD"), provider_id, quality_score],
+        )
+        n += 1
+    return n
+
+
 _RETENTION_RE = re.compile(r"^(\d+)\s*y$", re.IGNORECASE)
 
 

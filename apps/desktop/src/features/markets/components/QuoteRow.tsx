@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import type { QuoteMI } from "@/lib/types/market-intelligence";
 
 const COUNTRY_LABELS: Record<string, string> = {
@@ -13,6 +14,27 @@ const COUNTRY_LABELS: Record<string, string> = {
 
 interface Props {
   quote: QuoteMI;
+  sparkline?: number[];
+}
+
+// MKT-8: mini-gráfica SVG inline (sin recharts por fila). Verde/rojo según primer→último.
+function Sparkline({ points }: { points: number[] }) {
+  if (points.length < 2) return <div className="h-7" />;
+  const w = 64;
+  const h = 28;
+  const min = Math.min(...points);
+  const max = Math.max(...points);
+  const span = max - min || 1;
+  const step = w / (points.length - 1);
+  const d = points
+    .map((v, i) => `${i === 0 ? "M" : "L"}${(i * step).toFixed(1)},${(h - ((v - min) / span) * h).toFixed(1)}`)
+    .join(" ");
+  const up = points[points.length - 1] >= points[0];
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="overflow-visible" aria-hidden="true">
+      <path d={d} fill="none" stroke={up ? "#00a87e" : "#e23b4a"} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
+  );
 }
 
 function formatPrice(price: number): string {
@@ -43,7 +65,7 @@ function DataStatusBadge({ status }: { status: QuoteMI["data_status"] }) {
   );
 }
 
-export default function QuoteRow({ quote }: Props) {
+export default function QuoteRow({ quote, sparkline }: Props) {
   const positive = (quote.change_pct ?? 0) >= 0;
   const title = quote.display_name ?? quote.catalog_item_id.replace(/_/g, " ");
   const regionLabel = quote.display_country
@@ -51,12 +73,19 @@ export default function QuoteRow({ quote }: Props) {
     : null;
 
   return (
-    <div className="grid grid-cols-[1fr_100px_100px] items-center gap-4 px-6 py-3">
+    <Link
+      to={`/markets/${encodeURIComponent(quote.catalog_item_id)}`}
+      className="grid grid-cols-[1fr_64px_100px_100px] items-center gap-4 px-6 py-3 hover:bg-white/[.03] transition-colors"
+    >
       <div className="min-w-0">
         <p className="text-body-sm text-on-dark truncate">{title}</p>
         {regionLabel && (
           <p className="text-caption text-stone">{regionLabel}</p>
         )}
+      </div>
+
+      <div className="flex justify-center">
+        {sparkline && sparkline.length >= 2 ? <Sparkline points={sparkline} /> : <div className="h-7" />}
       </div>
 
       <div className="text-right">
@@ -90,6 +119,6 @@ export default function QuoteRow({ quote }: Props) {
         )}
         <DataStatusBadge status={quote.data_status} />
       </div>
-    </div>
+    </Link>
   );
 }

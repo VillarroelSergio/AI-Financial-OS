@@ -94,6 +94,41 @@ export interface BondSnapshotMI {
   warnings: string[];
 }
 
+// MKT-6/7: ficha de instrumento con histórico EOD.
+export type HistoryRange = "1m" | "3m" | "6m" | "1y" | "5y" | "max";
+
+export interface HistoryPointMI {
+  date: string;
+  close: number;
+  volume?: number | null;
+}
+
+export interface HistoryStatsMI {
+  previous_close?: number | null;
+  open?: number | null;
+  day_low?: number | null;
+  day_high?: number | null;
+  week52_low?: number | null;
+  week52_high?: number | null;
+  range_change_pct?: number | null;
+  volume?: number | null;
+}
+
+export interface InstrumentHistoryMI {
+  indicator_code: string;
+  name?: string | null;
+  region?: string | null;
+  currency?: string | null;
+  provider_id?: string | null;
+  quality_score: number;
+  last_updated?: string | null;
+  granularity: string;
+  available_ranges: HistoryRange[];
+  range: HistoryRange;
+  stats: HistoryStatsMI;
+  series: HistoryPointMI[];
+}
+
 export interface ImpactComparative {
   id: string;
   title: string;
