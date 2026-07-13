@@ -60,3 +60,34 @@ def test_comparison_returns_list(client):
     assert data[0]["budget_amount"] == 500.0
     assert data[0]["actual_amount"] == 0.0
     assert data[0]["over_budget"] is False
+
+
+def test_comparison_uses_positive_expense_magnitude(client):
+    cat_id = _create_category(client, "Restaurante")
+    budget = client.post("/api/budgets", json={"category_id": cat_id, "amount": "500.00"})
+    assert budget.status_code == 201
+
+    account = client.post("/api/accounts", json={
+        "name": "Budget test account",
+        "type": "bank",
+        "current_balance": "1000.00",
+        "currency": "EUR",
+    })
+    assert account.status_code == 201
+    transaction = client.post("/api/transactions", json={
+        "description": "Restaurant expense",
+        "amount": "-42.30",
+        "type": "expense",
+        "category_id": cat_id,
+        "account_id": account.json()["id"],
+        "date": "2026-07-13",
+    })
+    assert transaction.status_code == 201
+
+    response = client.get("/api/budgets/comparison?month=2026-07")
+    assert response.status_code == 200
+    item = response.json()[0]
+    assert item["actual_amount"] == 42.3
+    assert item["remaining"] == 457.7
+    assert item["consumption_pct"] == 8.5
+    assert item["over_budget"] is False

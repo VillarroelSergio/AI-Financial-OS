@@ -32,6 +32,7 @@ venv/
 # Data local — nunca commitear bases de datos personales
 data/
 backend/data/
+.e2e-data/
 
 # Entorno
 .env
