@@ -141,7 +141,7 @@ export default function AddStockDialog({ open, accountId, onClose, onSuccess }: 
                     <button
                       type="button"
                       onClick={() => pickCandidate(c)}
-                      className="w-full px-md py-sm text-left hover:bg-white/[.06]"
+                      className="w-full px-md py-sm text-left hover:bg-[var(--bg-interactive)]"
                     >
                       <span className="text-body-sm text-on-dark">{c.name}</span>
                       <span className="ml-2 text-caption text-stone">{c.ticker} · {c.exchange}{c.currency ? ` · ${c.currency}` : ""}</span>

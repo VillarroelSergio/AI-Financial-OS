@@ -1,3 +1,4 @@
+import { MotionConfig } from "framer-motion";
 import { Navigate, Route, Routes } from "react-router-dom";
 import RootLayout from "@/app/layout/RootLayout";
 import AssistantPage from "@/features/assistant/AssistantPage";
@@ -15,6 +16,7 @@ import SettingsPage from "@/features/settings/SettingsPage";
 
 export default function App() {
   return (
+    <MotionConfig reducedMotion="user">
     <Routes>
       <Route path="/" element={<RootLayout />}>
         <Route index element={<DashboardPage />} />
@@ -38,5 +40,6 @@ export default function App() {
         <Route path="welcome" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
+    </MotionConfig>
   );
 }

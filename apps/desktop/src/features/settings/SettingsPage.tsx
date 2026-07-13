@@ -154,14 +154,14 @@ export default function SettingsPage() {
           <div className="divide-y divide-hairline-dark">
             <div className="p-xl flex items-center justify-between gap-6">
               <div><p className="text-body-md text-on-dark">Idioma</p><p className="text-caption text-stone mt-xs">Idioma de la interfaz</p></div>
-              <select className="rounded-lg border border-hairline-dark bg-white/[.035] px-md py-sm text-body-sm text-on-dark" value={getValue("app.language")} onChange={(e) => handleUpdate("app.language", e.target.value)} disabled={saving === "app.language"}>
+              <select className="rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-md py-sm text-body-sm text-on-dark" value={getValue("app.language")} onChange={(e) => handleUpdate("app.language", e.target.value)} disabled={saving === "app.language"}>
                 <option value="es">Espanol</option>
                 <option value="en">English</option>
               </select>
             </div>
             <div className="p-xl flex items-center justify-between gap-6">
               <div><p className="text-body-md text-on-dark">Moneda</p><p className="text-caption text-stone mt-xs">Moneda predeterminada</p></div>
-              <select className="rounded-lg border border-hairline-dark bg-white/[.035] px-md py-sm text-body-sm text-on-dark" value={getValue("app.currency")} onChange={(e) => handleUpdate("app.currency", e.target.value)} disabled={saving === "app.currency"}>
+              <select className="rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-md py-sm text-body-sm text-on-dark" value={getValue("app.currency")} onChange={(e) => handleUpdate("app.currency", e.target.value)} disabled={saving === "app.currency"}>
                 <option value="EUR">EUR - Euro</option>
                 <option value="USD">USD - Dolar</option>
                 <option value="GBP">GBP - Libra</option>
@@ -205,7 +205,7 @@ export default function SettingsPage() {
 
         <section className="premium-card rounded-lg p-5">
           <div className="flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-lg border border-hairline-dark bg-white/[.035] text-primary-bright"><Bot size={18} /></span>
+            <span className="grid h-10 w-10 place-items-center rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] text-primary-bright"><Bot size={18} /></span>
             <div>
               <h2 className="text-base font-semibold text-on-dark">Asistente IA</h2>
               <p className="text-xs text-stone">Preparado para Ollama y LM Studio.</p>
@@ -225,7 +225,7 @@ export default function SettingsPage() {
               ["Estado RAG", documents.length > 0 ? "Indexado" : "Sin documentos"],
               ["Documentos indexados", String(documents.length)],
             ].map(([label, value]) => (
-              <div key={label} className="flex items-center justify-between rounded-lg border border-hairline-dark bg-white/[.03] px-3 py-2">
+              <div key={label} className="flex items-center justify-between rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-3 py-2">
                 <span className="text-xs text-stone">{label}</span>
                 <span className="text-xs text-on-dark">{value}</span>
               </div>
@@ -275,7 +275,7 @@ export default function SettingsPage() {
         {systemError && <p className="mt-3 text-sm text-accent-danger">{systemError}</p>}
         <div className="mt-4 grid gap-2">
           {backups.slice(0, 3).map((backup) => (
-            <div key={backup.filename} className="flex items-center justify-between gap-3 rounded-lg border border-hairline-dark bg-white/[.03] px-3 py-2">
+            <div key={backup.filename} className="flex items-center justify-between gap-3 rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-3 py-2">
               <div className="min-w-0">
                 <p className="truncate text-xs text-on-dark">{backup.filename}</p>
                 <p className="truncate text-[11px] text-stone">{new Date(backup.created_at).toLocaleString("es-ES")}</p>
@@ -295,10 +295,10 @@ export default function SettingsPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            <button onClick={handleCurrencyFix} disabled={currencyFixBusy} className="rounded-lg border border-hairline-dark px-4 py-2 text-sm text-on-dark hover:bg-white/[.05] disabled:opacity-50">
+            <button onClick={handleCurrencyFix} disabled={currencyFixBusy} className="rounded-lg border border-hairline-dark px-4 py-2 text-sm text-on-dark hover:bg-[var(--bg-interactive)] disabled:opacity-50">
               {currencyFixBusy ? "Comprobando..." : "Corregir divisa USD"}
             </button>
-            <button onClick={handlePurgeAccounts} disabled={purgeBusy} className="rounded-lg border border-hairline-dark px-4 py-2 text-sm text-on-dark hover:bg-white/[.05] disabled:opacity-50">
+            <button onClick={handlePurgeAccounts} disabled={purgeBusy} className="rounded-lg border border-hairline-dark px-4 py-2 text-sm text-on-dark hover:bg-[var(--bg-interactive)] disabled:opacity-50">
               {purgeBusy ? "Comprobando..." : "Limpiar cuentas duplicadas"}
             </button>
           </div>

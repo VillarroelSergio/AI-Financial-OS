@@ -16,6 +16,7 @@
     "e2e:flow-01-33": "tsx run-flow-01-05.ts",
     "e2e:flow-01-33:headed": "tsx run-flow-01-05.ts --headed",
     "test:flows": "tsx test-flow-contracts.ts",
+    "test:e2e-isolation": "tsx test-e2e-data-location.ts",
     "report": "tsx report.ts"
   },
   "devDependencies": {

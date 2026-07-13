@@ -114,25 +114,25 @@ export default function AccountsPage() {
           <div className="grid grid-cols-2 gap-lg">
             <label className="space-y-xs">
               <span className="text-caption text-stone">Nombre</span>
-              <input required className="w-full bg-white/[.035] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Ej. BBVA" />
+              <input required className="w-full bg-[var(--bg-interactive)] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Ej. BBVA" />
             </label>
             <label className="space-y-xs">
               <span className="text-caption text-stone">Tipo</span>
-              <select className="w-full bg-white/[.035] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary" value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}>
+              <select className="w-full bg-[var(--bg-interactive)] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary" value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}>
                 {Object.entries(ACCOUNT_TYPE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
             </label>
             <label className="space-y-xs">
               <span className="text-caption text-stone">Saldo</span>
-              <input type="number" step="0.01" className="w-full bg-white/[.035] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary" value={form.current_balance} onChange={(e) => setForm((f) => ({ ...f, current_balance: e.target.value }))} />
+              <input type="number" step="0.01" className="w-full bg-[var(--bg-interactive)] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary" value={form.current_balance} onChange={(e) => setForm((f) => ({ ...f, current_balance: e.target.value }))} />
             </label>
             <label className="space-y-xs">
               <span className="text-caption text-stone">Divisa</span>
-              <input maxLength={3} className="w-full bg-white/[.035] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary" value={form.currency ?? "EUR"} onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value.toUpperCase() }))} />
+              <input maxLength={3} className="w-full bg-[var(--bg-interactive)] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary" value={form.currency ?? "EUR"} onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value.toUpperCase() }))} />
             </label>
             <label className="space-y-xs col-span-2">
               <span className="text-caption text-stone">Institucion</span>
-              <input className="w-full bg-white/[.035] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary" value={form.institution ?? ""} onChange={(e) => setForm((f) => ({ ...f, institution: e.target.value }))} placeholder="Opcional" />
+              <input className="w-full bg-[var(--bg-interactive)] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary" value={form.institution ?? ""} onChange={(e) => setForm((f) => ({ ...f, institution: e.target.value }))} placeholder="Opcional" />
             </label>
             <label className="flex items-center gap-sm col-span-2 cursor-pointer">
               <input type="checkbox" checked={form.is_liability ?? false} onChange={(e) => setForm((f) => ({ ...f, is_liability: e.target.checked }))} />

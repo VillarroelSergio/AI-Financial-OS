@@ -73,7 +73,7 @@ export default {
       fontFamily: {
         sans:    ["'SF Pro Text'", "Inter", "ui-sans-serif", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "sans-serif"],
         display: ["'SF Pro Display'", "Inter", "ui-sans-serif", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "sans-serif"],
-        mono:    ["'Courier New'", "ui-monospace", "monospace"],
+        mono:    ["'SF Mono'", "ui-monospace", "Consolas", "monospace"],
       },
 
       fontSize: {
@@ -95,13 +95,13 @@ export default {
       },
 
       borderRadius: {
-        sm:    "10px",
+        sm:    "8px",
         md:    "10px",
-        lg:    "10px",
-        xl:    "10px",
-        "2xl": "28px",
-        "3xl": "28px",
-        "4xl": "36px",
+        lg:    "12px",
+        xl:    "16px",
+        "2xl": "20px",
+        "3xl": "24px",
+        "4xl": "24px",
         full:  "980px",
       },
 

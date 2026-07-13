@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { PageHeader } from "@/components/ui/Dashboard";
+import SegmentedControl from "@/components/ui/SegmentedControl";
 import BudgetTab from "@/features/planning/BudgetTab";
 import CashflowTab from "@/features/planning/CashflowTab";
 import HouseholdBillsTab from "@/features/planning/HouseholdBillsTab";
@@ -23,25 +24,11 @@ export default function PlanificacionPage() {
     <div className="space-y-6 p-8 max-w-[1500px] mx-auto">
       <PageHeader
         eyebrow="Forecast operativo"
-        title="Planificacion"
+        title="Planificación"
         description="Presupuestos, recurrentes, facturas del hogar y prevision financiera en una vista accionable."
-        actions={<span className="rounded-lg border border-hairline-dark bg-white/[.035] px-3 py-2 text-xs text-stone">Presupuestos - Recurrentes - Facturas - Cashflow</span>}
       />
 
-      <div className="flex gap-1 rounded-lg border border-hairline-dark bg-white/[.035] p-1 w-fit">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActive(tab.key)}
-            className={[
-              "rounded-lg px-4 py-2 text-sm font-medium transition-colors",
-              active === tab.key ? "bg-primary text-white" : "text-stone hover:text-on-dark hover:bg-white/[.04]",
-            ].join(" ")}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <SegmentedControl options={TABS} value={active} onChange={setActive} ariaLabel="Secciones de planificación" />
 
       {active === "presupuestos" && <BudgetTab />}
       {active === "recurrentes" && <RecurringTab />}

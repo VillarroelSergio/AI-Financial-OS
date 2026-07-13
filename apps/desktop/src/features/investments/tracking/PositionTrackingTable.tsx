@@ -53,7 +53,7 @@ export default function PositionTrackingTable({ holdings }: Props) {
               <Fragment key={h.id}>
                 <tr
                   onClick={() => setExpandedId(expanded ? null : h.id)}
-                  className="border-b border-hairline-dark last:border-0 hover:bg-white/[.02] transition-colors cursor-pointer"
+                  className="border-b border-hairline-dark last:border-0 hover:bg-[var(--bg-interactive)] transition-colors cursor-pointer"
                 >
                   <td className="pl-4 py-3 w-6 text-stone">
                     {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}

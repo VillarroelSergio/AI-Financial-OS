@@ -126,7 +126,7 @@ export default function IndicatorCard({ indicator, size = "default" }: Props) {
                 ? "bg-emerald-500/15 text-emerald-400"
                 : delta < 0
                 ? "bg-rose-500/15 text-rose-400"
-                : "bg-white/10 text-stone"
+                : "bg-[var(--bg-interactive)] text-stone"
             }`}
             title={`Variación vs periodo anterior (${formatValue(indicator.previous_value, indicator.unit)})`}
           >
@@ -135,7 +135,7 @@ export default function IndicatorCard({ indicator, size = "default" }: Props) {
           </span>
         )}
         {indicator.data_status && indicator.data_status !== "ok" && (
-          <span className="rounded px-1.5 py-0.5 text-xs font-medium uppercase tracking-wide bg-white/10 text-stone">
+          <span className="rounded px-1.5 py-0.5 text-xs font-medium uppercase tracking-wide bg-[var(--bg-interactive)] text-stone">
             {STATUS_LABELS[indicator.data_status] ?? indicator.data_status}
           </span>
         )}

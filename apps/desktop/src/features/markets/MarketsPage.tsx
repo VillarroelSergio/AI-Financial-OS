@@ -94,7 +94,7 @@ export default function MarketsPage() {
             <button
               onClick={handleRefresh}
               disabled={refreshing || loading}
-              className="flex items-center gap-1.5 rounded-lg bg-white/5 px-3 py-1.5 text-xs text-stone hover:text-on-dark disabled:opacity-50 transition-colors"
+              className="flex items-center gap-1.5 rounded-lg bg-[var(--bg-interactive)] px-3 py-1.5 text-xs text-stone hover:text-on-dark disabled:opacity-50 transition-colors"
             >
               <RefreshCw size={12} className={refreshing ? "animate-spin" : ""} />
               {refreshing
@@ -112,7 +112,7 @@ export default function MarketsPage() {
 
       <section className="premium-card rounded-lg p-5">
         <div className="flex items-center gap-3">
-          <span className="grid h-10 w-10 place-items-center rounded-lg border border-hairline-dark bg-white/[.035] text-primary-bright"><Activity size={18} /></span>
+          <span className="grid h-10 w-10 place-items-center rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] text-primary-bright"><Activity size={18} /></span>
           <div>
             <p className="text-sm font-semibold text-on-dark">Pulso de mercado</p>
             <p className="text-xs text-stone">Vista densa para seguimiento diario y validacion de calidad de dato.</p>
@@ -120,9 +120,9 @@ export default function MarketsPage() {
         </div>
       </section>
 
-      <div className="flex w-fit gap-1 rounded-lg border border-hairline-dark bg-white/[.035] p-1">
+      <div className="flex w-fit gap-1 rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] p-1">
         {tabs.map((tab) => (
-          <button key={tab.key} onClick={() => setActiveTab(tab.key)} className={["rounded-lg px-4 py-2 text-body-sm transition-colors", activeTab === tab.key ? "bg-white/[.08] text-on-dark shadow-[inset_0_0_0_1px_rgba(255,255,255,.08)]" : "text-stone hover:text-on-dark"].join(" ")}>
+          <button key={tab.key} onClick={() => setActiveTab(tab.key)} className={["rounded-lg px-4 py-2 text-body-sm transition-colors", activeTab === tab.key ? "bg-[var(--bg-interactive)] text-on-dark shadow-[inset_0_0_0_1px_rgba(255,255,255,.08)]" : "text-stone hover:text-on-dark"].join(" ")}>
             {tab.label}
           </button>
         ))}
@@ -178,7 +178,7 @@ export default function MarketsPage() {
           {forex && forex.rates.length > 0 ? (
             <div className="divide-y divide-divider-soft">
               {forex.rates.map((r) => (
-                <Link key={r.catalog_item_id} to={`/markets/${encodeURIComponent(r.catalog_item_id)}`} className="grid grid-cols-[1fr_120px_100px] items-center gap-4 px-6 py-3 hover:bg-white/[.03] transition-colors">
+                <Link key={r.catalog_item_id} to={`/markets/${encodeURIComponent(r.catalog_item_id)}`} className="grid grid-cols-[1fr_120px_100px] items-center gap-4 px-6 py-3 hover:bg-[var(--bg-interactive)] transition-colors">
                   <div>
                     <p className="text-body-sm text-on-dark">{r.base_currency ?? "-"} / {r.quote_currency ?? "-"}</p>
                   </div>

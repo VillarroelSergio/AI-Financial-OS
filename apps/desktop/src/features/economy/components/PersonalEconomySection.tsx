@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { CalendarDays, Home, Landmark, Newspaper, PiggyBank, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { Home, Landmark, Newspaper, PiggyBank, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import { formatCurrency } from "@/lib/formatters/currency";
 import type { MacroDataPointMI, PersonalEconomyMI } from "@/lib/types/market-intelligence";
 
@@ -65,7 +65,7 @@ function MortgageSimulator({ euribor }: { euribor: PersonalEconomyMI["euribor"] 
     return { now, delta: before !== null ? now - before : null };
   }, [capital, years, spread, euribor]);
 
-  const field = "w-full rounded-lg border border-hairline-dark bg-white/[.035] px-2 py-1.5 text-sm text-on-dark";
+  const field = "w-full rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-2 py-1.5 text-sm text-on-dark";
   return (
     <div className="premium-card rounded-lg p-5 space-y-3">
       <div className="flex items-center gap-2">
@@ -94,7 +94,7 @@ function MortgageSimulator({ euribor }: { euribor: PersonalEconomyMI["euribor"] 
         </label>
       </div>
       {result ? (
-        <div className="rounded-lg border border-hairline-dark bg-white/[.03] p-3">
+        <div className="rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] p-3">
           <p className="text-body-sm text-on-dark">
             Cuota estimada: <b>{formatCurrency(result.now)}</b>/mes
           </p>
@@ -222,34 +222,6 @@ function SavingsYield({ data }: { data: PersonalEconomyMI["savings"] }) {
   );
 }
 
-// ── Calendario fiscal (Fase 2) ───────────────────────────────────────
-function FiscalCalendar({ items }: { items: PersonalEconomyMI["fiscal_calendar"] }) {
-  return (
-    <div className="premium-card rounded-lg p-5 space-y-3">
-      <div className="flex items-center gap-2">
-        <CalendarDays size={14} className="text-primary-bright" />
-        <h3 className="text-caption text-mute uppercase tracking-widest">Calendario fiscal</h3>
-      </div>
-      <div className="space-y-2">
-        {items.map((m) => (
-          <div key={`${m.date}-${m.label}`} className="flex items-start justify-between gap-3 text-caption">
-            <div>
-              <p className="text-on-dark">{m.label}</p>
-              <p className="text-stone">
-                {new Date(m.date).toLocaleDateString("es-ES", { day: "numeric", month: "long" })}
-                {m.audience === "autonomos" && " · autónomos"}
-              </p>
-            </div>
-            <span className={`shrink-0 rounded-lg px-2 py-0.5 ${m.days_left <= 15 ? "bg-amber-400/15 text-amber-200" : "bg-white/[.05] text-stone"}`}>
-              {m.days_left === 0 ? "hoy" : `en ${m.days_left} días`}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // ── Noticias relevantes (Fase 3) ─────────────────────────────────────
 function RelevantNews({ items }: { items: PersonalEconomyMI["relevant_news"] }) {
   if (items.length === 0) return null;
@@ -289,7 +261,7 @@ export default function PersonalEconomySection({
       {context.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {context.map((c) => (
-            <span key={c.id} className="flex items-center gap-2 rounded-lg border border-hairline-dark bg-white/[.035] px-3 py-1.5 text-caption text-on-dark">
+            <span key={c.id} className="flex items-center gap-2 rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-3 py-1.5 text-caption text-on-dark">
               <span className={`h-2 w-2 rounded-full ${TONE_DOT[c.tone]}`} />
               {c.text}
             </span>
@@ -301,7 +273,6 @@ export default function PersonalEconomySection({
         <MortgageSimulator euribor={data.euribor} />
         <RealSalary data={data.real_salary} />
         <SavingsYield data={data.savings} />
-        <FiscalCalendar items={data.fiscal_calendar} />
         <RelevantNews items={data.relevant_news} />
       </div>
     </section>

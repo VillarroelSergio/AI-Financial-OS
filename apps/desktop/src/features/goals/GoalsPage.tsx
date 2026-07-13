@@ -207,6 +207,24 @@ export default function GoalsPage() {
           icon={Target}
           title="Define tus próximos objetivos financieros"
           description="Crea metas como fondo de emergencia, entrada de vivienda o inversión a largo plazo. Verás proyecciones con tres escenarios de crecimiento."
+          preview={
+            <div className="space-y-3 rounded-2xl border border-[var(--border-soft)] bg-[var(--bg-card)] p-4 text-left">
+              {[
+                { name: "Fondo de emergencia", pct: 72 },
+                { name: "Entrada de vivienda", pct: 34 },
+              ].map((g) => (
+                <div key={g.name}>
+                  <div className="mb-1 flex justify-between text-[11px] text-[var(--text-secondary)]">
+                    <span>{g.name}</span>
+                    <span>{g.pct}%</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-[var(--bg-interactive)]">
+                    <div className="h-2 rounded-full bg-[var(--primary)]" style={{ width: `${g.pct}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          }
           action={
             <button
               onClick={() => setOpen(true)}
@@ -262,7 +280,7 @@ export default function GoalsPage() {
                       de {formatCurrency(goal.target_amount)}
                     </span>
                   </div>
-                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/5">
+                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--bg-interactive)]">
                     <div
                       className="h-full rounded-full bg-primary transition-all duration-500"
                       style={{ width: `${progress}%` }}

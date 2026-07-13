@@ -5,7 +5,7 @@ const SIGNAL_CONFIG = {
   no_data: {
     label: "Sin datos",
     textColor: "text-mute",
-    badgeClass: "bg-white/5 text-mute border-white/10",
+    badgeClass: "bg-[var(--bg-interactive)] text-mute border-white/10",
     Icon: CircleOff,
   },
   positive: {

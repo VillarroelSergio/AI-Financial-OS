@@ -66,7 +66,7 @@ export default function RecurringTab() {
               <p className="text-sm font-semibold text-on-dark">Candidatos detectados</p>
               <p className="text-xs text-stone">Patrones encontrados en movimientos similares. Revisa importe, frecuencia y evidencias antes de confirmar.</p>
             </div>
-            <span className="rounded-lg border border-hairline-dark bg-white/[.035] px-2.5 py-1 text-xs text-primary-bright">{visibleCandidates.length} pendientes</span>
+            <span className="rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-2.5 py-1 text-xs text-primary-bright">{visibleCandidates.length} pendientes</span>
           </div>
           <div className="grid gap-3">
             {visibleCandidates.map((candidate) => (
@@ -82,9 +82,9 @@ export default function RecurringTab() {
                   </div>
                 </div>
                 <div className="mt-3 grid gap-2 md:grid-cols-3">
-                  <div className="rounded-lg bg-white/[.03] px-3 py-2"><span className="text-[11px] text-stone">Proxima fecha</span><p className="text-xs text-on-dark">{candidate.next_date}</p></div>
-                  <div className="rounded-lg bg-white/[.03] px-3 py-2"><span className="text-[11px] text-stone">Rango habitual</span><p className="text-xs text-on-dark">{formatCurrency(candidate.amount_min, candidate.currency)} - {formatCurrency(candidate.amount_max, candidate.currency)}</p></div>
-                  <div className="rounded-lg bg-white/[.03] px-3 py-2"><span className="text-[11px] text-stone">Movimientos usados</span><p className="text-xs text-on-dark">{candidate.transaction_count}</p></div>
+                  <div className="rounded-lg bg-[var(--bg-interactive)] px-3 py-2"><span className="text-[11px] text-stone">Proxima fecha</span><p className="text-xs text-on-dark">{candidate.next_date}</p></div>
+                  <div className="rounded-lg bg-[var(--bg-interactive)] px-3 py-2"><span className="text-[11px] text-stone">Rango habitual</span><p className="text-xs text-on-dark">{formatCurrency(candidate.amount_min, candidate.currency)} - {formatCurrency(candidate.amount_max, candidate.currency)}</p></div>
+                  <div className="rounded-lg bg-[var(--bg-interactive)] px-3 py-2"><span className="text-[11px] text-stone">Movimientos usados</span><p className="text-xs text-on-dark">{candidate.transaction_count}</p></div>
                 </div>
                 <details className="mt-3">
                   <summary className="cursor-pointer text-xs text-primary-bright">Ver evidencia</summary>

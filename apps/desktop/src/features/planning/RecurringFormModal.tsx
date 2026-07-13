@@ -27,7 +27,7 @@ export default function RecurringFormModal({ onSubmit, onClose }: Props) {
     }
   };
 
-  const inputClass = "w-full rounded-lg bg-white/5 px-3 py-2.5 text-sm text-on-dark focus:outline-none focus:ring-1 focus:ring-primary";
+  const inputClass = "w-full rounded-lg bg-[var(--bg-interactive)] px-3 py-2.5 text-sm text-on-dark focus:outline-none focus:ring-1 focus:ring-primary";
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
@@ -56,7 +56,7 @@ export default function RecurringFormModal({ onSubmit, onClose }: Props) {
           <input type="date" value={nextDate} onChange={e => setNextDate(e.target.value)} className={inputClass} required />
 
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 rounded-lg bg-white/5 py-2.5 text-sm text-stone hover:text-on-dark">Cancelar</button>
+            <button type="button" onClick={onClose} className="flex-1 rounded-lg bg-[var(--bg-interactive)] py-2.5 text-sm text-stone hover:text-on-dark">Cancelar</button>
             <button type="submit" disabled={saving} className="flex-1 rounded-lg bg-primary py-2.5 text-sm font-medium text-white disabled:opacity-50">
               {saving ? "Guardando..." : "Añadir"}
             </button>

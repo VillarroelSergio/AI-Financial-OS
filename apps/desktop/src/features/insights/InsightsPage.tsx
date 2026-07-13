@@ -120,7 +120,7 @@ export default function InsightsPage() {
             <button
               onClick={refresh}
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2 text-xs text-on-dark hover:bg-white/10 disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-2 rounded-lg bg-[var(--bg-interactive)] px-3 py-2 text-xs text-on-dark hover:bg-[var(--bg-interactive)] disabled:opacity-50 transition-colors"
             >
               <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
               Actualizar
@@ -158,7 +158,7 @@ export default function InsightsPage() {
       )}
 
       {lastDismissedId && (
-        <div className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/5 px-4 py-2">
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-[var(--bg-interactive)] px-4 py-2">
           <p className="text-xs text-stone truncate">
             Insight descartado{lastDismissedTitle ? `: ${lastDismissedTitle}` : ""}.
           </p>
@@ -210,7 +210,7 @@ export default function InsightsPage() {
               </summary>
               <div className="mt-3 space-y-2">
                 {contextInsights.map((i) => (
-                  <div key={i.id} className="flex items-center justify-between gap-3 rounded-lg bg-white/5 px-3 py-2">
+                  <div key={i.id} className="flex items-center justify-between gap-3 rounded-lg bg-[var(--bg-interactive)] px-3 py-2">
                     <div className="min-w-0">
                       <p className="text-sm text-on-dark truncate">{i.title}</p>
                       <p className="text-xs text-stone truncate">{i.summary}</p>

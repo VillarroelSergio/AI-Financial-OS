@@ -121,7 +121,7 @@ export default function AiMessageList({ messages, sending, onPickSuggestion, sug
           <div
             className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 ${
               msg.role === "user"
-                ? "bg-primary-600"
+                ? "bg-primary"
                 : "bg-surface-elevated border border-hairline-dark"
             }`}
           >
@@ -135,7 +135,7 @@ export default function AiMessageList({ messages, sending, onPickSuggestion, sug
             <div
               className={`rounded-xl px-4 py-3 text-body-sm ${
                 msg.role === "user"
-                  ? "bg-primary-600 text-white whitespace-pre-wrap"
+                  ? "bg-primary text-on-primary whitespace-pre-wrap"
                   : "bg-surface-elevated border border-hairline-dark text-on-dark"
               }`}
             >

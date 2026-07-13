@@ -21,11 +21,7 @@
   --color-iris-violet: #8668ff;
   --color-reef-teal: #00a1b3;
 
-  /* Funcionales compartidos */
-  --primary: #0071e3;
-  --positive: #008163;
-  --negative: #ee2526;
-  --warning: #ff5c00;
+  /* Funcionales compartidos (los de color por tema: ver bloques [data-theme]) */
   --info: #1b73e6;
   --accent: #f56900;
   --on-primary: #ffffff;
@@ -33,7 +29,6 @@
   /* Tipografía — Familias */
   --font-sf-pro-display: 'SF Pro Display', Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-sf-pro-text: 'SF Pro Text', Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-courier-new: "Courier New", ui-monospace, monospace;
 
   /* Tipografía — Escala exacta DESIGN.md */
   --text-caption: 10px;      --leading-caption: 1.83;     --tracking-caption: -0.37px;
@@ -43,6 +38,7 @@
   --text-heading-lg: 32px;   --leading-heading-lg: 1.14;  --tracking-heading-lg: -0.32px;
   --text-display: 56px;      --leading-display: 1.07;     --tracking-display: -0.84px;
   --text-hero: 80px;         --leading-hero: 1.05;        --tracking-hero: -0.24px;
+  --text-hero-value: 40px;   /* cifra hero patrimonio */
 
   /* Tipografía — Pesos */
   --font-weight-regular: 400;
@@ -72,38 +68,70 @@
   --radius-nav: 980px;
 }
 
-/* ─── Tema Oscuro (default) ─── */
-[data-theme="dark"] {
-  --bg-app: #000000;
-  --bg-sidebar: #1d1d1f;
-  --bg-surface: #111111;
-  --bg-card: #1d1d1f;
-  --bg-card-elevated: #333336;
-  --bg-interactive: #333336;
-  --text-primary: #f5f5f7;
-  --text-secondary: #86868b;
-  --text-muted: rgba(245, 245, 247, 0.5);
-  --border-soft: #333336;
-  --border-strong: #424245;
-  --divider-soft: rgba(245, 245, 247, 0.1);
-  --hairline-dark: #333336;
+/* ─── Tema Claro (nuevo default) ─── */
+[data-theme="light"] {
+  --bg-app: #F2F3F5;
+  --bg-sidebar: rgba(255, 255, 255, 0.72);
+  --bg-sidebar-active: #FFFFFF;
+  --bg-surface: #FFFFFF;
+  --bg-card: #FFFFFF;
+  --bg-card-elevated: #F5F5F7;
+  --bg-interactive: #F0F0F2;
+  --bg-hero-from: #1D1D1F;
+  --bg-hero-to: #2C2C30;
+  --text-primary: #1D1D1F;
+  --text-secondary: #6E6E73;
+  --text-muted: rgba(29, 29, 31, 0.45);
+  --text-on-hero: #F5F5F7;
+  --text-on-hero-secondary: #A1A1A6;
+  --border-soft: #E4E4E7;
+  --border-strong: #D2D2D7;
+  --divider-soft: rgba(29, 29, 31, 0.08);
+  --hairline-dark: #E4E4E7;
+  --primary: #0071E3;
+  --positive: #059669;
+  --negative: #DC2626;
+  --warning: #D97706;
+  --positive-on-hero: #6EE7B7;
+  --negative-on-hero: #FF8A80;
+  --bg-segment-thumb: #FFFFFF;
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.09);
+  --shadow-elevated: 0 8px 24px rgba(0, 0, 0, 0.10);
+  --shadow-hero: 0 12px 32px rgba(29, 29, 31, 0.18);
 }
 
-/* ─── Tema Claro ─── */
-[data-theme="light"] {
-  --bg-app: #f5f5f7;
-  --bg-sidebar: #1d1d1f;
-  --bg-surface: #ffffff;
-  --bg-card: #ffffff;
-  --bg-card-elevated: #f5f5f7;
-  --bg-interactive: #f5f5f7;
-  --text-primary: #1d1d1f;
-  --text-secondary: #86868b;
-  --text-muted: rgba(29, 29, 31, 0.5);
-  --border-soft: #e5e5e5;
-  --border-strong: #cccccc;
-  --divider-soft: rgba(29, 29, 31, 0.1);
-  --hairline-dark: #e5e5e5;
+/* ─── Tema Oscuro (refinado, no negro puro) ─── */
+[data-theme="dark"] {
+  --bg-app: #111113;
+  --bg-sidebar: rgba(28, 28, 30, 0.72);
+  --bg-sidebar-active: #2C2C2E;
+  --bg-surface: #1C1C1E;
+  --bg-card: #1C1C1E;
+  --bg-card-elevated: #2C2C2E;
+  --bg-interactive: #2C2C2E;
+  --bg-hero-from: #2C2C2E;
+  --bg-hero-to: #3A3A3C;
+  --text-primary: #F5F5F7;
+  --text-secondary: #98989D;
+  --text-muted: rgba(245, 245, 247, 0.45);
+  --text-on-hero: #F5F5F7;
+  --text-on-hero-secondary: #A1A1A6;
+  --border-soft: #2C2C2E;
+  --border-strong: #3A3A3C;
+  --divider-soft: rgba(245, 245, 247, 0.08);
+  --hairline-dark: #2C2C2E;
+  --primary: #0A84FF;
+  --positive: #30D158;
+  --negative: #FF453A;
+  --warning: #FF9F0A;
+  --positive-on-hero: #6EE7B7;
+  --negative-on-hero: #FF8A80;
+  --bg-segment-thumb: #48484A;
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --shadow-elevated: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-hero: 0 12px 32px rgba(0, 0, 0, 0.5);
 }
 
 /* ─── Reset base ─── */
@@ -122,7 +150,6 @@ body,
   background: var(--bg-app);
   color: var(--text-primary);
   font-family: var(--font-sf-pro-text);
-  font-feature-settings: "numr";
   -webkit-font-smoothing: antialiased;
   text-rendering: geometricPrecision;
 }
@@ -160,10 +187,10 @@ textarea:focus-visible {
 
 /* ─── Números financieros ─── */
 .financial-number {
-  font-family: var(--font-courier-new);
+  font-family: var(--font-sf-pro-display);
   font-variant-numeric: tabular-nums lining-nums;
-  font-feature-settings: "numr";
-  letter-spacing: -0.07em;
+  letter-spacing: -0.02em;
+  font-weight: 650;
 }
 
 /* ─── Grid dashboard ─── */
@@ -178,49 +205,53 @@ textarea:focus-visible {
 .mercury-panel {
   border: 1px solid var(--border-soft);
   background: var(--bg-card);
-  border-radius: var(--radius-cards);
-  box-shadow: none;
-  backdrop-filter: none;
-}
-
-[class*="shadow"] {
-  box-shadow: none !important;
+  border-radius: 16px;
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 150ms ease, transform 150ms ease;
 }
 
 .mercury-button {
   border: 1px solid var(--border-soft);
   background: transparent;
   color: var(--text-primary);
-  border-radius: var(--radius-buttons);
+  border-radius: 12px;
   box-shadow: none;
   padding: 10px 20px;
   font-size: var(--text-body);
   font-weight: var(--font-weight-semibold);
   letter-spacing: var(--tracking-body);
-  transition: opacity 100ms ease;
+  transition: background-color 150ms ease, transform 100ms ease;
   cursor: pointer;
 }
 
 .mercury-button:hover {
-  opacity: 0.85;
+  background: var(--bg-interactive);
+}
+
+.mercury-button:active {
+  transform: scale(0.98);
 }
 
 .mercury-button-primary {
   border: none;
   background: var(--primary);
   color: var(--on-primary);
-  border-radius: var(--radius-buttons);
-  box-shadow: none;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0, 113, 227, 0.35);
   padding: 10px 20px;
   font-size: var(--text-body);
   font-weight: var(--font-weight-semibold);
   letter-spacing: var(--tracking-body);
-  transition: opacity 100ms ease;
+  transition: filter 150ms ease, transform 100ms ease;
   cursor: pointer;
 }
 
 .mercury-button-primary:hover {
-  opacity: 0.85;
+  filter: brightness(1.06);
+}
+
+.mercury-button-primary:active {
+  transform: scale(0.98);
 }
 
 input,

@@ -52,7 +52,7 @@ function useInstrumentHistory(code: string) {
 
 function StatTile({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-lg border border-hairline-dark bg-white/[.02] px-4 py-3">
+    <div className="rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-4 py-3">
       <p className="text-caption text-stone">{label}</p>
       <p className="text-body-sm font-semibold text-on-dark tabular-nums mt-0.5">{value}</p>
     </div>
@@ -112,7 +112,7 @@ export default function InstrumentDetailPage() {
           <p className="text-caption text-stone">
             Aún no hay serie diaria para este instrumento. Ejecuta el backfill para descargarla:
           </p>
-          <code className="inline-block rounded bg-white/5 px-3 py-1.5 text-caption text-primary-bright">
+          <code className="inline-block rounded bg-[var(--bg-interactive)] px-3 py-1.5 text-caption text-primary-bright">
             python cli.py mi:backfill-history --years=1
           </code>
         </div>
@@ -150,7 +150,7 @@ export default function InstrumentDetailPage() {
           </section>
 
           {/* Selector de rango — solo rangos que la serie cubre */}
-          <div className="flex w-fit gap-1 rounded-lg border border-hairline-dark bg-white/[.035] p-1">
+          <div className="flex w-fit gap-1 rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] p-1">
             {data.available_ranges.map((r) => (
               <button
                 key={r}

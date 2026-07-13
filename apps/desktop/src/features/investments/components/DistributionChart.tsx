@@ -74,7 +74,7 @@ export default function DistributionChart({ holdings, accountNames }: Distributi
                 <span className="min-w-0 truncate text-on-dark">{entry.name}</span>
                 <span className="financial-number shrink-0 text-stone">{formatCurrency(entry.value)} · {entry.pct.toFixed(1)}%</span>
               </div>
-              <div className="mt-xs h-2 rounded-full bg-white/5 overflow-hidden">
+              <div className="mt-xs h-2 rounded-full bg-[var(--bg-interactive)] overflow-hidden">
                 <div className="h-full rounded-full" style={{ width: `${Math.max(2, entry.pct)}%`, background: entry.color }} />
               </div>
             </div>

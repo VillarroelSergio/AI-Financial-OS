@@ -119,9 +119,9 @@ export default function EconomyPage() {
     <div className="p-8 space-y-8 max-w-[1500px] mx-auto">
       <PageHeader
         eyebrow="Contexto macro"
-        title="Economia"
+        title="Economía"
         description="Indicadores macroeconomicos agrupados por Espana, Eurozona y EEUU con impacto personal cuando hay datos suficientes."
-        actions={<span className="rounded-lg border border-hairline-dark bg-white/[.035] px-3 py-2 text-xs text-stone">{generatedAt ? `Actualizado ${generatedAt}` : "Dato en cache"}</span>}
+        actions={<span className="rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-3 py-2 text-xs text-stone">{generatedAt ? `Actualizado ${generatedAt}` : "Dato en cache"}</span>}
       />
 
       {ingestStatus?.last_run_at && (
@@ -189,7 +189,7 @@ export default function EconomyPage() {
                     {withData.map((c) => <ImpactCard key={c.id} item={c} />)}
                   </div>
                 ) : (
-                  <div className="rounded-lg border border-hairline-dark bg-white/[.035] p-6 text-center">
+                  <div className="rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] p-6 text-center">
                     <p className="text-stone text-body-sm">
                       Sin datos de mercado suficientes para calcular el impacto personal.
                     </p>
@@ -197,7 +197,7 @@ export default function EconomyPage() {
                 )}
 
                 {noData.length > 0 && (
-                  <details className="rounded-lg border border-hairline-dark bg-white/[.02]">
+                  <details className="rounded-lg border border-hairline-dark bg-[var(--bg-interactive)]">
                     <summary className="cursor-pointer select-none px-4 py-3 text-caption text-stone">
                       Sin datos de mercado ({noData.length})
                     </summary>
@@ -228,7 +228,7 @@ export default function EconomyPage() {
                 )}
               </div>
             ) : (
-              <div className="rounded-lg border border-hairline-dark bg-white/[.035] p-8 text-center">
+              <div className="rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] p-8 text-center">
                 <p className="text-stone text-body-sm">No hay datos disponibles para España.</p>
               </div>
             )}
@@ -244,7 +244,7 @@ export default function EconomyPage() {
               {n3Groups.length > 0 ? (
                 <ThemedGroups groups={n3Groups} />
               ) : (
-                <div className="rounded-lg border border-hairline-dark bg-white/[.035] p-8 text-center">
+                <div className="rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] p-8 text-center">
                   <p className="text-stone text-body-sm">No hay datos disponibles para esta región.</p>
                 </div>
               )}
