@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import {
   deleteConversation,
   getConversation,
@@ -13,6 +13,7 @@ export interface LocalMessage {
   content: string | null;
   tool_calls?: AiChatResponse["tool_calls"];
   sources?: AiChatResponse["sources"];
+  structured?: AiChatResponse["structured"];
   quality_score?: number;
   created_at: string;
 }
@@ -23,6 +24,9 @@ export function useAiConversation() {
   const [messages, setMessages] = useState<LocalMessage[]>([]);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Controlador de la petición en vuelo, para poder cancelarla desde el botón Detener.
+  const controllerRef = useRef<AbortController | null>(null);
+  const userCancelledRef = useRef(false);
 
   const loadConversations = useCallback(async () => {
     try {
@@ -46,6 +50,7 @@ export function useAiConversation() {
             content: m.content,
             tool_calls: m.tool_calls as AiChatResponse["tool_calls"] | undefined,
             sources: m.sources as AiChatResponse["sources"] | undefined,
+            structured: m.structured,
             quality_score: m.quality_score,
             created_at: m.created_at,
           }))
@@ -81,9 +86,12 @@ export function useAiConversation() {
       setError(null);
 
       // Abort controller ensures the loading state is never infinite.
-      // 90 seconds is generous for a local LLM but prevents indefinite hangs.
+      // Must exceed the backend provider timeout (120s) so we don't cancel a
+      // request the server is still legitimately working on.
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 90_000);
+      controllerRef.current = controller;
+      userCancelledRef.current = false;
+      const timeoutId = setTimeout(() => controller.abort(), 130_000);
 
       try {
         const response = await sendMessage(
@@ -109,26 +117,36 @@ export function useAiConversation() {
           content: response.content,
           tool_calls: response.tool_calls,
           sources: response.sources,
+          structured: response.structured,
           quality_score: response.quality_score,
           created_at: new Date().toISOString(),
         };
         setMessages((prev) => [...prev, assistantMsg]);
       } catch (e) {
         if (e instanceof Error && e.name === "AbortError") {
-          setError(
-            "La respuesta tardó demasiado. Comprueba que el provider de IA está activo y el modelo está cargado.",
-          );
+          // Cancelación del usuario: sin error; timeout: aviso de provider lento.
+          if (!userCancelledRef.current) {
+            setError(
+              "La respuesta tardó demasiado. Comprueba que el provider de IA está activo y el modelo está cargado.",
+            );
+          }
         } else {
           setError(e instanceof Error ? e.message : "Error al enviar mensaje");
         }
         setMessages((prev) => prev.filter((m) => m.id !== userMsg.id));
       } finally {
         clearTimeout(timeoutId);
+        controllerRef.current = null;
         setSending(false); // always clear loading state
       }
     },
     [activeConversationId, sending, loadConversations]
   );
+
+  const cancel = useCallback(() => {
+    userCancelledRef.current = true;
+    controllerRef.current?.abort();
+  }, []);
 
   const removeConversation = useCallback(async (id: string) => {
     try {
@@ -152,6 +170,7 @@ export function useAiConversation() {
     loadConversation,
     startNewConversation,
     send,
+    cancel,
     removeConversation,
   };
 }

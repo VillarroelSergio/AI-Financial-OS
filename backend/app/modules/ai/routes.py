@@ -9,10 +9,13 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.database import get_db
+from app.modules.ai import analysis as ai_analysis
 from app.modules.ai import service as ai_service
 from app.modules.ai.memory import conversation_repository as conv_repo
 from app.modules.ai.schemas import (
     AIStatus,
+    BriefGenerateRequest,
+    BriefOut,
     ChatRequest,
     ChatResponse,
     ConversationCreate,
@@ -109,6 +112,40 @@ async def chat(request: ChatRequest, db: Session = Depends(get_db)) -> ChatRespo
         raise HTTPException(status_code=500, detail=f"AI error: {exc}")
 
 
+# ── Analysis Center (AI-3: briefs proactivos) ─────────────────────────────────
+
+@router.post("/briefs", response_model=BriefOut)
+async def generate_brief(request: BriefGenerateRequest, db: Session = Depends(get_db)) -> BriefOut:
+    if not settings.AI_ASSISTANT_ENABLED:
+        raise HTTPException(status_code=503, detail="AI Assistant is disabled")
+    try:
+        brief = await ai_analysis.generate_brief(
+            db=db,
+            scope=request.scope,
+            period=request.period,
+            provider_name=request.provider,
+            model=request.model,
+        )
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc))
+    return BriefOut(**brief)
+
+
+@router.get("/briefs", response_model=list[BriefOut])
+def list_briefs(limit: int = 20, db: Session = Depends(get_db)) -> list[BriefOut]:
+    return [BriefOut(**b) for b in ai_analysis.list_briefs(db, limit=limit)]
+
+
+@router.get("/briefs/{scope}/{period}", response_model=BriefOut)
+def get_brief(scope: str, period: str, db: Session = Depends(get_db)) -> BriefOut:
+    brief = ai_analysis.get_brief(db, scope, period)
+    if not brief:
+        raise HTTPException(status_code=404, detail="Brief not found")
+    return BriefOut(**brief)
+
+
 # ── Conversations ─────────────────────────────────────────────────────────────
 
 @router.post("/conversations", response_model=ConversationOut, status_code=201)
@@ -138,6 +175,23 @@ def list_conversations(db: Session = Depends(get_db)) -> list[ConversationOut]:
     ]
 
 
+def _message_out(m) -> MessageOut:
+    tool_calls = json.loads(m.tool_calls_json) if m.tool_calls_json else None
+    # AI-1: regenera structured determinista de los tool_calls guardados (no se
+    # persiste columna nueva) para que las chips reaparezcan al recargar el chat.
+    structured = ai_service._harvest_structured(tool_calls) if tool_calls else None
+    return MessageOut(
+        id=m.id,
+        role=m.role,
+        content=m.content,
+        tool_calls=tool_calls,
+        sources=json.loads(m.sources_json) if m.sources_json else None,
+        quality_score=m.quality_score,
+        structured=structured,
+        created_at=m.created_at,
+    )
+
+
 @router.get("/conversations/{conversation_id}", response_model=ConversationOut)
 def get_conversation(conversation_id: str, db: Session = Depends(get_db)) -> ConversationOut:
     conv = conv_repo.get_conversation(db, conversation_id)
@@ -150,18 +204,7 @@ def get_conversation(conversation_id: str, db: Session = Depends(get_db)) -> Con
         summary=conv.summary,
         created_at=conv.created_at,
         updated_at=conv.updated_at,
-        messages=[
-            MessageOut(
-                id=m.id,
-                role=m.role,
-                content=m.content,
-                tool_calls=json.loads(m.tool_calls_json) if m.tool_calls_json else None,
-                sources=json.loads(m.sources_json) if m.sources_json else None,
-                quality_score=m.quality_score,
-                created_at=m.created_at,
-            )
-            for m in messages
-        ],
+        messages=[_message_out(m) for m in messages],
     )
 
 
