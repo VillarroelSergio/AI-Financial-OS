@@ -1,9 +1,9 @@
 # E2E report — FLOW-01..33
 
-Generated: 2026-07-13T12:13:59.793Z
+Generated: 2026-07-13T16:13:24.804Z
 Base URL: http://localhost:1420
 API URL: http://127.0.0.1:18010
-Isolated data directory: C:\Users\SERGIO~1\AppData\Local\Temp\ai-financial-os-e2e\flow-01-05-1783944830818
+Isolated data directory: C:\Users\SERGIO~1\AppData\Local\Temp\ai-financial-os-e2e\flow-01-05-1783959136093
 
 ## Flows
 

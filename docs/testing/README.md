@@ -14,6 +14,8 @@ Esta carpeta define y documenta la suite E2E de Financial OS. La suite recorre l
 | Ruta | Responsabilidad |
 |---|---|
 | `flows/catalog.yaml` | Fuente de verdad de FLOW-01 a FLOW-33: precondiciones, pasos, aserciones y limpieza. |
+| `flows/negative-cases.yaml` | Contrato de validaciones, errores y límites (NEG-01 a NEG-15). |
+| `coverage-matrix.md` | Estado de diseño y automatización, con criterio explícito de cierre. |
 | `fixtures/financial-os.yaml` | Datos sintéticos y política de aislamiento. |
 | `tools/ux-snapshot/run-flow-01-05.ts` | Runner Playwright de la suite. |
 | `tools/ux-snapshot/flow-contracts.ts` | Cargador y validador de contratos YAML. |
@@ -32,6 +34,9 @@ Ejecutar desde `D:\FinancialAgent\AI-Financial-OS\tools\ux-snapshot`:
 ```powershell
 # Valida los 33 contratos: pasos, aserciones y fixtures.
 npm run test:flows
+
+# Valida los contratos de errores, límites y recuperación.
+npm run test:negative-flows
 
 # Comprueba que las bases E2E nunca se creen dentro del repositorio.
 npm run test:e2e-isolation

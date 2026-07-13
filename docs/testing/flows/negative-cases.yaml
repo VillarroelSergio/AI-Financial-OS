@@ -1,0 +1,107 @@
+version: 1
+negative_cases:
+  - id: NEG-01
+    module: Cuentas
+    title: Saldo no numérico
+    trigger: Intentar guardar una cuenta con saldo inválido
+    expected: El formulario muestra error y no se crea ninguna cuenta
+    verification: ui-and-api
+    priority: required
+  - id: NEG-02
+    module: Movimientos
+    title: Campos obligatorios
+    trigger: Guardar un movimiento sin descripción, importe o cuenta
+    expected: Se informa el campo inválido y no se crea el movimiento
+    verification: ui-and-api
+    priority: required
+  - id: NEG-03
+    module: Facturas
+    title: Periodo inválido
+    trigger: Crear una factura con fin anterior al inicio
+    expected: Se rechaza sin persistir una factura parcial
+    verification: api
+    priority: required
+  - id: NEG-04
+    module: Presupuestos
+    title: Importe límite
+    trigger: Crear un presupuesto con importe negativo o cero
+    expected: Se rechaza y la comparación mensual no cambia
+    verification: api
+    priority: required
+  - id: NEG-05
+    module: Recurrentes
+    title: Frecuencia o fecha inválida
+    trigger: Guardar un recurrente con frecuencia no válida
+    expected: Error explícito sin ocurrencias de calendario
+    verification: api
+    priority: required
+  - id: NEG-06
+    module: Inversiones
+    title: Importación vacía
+    trigger: Confirmar una importación sin posiciones revisadas
+    expected: HTTP 422 y ninguna posición creada
+    verification: ui-and-api
+    priority: required
+  - id: NEG-07
+    module: Inversiones
+    title: Importación ambigua
+    trigger: Revisar un instrumento sin ticker confirmado
+    expected: Se exige confirmación manual antes de habilitar la importación
+    verification: ui
+    priority: required
+  - id: NEG-08
+    module: Inversiones
+    title: Duplicado de cartera
+    trigger: Importar el mismo ticker en la misma cuenta
+    expected: Se advierte del duplicado y no se crea sin decisión explícita
+    verification: api-and-ui
+    priority: important
+  - id: NEG-09
+    module: Inversiones
+    title: Precio no disponible
+    trigger: Resolver un instrumento sin cotización
+    expected: Se identifica como manual o sin precio, sin inventar valoración
+    verification: ui-and-api
+    priority: required
+  - id: NEG-10
+    module: Documentos RAG
+    title: Archivo no admitido
+    trigger: Subir un archivo con formato no soportado
+    expected: Error 400/422, documento no indexado y sin respuesta ficticia
+    verification: api
+    priority: required
+  - id: NEG-11
+    module: Documentos RAG
+    title: Consulta sin evidencia
+    trigger: Preguntar algo ausente de los documentos
+    expected: Respuesta honesta sin fuentes inventadas
+    verification: api
+    priority: required
+  - id: NEG-12
+    module: Asistente IA
+    title: Proveedor no disponible
+    trigger: Abrir el asistente con todos los proveedores offline
+    expected: Estado visible, entrada deshabilitada y sin carga infinita
+    verification: ui
+    priority: required
+  - id: NEG-13
+    module: Asistente IA
+    title: Error de proveedor durante el chat
+    trigger: Enviar una pregunta y recibir HTTP 503
+    expected: Mensaje de error y el control vuelve a estar disponible
+    verification: ui
+    priority: required
+  - id: NEG-14
+    module: Red
+    title: Error recuperable
+    trigger: Fallar una carga de módulo y pulsar Reintentar
+    expected: Se muestra estado de error y el reintento recupera sin duplicar datos
+    verification: ui
+    priority: important
+  - id: NEG-15
+    module: Seguridad
+    title: Integridad no válida
+    trigger: La comprobación de integridad informa error
+    expected: El estado no se presenta como correcto y no se ofrecen datos engañosos
+    verification: api-and-ui
+    priority: required
