@@ -28,7 +28,7 @@ export default function AiConversationSidebar({
       <div className="p-3 border-b border-hairline-dark">
         <button
           onClick={onNew}
-          className="mercury-button-primary w-full flex items-center justify-center gap-2 text-body-sm transition-colors py-2 px-3 rounded-lg"
+          className="ui-pressable mercury-button-primary flex w-full items-center justify-center gap-2 px-3 py-2 text-body-sm"
         >
           <Plus size={14} />
           Nueva conversacion

@@ -46,7 +46,7 @@ export default function PositionMenu({ items }: { items: MenuItem[] }) {
         aria-label="Acciones"
         aria-haspopup="menu"
         aria-expanded={open}
-        className="text-stone hover:text-on-dark p-1 rounded-sm hover:bg-white/[.06]"
+        className="text-stone hover:text-on-dark p-1 rounded-sm hover:bg-[var(--bg-interactive)]"
       >
         <MoreHorizontal size={16} />
       </button>
@@ -64,7 +64,7 @@ export default function PositionMenu({ items }: { items: MenuItem[] }) {
               className={`block w-full px-md py-sm text-left text-caption ${
                 item.danger
                   ? "text-accent-danger hover:bg-accent-danger/10"
-                  : "text-stone hover:text-on-dark hover:bg-white/[.06]"
+                  : "text-stone hover:text-on-dark hover:bg-[var(--bg-interactive)]"
               }`}
             >
               {item.label}

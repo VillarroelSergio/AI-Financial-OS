@@ -21,11 +21,7 @@
   --color-iris-violet: #8668ff;
   --color-reef-teal: #00a1b3;
 
-  /* Funcionales compartidos */
-  --primary: #0071e3;
-  --positive: #008163;
-  --negative: #ee2526;
-  --warning: #ff5c00;
+  /* Funcionales compartidos (los de color por tema: ver bloques [data-theme]) */
   --info: #1b73e6;
   --accent: #f56900;
   --on-primary: #ffffff;
@@ -33,7 +29,6 @@
   /* Tipografía — Familias */
   --font-sf-pro-display: 'SF Pro Display', Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-sf-pro-text: 'SF Pro Text', Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  --font-courier-new: "Courier New", ui-monospace, monospace;
 
   /* Tipografía — Escala exacta DESIGN.md */
   --text-caption: 10px;      --leading-caption: 1.83;     --tracking-caption: -0.37px;
@@ -43,6 +38,7 @@
   --text-heading-lg: 32px;   --leading-heading-lg: 1.14;  --tracking-heading-lg: -0.32px;
   --text-display: 56px;      --leading-display: 1.07;     --tracking-display: -0.84px;
   --text-hero: 80px;         --leading-hero: 1.05;        --tracking-hero: -0.24px;
+  --text-hero-value: 40px;   /* cifra hero patrimonio */
 
   /* Tipografía — Pesos */
   --font-weight-regular: 400;
@@ -72,38 +68,78 @@
   --radius-nav: 980px;
 }
 
-/* ─── Tema Oscuro (default) ─── */
-[data-theme="dark"] {
-  --bg-app: #000000;
-  --bg-sidebar: #1d1d1f;
-  --bg-surface: #111111;
-  --bg-card: #1d1d1f;
-  --bg-card-elevated: #333336;
-  --bg-interactive: #333336;
-  --text-primary: #f5f5f7;
-  --text-secondary: #86868b;
-  --text-muted: rgba(245, 245, 247, 0.5);
-  --border-soft: #333336;
-  --border-strong: #424245;
-  --divider-soft: rgba(245, 245, 247, 0.1);
-  --hairline-dark: #333336;
+/* ─── Tema Claro (nuevo default) ─── */
+[data-theme="light"] {
+  --bg-app: #DCDDDA;
+  --bg-sidebar: rgba(232, 233, 230, 0.86);
+  --bg-sidebar-active: #ECEDEB;
+  --bg-surface: #E7E8E6;
+  --bg-card: #E7E8E6;
+  --bg-card-elevated: #E2E3E0;
+  --bg-interactive: #DCDDDA;
+  --bg-hero-from: #1D1D1F;
+  --bg-hero-to: #2C2C30;
+  --text-primary: #1D1D1F;
+  --text-secondary: #6E6E73;
+  --text-muted: rgba(29, 29, 31, 0.45);
+  --text-on-hero: #F5F5F7;
+  --text-on-hero-secondary: #A1A1A6;
+  --border-soft: #D0D1CE;
+  --border-strong: #BEC0BC;
+  --divider-soft: rgba(29, 29, 31, 0.08);
+  --hairline-dark: #D0D1CE;
+  --primary: #0071E3;
+  --positive: #2D7B6A;
+  --negative: #B34D62;
+  --warning: #D97706;
+  --economy-accent: #2D7B6A;
+  --economy-accent-soft: #2D7B6A1A;
+  --economy-negative: #B34D62;
+  --economy-negative-soft: #B34D621A;
+  --positive-on-hero: #8BD6BB;
+  --negative-on-hero: #F3A0AD;
+  --bg-segment-thumb: #ECEDEB;
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.09);
+  --shadow-elevated: 0 8px 24px rgba(0, 0, 0, 0.10);
+  --shadow-hero: 0 12px 32px rgba(29, 29, 31, 0.18);
 }
 
-/* ─── Tema Claro ─── */
-[data-theme="light"] {
-  --bg-app: #f5f5f7;
-  --bg-sidebar: #1d1d1f;
-  --bg-surface: #ffffff;
-  --bg-card: #ffffff;
-  --bg-card-elevated: #f5f5f7;
-  --bg-interactive: #f5f5f7;
-  --text-primary: #1d1d1f;
-  --text-secondary: #86868b;
-  --text-muted: rgba(29, 29, 31, 0.5);
-  --border-soft: #e5e5e5;
-  --border-strong: #cccccc;
-  --divider-soft: rgba(29, 29, 31, 0.1);
-  --hairline-dark: #e5e5e5;
+/* ─── Tema Oscuro (refinado, no negro puro) ─── */
+[data-theme="dark"] {
+  --bg-app: #111113;
+  --bg-sidebar: rgba(28, 28, 30, 0.72);
+  --bg-sidebar-active: #2C2C2E;
+  --bg-surface: #1C1C1E;
+  --bg-card: #1C1C1E;
+  --bg-card-elevated: #2C2C2E;
+  --bg-interactive: #2C2C2E;
+  --bg-hero-from: #2C2C2E;
+  --bg-hero-to: #3A3A3C;
+  --text-primary: #F5F5F7;
+  --text-secondary: #98989D;
+  --text-muted: rgba(245, 245, 247, 0.45);
+  --text-on-hero: #F5F5F7;
+  --text-on-hero-secondary: #A1A1A6;
+  --border-soft: #2C2C2E;
+  --border-strong: #3A3A3C;
+  --divider-soft: rgba(245, 245, 247, 0.08);
+  --hairline-dark: #2C2C2E;
+  --primary: #0A84FF;
+  --positive: #6FC5AE;
+  --negative: #F092A3;
+  --warning: #FF9F0A;
+  --economy-accent: #6FC5AE;
+  --economy-accent-soft: #6FC5AE1F;
+  --economy-negative: #F092A3;
+  --economy-negative-soft: #F092A31F;
+  --positive-on-hero: #8BD6BB;
+  --negative-on-hero: #F3A0AD;
+  --bg-segment-thumb: #48484A;
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.45);
+  --shadow-elevated: 0 8px 24px rgba(0, 0, 0, 0.5);
+  --shadow-hero: 0 12px 32px rgba(0, 0, 0, 0.5);
 }
 
 /* ─── Reset base ─── */
@@ -122,7 +158,6 @@ body,
   background: var(--bg-app);
   color: var(--text-primary);
   font-family: var(--font-sf-pro-text);
-  font-feature-settings: "numr";
   -webkit-font-smoothing: antialiased;
   text-rendering: geometricPrecision;
 }
@@ -160,10 +195,10 @@ textarea:focus-visible {
 
 /* ─── Números financieros ─── */
 .financial-number {
-  font-family: var(--font-courier-new);
+  font-family: var(--font-sf-pro-display);
   font-variant-numeric: tabular-nums lining-nums;
-  font-feature-settings: "numr";
-  letter-spacing: -0.07em;
+  letter-spacing: -0.02em;
+  font-weight: 650;
 }
 
 /* ─── Grid dashboard ─── */
@@ -173,54 +208,92 @@ textarea:focus-visible {
   gap: var(--spacing-16);
 }
 
+.page-shell {
+  width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
+  padding: 32px;
+}
+
+.page-tabs {
+  width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
+  padding-inline: 32px;
+}
+
+.progress-fill {
+  width: 100%;
+  transform-origin: left center;
+  transition: transform 240ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.ui-pressable {
+  transition: transform 120ms cubic-bezier(0.23, 1, 0.32, 1), filter 150ms ease, background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+  transform-origin: center;
+}
+
+.ui-pressable:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.ui-pressable:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
 /* ─── Componentes globales ─── */
 .premium-card,
 .mercury-panel {
   border: 1px solid var(--border-soft);
   background: var(--bg-card);
-  border-radius: var(--radius-cards);
-  box-shadow: none;
-  backdrop-filter: none;
-}
-
-[class*="shadow"] {
-  box-shadow: none !important;
+  border-radius: 16px;
+  box-shadow: var(--shadow-card);
+  transition: box-shadow 150ms ease, transform 150ms ease;
 }
 
 .mercury-button {
   border: 1px solid var(--border-soft);
   background: transparent;
   color: var(--text-primary);
-  border-radius: var(--radius-buttons);
+  border-radius: 12px;
   box-shadow: none;
   padding: 10px 20px;
   font-size: var(--text-body);
   font-weight: var(--font-weight-semibold);
   letter-spacing: var(--tracking-body);
-  transition: opacity 100ms ease;
+  transition: background-color 150ms ease, transform 100ms ease;
   cursor: pointer;
 }
 
 .mercury-button:hover {
-  opacity: 0.85;
+  background: var(--bg-interactive);
+}
+
+.mercury-button:active {
+  transform: scale(0.98);
 }
 
 .mercury-button-primary {
   border: none;
   background: var(--primary);
   color: var(--on-primary);
-  border-radius: var(--radius-buttons);
-  box-shadow: none;
+  border-radius: 12px;
+  box-shadow: 0 1px 2px rgba(0, 113, 227, 0.35);
   padding: 10px 20px;
   font-size: var(--text-body);
   font-weight: var(--font-weight-semibold);
   letter-spacing: var(--tracking-body);
-  transition: opacity 100ms ease;
+  transition: filter 150ms ease, transform 100ms ease;
   cursor: pointer;
 }
 
 .mercury-button-primary:hover {
-  opacity: 0.85;
+  filter: brightness(1.06);
+}
+
+.mercury-button-primary:active {
+  transform: scale(0.98);
 }
 
 input,
@@ -259,13 +332,22 @@ table {
   }
 }
 
+@media (max-width: 768px) {
+  .page-shell { padding: 20px; }
+  .page-tabs { padding-inline: 20px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
-    animation-duration: .01ms !important;
-    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
   }
+
+  .progress-fill { transition-duration: .01ms; }
+  .ui-pressable { transition-property: filter, background-color, border-color, color; }
+  .ui-pressable:active:not(:disabled) { transform: none; }
+  .live-dot { animation: none; }
 }
 
 ::-webkit-scrollbar {
@@ -292,17 +374,33 @@ table {
 }
 
 @keyframes flash-up {
-  0%   { background-color: rgba(0, 129, 99, .18); }
+  0%   { background-color: color-mix(in srgb, var(--positive) 18%, transparent); }
   100% { background-color: transparent; }
 }
 
 @keyframes flash-down {
-  0%   { background-color: rgba(238, 37, 38, .16); }
+  0%   { background-color: color-mix(in srgb, var(--negative) 16%, transparent); }
   100% { background-color: transparent; }
 }
 
 .live-dot {
   animation: live-pulse 2s ease-in-out infinite;
+}
+
+/* Estados heredados: toda seÃ±al favorable/desfavorable converge en jade/cassis. */
+@layer utilities {
+  .text-green-400, .text-emerald-400 { color: var(--positive) !important; }
+  .text-red-400 { color: var(--negative) !important; }
+  .text-emerald-400\/70 { color: color-mix(in srgb, var(--positive) 70%, transparent) !important; }
+  .text-red-400\/70 { color: color-mix(in srgb, var(--negative) 70%, transparent) !important; }
+  .bg-green-400, .bg-emerald-500, .bg-emerald-400 { background-color: var(--positive) !important; }
+  .bg-red-500, .bg-red-400 { background-color: var(--negative) !important; }
+  .bg-emerald-500\/15, .bg-emerald-400\/15 { background-color: color-mix(in srgb, var(--positive) 15%, transparent) !important; }
+  .bg-red-500\/15, .bg-red-400\/15 { background-color: color-mix(in srgb, var(--negative) 15%, transparent) !important; }
+  .bg-red-500\/10 { background-color: color-mix(in srgb, var(--negative) 10%, transparent) !important; }
+  .bg-red-500\/5 { background-color: color-mix(in srgb, var(--negative) 5%, transparent) !important; }
+  .border-emerald-500\/25, .border-emerald-400\/25 { border-color: color-mix(in srgb, var(--positive) 25%, transparent) !important; }
+  .border-red-500\/30, .border-red-500\/25, .border-red-500\/20 { border-color: color-mix(in srgb, var(--negative) 25%, transparent) !important; }
 }
 
 @keyframes live-pulse {

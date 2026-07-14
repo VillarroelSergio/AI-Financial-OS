@@ -18,7 +18,7 @@ export default function CashflowTab() {
     return (
       <div className="flex h-64 flex-col items-center justify-center gap-3">
         <p className="text-sm text-accent-danger">{error}</p>
-        <button onClick={refresh} className="rounded-lg bg-white/5 px-4 py-2 text-sm text-on-dark">Reintentar</button>
+        <button onClick={refresh} className="rounded-lg bg-[var(--bg-interactive)] px-4 py-2 text-sm text-on-dark">Reintentar</button>
       </div>
     );
   }
@@ -35,7 +35,7 @@ export default function CashflowTab() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-on-dark">Previsión de cashflow</h2>
-        <button onClick={refresh} className="flex items-center gap-1.5 rounded-lg bg-white/5 px-3 py-2 text-xs text-stone hover:text-on-dark transition-colors">
+        <button onClick={refresh} className="flex items-center gap-1.5 rounded-lg bg-[var(--bg-interactive)] px-3 py-2 text-xs text-stone hover:text-on-dark transition-colors">
           <RefreshCw size={13} />
           Actualizar
         </button>

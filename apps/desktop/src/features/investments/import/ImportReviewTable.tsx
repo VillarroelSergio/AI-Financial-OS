@@ -94,7 +94,7 @@ export default function ImportReviewTable({
               <>
                 <tr
                   key={row.id}
-                  className="border-b border-hairline-dark last:border-0 hover:bg-white/[.02] transition-colors cursor-pointer"
+                  className="border-b border-hairline-dark last:border-0 hover:bg-[var(--bg-interactive)] transition-colors cursor-pointer"
                   onClick={() => setExpandedId(isExpanded ? null : row.id)}
                 >
                   {/* Activo */}
@@ -215,7 +215,7 @@ export default function ImportReviewTable({
 
                 {/* Expanded detail row */}
                 {isExpanded && (
-                  <tr key={`${row.id}-detail`} className="bg-white/[.015] border-b border-hairline-dark">
+                  <tr key={`${row.id}-detail`} className="bg-[var(--bg-interactive)] border-b border-hairline-dark">
                     <td colSpan={HEADERS.length} className="px-6 py-3">
                       <div className="grid grid-cols-3 gap-4 text-xs text-stone">
                         <div>

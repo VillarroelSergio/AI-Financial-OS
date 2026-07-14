@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Bot, Copy, Database, HardDrive, Lock, ShieldCheck } from "lucide-react";
 import { PageHeader } from "@/components/ui/Dashboard";
-import Spinner from "@/components/ui/Spinner";
 import { fetchSettings, updateSetting, type AppSetting } from "@/lib/api/settings";
 import { reassignCurrency } from "@/lib/api/transactions";
 import { purgeInactiveAccounts } from "@/lib/api/accounts";
@@ -19,7 +18,6 @@ export default function SettingsPage() {
   const [integrity, setIntegrity] = useState<IntegrityCheck | null>(null);
   const [documents, setDocuments] = useState<RagDocument[]>([]);
   const [aiError, setAiError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
   const [backupBusy, setBackupBusy] = useState(false);
   const [systemError, setSystemError] = useState<string | null>(null);
@@ -39,12 +37,12 @@ export default function SettingsPage() {
         if (integrityResult.status === "fulfilled") setIntegrity(integrityResult.value);
         if (documentsResult.status === "fulfilled") setDocuments(documentsResult.value);
       })
-      .finally(() => setLoading(false));
+      .catch(() => undefined);
   }, []);
 
   const getValue = (key: string): string => {
     const s = settings.find((item) => item.key === key);
-    if (!s) return "";
+    if (!s) return key === "app.language" ? "es" : key === "app.currency" ? "EUR" : "";
     try {
       return JSON.parse(s.value_json) as string;
     } catch {
@@ -128,16 +126,8 @@ export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const providerStatus = aiStatus?.providers ?? [];
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Spinner />
-      </div>
-    );
-  }
-
   return (
-    <div className="p-8 max-w-[1300px] mx-auto space-y-6">
+    <div className="page-shell space-y-6">
       <PageHeader
         eyebrow="Control local"
         title="Ajustes"
@@ -154,14 +144,14 @@ export default function SettingsPage() {
           <div className="divide-y divide-hairline-dark">
             <div className="p-xl flex items-center justify-between gap-6">
               <div><p className="text-body-md text-on-dark">Idioma</p><p className="text-caption text-stone mt-xs">Idioma de la interfaz</p></div>
-              <select className="rounded-lg border border-hairline-dark bg-white/[.035] px-md py-sm text-body-sm text-on-dark" value={getValue("app.language")} onChange={(e) => handleUpdate("app.language", e.target.value)} disabled={saving === "app.language"}>
+              <select className="rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-md py-sm text-body-sm text-on-dark" value={getValue("app.language")} onChange={(e) => handleUpdate("app.language", e.target.value)} disabled={saving === "app.language"}>
                 <option value="es">Espanol</option>
                 <option value="en">English</option>
               </select>
             </div>
             <div className="p-xl flex items-center justify-between gap-6">
               <div><p className="text-body-md text-on-dark">Moneda</p><p className="text-caption text-stone mt-xs">Moneda predeterminada</p></div>
-              <select className="rounded-lg border border-hairline-dark bg-white/[.035] px-md py-sm text-body-sm text-on-dark" value={getValue("app.currency")} onChange={(e) => handleUpdate("app.currency", e.target.value)} disabled={saving === "app.currency"}>
+              <select className="rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-md py-sm text-body-sm text-on-dark" value={getValue("app.currency")} onChange={(e) => handleUpdate("app.currency", e.target.value)} disabled={saving === "app.currency"}>
                 <option value="EUR">EUR - Euro</option>
                 <option value="USD">USD - Dolar</option>
                 <option value="GBP">GBP - Libra</option>
@@ -175,16 +165,16 @@ export default function SettingsPage() {
                   <button
                     key={t}
                     onClick={() => setTheme(t)}
-                    className="flex-1 rounded-[28px] p-4 text-left transition-all"
+                    className="ui-pressable flex-1 rounded-[28px] p-4 text-left"
                     style={{
                       border: theme === t ? "2px solid #0071e3" : "1px solid var(--border-soft)",
-                      background: t === "dark" ? "#000000" : "#f5f5f7",
+                      background: t === "dark" ? "#000000" : "#DCDDDA",
                       cursor: "pointer",
                     }}
                   >
                     <div
                       className="mb-2 h-8 rounded-[10px]"
-                      style={{ background: t === "dark" ? "#1d1d1f" : "#ffffff", border: "1px solid", borderColor: t === "dark" ? "#333336" : "#e5e5e5" }}
+                      style={{ background: t === "dark" ? "#1d1d1f" : "#E7E8E6", border: "1px solid", borderColor: t === "dark" ? "#333336" : "#C4C6C2" }}
                     />
                     <p
                       style={{
@@ -205,7 +195,7 @@ export default function SettingsPage() {
 
         <section className="premium-card rounded-lg p-5">
           <div className="flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-lg border border-hairline-dark bg-white/[.035] text-primary-bright"><Bot size={18} /></span>
+            <span className="grid h-10 w-10 place-items-center rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] text-primary-bright"><Bot size={18} /></span>
             <div>
               <h2 className="text-base font-semibold text-on-dark">Asistente IA</h2>
               <p className="text-xs text-stone">Preparado para Ollama y LM Studio.</p>
@@ -225,7 +215,7 @@ export default function SettingsPage() {
               ["Estado RAG", documents.length > 0 ? "Indexado" : "Sin documentos"],
               ["Documentos indexados", String(documents.length)],
             ].map(([label, value]) => (
-              <div key={label} className="flex items-center justify-between rounded-lg border border-hairline-dark bg-white/[.03] px-3 py-2">
+              <div key={label} className="flex items-center justify-between rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-3 py-2">
                 <span className="text-xs text-stone">{label}</span>
                 <span className="text-xs text-on-dark">{value}</span>
               </div>
@@ -254,7 +244,7 @@ export default function SettingsPage() {
               ? `${security.database_filename} en la carpeta de datos del backend (backend/data/)`
               : "No disponible"}
           </p>
-          {security?.database_filename && <button onClick={() => navigator.clipboard?.writeText(security.database_filename)} className="mt-3 inline-flex items-center gap-2 rounded-lg border border-hairline-dark px-3 py-2 text-xs text-stone hover:text-on-dark"><Copy size={13} />Copiar nombre</button>}
+          {security?.database_filename && <button onClick={() => navigator.clipboard?.writeText(security.database_filename)} className="ui-pressable mt-3 inline-flex items-center gap-2 rounded-lg border border-hairline-dark px-3 py-2 text-xs text-stone hover:text-on-dark"><Copy size={13} />Copiar nombre</button>}
         </section>
       </div>
 
@@ -268,14 +258,14 @@ export default function SettingsPage() {
                 : "No hay copias registradas todavia."}
             </p>
           </div>
-          <button onClick={handleBackup} disabled={backupBusy} className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
+          <button onClick={handleBackup} disabled={backupBusy} className="ui-pressable rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white disabled:opacity-50">
             {backupBusy ? "Creando..." : "Crear backup"}
           </button>
         </div>
         {systemError && <p className="mt-3 text-sm text-accent-danger">{systemError}</p>}
         <div className="mt-4 grid gap-2">
           {backups.slice(0, 3).map((backup) => (
-            <div key={backup.filename} className="flex items-center justify-between gap-3 rounded-lg border border-hairline-dark bg-white/[.03] px-3 py-2">
+            <div key={backup.filename} className="flex items-center justify-between gap-3 rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-3 py-2">
               <div className="min-w-0">
                 <p className="truncate text-xs text-on-dark">{backup.filename}</p>
                 <p className="truncate text-[11px] text-stone">{new Date(backup.created_at).toLocaleString("es-ES")}</p>
@@ -295,10 +285,10 @@ export default function SettingsPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            <button onClick={handleCurrencyFix} disabled={currencyFixBusy} className="rounded-lg border border-hairline-dark px-4 py-2 text-sm text-on-dark hover:bg-white/[.05] disabled:opacity-50">
+            <button onClick={handleCurrencyFix} disabled={currencyFixBusy} className="ui-pressable rounded-lg border border-hairline-dark px-4 py-2 text-sm text-on-dark hover:bg-[var(--bg-interactive)] disabled:opacity-50">
               {currencyFixBusy ? "Comprobando..." : "Corregir divisa USD"}
             </button>
-            <button onClick={handlePurgeAccounts} disabled={purgeBusy} className="rounded-lg border border-hairline-dark px-4 py-2 text-sm text-on-dark hover:bg-white/[.05] disabled:opacity-50">
+            <button onClick={handlePurgeAccounts} disabled={purgeBusy} className="ui-pressable rounded-lg border border-hairline-dark px-4 py-2 text-sm text-on-dark hover:bg-[var(--bg-interactive)] disabled:opacity-50">
               {purgeBusy ? "Comprobando..." : "Limpiar cuentas duplicadas"}
             </button>
           </div>

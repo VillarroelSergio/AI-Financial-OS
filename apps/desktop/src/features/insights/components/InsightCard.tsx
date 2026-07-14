@@ -60,7 +60,7 @@ export function InsightCard({ insight, onDismiss, onAskAI, compact = false }: In
           <button
             key={i}
             onClick={() => navigate(action.target)}
-            className="rounded-md bg-white/5 px-3 py-1.5 text-xs text-on-dark hover:bg-white/10 transition-colors"
+            className="rounded-md bg-[var(--bg-interactive)] px-3 py-1.5 text-xs text-on-dark hover:bg-[var(--bg-interactive)] transition-colors"
           >
             {action.label}
           </button>

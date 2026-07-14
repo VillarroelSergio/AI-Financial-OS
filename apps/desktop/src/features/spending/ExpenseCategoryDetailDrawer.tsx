@@ -42,7 +42,7 @@ export default function ExpenseCategoryDetailDrawer({ category, period, onClose 
               <h2 className="mt-2 text-heading-md text-on-dark">{data?.category ?? category.category}</h2>
               <p className="mt-1 text-body-sm text-stone">{period.mode === "year" ? period.year : period.month}</p>
             </div>
-            <button onClick={onClose} aria-label="Cerrar" className="rounded-lg p-2 text-stone hover:bg-white/5 hover:text-on-dark">
+            <button onClick={onClose} aria-label="Cerrar" className="rounded-lg p-2 text-stone hover:bg-[var(--bg-interactive)] hover:text-on-dark">
               <X size={18} />
             </button>
           </div>

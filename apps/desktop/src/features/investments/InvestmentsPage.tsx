@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Plus, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { EmptyState, PageHeader } from "@/components/ui/Dashboard";
+import SegmentedControl from "@/components/ui/SegmentedControl";
+import { InvestmentsPreview } from "@/components/ui/EmptyPreviews";
 import MetricCard from "@/components/ui/MetricCard";
 import Spinner from "@/components/ui/Spinner";
 import { useAccounts } from "@/lib/hooks/useAccounts";
@@ -142,7 +144,7 @@ export default function InvestmentsPage() {
   };
 
   return (
-    <div className="p-8 max-w-[1500px] mx-auto space-y-xl">
+    <div className="page-shell space-y-xl">
       <PageHeader
         eyebrow="Portfolio desk"
         title="Inversiones"
@@ -210,33 +212,21 @@ export default function InvestmentsPage() {
       )}
 
       {/* Main tabs */}
-      <div className="flex w-fit gap-sm rounded-lg border border-hairline-dark bg-white/[.035] p-1">
-        <button
-          onClick={() => setActiveTab("posiciones")}
-          className={`px-md py-xs rounded-lg text-caption transition-colors ${
-            activeTab === "posiciones"
-              ? "bg-primary text-on-primary"
-              : "text-stone hover:text-on-dark hover:bg-white/[.04]"
-          }`}
-        >
-          Posiciones
-        </button>
-        <button
-          onClick={() => setActiveTab("reconciliacion")}
-          className={`px-md py-xs rounded-lg text-caption transition-colors ${
-            activeTab === "reconciliacion"
-              ? "bg-primary text-on-primary"
-              : "text-stone hover:text-on-dark hover:bg-white/[.04]"
-          }`}
-        >
-          Calidad de cartera
-        </button>
-      </div>
+      <SegmentedControl
+        ariaLabel="Vista de inversiones"
+        value={activeTab}
+        onChange={setActiveTab}
+        options={[
+          { key: "posiciones", label: "Posiciones" },
+          { key: "reconciliacion", label: "Calidad de cartera" },
+        ]}
+      />
 
       {!hasHoldings && activeTab === "posiciones" ? (
         <EmptyState
           title="Sin posiciones"
           description="Añade tus primeras inversiones para ver el estado de tu cartera."
+          preview={<InvestmentsPreview />}
           action={
             <button
               onClick={openAdd}
@@ -374,4 +364,3 @@ export default function InvestmentsPage() {
     </div>
   );
 }
-

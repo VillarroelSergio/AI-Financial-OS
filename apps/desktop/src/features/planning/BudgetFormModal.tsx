@@ -41,7 +41,7 @@ export default function BudgetFormModal({ onSubmit, onClose }: Props) {
             <select
               value={categoryId}
               onChange={e => setCategoryId(e.target.value)}
-              className="w-full rounded-lg bg-white/5 px-3 py-2.5 text-sm text-on-dark focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded-lg bg-[var(--bg-interactive)] px-3 py-2.5 text-sm text-on-dark focus:outline-none focus:ring-1 focus:ring-primary"
               required
             >
               <option value="">Selecciona una categoría</option>
@@ -60,7 +60,7 @@ export default function BudgetFormModal({ onSubmit, onClose }: Props) {
               placeholder="500"
               min="1"
               step="0.01"
-              className="w-full rounded-lg bg-white/5 px-3 py-2.5 text-sm text-on-dark placeholder:text-stone focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded-lg bg-[var(--bg-interactive)] px-3 py-2.5 text-sm text-on-dark placeholder:text-stone focus:outline-none focus:ring-1 focus:ring-primary"
               required
             />
           </div>
@@ -76,7 +76,7 @@ export default function BudgetFormModal({ onSubmit, onClose }: Props) {
           </div>
 
           <div className="flex gap-3 pt-2">
-            <button type="button" onClick={onClose} className="flex-1 rounded-lg bg-white/5 py-2.5 text-sm text-stone hover:text-on-dark transition-colors">
+            <button type="button" onClick={onClose} className="flex-1 rounded-lg bg-[var(--bg-interactive)] py-2.5 text-sm text-stone hover:text-on-dark transition-colors">
               Cancelar
             </button>
             <button type="submit" disabled={saving} className="flex-1 rounded-lg bg-primary py-2.5 text-sm font-medium text-white transition-colors disabled:opacity-50">

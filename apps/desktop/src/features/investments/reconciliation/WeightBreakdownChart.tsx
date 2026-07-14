@@ -31,7 +31,7 @@ export default function WeightBreakdownChart({ weightsBy }: Props) {
               "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
               active === tab.key
                 ? "bg-primary text-white"
-                : "bg-white/5 text-stone hover:text-on-dark",
+                : "bg-[var(--bg-interactive)] text-stone hover:text-on-dark",
             ].join(" ")}
           >
             {tab.label}

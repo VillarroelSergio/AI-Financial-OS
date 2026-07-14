@@ -61,20 +61,20 @@ export default function GoalsPage() {
   if (loading) return <LoadingState label="Cargando objetivos" />;
 
   return (
-    <div className="p-8 max-w-[1500px] mx-auto space-y-6">
+    <div className="page-shell space-y-6">
       <PageHeader
         eyebrow="Planificación"
         title="Objetivos"
         description="Convierte tus prioridades financieras en un plan medible con proyecciones de escenarios"
-        actions={
+        actions={goals.length > 0 ? (
           <button
             onClick={() => setOpen(true)}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold"
+            className="ui-pressable mercury-button-primary inline-flex items-center gap-2"
           >
             <Plus size={16} />
             Crear objetivo
           </button>
-        }
+        ) : undefined}
       />
 
       {error && (
@@ -194,7 +194,7 @@ export default function GoalsPage() {
           </div>
           <button
             disabled={saving}
-            className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
+            className="ui-pressable mercury-button-primary"
           >
             {saving ? "Guardando…" : "Guardar objetivo"}
           </button>
@@ -207,10 +207,28 @@ export default function GoalsPage() {
           icon={Target}
           title="Define tus próximos objetivos financieros"
           description="Crea metas como fondo de emergencia, entrada de vivienda o inversión a largo plazo. Verás proyecciones con tres escenarios de crecimiento."
+          preview={
+            <div className="space-y-3 rounded-2xl border border-[var(--border-soft)] bg-[var(--bg-card)] p-4 text-left">
+              {[
+                { name: "Fondo de emergencia", pct: 72 },
+                { name: "Entrada de vivienda", pct: 34 },
+              ].map((g) => (
+                <div key={g.name}>
+                  <div className="mb-1 flex justify-between text-[11px] text-[var(--text-secondary)]">
+                    <span>{g.name}</span>
+                    <span>{g.pct}%</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-[var(--bg-interactive)]">
+                    <div className="h-2 rounded-full bg-[var(--primary)]" style={{ width: `${g.pct}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          }
           action={
             <button
               onClick={() => setOpen(true)}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold"
+              className="ui-pressable mercury-button-primary inline-flex items-center gap-2"
             >
               <Plus size={16} />
               Crear objetivo
@@ -262,10 +280,10 @@ export default function GoalsPage() {
                       de {formatCurrency(goal.target_amount)}
                     </span>
                   </div>
-                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/5">
+                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--bg-interactive)]">
                     <div
-                      className="h-full rounded-full bg-primary transition-all duration-500"
-                      style={{ width: `${progress}%` }}
+                      className="progress-fill h-full rounded-full bg-primary"
+                      style={{ transform: `scaleX(${Math.min(progress, 100) / 100})` }}
                     />
                   </div>
 

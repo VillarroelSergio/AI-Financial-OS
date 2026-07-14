@@ -22,7 +22,7 @@ const TYPE_LABEL: Record<string, string> = {
 // Estado alineado con la clasificación de Calidad: fondos manuales, resto por precio.
 function estado(h: HoldingEnriched): { label: string; cls: string } {
   if (h.is_mock) return { label: "Demo", cls: "bg-amber-400/15 text-amber-300" };
-  if (h.asset_type === "fund") return { label: "Manual", cls: "bg-white/10 text-stone" };
+  if (h.asset_type === "fund") return { label: "Manual", cls: "bg-[var(--bg-interactive)] text-stone" };
   if (h.market_value === null) return { label: "Sin precio", cls: "bg-amber-400/15 text-amber-300" };
   return { label: "Confirmado", cls: "bg-accent-teal/15 text-accent-teal" };
 }
@@ -77,7 +77,7 @@ export default function PositionsTable({
                 items.push({ label: "Eliminar", onClick: () => onDelete(h), danger: true });
 
                 return (
-                  <tr key={h.id} className="border-b border-white/4 hover:bg-white/3 transition-colors">
+                  <tr key={h.id} className="border-b border-white/4 hover:bg-[var(--bg-interactive)] transition-colors">
                     <td className="px-3 py-3 font-medium text-on-dark">
                       {h.display_name}
                       {h.symbol && <span className="ml-1.5 text-[11px] text-stone">{h.symbol}</span>}

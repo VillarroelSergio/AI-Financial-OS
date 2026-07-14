@@ -5,12 +5,9 @@ import { ChartCard, EmptyState, KpiCard, LoadingState, PageHeader } from "@/comp
 import { useSpending, useSpendingMonthly, useSpendingYears } from "@/lib/hooks/useDashboard";
 import { formatCurrency, formatPercent } from "@/lib/formatters/currency";
 import type { CategorySpending } from "@/lib/api/dashboard";
+import { useFinancialChartColors } from "@/lib/chartPalette";
 import ExpenseCategoryDetailDrawer from "./ExpenseCategoryDetailDrawer";
 
-// Paleta validada (banda de luminosidad, CVD y contraste sobre superficie oscura)
-const EXPENSE_COLOR = "#7c83ff";
-const INCOME_COLOR = "#1cab84";
-const SAVINGS_LINE = "#a8adb3";
 const MONTH_LABEL = new Intl.DateTimeFormat("es-ES", { month: "short" });
 const currentMonth = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; };
 const moveMonth = (value: string, delta: number) => { const [y, m] = value.split("-").map(Number); const d = new Date(y, m - 1 + delta, 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; };
@@ -21,6 +18,8 @@ export default function SpendingPage() {
   const [year, setYear] = useState(initialYear);
   const [mode, setMode] = useState<"month" | "year">("month");
   const [selectedCategory, setSelectedCategory] = useState<CategorySpending | null>(null);
+  const chartColors = useFinancialChartColors();
+  const { income: INCOME_COLOR, expense: EXPENSE_COLOR, savings: SAVINGS_LINE } = chartColors;
   const loadedYears = useSpendingYears();
   const yearOptions = loadedYears.length ? loadedYears : [year];
   const { data, loading } = useSpending({ mode, month, year });
@@ -55,7 +54,7 @@ export default function SpendingPage() {
   if (loading) return <LoadingState label="Analizando el periodo" />;
 
   return (
-    <div className="p-8 max-w-[1500px] mx-auto space-y-6">
+    <div className="page-shell space-y-6">
       <ExpenseCategoryDetailDrawer
         category={selectedCategory}
         period={{ mode, month, year }}
@@ -67,7 +66,7 @@ export default function SpendingPage() {
         description="Desglose del gasto, ahorro neto y peso real de cada categoria."
         actions={
           <div className="flex items-center gap-2">
-            <div className="flex rounded-lg border border-hairline-dark bg-white/[.035] p-1">
+            <div className="flex rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] p-1">
               {(["month", "year"] as const).map((item) => (
                 <button key={item} onClick={() => setMode(item)} className={`rounded-lg px-3 py-2 text-xs ${mode === item ? "bg-primary text-on-primary" : "text-stone hover:text-on-dark"}`}>
                   {item === "month" ? "Mes" : "Ano"}
@@ -75,13 +74,13 @@ export default function SpendingPage() {
               ))}
             </div>
             {mode === "month" ? (
-              <div className="flex items-center rounded-lg border border-hairline-dark bg-white/[.035] p-1">
-                <button aria-label="Mes anterior" onClick={() => setMonth(moveMonth(month, -1))} className="rounded-lg p-2 text-stone hover:bg-white/5 hover:text-on-dark"><ChevronLeft size={16} /></button>
+              <div className="flex items-center rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] p-1">
+                <button aria-label="Mes anterior" onClick={() => setMonth(moveMonth(month, -1))} className="rounded-lg p-2 text-stone hover:bg-[var(--bg-interactive)] hover:text-on-dark"><ChevronLeft size={16} /></button>
                 <input type="month" value={month} onChange={(e) => { setMonth(e.target.value); setYear(Number(e.target.value.slice(0, 4))); }} className="financial-number w-32 bg-transparent text-center text-xs font-medium text-on-dark outline-none" />
-                <button aria-label="Mes siguiente" onClick={() => setMonth(moveMonth(month, 1))} className="rounded-lg p-2 text-stone hover:bg-white/5 hover:text-on-dark"><ChevronRight size={16} /></button>
+                <button aria-label="Mes siguiente" onClick={() => setMonth(moveMonth(month, 1))} className="rounded-lg p-2 text-stone hover:bg-[var(--bg-interactive)] hover:text-on-dark"><ChevronRight size={16} /></button>
               </div>
             ) : (
-              <select value={year} onChange={(e) => setYear(Number(e.target.value))} className="rounded-lg border border-hairline-dark bg-white/[.035] px-4 py-2 text-xs font-medium text-on-dark outline-none">
+              <select value={year} onChange={(e) => setYear(Number(e.target.value))} className="rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-4 py-2 text-xs font-medium text-on-dark outline-none">
                 {yearOptions.map((option) => <option key={option} value={option}>{option}</option>)}
               </select>
             )}
@@ -108,13 +107,13 @@ export default function SpendingPage() {
                   const m = payload?.[0]?.payload?.month;
                   if (m) { setMode("month"); setMonth(m); setYear(Number(m.slice(0, 4))); }
                 }}>
-                  <XAxis dataKey="label" tick={{ fill: "#a8adb3", fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fill: "#a8adb3", fontSize: 11 }} axisLine={false} tickLine={false} width={54} tickFormatter={(v: number) => `${Math.round(v)}€`} />
+                  <XAxis dataKey="label" tick={{ fill: "var(--text-secondary)", fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: "var(--text-secondary)", fontSize: 11 }} axisLine={false} tickLine={false} width={54} tickFormatter={(v: number) => `${Math.round(v)}€`} />
                   <Tooltip
                     formatter={(value, name) => [formatCurrency(Number(value)), name === "expense" ? "Gasto" : name === "income" ? "Ingreso" : "Ahorro"]}
                     labelFormatter={(label, payload) => payload?.[0]?.payload?.month ?? label}
-                    contentStyle={{ background: "#16181a", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 8, color: "#fff", fontSize: 12 }}
-                    cursor={{ fill: "rgba(255,255,255,0.04)" }}
+                    contentStyle={{ background: "var(--bg-card)", border: "1px solid var(--border-soft)", borderRadius: 8, color: "var(--text-primary)", fontSize: 12 }}
+                    cursor={{ fill: "var(--divider-soft)" }}
                   />
                   <Bar dataKey="income" fill={INCOME_COLOR} radius={[4, 4, 0, 0]} maxBarSize={16} className="cursor-pointer" />
                   <Bar dataKey="expense" fill={EXPENSE_COLOR} radius={[4, 4, 0, 0]} maxBarSize={16} className="cursor-pointer" />
@@ -132,7 +131,7 @@ export default function SpendingPage() {
           <ChartCard className="col-span-6" title="Gasto por categoria" description="Importe y porcentaje sobre el gasto del periodo">
             <div className="space-y-5">
               {categories.map((cat) => (
-                <button key={cat.category_id ?? cat.category} type="button" onClick={() => setSelectedCategory(cat)} className="block w-full rounded-lg text-left transition-colors hover:bg-white/[0.03] focus:outline-none focus:ring-1 focus:ring-primary">
+                <button key={cat.category_id ?? cat.category} type="button" onClick={() => setSelectedCategory(cat)} className="block w-full rounded-lg text-left transition-colors hover:bg-[var(--bg-interactive)] focus:outline-none focus:ring-1 focus:ring-primary">
                   <div className="flex items-center justify-between gap-4">
                     <span className="truncate text-sm">{cat.category}</span>
                     <div className="financial-number text-right text-sm shrink-0">
@@ -140,8 +139,8 @@ export default function SpendingPage() {
                       <span className="ml-3 inline-block w-16 text-stone">{cat.percentage.toFixed(1)}%</span>
                     </div>
                   </div>
-                  <div className="mt-2.5 h-2 rounded-full bg-white/5 overflow-hidden">
-                    <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(2, cat.percentage)}%`, background: EXPENSE_COLOR }} />
+                  <div className="mt-2.5 h-2 rounded-full bg-[var(--bg-interactive)] overflow-hidden">
+                    <div className="progress-fill h-full rounded-full" style={{ transform: `scaleX(${Math.max(2, cat.percentage) / 100})`, background: EXPENSE_COLOR }} />
                   </div>
                 </button>
               ))}
@@ -155,12 +154,12 @@ export default function SpendingPage() {
                 <p className="mt-2 font-semibold">{categories[0]?.category}</p>
                 <p className="mt-1 text-sm text-stone">{categories[0]?.percentage.toFixed(1)}% del gasto.</p>
               </div>
-              <div className="rounded-lg border border-hairline-dark bg-white/[.035] p-4">
+              <div className="rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] p-4">
                 <p className="text-xs text-stone">Base del porcentaje</p>
                 <p className="mt-2 font-semibold">{formatCurrency(expense)}</p>
                 <p className="mt-1 text-sm text-stone">Cada categoria se divide entre el gasto total.</p>
               </div>
-              <div className="rounded-lg border border-hairline-dark bg-white/[.035] p-4">
+              <div className="rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] p-4">
                 <p className="text-xs text-stone">Vista activa</p>
                 <p className="mt-2 font-semibold">{mode === "month" ? "Mes" : "Ano"}</p>
                 <p className="mt-1 text-sm text-stone">{mode === "month" ? month : year}</p>

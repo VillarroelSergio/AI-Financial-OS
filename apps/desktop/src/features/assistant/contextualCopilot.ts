@@ -38,7 +38,7 @@ const CONTEXT_BY_ROUTE: Record<string, Omit<CopilotContext, "route">> = {
     suggestedQuestions: ["Revisa mi cartera", "Explica mi rentabilidad", "Que posiciones requieren revision"],
   },
   "/planificacion": {
-    module: "Planificacion",
+    module: "Planificación",
     data_status: "presupuestos, recurrentes, facturas y cashflow visibles",
     visible_metrics: ["presupuestos", "candidatos recurrentes", "facturas", "cashflow"],
     suggestedQuestions: ["Detecta posibles suscripciones", "Propone recurrentes candidatos", "Explica mi prevision de cashflow"],
@@ -50,7 +50,7 @@ const CONTEXT_BY_ROUTE: Record<string, Omit<CopilotContext, "route">> = {
     suggestedQuestions: ["Explicame si voy en plazo", "Cuanto deberia aportar para llegar", "Compara escenarios"],
   },
   "/economy": {
-    module: "Economia",
+    module: "Economía",
     data_status: "indicadores macro disponibles por region",
     visible_metrics: ["inflacion", "tipos", "paro", "PIB", "EUR/USD", "impacto personal"],
     suggestedQuestions: ["Que indicadores afectan a mi situacion", "Explica el impacto del EUR/USD", "Que datos macro faltan"],

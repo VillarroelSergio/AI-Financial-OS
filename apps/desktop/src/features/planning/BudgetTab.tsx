@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Plus, RefreshCw } from "lucide-react";
 import BudgetCard from "./BudgetCard";
 import BudgetFormModal from "./BudgetFormModal";
+import { EmptyState, ErrorState } from "@/components/ui/Dashboard";
+import { BudgetPreview } from "@/components/ui/EmptyPreviews";
 import type { BudgetCreate } from "@/lib/api/budgets";
 import { useBudgetComparison, useBudgets } from "@/lib/hooks/useBudgets";
 
@@ -30,10 +32,11 @@ export default function BudgetTab() {
 
   if (error) {
     return (
-      <div className="flex h-64 flex-col items-center justify-center gap-3">
-        <p className="text-sm text-accent-danger">{error}</p>
-        <button onClick={refresh} className="rounded-lg bg-white/5 px-4 py-2 text-sm text-on-dark hover:bg-white/8">Reintentar</button>
-      </div>
+      <ErrorState
+        title="No se pudieron cargar los presupuestos"
+        description={error}
+        onRetry={refresh}
+      />
     );
   }
 
@@ -51,12 +54,16 @@ export default function BudgetTab() {
       </div>
 
       {data.length === 0 ? (
-        <div className="flex h-48 flex-col items-center justify-center gap-3 rounded-xl bg-surface-elevated">
-          <p className="text-sm text-stone">Crea tu primer presupuesto para controlar tus gastos</p>
-          <button onClick={() => setShowModal(true)} className="rounded-lg bg-primary px-4 py-2 text-sm text-white">
-            Crear presupuesto
-          </button>
-        </div>
+        <EmptyState
+          title="Aún no tienes presupuestos"
+          description="Crea tu primer presupuesto para controlar tus gastos por categoría cada mes."
+          preview={<BudgetPreview />}
+          action={
+            <button onClick={() => setShowModal(true)} className="rounded-lg bg-primary px-4 py-2 text-sm text-white">
+              Crear presupuesto
+            </button>
+          }
+        />
       ) : (
         <>
           <div className="grid grid-cols-3 gap-3">

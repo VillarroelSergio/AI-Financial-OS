@@ -17,8 +17,9 @@ interface Props {
   sparkline?: number[];
 }
 
-// MKT-8: mini-gráfica SVG inline (sin recharts por fila). Verde/rojo según primer→último.
-function Sparkline({ points }: { points: number[] }) {
+// MKT-8: mini-gráfica SVG inline (sin recharts por fila).
+// Color según change_pct (mismo signo que el badge de la fila): un índice en rojo nunca pinta línea verde.
+function Sparkline({ points, positive }: { points: number[]; positive: boolean }) {
   if (points.length < 2) return <div className="h-7" />;
   const w = 64;
   const h = 28;
@@ -29,10 +30,9 @@ function Sparkline({ points }: { points: number[] }) {
   const d = points
     .map((v, i) => `${i === 0 ? "M" : "L"}${(i * step).toFixed(1)},${(h - ((v - min) / span) * h).toFixed(1)}`)
     .join(" ");
-  const up = points[points.length - 1] >= points[0];
   return (
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="overflow-visible" aria-hidden="true">
-      <path d={d} fill="none" stroke={up ? "#00a87e" : "#e23b4a"} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" />
+      <path d={d} fill="none" stroke={positive ? "var(--positive)" : "var(--negative)"} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" />
     </svg>
   );
 }
@@ -53,7 +53,7 @@ function DataStatusBadge({ status }: { status: QuoteMI["data_status"] }) {
     { label: string; className: string }
   > = {
     limited: { label: "Limitado", className: "bg-amber-400/10 text-amber-400" },
-    unavailable: { label: "Sin dato", className: "bg-white/5 text-stone" },
+    unavailable: { label: "Sin dato", className: "bg-[var(--bg-interactive)] text-stone" },
     requires_review: { label: "Revisar", className: "bg-accent-danger/10 text-accent-danger" },
   };
 
@@ -75,7 +75,7 @@ export default function QuoteRow({ quote, sparkline }: Props) {
   return (
     <Link
       to={`/markets/${encodeURIComponent(quote.catalog_item_id)}`}
-      className="grid grid-cols-[1fr_64px_100px_100px] items-center gap-4 px-6 py-3 hover:bg-white/[.03] transition-colors"
+      className="grid grid-cols-[1fr_64px_100px_100px] items-center gap-4 px-6 py-3 hover:bg-[var(--bg-interactive)] transition-colors"
     >
       <div className="min-w-0">
         <p className="text-body-sm text-on-dark truncate">{title}</p>
@@ -85,7 +85,7 @@ export default function QuoteRow({ quote, sparkline }: Props) {
       </div>
 
       <div className="flex justify-center">
-        {sparkline && sparkline.length >= 2 ? <Sparkline points={sparkline} /> : <div className="h-7" />}
+        {sparkline && sparkline.length >= 2 ? <Sparkline points={sparkline} positive={positive} /> : <div className="h-7" />}
       </div>
 
       <div className="text-right">

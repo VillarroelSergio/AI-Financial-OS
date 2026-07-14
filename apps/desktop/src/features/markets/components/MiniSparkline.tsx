@@ -11,7 +11,7 @@ const SPARKLINE_HEIGHT = 32;
 
 export default function MiniSparkline({ sparkline, changePct }: Props) {
   const positive = (changePct ?? 0) >= 0;
-  const color = positive ? "#00a87e" : "#e23b4a";
+  const color = positive ? "var(--positive)" : "var(--negative)";
 
   if (!sparkline || sparkline.length < 2) {
     return (

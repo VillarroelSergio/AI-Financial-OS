@@ -139,7 +139,7 @@ export default function BalanceGeneralPanel() {
           )}
 
           {sheet && (
-            <div className="flex items-baseline justify-between rounded-lg bg-black/20 px-4 py-3">
+            <div className="flex items-baseline justify-between rounded-lg bg-[var(--bg-card-elevated)] px-4 py-3">
               <span className="text-sm font-semibold">Patrimonio neto</span>
               <span className="flex items-baseline gap-3">
                 <span className="financial-number text-lg font-semibold">{formatCurrency(sheet.net_worth)}</span>
@@ -159,14 +159,14 @@ export default function BalanceGeneralPanel() {
             <div className="h-48">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={chartData} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#ffffff12" />
-                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: "#8a8f98" }} />
-                  <YAxis tick={{ fontSize: 11, fill: "#8a8f98" }} width={60} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--divider-soft)" />
+                  <XAxis dataKey="month" tick={{ fontSize: 11, fill: "var(--text-secondary)" }} />
+                  <YAxis tick={{ fontSize: 11, fill: "var(--text-secondary)" }} width={60} />
                   <Tooltip
                     formatter={(v) => formatCurrency(Number(v))}
-                    contentStyle={{ background: "#1a1a1f", border: "1px solid #ffffff20", borderRadius: 8 }}
+                    contentStyle={{ background: "var(--bg-card)", border: "1px solid var(--border-soft)", borderRadius: 8, color: "var(--text-primary)" }}
                   />
-                  <Line type="monotone" dataKey="net_worth" stroke="#7c83ff" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="net_worth" stroke="var(--primary)" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>

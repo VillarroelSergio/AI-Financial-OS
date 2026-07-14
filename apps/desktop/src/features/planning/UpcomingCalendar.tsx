@@ -12,7 +12,7 @@ export default function UpcomingCalendar({ events }: Props) {
   return (
     <div className="space-y-2">
       {events.slice(0, 10).map((ev, i) => (
-        <div key={i} className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-white/4 transition-colors">
+        <div key={i} className="flex items-center justify-between rounded-lg px-3 py-2.5 hover:bg-[var(--bg-interactive)] transition-colors">
           <div className="flex items-center gap-3">
             <span className="w-12 text-[11px] text-stone tabular-nums">
               {new Date(ev.date).toLocaleDateString("es-ES", { day: "numeric", month: "short" })}

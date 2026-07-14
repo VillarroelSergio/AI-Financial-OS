@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { AlertCircle, RefreshCw, Sparkles } from "lucide-react";
+import { EmptyState } from "@/components/ui/Dashboard";
 import { formatCurrency, formatNumber } from "@/lib/formatters/currency";
 import { useBriefs } from "../hooks/useBriefs";
 import type { AiBrief, AiKeyFigure } from "../types/aiAssistant.types";
@@ -88,7 +89,7 @@ function BriefHero({ brief }: { brief: AiBrief }) {
             <button
               key={i}
               onClick={() => navigate(act.target)}
-              className="rounded-lg border border-hairline-dark bg-surface-elevated px-3 py-1.5 text-caption text-on-dark hover:border-primary/40"
+              className="ui-pressable rounded-lg border border-hairline-dark bg-surface-elevated px-3 py-1.5 text-caption text-on-dark hover:border-primary/40"
             >
               {act.label}
             </button>
@@ -99,7 +100,7 @@ function BriefHero({ brief }: { brief: AiBrief }) {
   );
 }
 
-export default function AnalysisCenter() {
+export default function AnalysisCenter({ onOpenChat }: { onOpenChat: () => void }) {
   const { briefs, generating, error, load, generate } = useBriefs();
 
   useEffect(() => {
@@ -110,20 +111,22 @@ export default function AnalysisCenter() {
   const history = briefs.slice(1);
 
   return (
-    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+    <section className="min-h-0 flex-1 space-y-4 overflow-y-auto">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-heading-sm text-on-dark">Centro de Análisis</h1>
-          <p className="text-caption text-stone">Informes proactivos con cifras deterministas - Sin SQL - Sin Internet</p>
+          <h2 className="text-heading-sm text-on-dark">Análisis mensual</h2>
+          <p className="mt-1 text-sm text-stone">Un resumen trazable de lo que cambió, por qué importa y qué puedes hacer.</p>
         </div>
-        <button
-          onClick={() => generate()}
-          disabled={generating}
-          className="flex items-center gap-2 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white disabled:opacity-50"
-        >
-          {generating ? <RefreshCw size={14} className="animate-spin" /> : <Sparkles size={14} />}
-          {generating ? "Generando…" : "Generar análisis"}
-        </button>
+        {current && (
+          <button
+            onClick={() => generate()}
+            disabled={generating}
+            className="ui-pressable mercury-button inline-flex items-center gap-2 px-3 py-2 text-xs"
+          >
+            {generating ? <RefreshCw size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+            {generating ? "Actualizando…" : "Actualizar"}
+          </button>
+        )}
       </div>
 
       {error && (
@@ -133,18 +136,56 @@ export default function AnalysisCenter() {
         </div>
       )}
 
-      {current ? (
+      {generating && !current ? (
+        <div className="premium-card flex min-h-56 flex-col items-center justify-center rounded-[16px] text-center">
+          <RefreshCw size={22} className="animate-spin text-primary-bright" />
+          <p className="mt-3 text-sm font-medium text-on-dark">Preparando tu análisis</p>
+          <p className="mt-1 text-xs text-stone">Estamos ordenando cifras y señales del periodo.</p>
+        </div>
+      ) : current ? (
         <BriefHero brief={current} />
       ) : (
-        !generating && (
-          <div className="premium-card rounded-lg p-8 text-center space-y-2">
-            <Sparkles size={28} className="text-stone mx-auto" />
-            <p className="text-body-md text-on-dark">Aún no hay ningún análisis</p>
-            <p className="text-body-sm text-stone max-w-sm mx-auto">
-              Genera un resumen mensual con tus cifras reales. La IA sólo narra datos ya calculados.
-            </p>
-          </div>
-        )
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(260px,.65fr)]">
+            <EmptyState
+              icon={Sparkles}
+              title="Convierte tus cifras en decisiones"
+              description="Genera una lectura mensual con cambios relevantes, señales y próximos pasos basados en datos ya calculados."
+              action={
+                <button
+                  onClick={() => generate()}
+                  className="ui-pressable mercury-button-primary inline-flex items-center gap-2"
+                >
+                  <Sparkles size={15} />
+                  Generar análisis
+                </button>
+              }
+              secondaryAction={
+                <button onClick={onOpenChat} className="ui-pressable mercury-button">
+                  Abrir chat
+                </button>
+              }
+            />
+            <aside className="premium-card rounded-[16px] p-5">
+              <p className="text-sm font-semibold text-on-dark">Qué recibirás</p>
+              <div className="mt-4 space-y-4">
+                {[
+                  ["Cambios del mes", "Ingresos, gastos, ahorro y patrimonio."],
+                  ["Señales relevantes", "Desviaciones que merecen tu atención."],
+                  ["Próximos pasos", "Acciones concretas enlazadas con cada módulo."],
+                ].map(([title, copy], index) => (
+                  <div key={title} className="flex gap-3">
+                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded-full bg-primary/10 text-xs font-semibold text-primary-bright">
+                      {index + 1}
+                    </span>
+                    <div>
+                      <p className="text-sm font-medium text-on-dark">{title}</p>
+                      <p className="mt-0.5 text-xs leading-5 text-stone">{copy}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </aside>
+        </div>
       )}
 
       {history.length > 0 && (
@@ -161,6 +202,6 @@ export default function AnalysisCenter() {
           ))}
         </div>
       )}
-    </div>
+    </section>
   );
 }

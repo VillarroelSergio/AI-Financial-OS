@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { CalendarDays, Home, Landmark, Newspaper, PiggyBank, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { Home, Landmark, Newspaper, PiggyBank, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import { formatCurrency } from "@/lib/formatters/currency";
 import type { MacroDataPointMI, PersonalEconomyMI } from "@/lib/types/market-intelligence";
 
@@ -37,9 +37,9 @@ function contextItems(spain: MacroDataPointMI[]) {
 }
 
 const TONE_DOT: Record<string, string> = {
-  good: "bg-emerald-400",
-  bad: "bg-red-400",
-  flat: "bg-amber-300",
+  good: "bg-[var(--economy-accent)]",
+  bad: "bg-[var(--economy-negative)]",
+  flat: "bg-[var(--economy-accent)]",
 };
 
 // ── Simulador de hipoteca sobre Euríbor (Fase 1) ─────────────────────
@@ -65,7 +65,7 @@ function MortgageSimulator({ euribor }: { euribor: PersonalEconomyMI["euribor"] 
     return { now, delta: before !== null ? now - before : null };
   }, [capital, years, spread, euribor]);
 
-  const field = "w-full rounded-lg border border-hairline-dark bg-white/[.035] px-2 py-1.5 text-sm text-on-dark";
+  const field = "w-full rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-2 py-1.5 text-sm text-on-dark";
   return (
     <div className="premium-card rounded-lg p-5 space-y-3">
       <div className="flex items-center gap-2">
@@ -94,12 +94,12 @@ function MortgageSimulator({ euribor }: { euribor: PersonalEconomyMI["euribor"] 
         </label>
       </div>
       {result ? (
-        <div className="rounded-lg border border-hairline-dark bg-white/[.03] p-3">
+        <div className="rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] p-3">
           <p className="text-body-sm text-on-dark">
             Cuota estimada: <b>{formatCurrency(result.now)}</b>/mes
           </p>
           {result.delta !== null && Math.abs(result.delta) >= 0.5 && (
-            <p className={`text-caption mt-1 ${result.delta > 0 ? "text-red-300" : "text-emerald-300"}`}>
+            <p className={`text-caption mt-1 ${result.delta > 0 ? "text-[var(--economy-negative)]" : "text-[var(--economy-accent)]"}`}>
               {result.delta > 0 ? "+" : ""}{formatCurrency(result.delta)}/mes frente a la revisión de hace un año
             </p>
           )}
@@ -127,7 +127,7 @@ function PersonalInflation({ data }: { data: PersonalEconomyMI["personal_inflati
       {has ? (
         <>
           <div className="flex items-baseline gap-3">
-            <span className={`text-2xl font-semibold ${worse ? "text-red-300" : "text-emerald-300"}`}>
+            <span className={`text-2xl font-semibold ${worse ? "text-[var(--economy-negative)]" : "text-[var(--economy-accent)]"}`}>
               {pct(data.user_yoy_pct)}
             </span>
             <span className="text-caption text-stone">
@@ -145,7 +145,7 @@ function PersonalInflation({ data }: { data: PersonalEconomyMI["personal_inflati
                 <span className="text-stone">{c.category}</span>
                 <span className="text-on-dark">
                   {formatCurrency(c.current)}{" "}
-                  <span className={c.yoy_pct !== null && c.yoy_pct > 0 ? "text-red-300" : "text-emerald-300"}>
+                  <span className={c.yoy_pct !== null && c.yoy_pct > 0 ? "text-[var(--economy-negative)]" : "text-[var(--economy-accent)]"}>
                     {c.yoy_pct !== null ? `${c.yoy_pct > 0 ? "+" : ""}${c.yoy_pct}%` : ""}
                   </span>
                 </span>
@@ -175,8 +175,8 @@ function RealSalary({ data }: { data: PersonalEconomyMI["real_salary"] }) {
       {has ? (
         <>
           <div className="flex items-center gap-2">
-            <Icon size={18} className={data.real_yoy_pct! >= 0 ? "text-emerald-300" : "text-red-300"} />
-            <span className={`text-2xl font-semibold ${data.real_yoy_pct! >= 0 ? "text-emerald-300" : "text-red-300"}`}>
+            <Icon size={18} className={data.real_yoy_pct! >= 0 ? "text-[var(--economy-accent)]" : "text-[var(--economy-negative)]"} />
+            <span className={`text-2xl font-semibold ${data.real_yoy_pct! >= 0 ? "text-[var(--economy-accent)]" : "text-[var(--economy-negative)]"}`}>
               {data.real_yoy_pct! > 0 ? "+" : ""}{pct(data.real_yoy_pct)}
             </span>
             <span className="text-caption text-stone">poder adquisitivo interanual</span>
@@ -209,7 +209,7 @@ function SavingsYield({ data }: { data: PersonalEconomyMI["savings"] }) {
         {data.tipo_bce !== null && <> · tipo BCE {pct(data.tipo_bce, 2)}</>}
       </p>
       {data.potential_monthly !== null && data.potential_monthly >= 1 ? (
-        <p className="text-body-sm text-emerald-300">
+        <p className="text-body-sm text-[var(--economy-accent)]">
           Remunerada al tipo BCE rentaría ~{formatCurrency(data.potential_monthly)}/mes
           (cuenta remunerada o Letras del Tesoro).
         </p>
@@ -218,34 +218,6 @@ function SavingsYield({ data }: { data: PersonalEconomyMI["savings"] }) {
           {data.tipo_bce === null ? "Sin dato del tipo BCE todavía." : "Poca liquidez ociosa que remunerar."}
         </p>
       )}
-    </div>
-  );
-}
-
-// ── Calendario fiscal (Fase 2) ───────────────────────────────────────
-function FiscalCalendar({ items }: { items: PersonalEconomyMI["fiscal_calendar"] }) {
-  return (
-    <div className="premium-card rounded-lg p-5 space-y-3">
-      <div className="flex items-center gap-2">
-        <CalendarDays size={14} className="text-primary-bright" />
-        <h3 className="text-caption text-mute uppercase tracking-widest">Calendario fiscal</h3>
-      </div>
-      <div className="space-y-2">
-        {items.map((m) => (
-          <div key={`${m.date}-${m.label}`} className="flex items-start justify-between gap-3 text-caption">
-            <div>
-              <p className="text-on-dark">{m.label}</p>
-              <p className="text-stone">
-                {new Date(m.date).toLocaleDateString("es-ES", { day: "numeric", month: "long" })}
-                {m.audience === "autonomos" && " · autónomos"}
-              </p>
-            </div>
-            <span className={`shrink-0 rounded-lg px-2 py-0.5 ${m.days_left <= 15 ? "bg-amber-400/15 text-amber-200" : "bg-white/[.05] text-stone"}`}>
-              {m.days_left === 0 ? "hoy" : `en ${m.days_left} días`}
-            </span>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
@@ -289,7 +261,7 @@ export default function PersonalEconomySection({
       {context.length > 0 && (
         <div className="flex flex-wrap gap-2">
           {context.map((c) => (
-            <span key={c.id} className="flex items-center gap-2 rounded-lg border border-hairline-dark bg-white/[.035] px-3 py-1.5 text-caption text-on-dark">
+            <span key={c.id} className="flex items-center gap-2 rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-3 py-1.5 text-caption text-on-dark">
               <span className={`h-2 w-2 rounded-full ${TONE_DOT[c.tone]}`} />
               {c.text}
             </span>
@@ -301,7 +273,6 @@ export default function PersonalEconomySection({
         <MortgageSimulator euribor={data.euribor} />
         <RealSalary data={data.real_salary} />
         <SavingsYield data={data.savings} />
-        <FiscalCalendar items={data.fiscal_calendar} />
         <RelevantNews items={data.relevant_news} />
       </div>
     </section>

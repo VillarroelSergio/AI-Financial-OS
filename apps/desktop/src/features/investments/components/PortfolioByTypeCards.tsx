@@ -13,7 +13,7 @@ interface Bucket {
 // mercado = precio de mercado, fondos = valor manual, ahorro = cálculo determinista.
 const BUCKETS: Bucket[] = [
   { key: "mercado", label: "Acciones y ETF", types: ["stock", "etf", "crypto", "bond"], badge: "Mercado", badgeClass: "bg-accent-teal/15 text-accent-teal" },
-  { key: "fondos", label: "Fondos", types: ["fund"], badge: "Manual", badgeClass: "bg-white/10 text-stone" },
+  { key: "fondos", label: "Fondos", types: ["fund"], badge: "Manual", badgeClass: "bg-[var(--bg-interactive)] text-stone" },
   { key: "ahorro", label: "Ahorro", types: ["savings_account", "cash"], badge: "Calculado", badgeClass: "bg-sky-500/15 text-sky-400" },
 ];
 

@@ -1,12 +1,14 @@
 import { Lightbulb, Upload } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { EmptyState } from "@/components/ui/Dashboard";
+import { InsightsPreview } from "@/components/ui/EmptyPreviews";
 
 export function EmptyInsightsState() {
   const navigate = useNavigate();
   return (
     <EmptyState
       icon={Lightbulb}
+      preview={<InsightsPreview />}
       title="Aún no hay suficientes datos para generar insights fiables"
       description="Importa movimientos y actualiza tus cuentas para que Financial OS pueda detectar patrones, alertas y oportunidades."
       action={

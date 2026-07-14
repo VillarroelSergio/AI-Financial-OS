@@ -60,7 +60,7 @@ export default function ReconciliationTable({ holdings }: Props) {
           {sorted.map((h) => {
             const pnlPositive = h.unrealized_pnl_pct >= 0;
             return (
-              <tr key={h.holding_id} className="border-b border-white/4 hover:bg-white/3 transition-colors">
+              <tr key={h.holding_id} className="border-b border-white/4 hover:bg-[var(--bg-interactive)] transition-colors">
                 <td className="px-3 py-3 font-medium text-on-dark">
                   {h.display_name}
                   {h.ticker && <span className="ml-1.5 text-[11px] text-stone">{h.ticker}</span>}

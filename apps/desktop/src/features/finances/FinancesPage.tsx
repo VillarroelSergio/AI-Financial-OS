@@ -23,22 +23,24 @@ export default function FinancesPage() {
   return (
     <div className="flex min-h-full flex-col">
       <div
-        className="sticky top-0 z-10 flex gap-1 border-b px-8 pt-3"
+        className="sticky top-0 z-10 border-b"
         style={{ background: "var(--bg-app)", borderColor: "var(--border-soft)" }}
       >
-        {TABS.map(({ id, label }) => (
-          <button
-            key={id}
-            onClick={() => setSearchParams({ tab: id })}
-            className={`border-b-2 px-4 py-2.5 text-sm transition-colors ${
-              tab === id
-                ? "border-[var(--primary)] text-[var(--text-primary)]"
-                : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
+        <div className="page-tabs flex gap-1 pt-3">
+          {TABS.map(({ id, label }) => (
+            <button
+              key={id}
+              onClick={() => setSearchParams({ tab: id })}
+              className={`border-b-2 px-4 py-2.5 text-sm transition-colors ${
+                tab === id
+                  ? "border-[var(--primary)] text-[var(--text-primary)]"
+                  : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
       {tab === "cuentas" && <AccountsPage />}
       {tab === "movimientos" && <TransactionsPage />}

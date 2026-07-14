@@ -46,7 +46,7 @@ function MethodSelector({ onSelect }: { onSelect: (m: "screenshot" | "manual") =
           <button
             onClick={() => onSelect("screenshot")}
             className="w-full flex flex-col items-center gap-3 rounded-xl border border-hairline-dark bg-surface-deep px-6 py-8
-              hover:border-primary/40 hover:bg-white/[.03] transition-all text-center group"
+              hover:border-primary/40 hover:bg-[var(--bg-interactive)] transition-all text-center group"
           >
             <Upload size={28} className="text-stone group-hover:text-on-dark transition-colors" />
             <div>
@@ -65,7 +65,7 @@ function MethodSelector({ onSelect }: { onSelect: (m: "screenshot" | "manual") =
         <button
           onClick={() => onSelect("manual")}
           className="flex flex-col items-center gap-3 rounded-xl border border-hairline-dark bg-surface-deep px-6 py-8
-            hover:border-primary/40 hover:bg-white/[.03] transition-all text-center group"
+            hover:border-primary/40 hover:bg-[var(--bg-interactive)] transition-all text-center group"
         >
           <Keyboard size={28} className="text-stone group-hover:text-on-dark transition-colors" />
           <div>
@@ -124,7 +124,7 @@ function ScreenshotInput({ onParsed }: ScreenshotInputProps) {
           Selecciona una o varias capturas de tu broker. Se procesan con tu modelo de visión IA local
           (Ollama/LM Studio): las imágenes no se guardan ni salen de tu equipo. Revisa siempre el resultado antes de importar.
         </p>
-        <label className="mt-3 flex cursor-pointer items-center justify-center rounded-lg border border-dashed border-hairline-dark bg-white/[.03] px-4 py-6 text-center text-sm text-stone hover:border-primary/40 hover:text-on-dark">
+        <label className="mt-3 flex cursor-pointer items-center justify-center rounded-lg border border-dashed border-hairline-dark bg-[var(--bg-interactive)] px-4 py-6 text-center text-sm text-stone hover:border-primary/40 hover:text-on-dark">
           <input
             type="file"
             accept="image/png,image/jpeg,image/webp"

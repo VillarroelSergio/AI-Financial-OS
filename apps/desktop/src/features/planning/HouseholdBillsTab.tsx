@@ -47,7 +47,7 @@ export default function HouseholdBillsTab() {
     }
   };
 
-  if (loading) return <div className="rounded-lg border border-hairline-dark bg-white/[.03] p-8 text-center text-sm text-stone">Cargando facturas del hogar...</div>;
+  if (loading) return <div className="rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] p-8 text-center text-sm text-stone">Cargando facturas del hogar...</div>;
   if (error) return <div className="rounded-lg border border-accent-danger/30 bg-accent-danger/5 p-5 text-sm text-accent-danger">{error}</div>;
 
   return (
@@ -84,12 +84,12 @@ export default function HouseholdBillsTab() {
       {showForm && (
         <form onSubmit={submit} className="rounded-lg border border-hairline-dark bg-surface-card p-5">
           <div className="grid gap-3 md:grid-cols-4">
-            <label className="space-y-1"><span className="text-xs text-stone">Proveedor</span><input required value={form.provider} onChange={(e) => setForm((prev) => ({ ...prev, provider: e.target.value }))} className="w-full rounded-lg border border-hairline-dark bg-white/[.035] px-3 py-2 text-sm text-on-dark" /></label>
-            <label className="space-y-1"><span className="text-xs text-stone">Servicio</span><select value={form.service_type} onChange={(e) => setForm((prev) => ({ ...prev, service_type: e.target.value }))} className="w-full rounded-lg border border-hairline-dark bg-white/[.035] px-3 py-2 text-sm text-on-dark">{SERVICE_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
-            <label className="space-y-1"><span className="text-xs text-stone">Inicio periodo</span><input required type="date" value={form.period_start} onChange={(e) => setForm((prev) => ({ ...prev, period_start: e.target.value }))} className="w-full rounded-lg border border-hairline-dark bg-white/[.035] px-3 py-2 text-sm text-on-dark" /></label>
-            <label className="space-y-1"><span className="text-xs text-stone">Fin periodo</span><input required type="date" value={form.period_end} onChange={(e) => setForm((prev) => ({ ...prev, period_end: e.target.value }))} className="w-full rounded-lg border border-hairline-dark bg-white/[.035] px-3 py-2 text-sm text-on-dark" /></label>
-            <label className="space-y-1"><span className="text-xs text-stone">Importe</span><input required type="number" step="0.01" value={form.amount} onChange={(e) => setForm((prev) => ({ ...prev, amount: e.target.value }))} className="w-full rounded-lg border border-hairline-dark bg-white/[.035] px-3 py-2 text-sm text-on-dark" /></label>
-            <label className="space-y-1"><span className="text-xs text-stone">Vencimiento</span><input type="date" value={form.due_date ?? ""} onChange={(e) => setForm((prev) => ({ ...prev, due_date: e.target.value || null }))} className="w-full rounded-lg border border-hairline-dark bg-white/[.035] px-3 py-2 text-sm text-on-dark" /></label>
+            <label className="space-y-1"><span className="text-xs text-stone">Proveedor</span><input required value={form.provider} onChange={(e) => setForm((prev) => ({ ...prev, provider: e.target.value }))} className="w-full rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-3 py-2 text-sm text-on-dark" /></label>
+            <label className="space-y-1"><span className="text-xs text-stone">Servicio</span><select value={form.service_type} onChange={(e) => setForm((prev) => ({ ...prev, service_type: e.target.value }))} className="w-full rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-3 py-2 text-sm text-on-dark">{SERVICE_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label>
+            <label className="space-y-1"><span className="text-xs text-stone">Inicio periodo</span><input required type="date" value={form.period_start} onChange={(e) => setForm((prev) => ({ ...prev, period_start: e.target.value }))} className="w-full rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-3 py-2 text-sm text-on-dark" /></label>
+            <label className="space-y-1"><span className="text-xs text-stone">Fin periodo</span><input required type="date" value={form.period_end} onChange={(e) => setForm((prev) => ({ ...prev, period_end: e.target.value }))} className="w-full rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-3 py-2 text-sm text-on-dark" /></label>
+            <label className="space-y-1"><span className="text-xs text-stone">Importe</span><input required type="number" step="0.01" value={form.amount} onChange={(e) => setForm((prev) => ({ ...prev, amount: e.target.value }))} className="w-full rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-3 py-2 text-sm text-on-dark" /></label>
+            <label className="space-y-1"><span className="text-xs text-stone">Vencimiento</span><input type="date" value={form.due_date ?? ""} onChange={(e) => setForm((prev) => ({ ...prev, due_date: e.target.value || null }))} className="w-full rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-3 py-2 text-sm text-on-dark" /></label>
             <label className="flex items-center gap-2 pt-6 text-sm text-stone"><input type="checkbox" checked={form.is_recurring ?? true} onChange={(e) => setForm((prev) => ({ ...prev, is_recurring: e.target.checked }))} /> Recurrente</label>
           </div>
           <div className="mt-4 flex justify-end gap-2">
@@ -104,7 +104,7 @@ export default function HouseholdBillsTab() {
           <h3 className="text-sm font-semibold text-on-dark">Resumen por proveedor</h3>
           <div className="mt-4 space-y-3">
             {summary?.items.length ? summary.items.map((item) => (
-              <div key={`${item.service_type}-${item.provider}`} className="rounded-lg border border-hairline-dark bg-white/[.03] p-3">
+              <div key={`${item.service_type}-${item.provider}`} className="rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] p-3">
                 <div className="flex items-center justify-between gap-3">
                   <div><p className="text-sm text-on-dark">{serviceLabel(item.service_type)} · {item.provider}</p><p className="text-xs text-stone">{item.bills_count} facturas · {item.latest_period}</p></div>
                   <div className="text-right"><p className="financial-number text-sm text-on-dark">{formatCurrency(item.next_estimate, billsCurrency)}</p><p className={item.anomaly ? "text-xs text-amber-200" : "text-xs text-stone"}>{item.change_pct == null ? "Sin comparativa" : `${item.change_pct}% vs anterior`}</p></div>
@@ -118,7 +118,7 @@ export default function HouseholdBillsTab() {
           <h3 className="text-sm font-semibold text-on-dark">Ultimas facturas</h3>
           <div className="mt-4 space-y-2">
             {bills.slice(0, 8).map((bill) => (
-              <div key={bill.id} className="flex items-center justify-between gap-3 rounded-lg bg-white/[.03] px-3 py-2">
+              <div key={bill.id} className="flex items-center justify-between gap-3 rounded-lg bg-[var(--bg-interactive)] px-3 py-2">
                 <div><p className="text-sm text-on-dark">{serviceLabel(bill.service_type)} · {bill.provider}</p><p className="text-xs text-stone">{bill.period_start} - {bill.period_end}</p></div>
                 <div className="flex items-center gap-3"><span className="financial-number text-sm text-on-dark">{formatCurrency(bill.amount, bill.currency)}</span><button onClick={() => remove(bill.id)} className="text-stone hover:text-accent-danger" aria-label={`Eliminar factura ${bill.provider}`}><Trash2 size={14} /></button></div>
               </div>

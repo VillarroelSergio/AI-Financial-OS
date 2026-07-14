@@ -28,7 +28,7 @@ export default function RegionTabs({ active, onSelect, availableRegions }: Props
             aria-selected={isActive}
             onClick={() => onSelect(tab.value)}
             className={[
-              "flex-shrink-0 text-button-sm rounded-full px-3.5 py-1.5 h-8 transition-all duration-150",
+              "ui-pressable flex-shrink-0 text-button-sm rounded-full px-3.5 py-1.5 h-8",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-canvas-dark",
               isActive
                 ? "bg-primary text-on-dark shadow-[0_0_0_1px_rgba(73,79,223,0.6)] font-medium"
