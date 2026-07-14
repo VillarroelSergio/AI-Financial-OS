@@ -169,13 +169,13 @@ export default function SettingsPage() {
                     className="flex-1 rounded-[28px] p-4 text-left transition-all"
                     style={{
                       border: theme === t ? "2px solid var(--primary)" : "1px solid var(--border-soft)",
-                      background: t === "dark" ? "#000000" : "#EFEEEB",
+                      background: t === "dark" ? "#000000" : "#E4E2DE",
                       cursor: "pointer",
                     }}
                   >
                     <div
                       className="mb-2 h-8 rounded-[10px]"
-                      style={{ background: t === "dark" ? "#1d1d1f" : "#F8F7F4", border: "1px solid", borderColor: t === "dark" ? "#333336" : "#DCDAD5" }}
+                      style={{ background: t === "dark" ? "#1d1d1f" : "#EEECE8", border: "1px solid", borderColor: t === "dark" ? "#333336" : "#D2CFC8" }}
                     />
                     <p
                       style={{

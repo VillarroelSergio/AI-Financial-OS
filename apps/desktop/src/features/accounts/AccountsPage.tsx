@@ -8,6 +8,7 @@ import { useAccounts } from "@/lib/hooks/useAccounts";
 import { formatCurrency } from "@/lib/formatters/currency";
 import type { Account } from "@/lib/types";
 import type { AccountCreate } from "@/lib/api/accounts";
+import { useToast } from "@/app/ToastProvider";
 
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   cash: "Efectivo",
@@ -40,6 +41,7 @@ export default function AccountsPage() {
   const [form, setForm] = useState<AccountCreate>(EMPTY_FORM);
   const [editing, setEditing] = useState<Account | null>(null);
   const [saving, setSaving] = useState(false);
+  const { notify } = useToast();
 
   const total = accounts.reduce((sum, account) => sum + Number(account.current_balance), 0);
   const liquidity = accounts.filter((account) => ["cash", "bank", "savings"].includes(account.type)).reduce((sum, account) => sum + Number(account.current_balance), 0);
@@ -70,6 +72,16 @@ export default function AccountsPage() {
       is_liability: account.is_liability,
     });
     setShowForm(true);
+  };
+
+  const confirmRemove = async (account: Account) => {
+    if (!window.confirm(`¿Eliminar la cuenta “${account.name}”? Esta acción no se puede deshacer.`)) return;
+    try {
+      await remove(account.id);
+      notify("Cuenta eliminada", "success");
+    } catch {
+      notify("No se ha podido eliminar la cuenta", "error");
+    }
   };
 
   const handleSubmit = async (event: FormEvent) => {
@@ -188,7 +200,7 @@ export default function AccountsPage() {
                     <p className="text-caption text-stone">{account.currency}</p>
                   </div>
                   <button onClick={() => openEdit(account)} className="text-stone hover:text-on-dark transition-colors" aria-label="Editar cuenta"><Pencil size={16} /></button>
-                  <button onClick={() => remove(account.id)} className="text-stone hover:text-accent-danger transition-colors" aria-label="Eliminar cuenta"><Trash2 size={16} /></button>
+                  <button onClick={() => void confirmRemove(account)} className="text-stone hover:text-accent-danger transition-colors" aria-label="Eliminar cuenta"><Trash2 size={16} /></button>
                 </div>
               </div>
             );

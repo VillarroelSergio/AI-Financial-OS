@@ -5,7 +5,7 @@ import { resolve } from "node:path";
 const root = resolve(import.meta.dirname, "../..");
 const source = (path: string) => readFile(resolve(root, path), "utf8");
 
-const [main, app, settings, layout, markets, transactions, accounts, spending, dashboard, investments, startupExperience, styles, sharedUi, insights, planning, budgetTab, mockData, personalEconomy, quoteRow] = await Promise.all([
+const [main, app, settings, layout, markets, transactions, accounts, spending, dashboard, investments, startupExperience, styles, sharedUi, insights, planning, budgetTab, mockData, personalEconomy, quoteRow, balance] = await Promise.all([
   source("apps/desktop/src/main.tsx"),
   source("apps/desktop/src/App.tsx"),
   source("apps/desktop/src/features/settings/SettingsPage.tsx"),
@@ -25,6 +25,7 @@ const [main, app, settings, layout, markets, transactions, accounts, spending, d
   source("apps/desktop/src/lib/api/mock-data.ts"),
   source("apps/desktop/src/features/economy/components/PersonalEconomySection.tsx"),
   source("apps/desktop/src/features/markets/components/QuoteRow.tsx"),
+  source("apps/desktop/src/features/dashboard/components/BalanceGeneralPanel.tsx"),
 ]);
 
 assert.doesNotMatch(layout, /M[aá]s herramientas/, "Objetivos e Insights no deben competir en la navegación lateral.");
@@ -70,10 +71,17 @@ assert.match(insights, /datos suficientes para analizar/, "Insights debe explica
 assert.match(planning, /BudgetTab/, "PlanificaciÃ³n debe mantener su contenido encapsulado por pestaÃ±as.");
 assert.match(budgetTab, /Preparando la planificaciÃ³n/, "PlanificaciÃ³n debe mostrar un estado neutro durante la carga.");
 assert.match(mockData, /clean === "\/api\/budgets\/comparison"/, "El entorno demo debe servir comparativas de presupuesto.");
-assert.match(styles, /--bg-app:\s*#EFEEEB/, "El tema claro debe partir de un gris cÃ¡lido, no de blanco puro.");
-assert.match(settings, /#EFEEEB/, "La muestra del tema claro debe reflejar el fondo gris cÃ¡lido real.");
+assert.match(styles, /--bg-app:\s*#E4E2DE/, "El tema claro debe partir de un gris cÃ¡lido, no de blanco puro.");
+assert.match(settings, /#E4E2DE/, "La muestra del tema claro debe reflejar el fondo gris cÃ¡lido real.");
 assert.doesNotMatch(personalEconomy, /<FiscalCalendar\b/, "El calendario fiscal no debe volver a mostrarse en EconomÃ­a.");
 assert.match(quoteRow, /Sparkline\(\{ points, positive \}/, "La minigrÃ¡fica debe recibir el signo real de la variaciÃ³n.");
 assert.match(quoteRow, /<Sparkline points=\{sparkline\} positive=\{positive\}/, "Las minigrÃ¡ficas negativas deben usar rojo granate.");
+assert.match(insights, /Actualizado/, "Insights debe indicar cuÃ¡ndo se actualizaron sus datos.");
+assert.match(insights, /refreshInsights/, "El botÃ³n Actualizar de Insights debe regenerar los datos, no repetir la misma lectura cacheada.");
+assert.match(mockData, /clean === "\/api\/insights\/refresh"/, "El entorno demo debe soportar actualizar Insights.");
+assert.match(app, /ToastProvider/, "La aplicaciÃ³n debe tener avisos breves globales de Ã©xito y error.");
+assert.doesNotMatch(balance, /Cerrar mes|Cierre de|snapshot/, "El Balance general no debe incluir cierres mensuales ni snapshots.");
+assert.match(styles, /--bg-app:\s*#E4E2DE/, "El tema claro debe ser suficientemente gris para reducir deslumbramiento.");
+assert.match(styles, /clamp\(11px, 0\.55vw, 13px\)/, "Los textos auxiliares deben adaptarse a pantallas de alta resoluciÃ³n.");
 
 console.log("UI quality contracts passed.");

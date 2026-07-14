@@ -646,6 +646,16 @@ export function getMockResponse<T>(path: string, init?: RequestInit): T {
   if (clean === "/api/categories") return mockCategories as T;
   if (clean === "/api/budgets") return [] as T;
   if (clean === "/api/budgets/comparison") return [] as T;
+  if (clean === "/api/insights" || clean === "/api/insights/refresh") {
+    return {
+      period: "2026-07",
+      generated_at: new Date().toISOString(),
+      data_status: "insufficient",
+      insights: [],
+      summary: { total: 0, positive: 0, info: 0, warning: 0, critical: 0, partial: 0, insufficient: 1 },
+    } as T;
+  }
+  if (clean === "/api/insights/monthly-review") return null as T;
   if (clean === "/api/transactions") return mockTransactions as T;
   if (clean === "/api/dashboard/overview") return mockOverview as T;
   if (clean === "/api/dashboard/spending/years") return { years: [2026] } as T;

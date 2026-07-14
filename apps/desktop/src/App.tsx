@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import RootLayout from "@/app/layout/RootLayout";
 import StartupExperience from "@/app/StartupExperience";
+import { ToastProvider } from "@/app/ToastProvider";
 import AssistantPage from "@/features/assistant/AssistantPage";
 import DashboardPage from "@/features/dashboard/DashboardPage";
 import EconomyPage from "@/features/economy/EconomyPage";
@@ -15,7 +16,7 @@ import InstrumentDetailPage from "@/features/markets/detail/InstrumentDetailPage
 import SettingsPage from "@/features/settings/SettingsPage";
 
 export default function App() {
-  return <>
+  return <ToastProvider>
     <StartupExperience />
     <Routes>
       <Route path="/" element={<RootLayout />}>
@@ -40,5 +41,5 @@ export default function App() {
         <Route path="welcome" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
-  </>;
+  </ToastProvider>;
 }

@@ -36,8 +36,8 @@
   --font-courier-new: "Courier New", ui-monospace, monospace;
 
   /* Tipografía — Escala exacta DESIGN.md */
-  --text-caption: 10px;      --leading-caption: 1.83;     --tracking-caption: -0.37px;
-  --text-body: 14px;         --leading-body: 1.43;        --tracking-body: -0.22px;
+  --text-caption: clamp(11px, 0.55vw, 13px); --leading-caption: 1.65; --tracking-caption: -0.2px;
+  --text-body: clamp(15px, 0.72vw, 17px);    --leading-body: 1.43; --tracking-body: -0.18px;
   --text-heading-sm: 19px;   --leading-heading-sm: 1.21;  --tracking-heading-sm: -0.28px;
   --text-heading: 24px;      --leading-heading: 1.17;     --tracking-heading: -0.24px;
   --text-heading-lg: 32px;   --leading-heading-lg: 1.14;  --tracking-heading-lg: -0.32px;
@@ -91,19 +91,23 @@
 
 /* ─── Tema Claro ─── */
 [data-theme="light"] {
-  --bg-app: #EFEEEB;
+  --bg-app: #E4E2DE;
   --bg-sidebar: #1d1d1f;
-  --bg-surface: #F8F7F4;
-  --bg-card: #F8F7F4;
-  --bg-card-elevated: #F2F1EE;
-  --bg-interactive: #E9E8E4;
+  --bg-surface: #EEECE8;
+  --bg-card: #EEECE8;
+  --bg-card-elevated: #E8E6E1;
+  --bg-interactive: #DDDAD4;
   --text-primary: #1d1d1f;
   --text-secondary: #86868b;
   --text-muted: rgba(29, 29, 31, 0.5);
-  --border-soft: #DCDAD5;
-  --border-strong: #C7C4BD;
+  --border-soft: #D2CFC8;
+  --border-strong: #BDB9B1;
   --divider-soft: rgba(29, 29, 31, 0.1);
-  --hairline-dark: #DCDAD5;
+  --hairline-dark: #D2CFC8;
+}
+
+@media (min-width: 1800px) {
+  html { font-size: 17px; }
 }
 
 /* ─── Reset base ─── */
