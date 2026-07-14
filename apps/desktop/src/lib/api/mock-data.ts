@@ -78,11 +78,11 @@ const mockAccounts: Account[] = [
 ];
 
 const mockCategories: Category[] = [
-  { id: "cat-1", name: "Alimentación", parent_id: null, type: "expense", icon: null, color: "#ec7e00", is_system: true, created_at: "2024-01-01T00:00:00", updated_at: "2024-01-01T00:00:00" },
-  { id: "cat-2", name: "Transporte", parent_id: null, type: "expense", icon: null, color: "#494fdf", is_system: true, created_at: "2024-01-01T00:00:00", updated_at: "2024-01-01T00:00:00" },
-  { id: "cat-3", name: "Ocio", parent_id: null, type: "expense", icon: null, color: "#00a87e", is_system: true, created_at: "2024-01-01T00:00:00", updated_at: "2024-01-01T00:00:00" },
-  { id: "cat-4", name: "Casa", parent_id: null, type: "expense", icon: null, color: "#e23b4a", is_system: true, created_at: "2024-01-01T00:00:00", updated_at: "2024-01-01T00:00:00" },
-  { id: "cat-5", name: "Salario", parent_id: null, type: "income", icon: null, color: "#4f55f1", is_system: true, created_at: "2024-01-01T00:00:00", updated_at: "2024-01-01T00:00:00" },
+  { id: "cat-1", name: "Alimentación", parent_id: null, type: "expense", icon: null, color: "#C28A4A", is_system: true, created_at: "2024-01-01T00:00:00", updated_at: "2024-01-01T00:00:00" },
+  { id: "cat-2", name: "Transporte", parent_id: null, type: "expense", icon: null, color: "#5B7EA3", is_system: true, created_at: "2024-01-01T00:00:00", updated_at: "2024-01-01T00:00:00" },
+  { id: "cat-3", name: "Ocio", parent_id: null, type: "expense", icon: null, color: "#C95B66", is_system: true, created_at: "2024-01-01T00:00:00", updated_at: "2024-01-01T00:00:00" },
+  { id: "cat-4", name: "Casa", parent_id: null, type: "expense", icon: null, color: "#C95B66", is_system: true, created_at: "2024-01-01T00:00:00", updated_at: "2024-01-01T00:00:00" },
+  { id: "cat-5", name: "Salario", parent_id: null, type: "income", icon: null, color: "#2F8F6B", is_system: true, created_at: "2024-01-01T00:00:00", updated_at: "2024-01-01T00:00:00" },
 ];
 
 const mockTransactions: Transaction[] = [
@@ -644,6 +644,18 @@ export function getMockResponse<T>(path: string, init?: RequestInit): T {
 
   if (clean === "/api/accounts") return mockAccounts as T;
   if (clean === "/api/categories") return mockCategories as T;
+  if (clean === "/api/budgets") return [] as T;
+  if (clean === "/api/budgets/comparison") return [] as T;
+  if (clean === "/api/insights" || clean === "/api/insights/refresh") {
+    return {
+      period: "2026-07",
+      generated_at: new Date().toISOString(),
+      data_status: "insufficient",
+      insights: [],
+      summary: { total: 0, positive: 0, info: 0, warning: 0, critical: 0, partial: 0, insufficient: 1 },
+    } as T;
+  }
+  if (clean === "/api/insights/monthly-review") return null as T;
   if (clean === "/api/transactions") return mockTransactions as T;
   if (clean === "/api/dashboard/overview") return mockOverview as T;
   if (clean === "/api/dashboard/spending/years") return { years: [2026] } as T;

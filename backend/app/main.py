@@ -66,6 +66,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     from app.modules.market_intelligence.ingestion.startup import launch_startup_ingest
     launch_startup_ingest()
 
+    from app.modules.ai.startup import launch_startup_brief
+    launch_startup_brief()  # AI-3 D1: auto-genera el brief mensual si falta
+
     yield
 
 

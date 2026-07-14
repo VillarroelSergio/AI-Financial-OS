@@ -14,11 +14,11 @@ export function PageHeader({
   actions?: ReactNode;
 }) {
   return (
-    <header className="flex items-start justify-between gap-24 pb-16">
+    <header className="flex items-start justify-between gap-10 pb-10 md:pb-12">
       <div className="min-w-0">
-        {eyebrow && <p className="mb-8 text-[14px] leading-none tracking-[-.7px] text-ink">{eyebrow}</p>}
-        <h1 className="font-display text-[80px] leading-none tracking-[-2px] text-ink">{title}</h1>
-        <p className="mt-16 max-w-[640px] text-body-md text-charcoal">{description}</p>
+        {eyebrow && <p className="mb-4 text-[13px] leading-none tracking-[-.5px] text-ink">{eyebrow}</p>}
+        <h1 className="font-display text-[52px] leading-[.96] tracking-[-1.5px] text-ink sm:text-[58px] md:text-[64px]">{title}</h1>
+        <p className="mt-7 max-w-[640px] text-body-md text-charcoal">{description}</p>
       </div>
       {actions && <div className="flex shrink-0 items-center gap-8">{actions}</div>}
     </header>

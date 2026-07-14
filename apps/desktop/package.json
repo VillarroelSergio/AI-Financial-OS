@@ -10,6 +10,8 @@
     "tauri": "tauri",
     "ux:snapshots": "npm install --prefix ../../tools/ux-snapshot && npm run snapshots --prefix ../../tools/ux-snapshot",
     "ux:snapshots:headed": "npm install --prefix ../../tools/ux-snapshot && npm run snapshots:headed --prefix ../../tools/ux-snapshot",
+    "ux:snapshots:real": "npm install --prefix ../../tools/ux-snapshot && npm run snapshots:real --prefix ../../tools/ux-snapshot",
+    "ux:snapshots:real:headed": "npm install --prefix ../../tools/ux-snapshot && npm run snapshots:real:headed --prefix ../../tools/ux-snapshot",
     "ux:report": "npm run report --prefix ../../tools/ux-snapshot",
     "screenshot:mercados": "npm install --prefix ../../tools/ux-snapshot && npm run snapshots:mercados --prefix ../../tools/ux-snapshot",
     "screenshot:mercados:headed": "npm install --prefix ../../tools/ux-snapshot && npm run snapshots:mercados:headed --prefix ../../tools/ux-snapshot"

@@ -6,6 +6,7 @@ distingue la corrida en curso de la última completada, protegido con lock.
 """
 from __future__ import annotations
 
+import logging
 import time
 from datetime import datetime, timezone
 from threading import Lock, Thread
@@ -16,10 +17,15 @@ from app.modules.market_intelligence.ingestion.runner import run_ingestion
 
 # Frecuencia del tick. El refresco real lo decide el scheduler por item; el tick solo debe
 # ser lo bastante fino para no retrasar una serie diaria más de una hora.
+logger = logging.getLogger("market_intelligence.startup")
+
 TICK_SECONDS = 3600
+# El histórico profundo se baja una vez (solo faltantes) y luego se refresca a diario.
+HISTORY_REFRESH_SECONDS = 86400
 
 _lock = Lock()
 _status: dict = {"current": None, "last_run": None}
+_last_history_refresh: datetime | None = None
 
 
 def get_ingest_status() -> dict:
@@ -86,11 +92,44 @@ def _run_due() -> None:
             _status["current"] = None
 
 
+def _backfill_history_once() -> None:
+    """Histórico profundo la primera vez (solo instrumentos sin serie). Idempotente:
+    en reinicios con datos ya presentes no baja nada. En background, nunca bloquea la UI."""
+    global _last_history_refresh
+    from app.modules.market_intelligence.ingestion.history_backfill import backfill_all
+
+    try:
+        n = backfill_all(years=5, only_missing=True)
+        if n:
+            logger.info("startup history backfill: %d filas", n)
+    except Exception as exc:  # el histórico es best-effort; no debe tumbar la ingesta
+        logger.warning("startup history backfill falló: %s", exc)
+    _last_history_refresh = datetime.now(timezone.utc)
+
+
+def _refresh_history_if_due() -> None:
+    """Refresco diario de la cola de la serie para que la ficha no se congele.
+    ponytail: re-baja 1 año (idempotente); pasar a ventana corta si algún proveedor limita."""
+    global _last_history_refresh
+    now = datetime.now(timezone.utc)
+    if _last_history_refresh and (now - _last_history_refresh).total_seconds() < HISTORY_REFRESH_SECONDS:
+        return
+    from app.modules.market_intelligence.ingestion.history_backfill import backfill_all
+
+    try:
+        backfill_all(years=1, only_missing=False)
+    except Exception as exc:
+        logger.warning("history refresh falló: %s", exc)
+    _last_history_refresh = now
+
+
 def launch_startup_ingest() -> None:
     """Tick de ingesta por frecuencia mientras la app viva (primer tick inmediato)."""
     def _loop() -> None:
+        _backfill_history_once()  # una vez, antes del primer tick
         while True:
             _run_due()
+            _refresh_history_if_due()
             time.sleep(TICK_SECONDS)
 
     Thread(target=_loop, daemon=True).start()

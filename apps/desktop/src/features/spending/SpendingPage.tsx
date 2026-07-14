@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { CalendarDays, ChevronLeft, ChevronRight, ReceiptText, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import { Bar, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ChartCard, EmptyState, KpiCard, LoadingState, PageHeader } from "@/components/ui/Dashboard";
@@ -8,14 +9,15 @@ import type { CategorySpending } from "@/lib/api/dashboard";
 import ExpenseCategoryDetailDrawer from "./ExpenseCategoryDetailDrawer";
 
 // Paleta validada (banda de luminosidad, CVD y contraste sobre superficie oscura)
-const EXPENSE_COLOR = "#7c83ff";
-const INCOME_COLOR = "#1cab84";
+const EXPENSE_COLOR = "#C95B66";
+const INCOME_COLOR = "#2F8F6B";
 const SAVINGS_LINE = "#a8adb3";
 const MONTH_LABEL = new Intl.DateTimeFormat("es-ES", { month: "short" });
 const currentMonth = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; };
 const moveMonth = (value: string, delta: number) => { const [y, m] = value.split("-").map(Number); const d = new Date(y, m - 1 + delta, 1); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`; };
 
 export default function SpendingPage() {
+  const navigate = useNavigate();
   const [month, setMonth] = useState(currentMonth);
   const initialYear = Number(currentMonth().slice(0, 4));
   const [year, setYear] = useState(initialYear);
@@ -51,6 +53,14 @@ export default function SpendingPage() {
     }), { category: "Otros", category_id: "otros", amount: "0", percentage: 0 });
     return [...major, other];
   }, [data]);
+  const selectedTrendIndex = trendData.findIndex((point) => point.month === month);
+  const previousExpense = selectedTrendIndex > 0 ? trendData[selectedTrendIndex - 1]?.expense : undefined;
+  const expenseDelta = previousExpense != null ? expense - previousExpense : null;
+  const unusualCategory = categories.find((category) => category.percentage >= 35);
+  const openCategoryTransactions = (category: CategorySpending) => {
+    const categoryId = category.category_id ?? category.category;
+    navigate(`/finances?tab=movimientos&category=${encodeURIComponent(categoryId)}`);
+  };
 
   if (loading) return <LoadingState label="Analizando el periodo" />;
 
@@ -96,6 +106,21 @@ export default function SpendingPage() {
         <div className="col-span-3"><KpiCard label="Gasto medio diario" value={formatCurrency(data?.average_daily_expense ?? "0")} hint={`${data?.transaction_count ?? 0} transacciones`} icon={CalendarDays} /></div>
       </div>
 
+      <section className="grid gap-4 lg:grid-cols-2">
+        <div className="rounded-lg border border-hairline-dark bg-primary/10 p-5">
+          <p className="text-xs text-primary-bright">Comparativa con el mes anterior</p>
+          {expenseDelta == null ? <p className="mt-2 text-sm text-stone">Aún no hay un periodo previo comparable.</p> : <>
+            <p className={`financial-number mt-2 text-xl font-semibold ${expenseDelta > 0 ? "text-accent-danger" : "text-accent-teal"}`}>{expenseDelta > 0 ? "+" : ""}{formatCurrency(expenseDelta)}</p>
+            <p className="mt-1 text-sm text-stone">{expenseDelta > 0 ? "Has gastado más que el mes anterior." : "Has gastado menos que el mes anterior."}</p>
+          </>}
+        </div>
+        {unusualCategory && <div className="rounded-lg border border-accent-warning/35 bg-accent-warning/10 p-5">
+          <p className="text-xs text-accent-warning">Categoria fuera de lo normal</p>
+          <p className="mt-2 text-sm font-semibold text-on-dark">{unusualCategory.category} concentra el {unusualCategory.percentage.toFixed(1)}% del gasto.</p>
+          <button type="button" onClick={() => openCategoryTransactions(unusualCategory)} className="ui-pressable mt-3 text-sm text-primary-bright hover:underline">Revisar movimientos</button>
+        </div>}
+      </section>
+
       {!categories.length ? (
         <EmptyState icon={ReceiptText} title="No hay movimientos este periodo" description="Importa o registra movimientos para ver porcentajes por categoria y evolucion de ahorro." />
       ) : (
@@ -132,7 +157,7 @@ export default function SpendingPage() {
           <ChartCard className="col-span-6" title="Gasto por categoria" description="Importe y porcentaje sobre el gasto del periodo">
             <div className="space-y-5">
               {categories.map((cat) => (
-                <button key={cat.category_id ?? cat.category} type="button" onClick={() => setSelectedCategory(cat)} className="block w-full rounded-lg text-left transition-colors hover:bg-white/[0.03] focus:outline-none focus:ring-1 focus:ring-primary">
+                <button key={cat.category_id ?? cat.category} type="button" onClick={() => setSelectedCategory(cat)} className="ui-pressable block w-full rounded-lg text-left transition-colors hover:bg-white/[0.03] focus:outline-none focus:ring-1 focus:ring-primary">
                   <div className="flex items-center justify-between gap-4">
                     <span className="truncate text-sm">{cat.category}</span>
                     <div className="financial-number text-right text-sm shrink-0">
@@ -153,7 +178,7 @@ export default function SpendingPage() {
               <div className="rounded-lg border border-hairline-dark bg-primary/10 p-4">
                 <p className="text-xs text-primary-bright">Mayor categoria</p>
                 <p className="mt-2 font-semibold">{categories[0]?.category}</p>
-                <p className="mt-1 text-sm text-stone">{categories[0]?.percentage.toFixed(1)}% del gasto.</p>
+                <button type="button" onClick={() => categories[0] && openCategoryTransactions(categories[0])} className="ui-pressable mt-1 text-sm text-primary-bright hover:underline">{categories[0]?.percentage.toFixed(1)}% del gasto · Ver movimientos</button>
               </div>
               <div className="rounded-lg border border-hairline-dark bg-white/[.035] p-4">
                 <p className="text-xs text-stone">Base del porcentaje</p>

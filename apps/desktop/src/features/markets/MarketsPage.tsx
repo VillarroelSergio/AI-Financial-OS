@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { Activity, RefreshCw } from "lucide-react";
 import { PageHeader } from "@/components/ui/Dashboard";
+import { getSparklines } from "@/lib/api/market-intelligence";
 import { useMarketsMI } from "@/lib/hooks/useMarketIntelligence";
 import QuoteRow from "./components/QuoteRow";
 import QualityBadge from "./components/QualityBadge";
@@ -26,7 +28,23 @@ function LoadingSkeleton({ isIngesting }: { isIngesting: boolean }) {
 
 export default function MarketsPage() {
   const { market, forex, bonds, ingestStatus, loading, error, refetch } = useMarketsMI();
+  const [sparklines, setSparklines] = useState<Record<string, number[]>>({});
   const [activeTab, setActiveTab] = useState<Tab>("indices");
+
+  // MKT-8: una sola llamada batch para todas las filas con histórico (índices/cripto/commodities).
+  useEffect(() => {
+    const codes = [
+      ...(market?.indices ?? []),
+      ...(market?.crypto ?? []),
+      ...(market?.commodities ?? []),
+    ].map((q) => q.catalog_item_id);
+    if (!codes.length) return;
+    let alive = true;
+    getSparklines(codes)
+      .then((r) => { if (alive) setSparklines(r); })
+      .catch(() => { if (alive) setSparklines({}); });
+    return () => { alive = false; };
+  }, [market]);
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const isIngesting = ingestStatus?.phase === "running";
@@ -66,7 +84,7 @@ export default function MarketsPage() {
   ];
 
   return (
-    <div className="p-8 space-y-6 max-w-[1400px]">
+    <div className="p-8 max-w-[1500px] mx-auto space-y-6">
       <PageHeader
         eyebrow="Market intelligence"
         title="Mercados"
@@ -134,13 +152,13 @@ export default function MarketsPage() {
           {market && market.indices.length > 0 && (
             <>
               <div className="px-6 pt-4 pb-2"><span className="text-caption text-mute uppercase tracking-widest font-medium">Indices</span></div>
-              <div className="divide-y divide-divider-soft">{market.indices.map((q) => <QuoteRow key={q.catalog_item_id} quote={q} />)}</div>
+              <div className="divide-y divide-divider-soft">{market.indices.map((q) => <QuoteRow key={q.catalog_item_id} quote={q} sparkline={sparklines[q.catalog_item_id]} />)}</div>
             </>
           )}
           {market && market.crypto.length > 0 && (
             <>
               <div className="border-t border-hairline-dark px-6 pt-4 pb-2"><span className="text-caption text-mute uppercase tracking-widest font-medium">Criptomonedas</span></div>
-              <div className="divide-y divide-divider-soft">{market.crypto.map((q) => <QuoteRow key={q.catalog_item_id} quote={q} />)}</div>
+              <div className="divide-y divide-divider-soft">{market.crypto.map((q) => <QuoteRow key={q.catalog_item_id} quote={q} sparkline={sparklines[q.catalog_item_id]} />)}</div>
             </>
           )}
           {(!market || (market.indices.length === 0 && market.crypto.length === 0)) && (
@@ -151,7 +169,7 @@ export default function MarketsPage() {
 
       {!loading && activeTab === "commodities" && (
         <div className="premium-card rounded-lg overflow-hidden">
-          {market && market.commodities.length > 0 ? <div className="divide-y divide-divider-soft">{market.commodities.map((q) => <QuoteRow key={q.catalog_item_id} quote={q} />)}</div> : <EmptySection categories={["commodities"]} fallbackText="Sin datos de materias primas disponibles." />}
+          {market && market.commodities.length > 0 ? <div className="divide-y divide-divider-soft">{market.commodities.map((q) => <QuoteRow key={q.catalog_item_id} quote={q} sparkline={sparklines[q.catalog_item_id]} />)}</div> : <EmptySection categories={["commodities"]} fallbackText="Sin datos de materias primas disponibles." />}
         </div>
       )}
 
@@ -160,13 +178,13 @@ export default function MarketsPage() {
           {forex && forex.rates.length > 0 ? (
             <div className="divide-y divide-divider-soft">
               {forex.rates.map((r) => (
-                <div key={r.catalog_item_id} className="grid grid-cols-[1fr_120px_100px] items-center gap-4 px-6 py-3">
+                <Link key={r.catalog_item_id} to={`/markets/${encodeURIComponent(r.catalog_item_id)}`} className="grid grid-cols-[1fr_120px_100px] items-center gap-4 px-6 py-3 hover:bg-white/[.03] transition-colors">
                   <div>
                     <p className="text-body-sm text-on-dark">{r.base_currency ?? "-"} / {r.quote_currency ?? "-"}</p>
                   </div>
                   <p className="text-body-sm font-semibold text-on-dark tabular-nums text-right">{r.rate != null ? r.rate.toLocaleString("es-ES", { minimumFractionDigits: 4, maximumFractionDigits: 4 }) : "-"}</p>
                   <p className="text-caption text-stone text-right">{r.date ?? "-"}</p>
-                </div>
+                </Link>
               ))}
             </div>
           ) : <div className="p-8 text-center"><p className="text-stone text-body-sm">Sin datos de divisas. No se mezclan bonos ni macro en esta seccion.</p></div>}

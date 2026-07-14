@@ -5,7 +5,11 @@ from datetime import datetime, timezone
 import requests
 
 from app.modules.market_intelligence.ingestion.adapters.base import BaseAdapter
-from app.modules.market_intelligence.ingestion.models import AdapterResult, MarketQuote
+from app.modules.market_intelligence.ingestion.models import (
+    AdapterResult,
+    HistoricalPrice,
+    MarketQuote,
+)
 
 _COINS = {"bitcoin": "bitcoin", "ethereum": "ethereum", "solana": "solana", "xrp": "ripple"}
 _BASE_URL = "https://api.coingecko.com/api/v3/coins/markets"
@@ -30,6 +34,33 @@ def _fetch_all_markets() -> list:
     data = r.json()
     _cache = (time.time(), data)
     return data
+
+
+def fetch_crypto_history(catalog_id: str, years: int | None = None) -> list[HistoricalPrice]:
+    """MKT-6: serie EOD de cripto desde CoinGecko market_chart. Solo `close` (la API no da
+    OHLC diario en free tier). El free tier tope a 365 días → profundidad máx 1 año."""
+    coin = _COINS[catalog_id]
+    days = min((years or 1) * 365, 365)
+    url = f"https://api.coingecko.com/api/v3/coins/{coin}/market_chart?vs_currency=usd&days={days}"
+    r = requests.get(url, timeout=20)
+    r.raise_for_status()
+    prices = r.json().get("prices") or []
+    now = datetime.now(timezone.utc)
+    by_date: dict = {}  # último precio del día gana (market_chart trae varios puntos intradía)
+    for ts, price in prices:
+        by_date[datetime.fromtimestamp(ts / 1000, tz=timezone.utc).date()] = price
+    out: list[HistoricalPrice] = []
+    for d, price in sorted(by_date.items()):
+        rec = HistoricalPrice(
+            provider="CoinGecko", source=url, retrieved_at=now,
+            country="GLOBAL", region="Global", symbol=catalog_id.upper(), date=d,
+            open=0.0, high=0.0, low=0.0, close=float(price), volume=0.0,
+        )
+        rec.currency = "USD"  # HistoricalPrice no tiene el campo; persist lee getattr
+        out.append(rec)
+    if not out:
+        raise ValueError("CoinGecko market_chart returned no prices")
+    return out
 
 
 class CoinGeckoAdapter(BaseAdapter):

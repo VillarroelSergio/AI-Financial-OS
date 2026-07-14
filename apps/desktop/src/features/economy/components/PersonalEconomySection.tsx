@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { CalendarDays, Home, Landmark, Newspaper, PiggyBank, TrendingDown, TrendingUp, Wallet } from "lucide-react";
+import { Home, Landmark, Newspaper, PiggyBank, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import { formatCurrency } from "@/lib/formatters/currency";
 import type { MacroDataPointMI, PersonalEconomyMI } from "@/lib/types/market-intelligence";
 
@@ -223,6 +223,7 @@ function SavingsYield({ data }: { data: PersonalEconomyMI["savings"] }) {
 }
 
 // ── Calendario fiscal (Fase 2) ───────────────────────────────────────
+/* Fiscal calendar intentionally removed from the Economy experience.
 function FiscalCalendar({ items }: { items: PersonalEconomyMI["fiscal_calendar"] }) {
   return (
     <div className="premium-card rounded-lg p-5 space-y-3">
@@ -251,6 +252,7 @@ function FiscalCalendar({ items }: { items: PersonalEconomyMI["fiscal_calendar"]
 }
 
 // ── Noticias relevantes (Fase 3) ─────────────────────────────────────
+*/
 function RelevantNews({ items }: { items: PersonalEconomyMI["relevant_news"] }) {
   if (items.length === 0) return null;
   return (
@@ -301,7 +303,6 @@ export default function PersonalEconomySection({
         <MortgageSimulator euribor={data.euribor} />
         <RealSalary data={data.real_salary} />
         <SavingsYield data={data.savings} />
-        <FiscalCalendar items={data.fiscal_calendar} />
         <RelevantNews items={data.relevant_news} />
       </div>
     </section>

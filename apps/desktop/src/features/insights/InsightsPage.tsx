@@ -38,7 +38,7 @@ export default function InsightsPage() {
   const [lastDismissedId, setLastDismissedId] = useState<string | null>(null);
 
   // La severidad se filtra en cliente (chips) para que los conteos no colapsen al filtrar.
-  const { data, loading, error, refresh } = useInsights(
+  const { data, loading, error, regenerate } = useInsights(
     {
       period,
       type: typeFilter || undefined,
@@ -117,14 +117,16 @@ export default function InsightsPage() {
             >
               {PERIODS.map((p) => <option key={p} value={p} style={{ backgroundColor: "#1c1c1e", color: "#f5f5f0" }}>{p}</option>)}
             </select>
+            {/* regenerate ejecuta refreshInsights en el hook; no reutiliza la lectura cacheada. */}
             <button
-              onClick={refresh}
+              onClick={regenerate}
               disabled={loading}
               className="inline-flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2 text-xs text-on-dark hover:bg-white/10 disabled:opacity-50 transition-colors"
             >
               <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
               Actualizar
             </button>
+            {data?.generated_at && <span className="text-xs text-stone">Actualizado {new Date(data.generated_at).toLocaleString("es-ES", { dateStyle: "medium", timeStyle: "short" })}</span>}
           </div>
         }
       />
@@ -174,8 +176,8 @@ export default function InsightsPage() {
       {error && !loading && (
         <ErrorState
           title="No se han podido generar los insights"
-          description="Inténtalo de nuevo o revisa el estado del backend."
-          onRetry={refresh}
+          description="No se han podido calcular las señales con tus datos locales. Comprueba que el backend esté disponible o importa movimientos de al menos un mes: necesitas datos suficientes para analizar tendencias."
+          onRetry={regenerate}
         />
       )}
 

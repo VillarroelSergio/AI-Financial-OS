@@ -6,7 +6,7 @@ import type { BudgetCreate } from "@/lib/api/budgets";
 import { useBudgetComparison, useBudgets } from "@/lib/hooks/useBudgets";
 
 export default function BudgetTab() {
-  const { add, refresh } = useBudgets();
+  const { add } = useBudgets();
   const { data, loading, error, refresh: refreshComparison } = useBudgetComparison();
   const [showModal, setShowModal] = useState(false);
 
@@ -21,18 +21,21 @@ export default function BudgetTab() {
 
   if (loading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <RefreshCw size={20} className="animate-spin text-stone" />
-        <span className="ml-2 text-sm text-stone">Cargando presupuestos...</span>
+      <div className="premium-card flex h-48 items-center justify-center rounded-xl">
+        <div className="flex items-center gap-2 text-sm text-stone">
+          <RefreshCw size={18} className="animate-spin text-stone" />
+          <span>Preparando la planificaciÃ³n...</span>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex h-64 flex-col items-center justify-center gap-3">
-        <p className="text-sm text-accent-danger">{error}</p>
-        <button onClick={refresh} className="rounded-lg bg-white/5 px-4 py-2 text-sm text-on-dark hover:bg-white/8">Reintentar</button>
+      <div className="premium-card flex h-48 flex-col items-center justify-center gap-3 rounded-xl px-6 text-center">
+        <p className="text-sm font-medium text-on-dark">No se ha podido cargar la comparativa de presupuestos</p>
+        <p className="text-xs text-stone">Vuelve a intentarlo; tus datos no se han modificado.</p>
+        <button onClick={refreshComparison} className="mercury-button rounded-lg px-4 py-2 text-sm text-on-dark">Reintentar</button>
       </div>
     );
   }

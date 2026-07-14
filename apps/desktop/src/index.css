@@ -14,20 +14,20 @@
   --color-graphite: #333336;
   --color-silver-mist: #cccccc;
   --color-smoke: #424245;
-  --color-apple-blue: #0071e3;
-  --color-link-blue: #0066cc;
-  --color-halo-blue: #2997ff;
-  --color-signal-orange: #f56900;
-  --color-iris-violet: #8668ff;
-  --color-reef-teal: #00a1b3;
+  --color-apple-blue: #5B7EA3;
+  --color-link-blue: #5B7EA3;
+  --color-halo-blue: #7C9AB5;
+  --color-signal-orange: #C28A4A;
+  --color-iris-violet: #7D93A6;
+  --color-reef-teal: #2F8F6B;
 
   /* Funcionales compartidos */
-  --primary: #0071e3;
-  --positive: #008163;
-  --negative: #ee2526;
-  --warning: #ff5c00;
-  --info: #1b73e6;
-  --accent: #f56900;
+  --primary: #5B7EA3;
+  --positive: #2F8F6B;
+  --negative: #C95B66;
+  --warning: #C28A4A;
+  --info: #5B7EA3;
+  --accent: #C28A4A;
   --on-primary: #ffffff;
 
   /* Tipografía — Familias */
@@ -36,8 +36,8 @@
   --font-courier-new: "Courier New", ui-monospace, monospace;
 
   /* Tipografía — Escala exacta DESIGN.md */
-  --text-caption: 10px;      --leading-caption: 1.83;     --tracking-caption: -0.37px;
-  --text-body: 14px;         --leading-body: 1.43;        --tracking-body: -0.22px;
+  --text-caption: clamp(11px, 0.55vw, 13px); --leading-caption: 1.65; --tracking-caption: -0.2px;
+  --text-body: clamp(15px, 0.72vw, 17px);    --leading-body: 1.43; --tracking-body: -0.18px;
   --text-heading-sm: 19px;   --leading-heading-sm: 1.21;  --tracking-heading-sm: -0.28px;
   --text-heading: 24px;      --leading-heading: 1.17;     --tracking-heading: -0.24px;
   --text-heading-lg: 32px;   --leading-heading-lg: 1.14;  --tracking-heading-lg: -0.32px;
@@ -91,19 +91,23 @@
 
 /* ─── Tema Claro ─── */
 [data-theme="light"] {
-  --bg-app: #f5f5f7;
+  --bg-app: #E4E2DE;
   --bg-sidebar: #1d1d1f;
-  --bg-surface: #ffffff;
-  --bg-card: #ffffff;
-  --bg-card-elevated: #f5f5f7;
-  --bg-interactive: #f5f5f7;
+  --bg-surface: #EEECE8;
+  --bg-card: #EEECE8;
+  --bg-card-elevated: #E8E6E1;
+  --bg-interactive: #DDDAD4;
   --text-primary: #1d1d1f;
   --text-secondary: #86868b;
   --text-muted: rgba(29, 29, 31, 0.5);
-  --border-soft: #e5e5e5;
-  --border-strong: #cccccc;
+  --border-soft: #D2CFC8;
+  --border-strong: #BDB9B1;
   --divider-soft: rgba(29, 29, 31, 0.1);
-  --hairline-dark: #e5e5e5;
+  --hairline-dark: #D2CFC8;
+}
+
+@media (min-width: 1800px) {
+  html { font-size: 17px; }
 }
 
 /* ─── Reset base ─── */
@@ -249,7 +253,7 @@ table {
 }
 
 ::selection {
-  background: rgba(0, 113, 227, 0.3);
+  background: rgba(91, 126, 163, 0.3);
   color: var(--text-primary);
 }
 
@@ -292,12 +296,12 @@ table {
 }
 
 @keyframes flash-up {
-  0%   { background-color: rgba(0, 129, 99, .18); }
+  0%   { background-color: rgba(47, 143, 107, .18); }
   100% { background-color: transparent; }
 }
 
 @keyframes flash-down {
-  0%   { background-color: rgba(238, 37, 38, .16); }
+  0%   { background-color: rgba(201, 91, 102, .16); }
   100% { background-color: transparent; }
 }
 
@@ -309,3 +313,81 @@ table {
   0%, 100% { opacity: 1; }
   50%       { opacity: .3; }
 }
+
+/* Entrada de la aplicacion: una señal breve de llegada, no una pantalla de carga. */
+.app-launch-stage {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  background: var(--bg-app);
+  animation: app-launch-stage-exit 2400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.app-launch-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 304px;
+  padding: 21px 24px;
+  border: 1px solid var(--border-soft);
+  border-radius: 26px;
+  background: var(--bg-card);
+  animation: app-launch-card-arrive 2180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  will-change: transform, opacity;
+}
+
+.app-launch-glyph {
+  position: relative;
+  display: flex;
+  align-items: end;
+  gap: 4px;
+  width: 52px;
+  height: 46px;
+  overflow: hidden;
+}
+
+.app-launch-bar {
+  width: 11px;
+  border-radius: 999px;
+  transform: scaleY(0);
+  transform-origin: bottom;
+  animation: app-launch-bar-arrive 420ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.app-launch-bar-jade { height: 25px; background: var(--positive); animation-delay: 120ms; }
+.app-launch-bar-blue { height: 39px; background: var(--primary); animation-delay: 190ms; }
+.app-launch-bar-garnet { height: 19px; background: var(--negative); animation-delay: 260ms; }
+
+.app-launch-trace {
+  position: absolute;
+  right: 0;
+  bottom: 3px;
+  left: 0;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--text-primary);
+  transform: scaleX(0);
+  transform-origin: left;
+  animation: app-launch-trace-arrive 320ms 340ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.app-launch-copy { display: grid; gap: 2px; }
+.app-launch-title { color: var(--text-primary); font-size: 18px; font-weight: 650; letter-spacing: -0.025em; }
+.app-launch-subtitle { color: var(--text-secondary); font-size: 12px; letter-spacing: 0.01em; }
+
+@keyframes app-launch-stage-exit {
+  0%, 82% { opacity: 1; visibility: visible; }
+  100% { opacity: 0; visibility: hidden; }
+}
+
+@keyframes app-launch-card-arrive {
+  0% { opacity: 0; transform: translateY(16px) scale(0.94); }
+  24%, 82% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-7px) scale(1.015); }
+}
+
+@keyframes app-launch-bar-arrive { to { transform: scaleY(1); } }
+@keyframes app-launch-trace-arrive { to { transform: scaleX(1); } }

@@ -9,6 +9,7 @@ from app.modules.market_intelligence.api.schemas import (
     BondSnapshotOut,
     EconomyOverviewOut,
     ForexSnapshotOut,
+    InstrumentHistoryOut,
     MacroSnapshotOut,
     MarketSnapshotOut,
     NewsSnapshotOut,
@@ -99,6 +100,21 @@ def get_bond_snapshot():
 @router.get("/snapshot/news", response_model=NewsSnapshotOut)
 def get_news_snapshot(limit: int = Query(default=20, le=100)):
     return service.get_news_snapshot(limit=limit)
+
+
+@router.get("/history/{indicator_code}", response_model=InstrumentHistoryOut)
+def get_instrument_history(indicator_code: str, range: str = Query(default="max")):
+    """MKT-6: serie EOD de un instrumento para la ficha de detalle. Solo lectura desde
+    SQLite; nunca ingesta síncrona. `range` se valida contra la serie real (ECO-2)."""
+    return service.get_instrument_history(indicator_code, range_key=range)
+
+
+@router.get("/sparklines")
+def get_sparklines(codes: str = Query(...), points: int = Query(default=30)) -> dict[str, list[float]]:
+    """MKT-8: últimos cierres por instrumento (codes separados por coma) para mini-gráficas
+    de fila. Una sola consulta, solo lectura."""
+    ids = [c.strip() for c in codes.split(",") if c.strip()]
+    return service.get_sparklines(ids, points=points)
 
 
 @router.get("/ai-datasheet", response_model=AiDatasheetOut)

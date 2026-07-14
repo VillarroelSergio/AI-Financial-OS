@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { getPortfolioEvolution, type PortfolioEvolutionPoint } from "@/lib/api/investments";
 
-const LINE_COLOR = "#5b5ef7";
+const LINE_COLOR = "#5B7EA3";
 const DATE_LABEL = new Intl.DateTimeFormat("es-ES", { month: "short", year: "2-digit" });
 const monthLabel = (m: string) => DATE_LABEL.format(new Date(`${m}-01T00:00:00`));
 

@@ -173,9 +173,39 @@ MIT — ver [LICENSE](LICENSE)
 
 ---
 
-Para usar la herramienta de capturas desde apps/desktop/:
+## UX Snapshots (Capturas automatizadas)
 
+La herramienta de snapshots genera capturas de pantalla de todas las funcionalidades principales. Se ejecuta desde `apps/desktop/`:
 
-npm run ux:snapshots        # captura 8 rutas en headless
-npm run ux:snapshots:headed # ídem con navegador visible
-npm run ux:report           # muestra resumen de la última capt
+### Modo Mock (datos ficticios)
+Genera capturas sin tocar el backend. Los datos son ficticios (útil para layouts y regresiones visuales):
+
+```powershell
+cd apps/desktop
+npm run ux:snapshots        # headless, salida en ux-snapshots/latest/
+npm run ux:snapshots:headed # con navegador visible
+```
+
+### Modo Real (datos del usuario)
+Captura la app con tus **datos reales** de `backend/data/financial.db`. Requiere que el backend esté corriendo en puerto 8010:
+
+```powershell
+# Terminal 1: inicia el backend
+cd backend
+python run_server.py
+
+# Terminal 2: captura con datos reales
+cd apps/desktop
+npm run ux:snapshots:real        # headless, salida en ux-snapshots/real/
+npm run ux:snapshots:real:headed # con navegador visible
+```
+
+**Diferencias:**
+- Mock: Vite + datos ficticios, puerto 1422, salida `ux-snapshots/latest/`
+- Real: Vite + backend real en 8010, puerto 1420, salida `ux-snapshots/real/`
+
+Ambos modos capturan 21 rutas principales (dashboard, inversiones, mercados, transacciones, etc.) y generan `metadata.json` + `UX_REVIEW_CONTEXT.md`.
+
+```powershell
+npm run ux:report           # muestra resumen de la última captura
+```

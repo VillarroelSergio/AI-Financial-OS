@@ -1,15 +1,14 @@
 import { useEffect, useState } from "react";
 import { Bot, Copy, Database, HardDrive, Lock, ShieldCheck } from "lucide-react";
 import { PageHeader } from "@/components/ui/Dashboard";
-import Spinner from "@/components/ui/Spinner";
-import { fetchSettings, updateSetting, type AppSetting } from "@/lib/api/settings";
+import { updateSetting, type AppSetting } from "@/lib/api/settings";
 import { reassignCurrency } from "@/lib/api/transactions";
 import { purgeInactiveAccounts } from "@/lib/api/accounts";
-import { getAiStatus } from "@/features/assistant/api/aiAssistantApi";
 import type { AiStatus } from "@/features/assistant/types/aiAssistant.types";
-import { createBackup, fetchBackups, fetchIntegrity, fetchSecurityStatus, type BackupInfo, type IntegrityCheck, type SecurityStatus } from "@/lib/api/security";
-import { fetchRagDocuments, type RagDocument } from "@/lib/api/rag";
+import { createBackup, fetchSecurityStatus, type BackupInfo, type IntegrityCheck, type SecurityStatus } from "@/lib/api/security";
+import type { RagDocument } from "@/lib/api/rag";
 import { useTheme } from "@/lib/useTheme";
+import { loadSettingsOverview } from "./settingsOverview";
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<AppSetting[]>([]);
@@ -29,22 +28,22 @@ export default function SettingsPage() {
   const [purgeMessage, setPurgeMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.allSettled([fetchSettings(), getAiStatus(), fetchSecurityStatus(), fetchBackups(), fetchIntegrity(), fetchRagDocuments()])
-      .then(([settingsResult, aiResult, securityResult, backupsResult, integrityResult, documentsResult]) => {
-        if (settingsResult.status === "fulfilled") setSettings(settingsResult.value);
-        if (aiResult.status === "fulfilled") setAiStatus(aiResult.value);
-        else setAiError("No disponible");
-        if (securityResult.status === "fulfilled") setSecurity(securityResult.value);
-        if (backupsResult.status === "fulfilled") setBackups(backupsResult.value);
-        if (integrityResult.status === "fulfilled") setIntegrity(integrityResult.value);
-        if (documentsResult.status === "fulfilled") setDocuments(documentsResult.value);
+    loadSettingsOverview()
+      .then((overview) => {
+        setSettings(overview.settings);
+        setAiStatus(overview.aiStatus);
+        setAiError(overview.aiError);
+        setSecurity(overview.security);
+        setBackups(overview.backups);
+        setIntegrity(overview.integrity);
+        setDocuments(overview.documents);
       })
       .finally(() => setLoading(false));
   }, []);
 
   const getValue = (key: string): string => {
     const s = settings.find((item) => item.key === key);
-    if (!s) return "";
+    if (!s) return key === "app.language" ? "es" : key === "app.currency" ? "EUR" : "";
     try {
       return JSON.parse(s.value_json) as string;
     } catch {
@@ -128,16 +127,8 @@ export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const providerStatus = aiStatus?.providers ?? [];
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Spinner />
-      </div>
-    );
-  }
-
   return (
-    <div className="p-8 max-w-[1300px] mx-auto space-y-6">
+    <div className="p-8 max-w-[1300px] mx-auto space-y-6" aria-busy={loading}>
       <PageHeader
         eyebrow="Control local"
         title="Ajustes"
@@ -177,14 +168,14 @@ export default function SettingsPage() {
                     onClick={() => setTheme(t)}
                     className="flex-1 rounded-[28px] p-4 text-left transition-all"
                     style={{
-                      border: theme === t ? "2px solid #0071e3" : "1px solid var(--border-soft)",
-                      background: t === "dark" ? "#000000" : "#f5f5f7",
+                      border: theme === t ? "2px solid var(--primary)" : "1px solid var(--border-soft)",
+                      background: t === "dark" ? "#000000" : "#E4E2DE",
                       cursor: "pointer",
                     }}
                   >
                     <div
                       className="mb-2 h-8 rounded-[10px]"
-                      style={{ background: t === "dark" ? "#1d1d1f" : "#ffffff", border: "1px solid", borderColor: t === "dark" ? "#333336" : "#e5e5e5" }}
+                      style={{ background: t === "dark" ? "#1d1d1f" : "#EEECE8", border: "1px solid", borderColor: t === "dark" ? "#333336" : "#D2CFC8" }}
                     />
                     <p
                       style={{
