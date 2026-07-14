@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="apps/desktop/src-tauri/icons/source-icon.png" width="132" alt="AI Financial OS" />
+<img src="docs/assets/logo.svg" width="132" alt="AI Financial OS" />
 
 # AI Financial OS
 
