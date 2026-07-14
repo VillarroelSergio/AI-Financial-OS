@@ -2,7 +2,7 @@ import { Bar, CartesianGrid, ComposedChart, Line, ResponsiveContainer, Tooltip, 
 import type { SavingsProjection } from "@/lib/api/investments";
 
 const BALANCE_COLOR = "#5b5ef7";
-const INTEREST_COLOR = "#00a87e";
+const INTEREST_COLOR = "var(--positive)";
 const DATE_LABEL = new Intl.DateTimeFormat("es-ES", { month: "short", year: "2-digit" });
 
 const monthLabel = (m: string) => DATE_LABEL.format(new Date(`${m}-01T00:00:00`));

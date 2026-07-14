@@ -144,7 +144,7 @@ export default function InvestmentsPage() {
   };
 
   return (
-    <div className="p-8 max-w-[1500px] mx-auto space-y-xl">
+    <div className="page-shell space-y-xl">
       <PageHeader
         eyebrow="Portfolio desk"
         title="Inversiones"
@@ -364,4 +364,3 @@ export default function InvestmentsPage() {
     </div>
   );
 }
-

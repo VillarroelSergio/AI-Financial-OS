@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Activity, RefreshCw } from "lucide-react";
 import { PageHeader } from "@/components/ui/Dashboard";
 import { getSparklines } from "@/lib/api/market-intelligence";
@@ -27,6 +27,8 @@ function LoadingSkeleton({ isIngesting }: { isIngesting: boolean }) {
 }
 
 export default function MarketsPage() {
+  const [searchParams] = useSearchParams();
+  const region = searchParams.get("region");
   const { market, forex, bonds, ingestStatus, loading, error, refetch } = useMarketsMI();
   const [sparklines, setSparklines] = useState<Record<string, number[]>>({});
   const [activeTab, setActiveTab] = useState<Tab>("indices");
@@ -48,6 +50,9 @@ export default function MarketsPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const isIngesting = ingestStatus?.phase === "running";
+  const visibleIndices = region === "eu"
+    ? (market?.indices ?? []).filter((quote) => ["ES", "EA"].includes(quote.display_country ?? ""))
+    : (market?.indices ?? []);
 
   const ingestFailures = (categories: string[]) =>
     (ingestStatus?.results ?? []).filter((r) => !r.success && categories.includes(r.category));
@@ -84,17 +89,22 @@ export default function MarketsPage() {
   ];
 
   return (
-    <div className="p-8 space-y-6 max-w-[1400px]">
+    <div className="page-shell space-y-6">
       <PageHeader
         eyebrow="Market intelligence"
         title="Mercados"
         description="Terminal compacto con indices, materias primas, divisas y bonos alimentado por Market Intelligence."
         actions={
           <div className="flex items-center gap-2">
+            {region === "eu" && (
+              <Link to="/markets" className="ui-pressable rounded-lg border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary-bright">
+                Europa
+              </Link>
+            )}
             <button
               onClick={handleRefresh}
               disabled={refreshing || loading}
-              className="flex items-center gap-1.5 rounded-lg bg-[var(--bg-interactive)] px-3 py-1.5 text-xs text-stone hover:text-on-dark disabled:opacity-50 transition-colors"
+              className="ui-pressable flex items-center gap-1.5 rounded-lg bg-[var(--bg-interactive)] px-3 py-1.5 text-xs text-stone hover:text-on-dark disabled:opacity-50"
             >
               <RefreshCw size={12} className={refreshing ? "animate-spin" : ""} />
               {refreshing
@@ -122,7 +132,7 @@ export default function MarketsPage() {
 
       <div className="flex w-fit gap-1 rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] p-1">
         {tabs.map((tab) => (
-          <button key={tab.key} onClick={() => setActiveTab(tab.key)} className={["rounded-lg px-4 py-2 text-body-sm transition-colors", activeTab === tab.key ? "bg-[var(--bg-interactive)] text-on-dark shadow-[inset_0_0_0_1px_rgba(255,255,255,.08)]" : "text-stone hover:text-on-dark"].join(" ")}>
+          <button key={tab.key} onClick={() => setActiveTab(tab.key)} className={["ui-pressable rounded-lg px-4 py-2 text-body-sm", activeTab === tab.key ? "bg-[var(--bg-interactive)] text-on-dark shadow-[inset_0_0_0_1px_rgba(255,255,255,.08)]" : "text-stone hover:text-on-dark"].join(" ")}>
             {tab.label}
           </button>
         ))}
@@ -149,19 +159,19 @@ export default function MarketsPage() {
 
       {!loading && activeTab === "indices" && (
         <div className="premium-card rounded-lg overflow-hidden">
-          {market && market.indices.length > 0 && (
+          {market && visibleIndices.length > 0 && (
             <>
               <div className="px-6 pt-4 pb-2"><span className="text-caption text-mute uppercase tracking-widest font-medium">Indices</span></div>
-              <div className="divide-y divide-divider-soft">{market.indices.map((q) => <QuoteRow key={q.catalog_item_id} quote={q} sparkline={sparklines[q.catalog_item_id]} />)}</div>
+              <div className="divide-y divide-divider-soft">{visibleIndices.map((q) => <QuoteRow key={q.catalog_item_id} quote={q} sparkline={sparklines[q.catalog_item_id]} />)}</div>
             </>
           )}
-          {market && market.crypto.length > 0 && (
+          {region !== "eu" && market && market.crypto.length > 0 && (
             <>
               <div className="border-t border-hairline-dark px-6 pt-4 pb-2"><span className="text-caption text-mute uppercase tracking-widest font-medium">Criptomonedas</span></div>
               <div className="divide-y divide-divider-soft">{market.crypto.map((q) => <QuoteRow key={q.catalog_item_id} quote={q} sparkline={sparklines[q.catalog_item_id]} />)}</div>
             </>
           )}
-          {(!market || (market.indices.length === 0 && market.crypto.length === 0)) && (
+          {(!market || (visibleIndices.length === 0 && (region === "eu" || market.crypto.length === 0))) && (
             <EmptySection categories={["indices", "crypto"]} fallbackText="Sin datos de indices o cripto. La ingesta no ha devuelto esas secciones." />
           )}
         </div>

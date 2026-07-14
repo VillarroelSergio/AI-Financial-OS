@@ -88,13 +88,13 @@ export default function AccountsPage() {
   }
 
   return (
-    <div className="p-8 max-w-[1500px] mx-auto space-y-xl">
+    <div className="page-shell space-y-xl">
       <PageHeader
         eyebrow="Liquidez local"
         title="Cuentas"
         description="Resumen operativo de liquidez, ahorro y brokers con pesos sobre patrimonio."
         actions={
-        <button onClick={openNew} className="mercury-button-primary px-lg py-sm text-button-md rounded-lg transition-colors">
+        <button onClick={openNew} className="ui-pressable mercury-button-primary px-lg py-sm text-button-md rounded-lg">
           Nueva cuenta
         </button>
         }
@@ -140,8 +140,8 @@ export default function AccountsPage() {
             </label>
           </div>
           <div className="flex gap-sm justify-end">
-            <button type="button" onClick={resetForm} className="mercury-button px-lg py-sm rounded-lg text-body-sm transition-colors">Cancelar</button>
-            <button type="submit" disabled={saving} className="mercury-button-primary px-lg py-sm text-button-md rounded-lg disabled:opacity-50 transition-colors">
+            <button type="button" onClick={resetForm} className="ui-pressable mercury-button px-lg py-sm rounded-lg text-body-sm">Cancelar</button>
+            <button type="submit" disabled={saving} className="ui-pressable mercury-button-primary px-lg py-sm text-button-md rounded-lg disabled:opacity-50">
               {saving ? "Guardando..." : editing ? "Actualizar" : "Guardar"}
             </button>
           </div>
@@ -149,7 +149,7 @@ export default function AccountsPage() {
       )}
 
       {accounts.length === 0 ? (
-        <EmptyState title="Sin cuentas" description="Anade tu primera cuenta para empezar a registrar movimientos." action={<button onClick={openNew} className="mercury-button-primary px-lg py-sm text-button-md rounded-lg transition-colors">Anadir cuenta</button>} />
+        <EmptyState title="Sin cuentas" description="Anade tu primera cuenta para empezar a registrar movimientos." action={<button onClick={openNew} className="ui-pressable mercury-button-primary px-lg py-sm text-button-md rounded-lg">Anadir cuenta</button>} />
       ) : (
         <div className="space-y-sm">
           {accounts.map((account) => {
@@ -169,8 +169,8 @@ export default function AccountsPage() {
                     <p className="text-heading-sm text-on-dark">{formatCurrency(account.current_balance, account.currency)}</p>
                     <p className="text-caption text-stone">{account.currency}</p>
                   </div>
-                  <button onClick={() => openEdit(account)} className="text-stone hover:text-on-dark transition-colors" aria-label="Editar cuenta"><Pencil size={16} /></button>
-                  <button onClick={() => remove(account.id)} className="text-stone hover:text-accent-danger transition-colors" aria-label="Eliminar cuenta"><Trash2 size={16} /></button>
+                  <button onClick={() => openEdit(account)} className="ui-pressable text-stone hover:text-on-dark" aria-label="Editar cuenta"><Pencil size={16} /></button>
+                  <button onClick={() => remove(account.id)} className="ui-pressable text-stone hover:text-accent-danger" aria-label="Eliminar cuenta"><Trash2 size={16} /></button>
                 </div>
               </div>
             );

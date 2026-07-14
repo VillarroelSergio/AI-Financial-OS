@@ -17,7 +17,7 @@ import { getInstrumentHistory } from "@/lib/api/market-intelligence";
 import type { HistoryRange, InstrumentHistoryMI } from "@/lib/types/market-intelligence";
 
 const RANGE_LABELS: Record<HistoryRange, string> = {
-  "1m": "1m", "3m": "3m", "6m": "6m", "1y": "1a", "5y": "5a", max: "Todo",
+  "1d": "1d", "5d": "5d", "1m": "1m", "6m": "6m", "1y": "1a", "5y": "5a", max: "Todos",
 };
 const REGION_LABELS: Record<string, string> = {
   US: "🇺🇸 EE.UU.", ES: "🇪🇸 España", DE: "🇩🇪 Alemania", FR: "🇫🇷 Francia",
@@ -82,7 +82,7 @@ export default function InstrumentDetailPage() {
     (changeAbs != null && firstClose ? (changeAbs / firstClose) * 100 : null);
   const positive = (changePct ?? 0) >= 0;
   const currency = data?.currency ?? "";
-  const chartColor = positive ? "#00a87e" : "#e23b4a";
+  const chartColor = positive ? "var(--positive)" : "var(--negative)";
 
   const chartData = useMemo(
     () => (data?.series ?? []).map((p) => ({ date: p.date, close: p.close })),
@@ -162,7 +162,7 @@ export default function InstrumentDetailPage() {
                     : "text-stone hover:text-on-dark",
                 ].join(" ")}
               >
-                {RANGE_LABELS[r]}
+                {RANGE_LABELS[r] ?? r}
               </button>
             ))}
           </div>
@@ -201,7 +201,7 @@ export default function InstrumentDetailPage() {
             <StatTile label="Apertura" value={fmt(data.stats.open)} />
             <StatTile label="Rango del día" value={`${fmt(data.stats.day_low)} – ${fmt(data.stats.day_high)}`} />
             <StatTile label="Rango 52 sem." value={`${fmt(data.stats.week52_low)} – ${fmt(data.stats.week52_high)}`} />
-            <StatTile label={`Variación ${RANGE_LABELS[data.range]}`} value={data.stats.range_change_pct != null ? `${fmt(data.stats.range_change_pct)}%` : "—"} />
+            <StatTile label={`Variación ${RANGE_LABELS[data.range] ?? data.range}`} value={data.stats.range_change_pct != null ? `${fmt(data.stats.range_change_pct)}%` : "—"} />
             <StatTile label="Volumen" value={data.stats.volume != null ? data.stats.volume.toLocaleString("es-ES") : "—"} />
           </section>
 

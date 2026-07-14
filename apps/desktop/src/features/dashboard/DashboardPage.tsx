@@ -61,7 +61,7 @@ export default function DashboardPage() {
   const savingsRate = overview?.savings_rate ?? 0;
 
   return (
-    <div className="p-8 max-w-[1500px] mx-auto space-y-6">
+    <div className="page-shell space-y-6">
       <PageHeader title="Resumen" description="Cómo van tus finanzas, inversiones y gastos." />
 
       <NetWorthHero netWorth={overview?.net_worth ?? "0"} />

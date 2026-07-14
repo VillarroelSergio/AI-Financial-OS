@@ -16,7 +16,7 @@ export function PageHeader({
   // eyebrow: prop conservada como deprecated para no romper call sites; ya no se renderiza.
   void eyebrow;
   return (
-    <header className="flex items-center justify-between gap-6 pb-6">
+    <header className="flex items-start justify-between gap-6">
       <div className="min-w-0">
         <h1 className="text-heading text-[var(--text-primary)]">{title}</h1>
         {description && <p className="mt-1 text-[13px] text-[var(--text-secondary)]">{description}</p>}
@@ -62,7 +62,7 @@ export function KpiCard({
           </span>
         )}
       </div>
-      <p className="financial-number mt-4 truncate text-[22px] leading-none text-on-dark">{value}</p>
+      <p className="financial-number mt-4 break-words text-[clamp(1.25rem,2vw,1.5rem)] leading-tight text-on-dark">{value}</p>
       <div className="mt-3 min-h-5">{delta ? <MetricDelta value={delta} positive={positive} label={hint} /> : hint && <p className="text-xs text-mute">{hint}</p>}</div>
     </article>
   );
@@ -130,13 +130,21 @@ export function EmptyState({
   );
 }
 
+const INTERNAL_ERROR_PATTERN = /\[mock\]|\/api\/|localhost|127\.0\.0\.1|(?:type|reference|syntax)error|\bat\s+\w+.*:\d+/i;
+
+export function sanitizeUserError(description: string): string {
+  return INTERNAL_ERROR_PATTERN.test(description)
+    ? "No se pudo cargar esta información. Inténtalo de nuevo o revisa que el servicio local esté disponible."
+    : description;
+}
+
 export function ErrorState({ title, description, onRetry, action }: { title: string; description: string; onRetry?: () => void; action?: ReactNode }) {
   return (
     <div className="rounded-lg border border-accent-danger/30 bg-accent-danger/5 p-6 flex gap-4">
       <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-accent-danger/10 text-accent-danger"><AlertTriangle size={19} /></span>
       <div>
         <h3 className="font-semibold text-on-dark">{title}</h3>
-        <p className="text-sm text-stone mt-1 max-w-xl">{description}</p>
+        <p className="text-sm text-stone mt-1 max-w-xl">{sanitizeUserError(description)}</p>
         <div className="flex gap-3 mt-4">{onRetry && <button onClick={onRetry} className="mercury-button rounded-lg px-4 py-2 text-xs font-semibold">Reintentar</button>}{action}</div>
       </div>
     </div>

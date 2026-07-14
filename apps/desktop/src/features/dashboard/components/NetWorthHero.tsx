@@ -13,7 +13,7 @@ function monthLabel(): string {
 function LastDot(props: { cx?: number; cy?: number; index?: number; dataLength: number }) {
   const { cx, cy, index, dataLength } = props;
   if (cx == null || cy == null || index !== dataLength - 1) return <circle r={0} />;
-  return <circle cx={cx} cy={cy} r={3} fill="#6EE7B7" />;
+  return <circle cx={cx} cy={cy} r={3} fill="var(--positive-on-hero)" />;
 }
 
 export default function NetWorthHero({ netWorth }: { netWorth: string }) {
@@ -65,14 +65,14 @@ export default function NetWorthHero({ netWorth }: { netWorth: string }) {
               <AreaChart data={series} margin={{ top: 6, bottom: 6, left: 0, right: 4 }}>
                 <defs>
                   <linearGradient id="nwHeroFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#6EE7B7" stopOpacity={0.35} />
-                    <stop offset="100%" stopColor="#6EE7B7" stopOpacity={0} />
+                    <stop offset="0%" stopColor="var(--positive-on-hero)" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="var(--positive-on-hero)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <Area
                   type="monotone"
                   dataKey="value"
-                  stroke="#6EE7B7"
+                  stroke="var(--positive-on-hero)"
                   strokeWidth={2}
                   fill="url(#nwHeroFill)"
                   dot={(p) => <LastDot key={`d-${p.index}`} cx={p.cx} cy={p.cy} index={p.index} dataLength={series.length} />}

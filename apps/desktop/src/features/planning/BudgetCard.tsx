@@ -26,8 +26,8 @@ export default function BudgetCard({ item }: Props) {
 
       <div className="h-1.5 w-full rounded-full bg-[var(--bg-interactive)] overflow-hidden">
         <div
-          className={`h-full rounded-full transition-all ${barColor}`}
-          style={{ width: `${pct}%` }}
+          className={`progress-fill h-full rounded-full ${barColor}`}
+          style={{ transform: `scaleX(${pct / 100})` }}
         />
       </div>
 

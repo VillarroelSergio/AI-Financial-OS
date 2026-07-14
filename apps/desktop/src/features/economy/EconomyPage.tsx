@@ -116,7 +116,7 @@ export default function EconomyPage() {
   const noData = comparatives.filter((c) => c.signal === "no_data");
 
   return (
-    <div className="p-8 space-y-8 max-w-[1500px] mx-auto">
+    <div className="page-shell space-y-8">
       <PageHeader
         eyebrow="Contexto macro"
         title="Economía"
@@ -141,8 +141,8 @@ export default function EconomyPage() {
       )}
 
       {ingestStatus?.storage_warning && (
-        <div className="rounded-lg border border-amber-400/25 bg-amber-400/10 px-4 py-2.5">
-          <p className="text-caption text-amber-200">{ingestStatus.storage_warning}</p>
+        <div className="rounded-lg border border-[var(--economy-negative)]/25 bg-[var(--economy-negative-soft)] px-4 py-2.5">
+          <p className="text-caption text-[var(--economy-negative)]">{ingestStatus.storage_warning}</p>
         </div>
       )}
 

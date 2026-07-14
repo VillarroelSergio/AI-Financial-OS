@@ -8,6 +8,7 @@ import AiMessageInput from "./components/AiMessageInput";
 import AiStatusBadge from "./components/AiStatusBadge";
 import AiConversationSidebar from "./components/AiConversationSidebar";
 import AnalysisCenter from "./components/AnalysisCenter";
+import { PageHeader } from "@/components/ui/Dashboard";
 
 type Tab = "analisis" | "chat";
 
@@ -37,16 +38,29 @@ export default function AssistantPage() {
   const prompt = state?.prompt;
 
   return (
-    <div className="flex h-full flex-col p-4">
-      <div className="flex items-center gap-1 mb-3 flex-shrink-0">
+    <div className="page-shell flex h-full min-h-0 flex-col gap-5">
+      <PageHeader
+        title="Asistente financiero"
+        description="Analiza tus datos locales y conversa sobre decisiones concretas, sin compartir información fuera de tu equipo."
+        actions={<AiStatusBadge provider={defaultProvider} loading={statusLoading} />}
+      />
+
+      <div
+        className="flex w-fit flex-shrink-0 items-center gap-1 rounded-[12px] bg-[var(--bg-interactive)] p-1"
+        role="tablist"
+        aria-label="Modo del asistente"
+      >
         {([["analisis", "Análisis"], ["chat", "Chat"]] as const).map(([key, label]) => (
           <button
             key={key}
+            type="button"
+            role="tab"
+            aria-selected={tab === key}
             onClick={() => setTab(key)}
-            className={`rounded-lg px-3 py-1.5 text-body-sm font-medium transition-colors ${
+            className={`ui-pressable rounded-[9px] px-3.5 py-2 text-sm font-medium transition-colors ${
               tab === key
-                ? "bg-surface-elevated text-on-dark border border-hairline-dark"
-                : "text-stone hover:text-on-dark"
+                ? "bg-[var(--bg-card)] text-[var(--text-primary)] shadow-[var(--shadow-card)]"
+                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
             }`}
           >
             {label}
@@ -55,9 +69,7 @@ export default function AssistantPage() {
       </div>
 
       {tab === "analisis" ? (
-        <div className="flex min-h-0 flex-1 premium-card rounded-lg overflow-hidden">
-          <AnalysisCenter />
-        </div>
+        <AnalysisCenter onOpenChat={() => setTab("chat")} />
       ) : (
         <div className="flex min-h-0 flex-1 gap-4">
           <AiConversationSidebar
@@ -69,13 +81,12 @@ export default function AssistantPage() {
             onLoad={loadConversations}
           />
 
-          <div className="premium-card rounded-lg flex-1 flex flex-col min-w-0 overflow-hidden">
+          <div className="premium-card flex min-w-0 flex-1 flex-col overflow-hidden rounded-[16px]">
             <div className="flex items-center justify-between px-5 py-4 border-b border-hairline-dark flex-shrink-0">
               <div>
-                <h1 className="text-heading-sm text-on-dark">Asistente IA</h1>
-                <p className="text-caption text-stone">Copiloto financiero contextual - Sin SQL - Sin Internet</p>
+                <h2 className="text-heading-sm text-on-dark">Conversación</h2>
+                <p className="text-caption text-stone">Tus cifras se consultan localmente y se muestran con su contexto.</p>
               </div>
-              <AiStatusBadge provider={defaultProvider} loading={statusLoading} />
             </div>
 
             {!statusLoading && !isAvailable && (
@@ -105,7 +116,7 @@ export default function AssistantPage() {
                 <p className="text-caption font-medium text-on-dark">Contexto recibido: {String(context.module ?? "Modulo")}</p>
                 <div className="mt-2 flex items-center justify-between gap-3">
                   <p className="text-caption text-stone">{prompt}</p>
-                  <button onClick={() => send(prompt, context)} disabled={inputDisabled} className="rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white disabled:opacity-50">Preguntar</button>
+                  <button onClick={() => send(prompt, context)} disabled={inputDisabled} className="ui-pressable mercury-button-primary px-3 py-2 text-xs">Preguntar</button>
                 </div>
               </div>
             )}

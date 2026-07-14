@@ -139,7 +139,7 @@ export default function TransactionsPage() {
   }
 
   return (
-    <div className="p-8 max-w-[1500px] mx-auto space-y-6">
+    <div className="page-shell space-y-6">
       <PageHeader
         eyebrow="Ledger financiero"
         title="Movimientos"

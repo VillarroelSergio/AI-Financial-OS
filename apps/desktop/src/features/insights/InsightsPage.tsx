@@ -102,7 +102,7 @@ export default function InsightsPage() {
   const isEmpty = data?.data_status === "empty" && !loading;
 
   return (
-    <div className="p-8 max-w-[1500px] mx-auto space-y-6">
+    <div className="page-shell space-y-6">
       <PageHeader
         eyebrow="Inteligencia financiera"
         title="Insights"

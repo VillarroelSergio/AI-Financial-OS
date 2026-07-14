@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { PageHeader } from "@/components/ui/Dashboard";
 import SegmentedControl from "@/components/ui/SegmentedControl";
 import BudgetTab from "@/features/planning/BudgetTab";
@@ -16,19 +16,26 @@ const TABS: { key: Tab; label: string }[] = [
 ];
 
 export default function PlanificacionPage() {
-  const tabParam = new URLSearchParams(window.location.search).get("tab");
-  const initialTab = TABS.some((tab) => tab.key === tabParam) ? (tabParam as Tab) : "presupuestos";
-  const [active, setActive] = useState<Tab>(initialTab);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tabParam = searchParams.get("planningTab");
+  const active: Tab = TABS.some((tab) => tab.key === tabParam) ? (tabParam as Tab) : "presupuestos";
+
+  const selectTab = (nextTab: Tab) => {
+    const next = new URLSearchParams(searchParams);
+    next.set("tab", "planificacion");
+    next.set("planningTab", nextTab);
+    setSearchParams(next);
+  };
 
   return (
-    <div className="space-y-6 p-8 max-w-[1500px] mx-auto">
+    <div className="page-shell space-y-6">
       <PageHeader
         eyebrow="Forecast operativo"
         title="Planificación"
         description="Presupuestos, recurrentes, facturas del hogar y prevision financiera en una vista accionable."
       />
 
-      <SegmentedControl options={TABS} value={active} onChange={setActive} ariaLabel="Secciones de planificación" />
+      <SegmentedControl options={TABS} value={active} onChange={selectTab} ariaLabel="Secciones de planificación" />
 
       {active === "presupuestos" && <BudgetTab />}
       {active === "recurrentes" && <RecurringTab />}

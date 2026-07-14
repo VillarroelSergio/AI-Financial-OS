@@ -5,7 +5,7 @@ import { ChartCard, EmptyState, KpiCard, LoadingState, PageHeader } from "@/comp
 import { useSpending, useSpendingMonthly, useSpendingYears } from "@/lib/hooks/useDashboard";
 import { formatCurrency, formatPercent } from "@/lib/formatters/currency";
 import type { CategorySpending } from "@/lib/api/dashboard";
-import { useChartPalette } from "@/lib/chartPalette";
+import { useFinancialChartColors } from "@/lib/chartPalette";
 import ExpenseCategoryDetailDrawer from "./ExpenseCategoryDetailDrawer";
 
 const MONTH_LABEL = new Intl.DateTimeFormat("es-ES", { month: "short" });
@@ -18,10 +18,8 @@ export default function SpendingPage() {
   const [year, setYear] = useState(initialYear);
   const [mode, setMode] = useState<"month" | "year">("month");
   const [selectedCategory, setSelectedCategory] = useState<CategorySpending | null>(null);
-  const palette = useChartPalette();
-  const EXPENSE_COLOR = palette[0];
-  const INCOME_COLOR = palette[3];
-  const SAVINGS_LINE = "var(--text-muted)";
+  const chartColors = useFinancialChartColors();
+  const { income: INCOME_COLOR, expense: EXPENSE_COLOR, savings: SAVINGS_LINE } = chartColors;
   const loadedYears = useSpendingYears();
   const yearOptions = loadedYears.length ? loadedYears : [year];
   const { data, loading } = useSpending({ mode, month, year });
@@ -56,7 +54,7 @@ export default function SpendingPage() {
   if (loading) return <LoadingState label="Analizando el periodo" />;
 
   return (
-    <div className="p-8 max-w-[1500px] mx-auto space-y-6">
+    <div className="page-shell space-y-6">
       <ExpenseCategoryDetailDrawer
         category={selectedCategory}
         period={{ mode, month, year }}
@@ -142,7 +140,7 @@ export default function SpendingPage() {
                     </div>
                   </div>
                   <div className="mt-2.5 h-2 rounded-full bg-[var(--bg-interactive)] overflow-hidden">
-                    <div className="h-full rounded-full transition-all" style={{ width: `${Math.max(2, cat.percentage)}%`, background: EXPENSE_COLOR }} />
+                    <div className="progress-fill h-full rounded-full" style={{ transform: `scaleX(${Math.max(2, cat.percentage) / 100})`, background: EXPENSE_COLOR }} />
                   </div>
                 </button>
               ))}

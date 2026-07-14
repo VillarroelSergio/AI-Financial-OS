@@ -61,6 +61,7 @@ export default {
         },
         accent: {
           teal:    "var(--positive)",
+          success: "var(--positive)",
           danger:  "var(--negative)",
           warning: "var(--warning)",
           yellow:  "var(--accent)",

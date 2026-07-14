@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Plus, RefreshCw } from "lucide-react";
 import BudgetCard from "./BudgetCard";
 import BudgetFormModal from "./BudgetFormModal";
-import { EmptyState } from "@/components/ui/Dashboard";
+import { EmptyState, ErrorState } from "@/components/ui/Dashboard";
 import { BudgetPreview } from "@/components/ui/EmptyPreviews";
 import type { BudgetCreate } from "@/lib/api/budgets";
 import { useBudgetComparison, useBudgets } from "@/lib/hooks/useBudgets";
@@ -32,10 +32,11 @@ export default function BudgetTab() {
 
   if (error) {
     return (
-      <div className="flex h-64 flex-col items-center justify-center gap-3">
-        <p className="text-sm text-accent-danger">{error}</p>
-        <button onClick={refresh} className="rounded-lg bg-[var(--bg-interactive)] px-4 py-2 text-sm text-on-dark hover:bg-[var(--bg-interactive)]">Reintentar</button>
-      </div>
+      <ErrorState
+        title="No se pudieron cargar los presupuestos"
+        description={error}
+        onRetry={refresh}
+      />
     );
   }
 

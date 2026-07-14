@@ -67,7 +67,7 @@ export default function ImportsPage() {
     `rounded-lg px-3 py-1.5 transition-colors cursor-pointer ${palette} ${statusFilter === value ? "ring-1 ring-current" : "opacity-80 hover:opacity-100"}`;
 
   return (
-    <div className="p-8 max-w-[1300px] mx-auto space-y-6">
+    <div className="page-shell space-y-6">
       <PageHeader
         eyebrow="Datos locales"
         title="Centro de importacion"

@@ -50,7 +50,7 @@ function StructuredPanel({ data }: { data: AiStructured }) {
             <button
               key={i}
               onClick={() => navigate(act.target)}
-              className="rounded-lg border border-hairline-dark bg-surface-elevated px-3 py-1.5 text-caption text-on-dark hover:border-primary/40"
+              className="ui-pressable rounded-lg border border-hairline-dark bg-surface-elevated px-3 py-1.5 text-caption text-on-dark hover:border-primary/40"
             >
               {act.label}
             </button>
@@ -85,7 +85,8 @@ export default function AiMessageList({ messages, sending, onPickSuggestion, sug
   const bottomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    bottomRef.current?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth" });
   }, [messages, sending]);
 
   if (!messages.length && !sending) {
@@ -103,7 +104,7 @@ export default function AiMessageList({ messages, sending, onPickSuggestion, sug
                 key={s}
                 onClick={() => onPickSuggestion?.(s)}
                 disabled={!onPickSuggestion}
-                className="text-caption px-3 py-1 rounded-full border border-hairline-dark text-stone transition-colors hover:border-primary/40 hover:text-on-dark disabled:cursor-default disabled:hover:border-hairline-dark disabled:hover:text-stone"
+                className="ui-pressable rounded-full border border-hairline-dark px-3 py-1 text-caption text-stone hover:border-primary/40 hover:text-on-dark disabled:cursor-default disabled:hover:border-hairline-dark disabled:hover:text-stone"
               >
                 {s}
               </button>

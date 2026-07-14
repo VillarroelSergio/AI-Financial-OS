@@ -37,9 +37,9 @@ function contextItems(spain: MacroDataPointMI[]) {
 }
 
 const TONE_DOT: Record<string, string> = {
-  good: "bg-emerald-400",
-  bad: "bg-red-400",
-  flat: "bg-amber-300",
+  good: "bg-[var(--economy-accent)]",
+  bad: "bg-[var(--economy-negative)]",
+  flat: "bg-[var(--economy-accent)]",
 };
 
 // ── Simulador de hipoteca sobre Euríbor (Fase 1) ─────────────────────
@@ -99,7 +99,7 @@ function MortgageSimulator({ euribor }: { euribor: PersonalEconomyMI["euribor"] 
             Cuota estimada: <b>{formatCurrency(result.now)}</b>/mes
           </p>
           {result.delta !== null && Math.abs(result.delta) >= 0.5 && (
-            <p className={`text-caption mt-1 ${result.delta > 0 ? "text-red-300" : "text-emerald-300"}`}>
+            <p className={`text-caption mt-1 ${result.delta > 0 ? "text-[var(--economy-negative)]" : "text-[var(--economy-accent)]"}`}>
               {result.delta > 0 ? "+" : ""}{formatCurrency(result.delta)}/mes frente a la revisión de hace un año
             </p>
           )}
@@ -127,7 +127,7 @@ function PersonalInflation({ data }: { data: PersonalEconomyMI["personal_inflati
       {has ? (
         <>
           <div className="flex items-baseline gap-3">
-            <span className={`text-2xl font-semibold ${worse ? "text-red-300" : "text-emerald-300"}`}>
+            <span className={`text-2xl font-semibold ${worse ? "text-[var(--economy-negative)]" : "text-[var(--economy-accent)]"}`}>
               {pct(data.user_yoy_pct)}
             </span>
             <span className="text-caption text-stone">
@@ -145,7 +145,7 @@ function PersonalInflation({ data }: { data: PersonalEconomyMI["personal_inflati
                 <span className="text-stone">{c.category}</span>
                 <span className="text-on-dark">
                   {formatCurrency(c.current)}{" "}
-                  <span className={c.yoy_pct !== null && c.yoy_pct > 0 ? "text-red-300" : "text-emerald-300"}>
+                  <span className={c.yoy_pct !== null && c.yoy_pct > 0 ? "text-[var(--economy-negative)]" : "text-[var(--economy-accent)]"}>
                     {c.yoy_pct !== null ? `${c.yoy_pct > 0 ? "+" : ""}${c.yoy_pct}%` : ""}
                   </span>
                 </span>
@@ -175,8 +175,8 @@ function RealSalary({ data }: { data: PersonalEconomyMI["real_salary"] }) {
       {has ? (
         <>
           <div className="flex items-center gap-2">
-            <Icon size={18} className={data.real_yoy_pct! >= 0 ? "text-emerald-300" : "text-red-300"} />
-            <span className={`text-2xl font-semibold ${data.real_yoy_pct! >= 0 ? "text-emerald-300" : "text-red-300"}`}>
+            <Icon size={18} className={data.real_yoy_pct! >= 0 ? "text-[var(--economy-accent)]" : "text-[var(--economy-negative)]"} />
+            <span className={`text-2xl font-semibold ${data.real_yoy_pct! >= 0 ? "text-[var(--economy-accent)]" : "text-[var(--economy-negative)]"}`}>
               {data.real_yoy_pct! > 0 ? "+" : ""}{pct(data.real_yoy_pct)}
             </span>
             <span className="text-caption text-stone">poder adquisitivo interanual</span>
@@ -209,7 +209,7 @@ function SavingsYield({ data }: { data: PersonalEconomyMI["savings"] }) {
         {data.tipo_bce !== null && <> · tipo BCE {pct(data.tipo_bce, 2)}</>}
       </p>
       {data.potential_monthly !== null && data.potential_monthly >= 1 ? (
-        <p className="text-body-sm text-emerald-300">
+        <p className="text-body-sm text-[var(--economy-accent)]">
           Remunerada al tipo BCE rentaría ~{formatCurrency(data.potential_monthly)}/mes
           (cuenta remunerada o Letras del Tesoro).
         </p>

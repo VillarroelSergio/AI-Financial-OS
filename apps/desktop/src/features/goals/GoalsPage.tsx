@@ -61,20 +61,20 @@ export default function GoalsPage() {
   if (loading) return <LoadingState label="Cargando objetivos" />;
 
   return (
-    <div className="p-8 max-w-[1500px] mx-auto space-y-6">
+    <div className="page-shell space-y-6">
       <PageHeader
         eyebrow="Planificación"
         title="Objetivos"
         description="Convierte tus prioridades financieras en un plan medible con proyecciones de escenarios"
-        actions={
+        actions={goals.length > 0 ? (
           <button
             onClick={() => setOpen(true)}
-            className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold"
+            className="ui-pressable mercury-button-primary inline-flex items-center gap-2"
           >
             <Plus size={16} />
             Crear objetivo
           </button>
-        }
+        ) : undefined}
       />
 
       {error && (
@@ -194,7 +194,7 @@ export default function GoalsPage() {
           </div>
           <button
             disabled={saving}
-            className="rounded-lg bg-primary px-5 py-2.5 text-sm font-semibold disabled:opacity-50"
+            className="ui-pressable mercury-button-primary"
           >
             {saving ? "Guardando…" : "Guardar objetivo"}
           </button>
@@ -228,7 +228,7 @@ export default function GoalsPage() {
           action={
             <button
               onClick={() => setOpen(true)}
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-sm font-semibold"
+              className="ui-pressable mercury-button-primary inline-flex items-center gap-2"
             >
               <Plus size={16} />
               Crear objetivo
@@ -282,8 +282,8 @@ export default function GoalsPage() {
                   </div>
                   <div className="mt-2 h-2 overflow-hidden rounded-full bg-[var(--bg-interactive)]">
                     <div
-                      className="h-full rounded-full bg-primary transition-all duration-500"
-                      style={{ width: `${progress}%` }}
+                      className="progress-fill h-full rounded-full bg-primary"
+                      style={{ transform: `scaleX(${Math.min(progress, 100) / 100})` }}
                     />
                   </div>
 

@@ -70,13 +70,13 @@
 
 /* ─── Tema Claro (nuevo default) ─── */
 [data-theme="light"] {
-  --bg-app: #F2F3F5;
-  --bg-sidebar: rgba(255, 255, 255, 0.72);
-  --bg-sidebar-active: #FFFFFF;
-  --bg-surface: #FFFFFF;
-  --bg-card: #FFFFFF;
-  --bg-card-elevated: #F5F5F7;
-  --bg-interactive: #F0F0F2;
+  --bg-app: #DCDDDA;
+  --bg-sidebar: rgba(232, 233, 230, 0.86);
+  --bg-sidebar-active: #ECEDEB;
+  --bg-surface: #E7E8E6;
+  --bg-card: #E7E8E6;
+  --bg-card-elevated: #E2E3E0;
+  --bg-interactive: #DCDDDA;
   --bg-hero-from: #1D1D1F;
   --bg-hero-to: #2C2C30;
   --text-primary: #1D1D1F;
@@ -84,17 +84,21 @@
   --text-muted: rgba(29, 29, 31, 0.45);
   --text-on-hero: #F5F5F7;
   --text-on-hero-secondary: #A1A1A6;
-  --border-soft: #E4E4E7;
-  --border-strong: #D2D2D7;
+  --border-soft: #D0D1CE;
+  --border-strong: #BEC0BC;
   --divider-soft: rgba(29, 29, 31, 0.08);
-  --hairline-dark: #E4E4E7;
+  --hairline-dark: #D0D1CE;
   --primary: #0071E3;
-  --positive: #059669;
-  --negative: #DC2626;
+  --positive: #2D7B6A;
+  --negative: #B34D62;
   --warning: #D97706;
-  --positive-on-hero: #6EE7B7;
-  --negative-on-hero: #FF8A80;
-  --bg-segment-thumb: #FFFFFF;
+  --economy-accent: #2D7B6A;
+  --economy-accent-soft: #2D7B6A1A;
+  --economy-negative: #B34D62;
+  --economy-negative-soft: #B34D621A;
+  --positive-on-hero: #8BD6BB;
+  --negative-on-hero: #F3A0AD;
+  --bg-segment-thumb: #ECEDEB;
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06);
   --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.09);
   --shadow-elevated: 0 8px 24px rgba(0, 0, 0, 0.10);
@@ -122,11 +126,15 @@
   --divider-soft: rgba(245, 245, 247, 0.08);
   --hairline-dark: #2C2C2E;
   --primary: #0A84FF;
-  --positive: #30D158;
-  --negative: #FF453A;
+  --positive: #6FC5AE;
+  --negative: #F092A3;
   --warning: #FF9F0A;
-  --positive-on-hero: #6EE7B7;
-  --negative-on-hero: #FF8A80;
+  --economy-accent: #6FC5AE;
+  --economy-accent-soft: #6FC5AE1F;
+  --economy-negative: #F092A3;
+  --economy-negative-soft: #F092A31F;
+  --positive-on-hero: #8BD6BB;
+  --negative-on-hero: #F3A0AD;
   --bg-segment-thumb: #48484A;
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.35);
   --shadow-card-hover: 0 4px 12px rgba(0, 0, 0, 0.45);
@@ -198,6 +206,40 @@ textarea:focus-visible {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: var(--spacing-16);
+}
+
+.page-shell {
+  width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
+  padding: 32px;
+}
+
+.page-tabs {
+  width: 100%;
+  max-width: 1280px;
+  margin-inline: auto;
+  padding-inline: 32px;
+}
+
+.progress-fill {
+  width: 100%;
+  transform-origin: left center;
+  transition: transform 240ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.ui-pressable {
+  transition: transform 120ms cubic-bezier(0.23, 1, 0.32, 1), filter 150ms ease, background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+  transform-origin: center;
+}
+
+.ui-pressable:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.ui-pressable:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 
 /* ─── Componentes globales ─── */
@@ -290,13 +332,22 @@ table {
   }
 }
 
+@media (max-width: 768px) {
+  .page-shell { padding: 20px; }
+  .page-tabs { padding-inline: 20px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
   *::after {
-    animation-duration: .01ms !important;
-    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
   }
+
+  .progress-fill { transition-duration: .01ms; }
+  .ui-pressable { transition-property: filter, background-color, border-color, color; }
+  .ui-pressable:active:not(:disabled) { transform: none; }
+  .live-dot { animation: none; }
 }
 
 ::-webkit-scrollbar {
@@ -323,17 +374,33 @@ table {
 }
 
 @keyframes flash-up {
-  0%   { background-color: rgba(0, 129, 99, .18); }
+  0%   { background-color: color-mix(in srgb, var(--positive) 18%, transparent); }
   100% { background-color: transparent; }
 }
 
 @keyframes flash-down {
-  0%   { background-color: rgba(238, 37, 38, .16); }
+  0%   { background-color: color-mix(in srgb, var(--negative) 16%, transparent); }
   100% { background-color: transparent; }
 }
 
 .live-dot {
   animation: live-pulse 2s ease-in-out infinite;
+}
+
+/* Estados heredados: toda seÃ±al favorable/desfavorable converge en jade/cassis. */
+@layer utilities {
+  .text-green-400, .text-emerald-400 { color: var(--positive) !important; }
+  .text-red-400 { color: var(--negative) !important; }
+  .text-emerald-400\/70 { color: color-mix(in srgb, var(--positive) 70%, transparent) !important; }
+  .text-red-400\/70 { color: color-mix(in srgb, var(--negative) 70%, transparent) !important; }
+  .bg-green-400, .bg-emerald-500, .bg-emerald-400 { background-color: var(--positive) !important; }
+  .bg-red-500, .bg-red-400 { background-color: var(--negative) !important; }
+  .bg-emerald-500\/15, .bg-emerald-400\/15 { background-color: color-mix(in srgb, var(--positive) 15%, transparent) !important; }
+  .bg-red-500\/15, .bg-red-400\/15 { background-color: color-mix(in srgb, var(--negative) 15%, transparent) !important; }
+  .bg-red-500\/10 { background-color: color-mix(in srgb, var(--negative) 10%, transparent) !important; }
+  .bg-red-500\/5 { background-color: color-mix(in srgb, var(--negative) 5%, transparent) !important; }
+  .border-emerald-500\/25, .border-emerald-400\/25 { border-color: color-mix(in srgb, var(--positive) 25%, transparent) !important; }
+  .border-red-500\/30, .border-red-500\/25, .border-red-500\/20 { border-color: color-mix(in srgb, var(--negative) 25%, transparent) !important; }
 }
 
 @keyframes live-pulse {

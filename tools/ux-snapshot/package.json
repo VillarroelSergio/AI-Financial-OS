@@ -17,6 +17,7 @@
     "e2e:flow-01-33:headed": "tsx run-flow-01-05.ts --headed",
     "test:flows": "tsx test-flow-contracts.ts",
     "test:negative-flows": "tsx test-negative-flow-contracts.ts",
+    "test:ui-quality": "tsx test-ui-quality-contracts.ts",
     "test:e2e-isolation": "tsx test-e2e-data-location.ts",
     "report": "tsx report.ts"
   },
