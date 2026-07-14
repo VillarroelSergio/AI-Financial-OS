@@ -2,10 +2,10 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import type { ReconciliationReport } from "@/lib/api/investments";
 
 const SEGMENTS = [
-  { key: "confirmed_pct",  label: "Confirmado",  color: "#00a87e" },
-  { key: "estimated_pct",  label: "Estimado",    color: "#ec7e00" },
+  { key: "confirmed_pct",  label: "Confirmado",  color: "#2F8F6B" },
+  { key: "estimated_pct",  label: "Estimado",    color: "#C28A4A" },
   { key: "manual_pct",     label: "Manual",      color: "#8d969e" },
-  { key: "no_price_pct",   label: "Sin precio",  color: "#b09000" },
+  { key: "no_price_pct",   label: "Sin precio",  color: "#A97844" },
 ] as const;
 
 interface Props {

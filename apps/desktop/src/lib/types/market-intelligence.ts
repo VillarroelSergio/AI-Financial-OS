@@ -95,7 +95,7 @@ export interface BondSnapshotMI {
 }
 
 // MKT-6/7: ficha de instrumento con histórico EOD.
-export type HistoryRange = "1m" | "3m" | "6m" | "1y" | "5y" | "max";
+export type HistoryRange = "1d" | "5d" | "1m" | "6m" | "1y" | "5y" | "max";
 
 export interface HistoryPointMI {
   date: string;

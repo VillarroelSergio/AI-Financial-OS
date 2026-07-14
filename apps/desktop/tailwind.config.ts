@@ -15,12 +15,12 @@ export default {
         graphite:      "#333336",
         "silver-mist": "#cccccc",
         smoke:         "#424245",
-        "apple-blue":  "#0071e3",
-        "link-blue":   "#0066cc",
-        "halo-blue":   "#2997ff",
-        "signal-orange": "#f56900",
-        "iris-violet": "#8668ff",
-        "reef-teal":   "#00a1b3",
+        "apple-blue":  "#5B7EA3",
+        "link-blue":   "#5B7EA3",
+        "halo-blue":   "#7C9AB5",
+        "signal-orange": "#C28A4A",
+        "iris-violet": "#7D93A6",
+        "reef-teal":   "#2F8F6B",
 
         /* ── Tokens semánticos → CSS vars (responden al tema) ── */
         "bg-app":          "var(--bg-app)",
@@ -67,7 +67,7 @@ export default {
         },
 
         /* ── Colores funcionales directos ── */
-        "ember-orange": "#ff3d00",
+        "ember-orange": "#C28A4A",
       },
 
       fontFamily: {

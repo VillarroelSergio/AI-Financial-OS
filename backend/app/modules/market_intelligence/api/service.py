@@ -251,8 +251,12 @@ def get_economy_overview(db) -> EconomyOverviewOut:
 
 
 # ── MKT-6: ficha de instrumento (histórico EOD) ───────────────────────────────
-_RANGE_DAYS = {"1m": 30, "3m": 91, "6m": 182, "1y": 365, "5y": 1825}
-_RANGE_ORDER = ["1m", "3m", "6m", "1y", "5y"]
+# Rangos por span de calendario (mes+) …
+_RANGE_DAYS = {"1m": 30, "6m": 182, "1y": 365, "5y": 1825}
+# … y rangos cortos por nº de cierres (datos EOD: días de bolsa, no de calendario).
+# 1d = últimos 2 cierres (dibuja el movimiento del día); 5d ≈ una semana de bolsa.
+_RANGE_TAIL = {"1d": 2, "5d": 6}
+_RANGE_ORDER = ["1d", "5d", "1m", "6m", "1y", "5y"]
 _MAX_POINTS = 400  # downsampling: mantiene el gráfico fluido en rangos largos
 
 
@@ -313,10 +317,16 @@ def get_instrument_history(indicator_code: str, range_key: str = "max"):
 
     first_date, last = rows[0]["date"], rows[-1]
     span = (last["date"] - first_date).days
-    available = [r for r in _RANGE_ORDER if span >= _RANGE_DAYS[r]] + ["max"]
+
+    def _covers(r: str) -> bool:
+        return len(rows) >= _RANGE_TAIL[r] if r in _RANGE_TAIL else span >= _RANGE_DAYS[r]
+
+    available = [r for r in _RANGE_ORDER if _covers(r)] + ["max"]
     rk = range_key if range_key in available else "max"
     if rk == "max":
         selected = rows
+    elif rk in _RANGE_TAIL:
+        selected = rows[-_RANGE_TAIL[rk]:]
     else:
         cutoff = last["date"] - timedelta(days=_RANGE_DAYS[rk])
         selected = [r for r in rows if r["date"] >= cutoff] or rows

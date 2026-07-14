@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { Edit3, Plus, Search, SlidersHorizontal, Trash2 } from "lucide-react";
 import { EmptyState, PageHeader } from "@/components/ui/Dashboard";
 import Spinner from "@/components/ui/Spinner";
@@ -28,15 +29,17 @@ const EMPTY_FORM: TransactionCreate = {
 };
 
 export default function TransactionsPage() {
+  const [searchParams] = useSearchParams();
   const [activeType, setActiveType] = useState("");
   const [query, setQuery] = useState("");
   const [accountFilter, setAccountFilter] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState(() => searchParams.get("category") ?? "");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [minAmount, setMinAmount] = useState("");
   const [maxAmount, setMaxAmount] = useState("");
   const [sortBy, setSortBy] = useState<"date_desc" | "date_asc" | "amount_desc" | "amount_asc" | "category_asc">("date_desc");
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const filters: TransactionFilters = {
     ...(activeType ? { type: activeType } : {}),
     ...(accountFilter ? { account_id: accountFilter } : {}),
@@ -82,6 +85,11 @@ export default function TransactionsPage() {
   }, [transactions, minAmount, maxAmount, query, accounts, categories, sortBy]);
 
   const total = visibleTransactions.reduce((sum, tx) => sum + Number(tx.amount), 0);
+  const hasActiveFilters = Boolean(activeType || query || accountFilter || categoryFilter || fromDate || toDate || minAmount || maxAmount || sortBy !== "date_desc");
+  const clearFilters = () => {
+    setActiveType(""); setQuery(""); setAccountFilter(""); setCategoryFilter("");
+    setFromDate(""); setToDate(""); setMinAmount(""); setMaxAmount(""); setSortBy("date_desc");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -167,18 +175,22 @@ export default function TransactionsPage() {
             <option value="">Todas las categorias</option>
             {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
           </select>
-          <div className="flex items-center gap-2 rounded-lg border border-hairline-dark bg-white/[.035] px-3 py-2 text-sm text-stone">
+          <button type="button" onClick={() => setShowAdvancedFilters((value) => !value)} className="ui-pressable flex items-center gap-2 rounded-lg border border-hairline-dark bg-white/[.035] px-3 py-2 text-sm text-stone hover:text-on-dark">
             <SlidersHorizontal size={16} />
-            <span className="financial-number">{visibleTransactions.length}</span>
-          </div>
+            Filtros avanzados
+          </button>
         </div>
-        <div className="mt-3 grid gap-3 lg:grid-cols-[160px_160px_160px_160px_220px]">
+        <div className="mt-3 flex items-center justify-between text-xs text-stone">
+          <span><span className="financial-number text-on-dark">{visibleTransactions.length}</span> resultados</span>
+          {hasActiveFilters && <button type="button" onClick={clearFilters} className="ui-pressable text-primary-bright hover:underline">Limpiar filtros</button>}
+        </div>
+        {showAdvancedFilters && <div className="mt-3 grid gap-3 lg:grid-cols-[160px_160px_160px_160px_220px]">
           <label className="space-y-1"><span className="text-[11px] text-stone">Desde</span><input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="w-full rounded-lg border border-hairline-dark bg-white/[.035] px-3 py-2 text-sm text-on-dark" /></label>
           <label className="space-y-1"><span className="text-[11px] text-stone">Hasta</span><input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="w-full rounded-lg border border-hairline-dark bg-white/[.035] px-3 py-2 text-sm text-on-dark" /></label>
           <label className="space-y-1"><span className="text-[11px] text-stone">Importe min.</span><input type="number" step="0.01" value={minAmount} onChange={(e) => setMinAmount(e.target.value)} className="w-full rounded-lg border border-hairline-dark bg-white/[.035] px-3 py-2 text-sm text-on-dark" /></label>
           <label className="space-y-1"><span className="text-[11px] text-stone">Importe max.</span><input type="number" step="0.01" value={maxAmount} onChange={(e) => setMaxAmount(e.target.value)} className="w-full rounded-lg border border-hairline-dark bg-white/[.035] px-3 py-2 text-sm text-on-dark" /></label>
           <label className="space-y-1"><span className="text-[11px] text-stone">Orden</span><select value={sortBy} onChange={(e) => setSortBy(e.target.value as typeof sortBy)} className="w-full rounded-lg border border-hairline-dark bg-white/[.035] px-3 py-2 text-sm text-on-dark"><option value="date_desc">Fecha reciente</option><option value="date_asc">Fecha antigua</option><option value="amount_desc">Importe mayor</option><option value="amount_asc">Importe menor</option><option value="category_asc">Categoria A-Z</option></select></label>
-        </div>
+        </div>}
       </section>
 
       {error && <div className="rounded-lg border border-accent-danger/30 bg-accent-danger/5 p-4 text-sm text-accent-danger">No se han podido cargar los movimientos. Revisa el backend local.</div>}
@@ -214,7 +226,7 @@ export default function TransactionsPage() {
             <table className="w-full">
               <thead className="bg-black/20">
                 <tr className="border-b border-hairline-dark">
-                  {["Fecha", "Descripcion", "Cuenta", "Categoria", "Tipo", "Importe", ""].map((header) => (
+                  {["Fecha", "Descripcion", "Cuenta", "Categoria", "Tipo", "Importe", "Acciones"].map((header) => (
                     <th key={header} className="text-left px-xl py-md text-caption text-stone font-medium">{header}</th>
                   ))}
                 </tr>
@@ -232,8 +244,8 @@ export default function TransactionsPage() {
                       <td className={`financial-number px-xl py-md text-right text-body-sm font-medium ${amount >= 0 ? "text-accent-teal" : "text-on-dark"}`}>{formatCurrency(tx.amount, tx.currency)}</td>
                       <td className="px-xl py-md text-right">
                         <div className="flex justify-end gap-2">
-                          <button aria-label={`Editar ${tx.description}`} onClick={() => startEdit(tx.id)} className="text-stone hover:text-primary-bright transition-colors"><Edit3 size={15} /></button>
-                          <button aria-label={`Eliminar ${tx.description}`} onClick={() => handleDelete(tx.id, tx.description)} className="text-stone hover:text-accent-danger transition-colors"><Trash2 size={15} /></button>
+                          <button aria-label={`Editar ${tx.description}`} onClick={() => startEdit(tx.id)} className="ui-pressable inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-stone hover:bg-white/[.05] hover:text-primary-bright"><Edit3 size={14} />Editar</button>
+                          <button aria-label={`Eliminar ${tx.description}`} onClick={() => handleDelete(tx.id, tx.description)} className="ui-pressable inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-stone hover:bg-white/[.05] hover:text-accent-danger"><Trash2 size={14} />Eliminar</button>
                         </div>
                       </td>
                     </tr>

@@ -11,6 +11,7 @@
     "snapshots:responsive": "tsx run-ux-snapshots.ts --responsive",
     "snapshots:mercados": "tsx run-ux-snapshots.ts --filter=/markets",
     "snapshots:mercados:headed": "tsx run-ux-snapshots.ts --filter=/markets --headed",
+    "test:ui-quality": "tsx test-ui-quality-contracts.ts",
     "report": "tsx report.ts"
   },
   "devDependencies": {

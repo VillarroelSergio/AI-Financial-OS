@@ -174,7 +174,7 @@ export default function InsightsPage() {
       {error && !loading && (
         <ErrorState
           title="No se han podido generar los insights"
-          description="Inténtalo de nuevo o revisa el estado del backend."
+          description="Comprueba que el asistente local esté disponible. Si acabas de empezar, importa movimientos de al menos un mes: necesitamos datos suficientes para analizar tendencias."
           onRetry={refresh}
         />
       )}

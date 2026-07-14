@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { Clock3, Pencil, Trash2 } from "lucide-react";
 import { EmptyState, PageHeader } from "@/components/ui/Dashboard";
 import MetricCard from "@/components/ui/MetricCard";
 import Spinner from "@/components/ui/Spinner";
@@ -27,6 +27,13 @@ const EMPTY_FORM: AccountCreate = {
   is_liability: false,
 };
 
+function formatCompactCurrency(value: number) {
+  if (Math.abs(value) >= 100_000) {
+    return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", notation: "compact", maximumFractionDigits: 1 }).format(value);
+  }
+  return formatCurrency(value);
+}
+
 export default function AccountsPage() {
   const { accounts, loading, add, update, remove } = useAccounts();
   const [showForm, setShowForm] = useState(false);
@@ -38,6 +45,7 @@ export default function AccountsPage() {
   const liquidity = accounts.filter((account) => ["cash", "bank", "savings"].includes(account.type)).reduce((sum, account) => sum + Number(account.current_balance), 0);
   const savings = accounts.filter((account) => account.type === "savings").reduce((sum, account) => sum + Number(account.current_balance), 0);
   const lastUpdated = accounts.reduce<string | null>((latest, account) => !latest || account.updated_at > latest ? account.updated_at : latest, null);
+  const staleAccounts = accounts.filter((account) => Date.now() - new Date(account.updated_at).getTime() > 30 * 24 * 60 * 60 * 1000);
 
   const resetForm = () => {
     setForm(EMPTY_FORM);
@@ -101,12 +109,22 @@ export default function AccountsPage() {
       />
 
       <div className="grid grid-cols-5 gap-lg">
-        <MetricCard label="Saldo total" value={formatCurrency(total)} />
+        <MetricCard label="Saldo total" value={formatCompactCurrency(total)} />
         <MetricCard label="Numero de cuentas" value={String(accounts.length)} />
-        <MetricCard label="Liquidez inmediata" value={formatCurrency(liquidity)} />
-        <MetricCard label="Cuentas de ahorro" value={formatCurrency(savings)} />
+        <MetricCard label="Liquidez inmediata" value={formatCompactCurrency(liquidity)} />
+        <MetricCard label="Cuentas de ahorro" value={formatCompactCurrency(savings)} />
         <MetricCard label="Ultima actualizacion" value={lastUpdated ? new Date(lastUpdated).toLocaleDateString("es-ES") : "Sin datos"} />
       </div>
+
+      {staleAccounts.length > 0 && (
+        <section className="flex items-center justify-between gap-4 rounded-lg border border-accent-warning/35 bg-accent-warning/10 px-5 py-4">
+          <div className="flex items-start gap-3">
+            <Clock3 size={18} className="mt-0.5 text-accent-warning" />
+            <div><p className="text-sm font-semibold text-on-dark">Saldos que requieren revision</p><p className="mt-1 text-xs text-stone">{staleAccounts.length} cuenta(s) lleva(n) más de 30 días sin actualizar.</p></div>
+          </div>
+          <button type="button" onClick={() => openEdit(staleAccounts[0])} className="ui-pressable mercury-button rounded-lg px-3 py-2 text-xs">Revisar saldo</button>
+        </section>
+      )}
 
       {showForm && (
         <form onSubmit={handleSubmit} className="premium-card rounded-lg p-xl space-y-lg">

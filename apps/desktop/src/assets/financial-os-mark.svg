@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-labelledby="title">
+  <title id="title">Financial OS</title>
+  <rect x="8" y="31" width="13" height="21" rx="6.5" fill="#2F8F6B"/>
+  <rect x="26" y="14" width="13" height="38" rx="6.5" fill="#5B7EA3"/>
+  <rect x="44" y="36" width="13" height="16" rx="6.5" fill="#C95B66"/>
+  <path d="M8 50.5H56" stroke="#F4F3EF" stroke-width="4" stroke-linecap="round"/>
+</svg>

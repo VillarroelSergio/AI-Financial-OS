@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, Check, X } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, ChevronUp, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAccounts } from "@/lib/hooks/useAccounts";
 import { useHoldings } from "@/lib/hooks/useInvestments";
@@ -10,6 +10,7 @@ const DISMISS_KEY = "comienza-dismissed";
 export default function ComienzaWidget() {
   const navigate = useNavigate();
   const [dismissed, setDismissed] = useState(() => localStorage.getItem(DISMISS_KEY) === "true");
+  const [expanded, setExpanded] = useState(false);
   const { accounts } = useAccounts();
   const { holdings } = useHoldings();
   const years = useSpendingYears();
@@ -21,6 +22,7 @@ export default function ComienzaWidget() {
     { label: "Añade fondos y ahorro", done: holdings.some((h) => ["fund", "savings_account", "cash"].includes(h.asset_type)), to: "/investments" },
   ];
   const doneCount = steps.filter((s) => s.done).length;
+  const compact = doneCount >= 2 && !expanded;
 
   if (dismissed || doneCount === steps.length) return null;
 
@@ -46,7 +48,12 @@ export default function ComienzaWidget() {
         </div>
       </div>
       <p className="mt-1 text-[var(--color-platinum)]" style={{ fontSize: "11px" }}>{doneCount}/{steps.length} completados</p>
-      <div className="mt-2 space-y-1">
+      {compact && (
+        <button onClick={() => setExpanded(true)} className="mt-2 flex w-full items-center justify-between rounded-lg bg-white/[.035] px-2.5 py-2 text-left text-[var(--color-platinum)] hover:text-[var(--color-frost-white)]" style={{ fontSize: "11px" }}>
+          <span>Ver el paso pendiente</span><ChevronDown size={13} />
+        </button>
+      )}
+      {!compact && <div className="mt-2 space-y-1">
         {steps.map((step) => (
           <div key={step.label} className="flex items-start gap-2 border-t border-[rgba(255,255,255,0.05)] pt-1.5">
             <span className={`mt-0.5 grid h-3.5 w-3.5 shrink-0 place-items-center rounded ${step.done ? "bg-emerald-500 text-emerald-950" : "border border-[var(--border-soft)]"}`}>
@@ -64,7 +71,9 @@ export default function ComienzaWidget() {
             </div>
           </div>
         ))}
+        {doneCount >= 2 && <button onClick={() => setExpanded(false)} className="flex w-full items-center justify-end gap-1 pt-1 text-[var(--color-platinum)] hover:text-[var(--color-frost-white)]" style={{ fontSize: "11px" }}>Minimizar <ChevronUp size={12} /></button>}
       </div>
+      }
     </div>
   );
 }

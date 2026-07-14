@@ -166,7 +166,7 @@ export default function BalanceGeneralPanel() {
                     formatter={(v) => formatCurrency(Number(v))}
                     contentStyle={{ background: "#1a1a1f", border: "1px solid #ffffff20", borderRadius: 8 }}
                   />
-                  <Line type="monotone" dataKey="net_worth" stroke="#7c83ff" strokeWidth={2} dot={false} />
+                  <Line type="monotone" dataKey="net_worth" stroke="#2F8F6B" strokeWidth={2} dot={false} />
                 </LineChart>
               </ResponsiveContainer>
             </div>

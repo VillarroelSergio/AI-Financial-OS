@@ -90,7 +90,7 @@ export default function RootLayout() {
   ) : null;
 
   return (
-    <div className="flex h-full flex-col lg:flex-row" style={{ background: "var(--bg-app)", color: "var(--text-primary)" }} data-app-ready="true">
+    <div className="app-shell flex h-full flex-col lg:flex-row" style={{ background: "var(--bg-app)", color: "var(--text-primary)" }} data-app-ready="true">
       {/* Sidebar desktop */}
       <aside className="hidden w-[216px] flex-shrink-0 overflow-y-auto px-3 py-6 lg:flex lg:flex-col" style={{ background: "var(--bg-sidebar)" }}>
         <div className="mb-6 px-3">
@@ -199,10 +199,9 @@ export default function RootLayout() {
       {/* Contenido principal */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col" style={{ background: "var(--bg-app)" }}>
         <header
-          className="relative hidden h-14 shrink-0 items-center justify-between px-6 lg:flex"
+          className="relative hidden h-14 shrink-0 items-center justify-end px-6 lg:flex"
           style={{ borderBottom: "1px solid var(--border-soft)", color: "var(--text-secondary)" }}
         >
-          <span style={{ fontSize: "17px", lineHeight: "1.21", letterSpacing: "-0.22px" }}>Centro de control privado</span>
           {showCopilot && (
             <button
               onClick={() => setCopilotOpen((open) => !open)}

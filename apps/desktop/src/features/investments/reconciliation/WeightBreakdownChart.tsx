@@ -74,7 +74,7 @@ export default function WeightBreakdownChart({ weightsBy }: Props) {
               />
               <Bar dataKey="weight_pct" radius={[0, 4, 4, 0]}>
                 {data.map((_, i) => (
-                  <Cell key={i} fill="#494fdf" fillOpacity={1 - i * 0.08} />
+                  <Cell key={i} fill="#5B7EA3" fillOpacity={1 - i * 0.08} />
                 ))}
               </Bar>
             </BarChart>

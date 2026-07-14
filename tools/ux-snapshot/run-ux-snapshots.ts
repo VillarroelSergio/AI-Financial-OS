@@ -230,6 +230,9 @@ async function main(): Promise<void> {
         console.log(`Capturando ${filename}...`);
         await page.goto(`${BASE_URL}${route.path}`, { waitUntil: "networkidle" });
         await page.waitForSelector('[data-app-ready="true"]', { timeout: 10_000 });
+        // La animación de arranque (.app-launch-stage, 2400ms) se remonta en cada
+        // navegación y tapa la pantalla; esperar a que se desmonte antes de capturar.
+        await page.waitForSelector(".app-launch-stage", { state: "detached", timeout: 10_000 });
         await page.waitForTimeout(600);
 
         const outPath = path.join(OUTPUT_DIR, filename);

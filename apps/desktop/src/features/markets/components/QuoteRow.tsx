@@ -18,7 +18,7 @@ interface Props {
 }
 
 // MKT-8: mini-gráfica SVG inline (sin recharts por fila). Verde/rojo según primer→último.
-function Sparkline({ points }: { points: number[] }) {
+function Sparkline({ points, positive }: { points: number[]; positive: boolean }) {
   if (points.length < 2) return <div className="h-7" />;
   const w = 64;
   const h = 28;
@@ -29,10 +29,9 @@ function Sparkline({ points }: { points: number[] }) {
   const d = points
     .map((v, i) => `${i === 0 ? "M" : "L"}${(i * step).toFixed(1)},${(h - ((v - min) / span) * h).toFixed(1)}`)
     .join(" ");
-  const up = points[points.length - 1] >= points[0];
   return (
     <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} className="overflow-visible" aria-hidden="true">
-      <path d={d} fill="none" stroke={up ? "#00a87e" : "#e23b4a"} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" />
+      <path d={d} fill="none" stroke={positive ? "#2F8F6B" : "#C95B66"} strokeWidth={1.5} strokeLinejoin="round" strokeLinecap="round" />
     </svg>
   );
 }
@@ -85,7 +84,7 @@ export default function QuoteRow({ quote, sparkline }: Props) {
       </div>
 
       <div className="flex justify-center">
-        {sparkline && sparkline.length >= 2 ? <Sparkline points={sparkline} /> : <div className="h-7" />}
+        {sparkline && sparkline.length >= 2 ? <Sparkline points={sparkline} positive={positive} /> : <div className="h-7" />}
       </div>
 
       <div className="text-right">

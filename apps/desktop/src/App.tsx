@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import RootLayout from "@/app/layout/RootLayout";
+import StartupExperience from "@/app/StartupExperience";
 import AssistantPage from "@/features/assistant/AssistantPage";
 import DashboardPage from "@/features/dashboard/DashboardPage";
 import EconomyPage from "@/features/economy/EconomyPage";
@@ -14,7 +15,8 @@ import InstrumentDetailPage from "@/features/markets/detail/InstrumentDetailPage
 import SettingsPage from "@/features/settings/SettingsPage";
 
 export default function App() {
-  return (
+  return <>
+    <StartupExperience />
     <Routes>
       <Route path="/" element={<RootLayout />}>
         <Route index element={<DashboardPage />} />
@@ -38,5 +40,5 @@ export default function App() {
         <Route path="welcome" element={<Navigate to="/" replace />} />
       </Route>
     </Routes>
-  );
+  </>;
 }
