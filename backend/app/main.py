@@ -1,3 +1,4 @@
+import hmac
 import os
 from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
@@ -72,7 +73,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     yield
 
 
-app = FastAPI(title="AI Financial OS", version="0.1.0", lifespan=lifespan)
+app = FastAPI(title="AI Financial OS", version="1.0.0", lifespan=lifespan)
 
 app.add_middleware(
     CORSMiddleware,
@@ -95,7 +96,8 @@ async def require_api_token(request: Request, call_next):
     # token que el launcher inyecta después del import.
     token = os.environ.get("FINOS_API_TOKEN")
     if token and request.url.path != "/health" and request.method != "OPTIONS":
-        if request.headers.get("x-api-token") != token:
+        # Comparación de tiempo constante para evitar timing attacks sobre el token.
+        if not hmac.compare_digest(request.headers.get("x-api-token", ""), token):
             return JSONResponse(
                 status_code=401,
                 content={"error": {"code": "UNAUTHORIZED", "message": "Token de API inválido", "details": {}}},
@@ -105,7 +107,7 @@ async def require_api_token(request: Request, call_next):
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "version": "0.1.0"}
+    return {"status": "ok", "version": "1.0.0"}
 
 
 app.include_router(accounts_router, prefix="/api/accounts", tags=["accounts"])
