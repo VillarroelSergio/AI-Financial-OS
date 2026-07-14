@@ -146,9 +146,3 @@ output/market-intelligence/
 
 Estas salidas son artefactos generados. No deben usarse como documentacion fuente ni
 commitearse salvo decision explicita.
-
-## Legado
-
-`market-data-poc/` conserva codigo y notas del POC. Sirve para comparar adapters o
-recuperar ideas, pero la documentacion operacional debe apuntar al modulo backend
-`market_intelligence`.

@@ -204,9 +204,6 @@ Catalog YAML
  → React UI / AI datasheet
 ```
 
-El POC `market-data-poc/` se conserva como referencia tecnica y banco de pruebas, pero
-no debe documentarse como ruta operativa principal.
-
 ## Fase 6.4 - Integridad de datos y UX core
 
 Reglas vigentes:
