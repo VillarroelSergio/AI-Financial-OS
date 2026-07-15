@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/assets/logo.svg" width="132" alt="AI Financial OS" />
+<img src="vault/docs/assets/logo.svg" width="132" alt="AI Financial OS" />
 
 # AI Financial OS
 
@@ -37,16 +37,16 @@ en una visión clara y accionable, sobre un principio de producto simple:
 
 <div align="center">
 
-<img src="docs/assets/screenshot-overview.png" width="90%" alt="Resumen — patrimonio, ahorro y ritmo de gasto" />
+<img src="vault/docs/assets/screenshot-overview.png" width="90%" alt="Resumen — patrimonio, ahorro y ritmo de gasto" />
 
 <table>
 <tr>
-<td><img src="docs/assets/screenshot-spending.png" alt="Gastos" /></td>
-<td><img src="docs/assets/screenshot-investments.png" alt="Inversiones" /></td>
+<td><img src="vault/docs/assets/screenshot-spending.png" alt="Gastos" /></td>
+<td><img src="vault/docs/assets/screenshot-investments.png" alt="Inversiones" /></td>
 </tr>
 <tr>
-<td><img src="docs/assets/screenshot-markets.png" alt="Mercados" /></td>
-<td><img src="docs/assets/screenshot-economy.png" alt="Economía" /></td>
+<td><img src="vault/docs/assets/screenshot-markets.png" alt="Mercados" /></td>
+<td><img src="vault/docs/assets/screenshot-economy.png" alt="Economía" /></td>
 </tr>
 </table>
 
@@ -94,7 +94,7 @@ FastAPI Backend  ──►  Financial Core · Import Center · Investments
 Almacenamiento local:  SQLite (datos + mi_*)  ·  DuckDB (analítica)  ·  ficheros
 ```
 
-Detalle en [docs/03_ARCHITECTURE.md](docs/03_ARCHITECTURE.md) y contrato de API en [docs/11_API_CONTRACT.md](docs/11_API_CONTRACT.md).
+Detalle en [vault/docs/03_ARCHITECTURE.md](vault/docs/03_ARCHITECTURE.md) y contrato de API en [vault/docs/11_API_CONTRACT.md](vault/docs/11_API_CONTRACT.md).
 
 ## ✅ Requisitos previos
 
@@ -165,7 +165,7 @@ y guarda tus datos en `backend/data/` (`financial.db`, `analytics.duckdb`).
 - **Datos de mercado/macro** se consultan online (no contienen datos personales), se **cachean** localmente y muestran su última actualización.
 - **CSP de producción** restringe las conexiones del frontend a `localhost` (backend + IA local).
 - **Token de API opcional** (`FINOS_API_TOKEN`) en el build empaquetado, con comparación de tiempo constante.
-- Los secretos (`.env`) están **fuera de git**. Modelo de seguridad completo en [docs/10_SECURITY_MODEL.md](docs/10_SECURITY_MODEL.md).
+- Los secretos (`.env`) están **fuera de git**. Modelo de seguridad completo en [vault/docs/10_SECURITY_MODEL.md](vault/docs/10_SECURITY_MODEL.md).
 
 ## 🗂️ Estructura del proyecto
 
@@ -177,7 +177,7 @@ AI-Financial-OS/
 ├─ backend/               # API FastAPI
 │  └─ app/modules/        #   accounts, transactions, investments, market_intelligence,
 │                         #   insights, goals, budgets, ai, rag, security…
-├─ docs/                  # Arquitectura, modelo de datos, contrato API, roadmap
+├─ vault/docs/                  # Arquitectura, modelo de datos, contrato API, roadmap
 ├─ scripts/               # setup / dev / backend / build (PowerShell)
 └─ tools/ux-snapshot/     # Capturas automatizadas de la UI
 ```
@@ -196,7 +196,7 @@ npx tsc --noEmit
 
 ## 📚 Documentación
 
-La carpeta [`docs/`](docs/) contiene el brief de producto, la visión, la arquitectura,
+La carpeta [`vault/docs/`](vault/docs/) contiene el brief de producto, la visión, la arquitectura,
 el modelo de datos, el contrato de API, el roadmap y las notas por módulo.
 
 ## 📄 Licencia
