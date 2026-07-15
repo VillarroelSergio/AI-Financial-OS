@@ -15,12 +15,12 @@ export default {
         graphite:      "#333336",
         "silver-mist": "#cccccc",
         smoke:         "#424245",
-        "apple-blue":  "#5B7EA3",
-        "link-blue":   "#5B7EA3",
-        "halo-blue":   "#7C9AB5",
-        "signal-orange": "#C28A4A",
-        "iris-violet": "#7D93A6",
-        "reef-teal":   "#2F8F6B",
+        "apple-blue":  "#0071e3",
+        "link-blue":   "#0066cc",
+        "halo-blue":   "#2997ff",
+        "signal-orange": "#f56900",
+        "iris-violet": "#8668ff",
+        "reef-teal":   "#00a1b3",
 
         /* ── Tokens semánticos → CSS vars (responden al tema) ── */
         "bg-app":          "var(--bg-app)",
@@ -61,19 +61,20 @@ export default {
         },
         accent: {
           teal:    "var(--positive)",
+          success: "var(--positive)",
           danger:  "var(--negative)",
           warning: "var(--warning)",
           yellow:  "var(--accent)",
         },
 
         /* ── Colores funcionales directos ── */
-        "ember-orange": "#C28A4A",
+        "ember-orange": "#ff3d00",
       },
 
       fontFamily: {
         sans:    ["'SF Pro Text'", "Inter", "ui-sans-serif", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "sans-serif"],
         display: ["'SF Pro Display'", "Inter", "ui-sans-serif", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "sans-serif"],
-        mono:    ["'Courier New'", "ui-monospace", "monospace"],
+        mono:    ["'SF Mono'", "ui-monospace", "Consolas", "monospace"],
       },
 
       fontSize: {
@@ -95,13 +96,13 @@ export default {
       },
 
       borderRadius: {
-        sm:    "10px",
+        sm:    "8px",
         md:    "10px",
-        lg:    "10px",
-        xl:    "10px",
-        "2xl": "28px",
-        "3xl": "28px",
-        "4xl": "36px",
+        lg:    "12px",
+        xl:    "16px",
+        "2xl": "20px",
+        "3xl": "24px",
+        "4xl": "24px",
         full:  "980px",
       },
 

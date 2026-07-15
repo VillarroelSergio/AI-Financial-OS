@@ -18,7 +18,7 @@ resolution-markers = [
 
 [[package]]
 name = "ai-financial-os-backend"
-version = "0.1.2"
+version = "1.0.0"
 source = { editable = "." }
 dependencies = [
     { name = "duckdb" },

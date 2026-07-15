@@ -89,7 +89,9 @@ def budget_comparison(
             )
             .scalar()
         )
-        actual = float(actual_q or Decimal("0"))
+        # Expenses are stored as negative transaction amounts, while budget
+        # consumption is presented as a positive amount to the user.
+        actual = abs(float(actual_q or Decimal("0")))
         budget_amt = float(budget.amount)
         remaining = budget_amt - actual
         consumption_pct = round(actual / budget_amt * 100, 1) if budget_amt > 0 else 0.0

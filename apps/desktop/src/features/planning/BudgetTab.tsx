@@ -2,11 +2,13 @@ import { useState } from "react";
 import { Plus, RefreshCw } from "lucide-react";
 import BudgetCard from "./BudgetCard";
 import BudgetFormModal from "./BudgetFormModal";
+import { EmptyState, ErrorState } from "@/components/ui/Dashboard";
+import { BudgetPreview } from "@/components/ui/EmptyPreviews";
 import type { BudgetCreate } from "@/lib/api/budgets";
 import { useBudgetComparison, useBudgets } from "@/lib/hooks/useBudgets";
 
 export default function BudgetTab() {
-  const { add } = useBudgets();
+  const { add, refresh } = useBudgets();
   const { data, loading, error, refresh: refreshComparison } = useBudgetComparison();
   const [showModal, setShowModal] = useState(false);
 
@@ -21,22 +23,20 @@ export default function BudgetTab() {
 
   if (loading) {
     return (
-      <div className="premium-card flex h-48 items-center justify-center rounded-xl">
-        <div className="flex items-center gap-2 text-sm text-stone">
-          <RefreshCw size={18} className="animate-spin text-stone" />
-          <span>Preparando la planificaciÃ³n...</span>
-        </div>
+      <div className="flex h-64 items-center justify-center">
+        <RefreshCw size={20} className="animate-spin text-stone" />
+        <span className="ml-2 text-sm text-stone">Cargando presupuestos...</span>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="premium-card flex h-48 flex-col items-center justify-center gap-3 rounded-xl px-6 text-center">
-        <p className="text-sm font-medium text-on-dark">No se ha podido cargar la comparativa de presupuestos</p>
-        <p className="text-xs text-stone">Vuelve a intentarlo; tus datos no se han modificado.</p>
-        <button onClick={refreshComparison} className="mercury-button rounded-lg px-4 py-2 text-sm text-on-dark">Reintentar</button>
-      </div>
+      <ErrorState
+        title="No se pudieron cargar los presupuestos"
+        description={error}
+        onRetry={refresh}
+      />
     );
   }
 
@@ -54,12 +54,16 @@ export default function BudgetTab() {
       </div>
 
       {data.length === 0 ? (
-        <div className="flex h-48 flex-col items-center justify-center gap-3 rounded-xl bg-surface-elevated">
-          <p className="text-sm text-stone">Crea tu primer presupuesto para controlar tus gastos</p>
-          <button onClick={() => setShowModal(true)} className="rounded-lg bg-primary px-4 py-2 text-sm text-white">
-            Crear presupuesto
-          </button>
-        </div>
+        <EmptyState
+          title="Aún no tienes presupuestos"
+          description="Crea tu primer presupuesto para controlar tus gastos por categoría cada mes."
+          preview={<BudgetPreview />}
+          action={
+            <button onClick={() => setShowModal(true)} className="rounded-lg bg-primary px-4 py-2 text-sm text-white">
+              Crear presupuesto
+            </button>
+          }
+        />
       ) : (
         <>
           <div className="grid grid-cols-3 gap-3">

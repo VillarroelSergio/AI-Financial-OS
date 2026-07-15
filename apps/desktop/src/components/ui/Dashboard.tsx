@@ -13,14 +13,15 @@ export function PageHeader({
   description: string;
   actions?: ReactNode;
 }) {
+  // eyebrow: prop conservada como deprecated para no romper call sites; ya no se renderiza.
+  void eyebrow;
   return (
-    <header className="flex items-start justify-between gap-10 pb-10 md:pb-12">
+    <header className="flex items-start justify-between gap-6">
       <div className="min-w-0">
-        {eyebrow && <p className="mb-4 text-[13px] leading-none tracking-[-.5px] text-ink">{eyebrow}</p>}
-        <h1 className="font-display text-[52px] leading-[.96] tracking-[-1.5px] text-ink sm:text-[58px] md:text-[64px]">{title}</h1>
-        <p className="mt-7 max-w-[640px] text-body-md text-charcoal">{description}</p>
+        <h1 className="text-heading text-[var(--text-primary)]">{title}</h1>
+        {description && <p className="mt-1 text-[13px] text-[var(--text-secondary)]">{description}</p>}
       </div>
-      {actions && <div className="flex shrink-0 items-center gap-8">{actions}</div>}
+      {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
     </header>
   );
 }
@@ -56,12 +57,12 @@ export function KpiCard({
       <div className="flex items-center justify-between gap-3">
         <p className="truncate text-xs font-medium text-stone">{label}</p>
         {Icon && (
-          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-hairline-dark bg-white/[.035] text-primary-bright">
+          <span className="grid h-8 w-8 shrink-0 place-items-center rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] text-primary-bright">
             <Icon size={16} />
           </span>
         )}
       </div>
-      <p className="financial-number mt-4 truncate text-[26px] leading-none font-normal text-on-dark">{value}</p>
+      <p className="financial-number mt-4 break-words text-[clamp(1.25rem,2vw,1.5rem)] leading-tight text-on-dark">{value}</p>
       <div className="mt-3 min-h-5">{delta ? <MetricDelta value={delta} positive={positive} label={hint} /> : hint && <p className="text-xs text-mute">{hint}</p>}</div>
     </article>
   );
@@ -101,6 +102,7 @@ export function EmptyState({
   secondaryAction,
   icon: Icon = Inbox,
   compact = false,
+  preview,
 }: {
   title: string;
   description: string;
@@ -108,10 +110,17 @@ export function EmptyState({
   secondaryAction?: ReactNode;
   icon?: LucideIcon;
   compact?: boolean;
+  preview?: ReactNode;
 }) {
   return (
     <div className={`flex flex-col items-center justify-center text-center ${compact ? "py-8" : "premium-card rounded-lg py-16 px-6"}`}>
-      <span className="grid h-11 w-11 place-items-center rounded-lg border border-hairline-dark bg-white/[.04] text-primary-bright">
+      {preview && (
+        <div className="relative mb-6 w-full max-w-md opacity-50" style={{ pointerEvents: "none" }} aria-hidden>
+          <span className="absolute right-2 top-2 z-10 rounded-full bg-[var(--bg-interactive)] px-2 py-0.5 text-[10px] font-medium text-[var(--text-secondary)]">Ejemplo</span>
+          <div className="grayscale">{preview}</div>
+        </div>
+      )}
+      <span className="grid h-11 w-11 place-items-center rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] text-primary-bright">
         <Icon size={20} />
       </span>
       <h3 className="mt-4 text-base font-semibold text-on-dark">{title}</h3>
@@ -121,13 +130,21 @@ export function EmptyState({
   );
 }
 
+const INTERNAL_ERROR_PATTERN = /\[mock\]|\/api\/|localhost|127\.0\.0\.1|(?:type|reference|syntax)error|\bat\s+\w+.*:\d+/i;
+
+export function sanitizeUserError(description: string): string {
+  return INTERNAL_ERROR_PATTERN.test(description)
+    ? "No se pudo cargar esta información. Inténtalo de nuevo o revisa que el servicio local esté disponible."
+    : description;
+}
+
 export function ErrorState({ title, description, onRetry, action }: { title: string; description: string; onRetry?: () => void; action?: ReactNode }) {
   return (
     <div className="rounded-lg border border-accent-danger/30 bg-accent-danger/5 p-6 flex gap-4">
       <span className="grid h-10 w-10 shrink-0 place-items-center rounded-lg bg-accent-danger/10 text-accent-danger"><AlertTriangle size={19} /></span>
       <div>
         <h3 className="font-semibold text-on-dark">{title}</h3>
-        <p className="text-sm text-stone mt-1 max-w-xl">{description}</p>
+        <p className="text-sm text-stone mt-1 max-w-xl">{sanitizeUserError(description)}</p>
         <div className="flex gap-3 mt-4">{onRetry && <button onClick={onRetry} className="mercury-button rounded-lg px-4 py-2 text-xs font-semibold">Reintentar</button>}{action}</div>
       </div>
     </div>
@@ -135,7 +152,7 @@ export function ErrorState({ title, description, onRetry, action }: { title: str
 }
 
 export function DataSourceBadge({ status = "local", label }: { status?: "live" | "delayed" | "offline" | "error" | "local"; label?: string }) {
-  const colors = { live: "text-accent-teal bg-accent-teal/10", delayed: "text-accent-warning bg-accent-warning/10", offline: "text-stone bg-white/5", error: "text-accent-danger bg-accent-danger/10", local: "text-primary-bright bg-primary/10" };
+  const colors = { live: "text-accent-teal bg-accent-teal/10", delayed: "text-accent-warning bg-accent-warning/10", offline: "text-stone bg-[var(--bg-interactive)]", error: "text-accent-danger bg-accent-danger/10", local: "text-primary-bright bg-primary/10" };
   return <span className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-[11px] font-medium ${colors[status]}`}><Database size={11} />{label ?? ({ live: "Actualizado", delayed: "Dato retrasado", offline: "Offline", error: "Error", local: "Local" }[status])}</span>;
 }
 

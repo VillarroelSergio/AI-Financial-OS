@@ -1,6 +1,6 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Clock3, Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2 } from "lucide-react";
 import { EmptyState, PageHeader } from "@/components/ui/Dashboard";
 import MetricCard from "@/components/ui/MetricCard";
 import Spinner from "@/components/ui/Spinner";
@@ -8,7 +8,6 @@ import { useAccounts } from "@/lib/hooks/useAccounts";
 import { formatCurrency } from "@/lib/formatters/currency";
 import type { Account } from "@/lib/types";
 import type { AccountCreate } from "@/lib/api/accounts";
-import { useToast } from "@/app/ToastProvider";
 
 const ACCOUNT_TYPE_LABELS: Record<string, string> = {
   cash: "Efectivo",
@@ -28,26 +27,17 @@ const EMPTY_FORM: AccountCreate = {
   is_liability: false,
 };
 
-function formatCompactCurrency(value: number) {
-  if (Math.abs(value) >= 100_000) {
-    return new Intl.NumberFormat("es-ES", { style: "currency", currency: "EUR", notation: "compact", maximumFractionDigits: 1 }).format(value);
-  }
-  return formatCurrency(value);
-}
-
 export default function AccountsPage() {
   const { accounts, loading, add, update, remove } = useAccounts();
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState<AccountCreate>(EMPTY_FORM);
   const [editing, setEditing] = useState<Account | null>(null);
   const [saving, setSaving] = useState(false);
-  const { notify } = useToast();
 
   const total = accounts.reduce((sum, account) => sum + Number(account.current_balance), 0);
   const liquidity = accounts.filter((account) => ["cash", "bank", "savings"].includes(account.type)).reduce((sum, account) => sum + Number(account.current_balance), 0);
   const savings = accounts.filter((account) => account.type === "savings").reduce((sum, account) => sum + Number(account.current_balance), 0);
   const lastUpdated = accounts.reduce<string | null>((latest, account) => !latest || account.updated_at > latest ? account.updated_at : latest, null);
-  const staleAccounts = accounts.filter((account) => Date.now() - new Date(account.updated_at).getTime() > 30 * 24 * 60 * 60 * 1000);
 
   const resetForm = () => {
     setForm(EMPTY_FORM);
@@ -74,16 +64,6 @@ export default function AccountsPage() {
     setShowForm(true);
   };
 
-  const confirmRemove = async (account: Account) => {
-    if (!window.confirm(`¿Eliminar la cuenta “${account.name}”? Esta acción no se puede deshacer.`)) return;
-    try {
-      await remove(account.id);
-      notify("Cuenta eliminada", "success");
-    } catch {
-      notify("No se ha podido eliminar la cuenta", "error");
-    }
-  };
-
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
     setSaving(true);
@@ -108,35 +88,25 @@ export default function AccountsPage() {
   }
 
   return (
-    <div className="p-8 max-w-[1500px] mx-auto space-y-xl">
+    <div className="page-shell space-y-xl">
       <PageHeader
         eyebrow="Liquidez local"
         title="Cuentas"
         description="Resumen operativo de liquidez, ahorro y brokers con pesos sobre patrimonio."
         actions={
-        <button onClick={openNew} className="mercury-button-primary px-lg py-sm text-button-md rounded-lg transition-colors">
+        <button onClick={openNew} className="ui-pressable mercury-button-primary px-lg py-sm text-button-md rounded-lg">
           Nueva cuenta
         </button>
         }
       />
 
       <div className="grid grid-cols-5 gap-lg">
-        <MetricCard label="Saldo total" value={formatCompactCurrency(total)} />
+        <MetricCard label="Saldo total" value={formatCurrency(total)} />
         <MetricCard label="Numero de cuentas" value={String(accounts.length)} />
-        <MetricCard label="Liquidez inmediata" value={formatCompactCurrency(liquidity)} />
-        <MetricCard label="Cuentas de ahorro" value={formatCompactCurrency(savings)} />
+        <MetricCard label="Liquidez inmediata" value={formatCurrency(liquidity)} />
+        <MetricCard label="Cuentas de ahorro" value={formatCurrency(savings)} />
         <MetricCard label="Ultima actualizacion" value={lastUpdated ? new Date(lastUpdated).toLocaleDateString("es-ES") : "Sin datos"} />
       </div>
-
-      {staleAccounts.length > 0 && (
-        <section className="flex items-center justify-between gap-4 rounded-lg border border-accent-warning/35 bg-accent-warning/10 px-5 py-4">
-          <div className="flex items-start gap-3">
-            <Clock3 size={18} className="mt-0.5 text-accent-warning" />
-            <div><p className="text-sm font-semibold text-on-dark">Saldos que requieren revision</p><p className="mt-1 text-xs text-stone">{staleAccounts.length} cuenta(s) lleva(n) más de 30 días sin actualizar.</p></div>
-          </div>
-          <button type="button" onClick={() => openEdit(staleAccounts[0])} className="ui-pressable mercury-button rounded-lg px-3 py-2 text-xs">Revisar saldo</button>
-        </section>
-      )}
 
       {showForm && (
         <form onSubmit={handleSubmit} className="premium-card rounded-lg p-xl space-y-lg">
@@ -144,25 +114,25 @@ export default function AccountsPage() {
           <div className="grid grid-cols-2 gap-lg">
             <label className="space-y-xs">
               <span className="text-caption text-stone">Nombre</span>
-              <input required className="w-full bg-white/[.035] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Ej. BBVA" />
+              <input required className="w-full bg-[var(--bg-interactive)] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} placeholder="Ej. BBVA" />
             </label>
             <label className="space-y-xs">
               <span className="text-caption text-stone">Tipo</span>
-              <select className="w-full bg-white/[.035] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary" value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}>
+              <select className="w-full bg-[var(--bg-interactive)] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary" value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}>
                 {Object.entries(ACCOUNT_TYPE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
               </select>
             </label>
             <label className="space-y-xs">
               <span className="text-caption text-stone">Saldo</span>
-              <input type="number" step="0.01" className="w-full bg-white/[.035] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary" value={form.current_balance} onChange={(e) => setForm((f) => ({ ...f, current_balance: e.target.value }))} />
+              <input type="number" step="0.01" className="w-full bg-[var(--bg-interactive)] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary" value={form.current_balance} onChange={(e) => setForm((f) => ({ ...f, current_balance: e.target.value }))} />
             </label>
             <label className="space-y-xs">
               <span className="text-caption text-stone">Divisa</span>
-              <input maxLength={3} className="w-full bg-white/[.035] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary" value={form.currency ?? "EUR"} onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value.toUpperCase() }))} />
+              <input maxLength={3} className="w-full bg-[var(--bg-interactive)] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary" value={form.currency ?? "EUR"} onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value.toUpperCase() }))} />
             </label>
             <label className="space-y-xs col-span-2">
               <span className="text-caption text-stone">Institucion</span>
-              <input className="w-full bg-white/[.035] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary" value={form.institution ?? ""} onChange={(e) => setForm((f) => ({ ...f, institution: e.target.value }))} placeholder="Opcional" />
+              <input className="w-full bg-[var(--bg-interactive)] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary" value={form.institution ?? ""} onChange={(e) => setForm((f) => ({ ...f, institution: e.target.value }))} placeholder="Opcional" />
             </label>
             <label className="flex items-center gap-sm col-span-2 cursor-pointer">
               <input type="checkbox" checked={form.is_liability ?? false} onChange={(e) => setForm((f) => ({ ...f, is_liability: e.target.checked }))} />
@@ -170,8 +140,8 @@ export default function AccountsPage() {
             </label>
           </div>
           <div className="flex gap-sm justify-end">
-            <button type="button" onClick={resetForm} className="mercury-button px-lg py-sm rounded-lg text-body-sm transition-colors">Cancelar</button>
-            <button type="submit" disabled={saving} className="mercury-button-primary px-lg py-sm text-button-md rounded-lg disabled:opacity-50 transition-colors">
+            <button type="button" onClick={resetForm} className="ui-pressable mercury-button px-lg py-sm rounded-lg text-body-sm">Cancelar</button>
+            <button type="submit" disabled={saving} className="ui-pressable mercury-button-primary px-lg py-sm text-button-md rounded-lg disabled:opacity-50">
               {saving ? "Guardando..." : editing ? "Actualizar" : "Guardar"}
             </button>
           </div>
@@ -179,7 +149,7 @@ export default function AccountsPage() {
       )}
 
       {accounts.length === 0 ? (
-        <EmptyState title="Sin cuentas" description="Anade tu primera cuenta para empezar a registrar movimientos." action={<button onClick={openNew} className="mercury-button-primary px-lg py-sm text-button-md rounded-lg transition-colors">Anadir cuenta</button>} />
+        <EmptyState title="Sin cuentas" description="Anade tu primera cuenta para empezar a registrar movimientos." action={<button onClick={openNew} className="ui-pressable mercury-button-primary px-lg py-sm text-button-md rounded-lg">Anadir cuenta</button>} />
       ) : (
         <div className="space-y-sm">
           {accounts.map((account) => {
@@ -199,8 +169,8 @@ export default function AccountsPage() {
                     <p className="text-heading-sm text-on-dark">{formatCurrency(account.current_balance, account.currency)}</p>
                     <p className="text-caption text-stone">{account.currency}</p>
                   </div>
-                  <button onClick={() => openEdit(account)} className="text-stone hover:text-on-dark transition-colors" aria-label="Editar cuenta"><Pencil size={16} /></button>
-                  <button onClick={() => void confirmRemove(account)} className="text-stone hover:text-accent-danger transition-colors" aria-label="Eliminar cuenta"><Trash2 size={16} /></button>
+                  <button onClick={() => openEdit(account)} className="ui-pressable text-stone hover:text-on-dark" aria-label="Editar cuenta"><Pencil size={16} /></button>
+                  <button onClick={() => remove(account.id)} className="ui-pressable text-stone hover:text-accent-danger" aria-label="Eliminar cuenta"><Trash2 size={16} /></button>
                 </div>
               </div>
             );

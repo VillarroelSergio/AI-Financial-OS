@@ -8,9 +8,9 @@ interface MetricCardProps {
 
 export default function MetricCard({ label, value, delta, deltaPositive, sublabel }: MetricCardProps) {
   return (
-    <div className="premium-card rounded-lg p-xl">
+    <div className="premium-card min-w-0 rounded-lg p-xl">
       <p className="text-[11px] text-stone uppercase tracking-[.16em] mb-xs">{label}</p>
-      <p className="financial-number truncate text-heading-md text-on-dark">{value}</p>
+      <p className="financial-number break-words text-[clamp(1.25rem,2vw,1.75rem)] leading-tight text-on-dark">{value}</p>
       {delta && (
         <p className={`text-caption mt-xs ${deltaPositive ? "text-accent-teal" : "text-accent-danger"}`}>
           {delta}

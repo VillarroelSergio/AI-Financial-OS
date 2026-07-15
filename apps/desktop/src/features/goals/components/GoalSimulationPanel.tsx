@@ -195,12 +195,12 @@ export default function GoalSimulationPanel({ goalId, targetAmount, hasContribut
                         <stop offset="95%" stopColor="#94a3b8" stopOpacity={0} />
                       </linearGradient>
                       <linearGradient id={`gb-${goalId}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#2F8F6B" stopOpacity={0.2} />
-                        <stop offset="95%" stopColor="#2F8F6B" stopOpacity={0} />
+                        <stop offset="5%" stopColor="var(--positive)" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="var(--positive)" stopOpacity={0} />
                       </linearGradient>
                       <linearGradient id={`go-${goalId}`} x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#C28A4A" stopOpacity={0.15} />
-                        <stop offset="95%" stopColor="#C28A4A" stopOpacity={0} />
+                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.15} />
+                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <XAxis
@@ -214,7 +214,7 @@ export default function GoalSimulationPanel({ goalId, targetAmount, hasContribut
                     <Tooltip content={<ChartTooltip />} />
                     <ReferenceLine
                       y={target}
-                      stroke="#2F8F6B"
+                      stroke="var(--positive)"
                       strokeDasharray="4 2"
                       strokeOpacity={0.5}
                     />
@@ -231,7 +231,7 @@ export default function GoalSimulationPanel({ goalId, targetAmount, hasContribut
                       type="monotone"
                       dataKey="base"
                       name="Base"
-                      stroke="#2F8F6B"
+                      stroke="var(--positive)"
                       strokeWidth={1.5}
                       fill={`url(#gb-${goalId})`}
                       dot={false}
@@ -240,7 +240,7 @@ export default function GoalSimulationPanel({ goalId, targetAmount, hasContribut
                       type="monotone"
                       dataKey="optimistic"
                       name="Optimista"
-                      stroke="#C28A4A"
+                      stroke="#f59e0b"
                       strokeWidth={1.5}
                       fill={`url(#go-${goalId})`}
                       dot={false}

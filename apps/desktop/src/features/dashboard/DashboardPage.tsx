@@ -1,41 +1,18 @@
-import { ArrowUpRight, BarChart2, ReceiptText, Target } from "lucide-react";
+import { ArrowUpRight, BarChart2, PiggyBank, ReceiptText, Target, TrendingDown } from "lucide-react";
+import { motion } from "framer-motion";
 import { Link, useNavigate } from "react-router-dom";
-import { PageHeader } from "@/components/ui/Dashboard";
-import { useOverview } from "@/lib/hooks/useDashboard";
+import { KpiCard, PageHeader } from "@/components/ui/Dashboard";
+import { CardSkeleton, DashboardSkeleton } from "@/components/ui/Skeleton";
+import { staggerContainer, staggerItem } from "@/components/ui/motion";
+import { useOverview, useSpendingMonthly } from "@/lib/hooks/useDashboard";
 import { useHoldings, useInvestmentSummary } from "@/lib/hooks/useInvestments";
 import { useTransactions } from "@/lib/hooks/useTransactions";
 import { useGoals } from "@/lib/hooks/useGoals";
 import { useInsights } from "@/features/insights/hooks/useInsights";
 import { formatCurrency, formatPercent } from "@/lib/formatters/currency";
 import BalanceGeneralPanel from "./components/BalanceGeneralPanel";
-
-function CardSkeleton({ rows = 3 }: { rows?: number }) {
-  return (
-    <div className="animate-pulse space-y-2 py-2">
-      {Array.from({ length: rows }).map((_, i) => (
-        <div key={i} className="h-4 rounded bg-surface-elevated" />
-      ))}
-    </div>
-  );
-}
-
-function DashboardSkeleton() {
-  return (
-    <div className="p-8 max-w-[1500px] mx-auto space-y-6" aria-label="Preparando resumen">
-      <div className="animate-pulse space-y-5 py-2">
-        <div className="h-16 w-64 rounded-lg bg-surface-elevated" />
-        <div className="h-5 w-[420px] max-w-full rounded bg-surface-elevated" />
-      </div>
-      <div className="grid gap-4 lg:grid-cols-3 animate-pulse">
-        {Array.from({ length: 3 }).map((_, index) => <div key={index} className="premium-card h-28 rounded-lg" />)}
-      </div>
-      <div className="grid gap-6 lg:grid-cols-[2fr_1fr] animate-pulse">
-        <div className="premium-card h-72 rounded-lg" />
-        <div className="space-y-6"><div className="premium-card h-32 rounded-lg" /><div className="premium-card h-32 rounded-lg" /></div>
-      </div>
-    </div>
-  );
-}
+import NetWorthHero from "./components/NetWorthHero";
+import InsightStrip from "./components/InsightStrip";
 
 function SectionCard({ title, more, children }: { title: string; more: string; children: React.ReactNode }) {
   return (
@@ -58,7 +35,8 @@ export default function DashboardPage() {
   const { summary } = useInvestmentSummary();
   const { transactions, loading: txLoading } = useTransactions({ limit: 5 });
   const { goals, loading: goalsLoading } = useGoals();
-  const { data: insightsData, loading: insightsLoading } = useInsights();
+  const { data: insightsData } = useInsights();
+  const monthly = useSpendingMonthly(6);
 
   if (loading) return <DashboardSkeleton />;
 
@@ -67,21 +45,73 @@ export default function DashboardPage() {
   const recent = transactions;
   const insights = (insightsData?.insights ?? []).slice(0, 2);
 
-  return (
-    <div className="p-8 max-w-[1500px] mx-auto space-y-6">
-      <PageHeader
-        title="Resumen"
-        description="Monitorea tus finanzas, inversiones y gastos."
-      />
+  // Delta de gastos vs media de meses anteriores (solo si hay histórico; nunca inventado)
+  let expenseDelta: string | undefined;
+  let expenseIsGood = true;
+  if (monthly.length >= 2) {
+    const current = Number(monthly[monthly.length - 1].expense);
+    const prev = monthly.slice(0, -1).map((m) => Number(m.expense));
+    const avg = prev.reduce((a, b) => a + b, 0) / prev.length;
+    if (avg > 0) {
+      const pct = ((current - avg) / avg) * 100;
+      expenseIsGood = current <= avg;
+      expenseDelta = `${pct >= 0 ? "+" : ""}${pct.toFixed(0)}%`;
+    }
+  }
+  const savingsRate = overview?.savings_rate ?? 0;
 
-      <section>
-        <div className="mb-3 flex items-center justify-between"><div><p className="text-sm font-semibold text-on-dark">Señales del mes</p><p className="mt-1 text-xs text-stone">Lo importante antes del detalle.</p></div><Link to="/finances?tab=gastos" className="text-xs text-primary-bright hover:underline">Ver gastos</Link></div>
-        <div className="grid gap-4 lg:grid-cols-3">
-          <button type="button" onClick={() => navigate("/finances?tab=cuentas")} className="premium-card ui-pressable rounded-lg p-5 text-left transition-colors hover:border-[var(--border-strong)]"><p className="text-xs text-stone">Patrimonio neto</p><p className="financial-number mt-2 text-xl font-semibold">{formatCurrency(overview?.net_worth ?? "0")}</p><p className="mt-2 text-xs text-primary-bright">Revisar cuentas</p></button>
-          <button type="button" onClick={() => navigate("/finances?tab=gastos")} className="premium-card ui-pressable rounded-lg p-5 text-left transition-colors hover:border-[var(--border-strong)]"><p className="text-xs text-stone">Ahorro neto</p><p className={`financial-number mt-2 text-xl font-semibold ${Number(overview?.monthly_savings ?? 0) >= 0 ? "text-accent-teal" : "text-accent-danger"}`}>{formatCurrency(overview?.monthly_savings ?? "0")}</p><p className="mt-2 text-xs text-primary-bright">Analizar gastos</p></button>
-          <button type="button" onClick={() => navigate("/finances?tab=gastos")} className="premium-card ui-pressable rounded-lg p-5 text-left transition-colors hover:border-[var(--border-strong)]"><p className="text-xs text-stone">Ritmo de gasto</p><p className="financial-number mt-2 text-xl font-semibold">{formatCurrency(overview?.monthly_expense ?? "0")}</p><p className="mt-1 text-xs text-stone">{formatPercent(overview?.savings_rate ?? 0)} de ahorro · <span className="text-primary-bright">Ver gastos</span></p></button>
+  return (
+    <div className="page-shell space-y-6">
+      <PageHeader title="Resumen" description="Cómo van tus finanzas, inversiones y gastos." />
+
+      <NetWorthHero netWorth={overview?.net_worth ?? "0"} />
+
+      <motion.div className="dashboard-grid" variants={staggerContainer} initial="hidden" animate="show">
+        <motion.div className="col-span-4" variants={staggerItem}>
+          <KpiCard
+            label="Gastos del mes"
+            value={formatCurrency(overview?.monthly_expense ?? "0")}
+            icon={TrendingDown}
+            delta={expenseDelta}
+            positive={expenseIsGood}
+            hint={expenseDelta ? "vs media" : "Mes en curso"}
+          />
+        </motion.div>
+        <motion.div className="col-span-4" variants={staggerItem}>
+          <KpiCard
+            label="Ahorro neto"
+            value={formatCurrency(overview?.monthly_savings ?? "0")}
+            icon={PiggyBank}
+            hint={`Tasa de ahorro ${formatPercent(savingsRate)}`}
+          />
+        </motion.div>
+        <motion.div className="col-span-4" variants={staggerItem}>
+          <KpiCard
+            label="Inversiones"
+            value={`${activeInvestments} ${activeInvestments === 1 ? "posición" : "posiciones"}`}
+            icon={BarChart2}
+            delta={activeInvestments > 0 ? `${returnPct >= 0 ? "+" : ""}${returnPct.toFixed(1)}%` : undefined}
+            positive={returnPct >= 0}
+            hint={activeInvestments > 0 ? "rentabilidad" : "Sin posiciones"}
+          />
+        </motion.div>
+      </motion.div>
+
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <p className="font-semibold text-[var(--text-primary)]">Insights</p>
+          <Link to="/insights" className="flex items-center gap-1 text-xs text-primary-bright hover:underline">
+            Ver todos <ArrowUpRight size={12} />
+          </Link>
         </div>
+        {insights.length > 0 ? (
+          <InsightStrip insights={insights} />
+        ) : (
+          <p className="text-sm text-stone">Aún no hay insights destacados. Ábrelos para explorar patrones y alertas de tus finanzas.</p>
+        )}
       </section>
+
+      <BalanceGeneralPanel />
 
       <div className="dashboard-grid">
         <div className="col-span-8 space-y-6">
@@ -132,7 +162,7 @@ export default function DashboardPage() {
             </button>
             {goalsLoading && <CardSkeleton rows={2} />}
             {!goalsLoading && goals.slice(0, 2).map((g) => (
-              <div key={g.id} className="mt-2 rounded-lg border border-hairline-dark bg-black/20 px-3 py-2.5">
+              <div key={g.id} className="mt-2 rounded-lg border border-hairline-dark bg-[var(--bg-card-elevated)] px-3 py-2.5">
                 <p className="text-sm font-medium">{g.name}</p>
                 <p className="mt-0.5 text-xs text-stone">
                   {formatCurrency(g.current_amount)} de {formatCurrency(g.target_amount)}
@@ -140,23 +170,8 @@ export default function DashboardPage() {
               </div>
             ))}
           </SectionCard>
-
-          <SectionCard title="Insights" more="/insights">
-            {insightsLoading ? <CardSkeleton rows={2} /> : insights.length === 0 ? (
-              <p className="py-4 text-sm text-stone">Cuando haya suficientes datos verás aquí recomendaciones basadas en tus finanzas.</p>
-            ) : (
-              insights.map((i) => (
-                <div key={i.id} className={`mt-2 rounded-lg border px-3 py-2.5 first:mt-0 ${i.severity === "warning" || i.severity === "critical" ? "border-accent-warning/30 bg-accent-warning/5" : "border-accent-teal/30 bg-accent-teal/5"}`}>
-                  <p className="text-sm font-medium">{i.title}</p>
-                  <p className="mt-0.5 text-xs text-stone">{i.summary}</p>
-                </div>
-              ))
-            )}
-          </SectionCard>
         </div>
       </div>
-
-      <BalanceGeneralPanel />
     </div>
   );
 }

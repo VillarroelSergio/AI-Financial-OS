@@ -31,7 +31,7 @@ export default function WeightBreakdownChart({ weightsBy }: Props) {
               "rounded-full px-3 py-1.5 text-xs font-medium transition-colors",
               active === tab.key
                 ? "bg-primary text-white"
-                : "bg-white/5 text-stone hover:text-on-dark",
+                : "bg-[var(--bg-interactive)] text-stone hover:text-on-dark",
             ].join(" ")}
           >
             {tab.label}
@@ -74,7 +74,7 @@ export default function WeightBreakdownChart({ weightsBy }: Props) {
               />
               <Bar dataKey="weight_pct" radius={[0, 4, 4, 0]}>
                 {data.map((_, i) => (
-                  <Cell key={i} fill="#5B7EA3" fillOpacity={1 - i * 0.08} />
+                  <Cell key={i} fill="#494fdf" fillOpacity={1 - i * 0.08} />
                 ))}
               </Bar>
             </BarChart>

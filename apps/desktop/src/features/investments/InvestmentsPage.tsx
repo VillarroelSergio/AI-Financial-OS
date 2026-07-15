@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Plus, RefreshCw } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { EmptyState, PageHeader } from "@/components/ui/Dashboard";
+import SegmentedControl from "@/components/ui/SegmentedControl";
+import { InvestmentsPreview } from "@/components/ui/EmptyPreviews";
 import MetricCard from "@/components/ui/MetricCard";
 import Spinner from "@/components/ui/Spinner";
 import { useAccounts } from "@/lib/hooks/useAccounts";
@@ -90,9 +92,6 @@ export default function InvestmentsPage() {
   const realHoldings = holdings.filter((h) => !h.is_mock);
   const returnPct = summary?.return_percent ?? 0;
   const isPositive = returnPct >= 0;
-  const totalPortfolioValue = realHoldings.reduce((total, holding) => total + Number(holding.market_value ?? 0), 0);
-  const largestHolding = [...realHoldings].sort((a, b) => Number(b.market_value ?? 0) - Number(a.market_value ?? 0))[0];
-  const largestWeight = largestHolding && totalPortfolioValue > 0 ? (Number(largestHolding.market_value ?? 0) / totalPortfolioValue) * 100 : 0;
   const openAdd = () => {
     setEditingHolding(null);
     setEditorOpen(true);
@@ -145,7 +144,7 @@ export default function InvestmentsPage() {
   };
 
   return (
-    <div className="p-8 max-w-[1500px] mx-auto space-y-xl">
+    <div className="page-shell space-y-xl">
       <PageHeader
         eyebrow="Portfolio desk"
         title="Inversiones"
@@ -175,12 +174,6 @@ export default function InvestmentsPage() {
             className="mercury-button flex items-center gap-sm px-md py-sm rounded-lg text-body-sm"
           >
             Seguimiento
-          </button>
-          <button
-            onClick={() => navigate("/markets")}
-            className="mercury-button flex items-center gap-sm px-md py-sm rounded-lg text-body-sm"
-          >
-            Mercado
           </button>
           </>
         }
@@ -219,33 +212,21 @@ export default function InvestmentsPage() {
       )}
 
       {/* Main tabs */}
-      <div className="flex w-fit gap-sm rounded-lg border border-hairline-dark bg-white/[.035] p-1">
-        <button
-          onClick={() => setActiveTab("posiciones")}
-          className={`px-md py-xs rounded-lg text-caption transition-colors ${
-            activeTab === "posiciones"
-              ? "bg-primary text-on-primary"
-              : "text-stone hover:text-on-dark hover:bg-white/[.04]"
-          }`}
-        >
-          Posiciones
-        </button>
-        <button
-          onClick={() => setActiveTab("reconciliacion")}
-          className={`px-md py-xs rounded-lg text-caption transition-colors ${
-            activeTab === "reconciliacion"
-              ? "bg-primary text-on-primary"
-              : "text-stone hover:text-on-dark hover:bg-white/[.04]"
-          }`}
-        >
-          Calidad de cartera
-        </button>
-      </div>
+      <SegmentedControl
+        ariaLabel="Vista de inversiones"
+        value={activeTab}
+        onChange={setActiveTab}
+        options={[
+          { key: "posiciones", label: "Posiciones" },
+          { key: "reconciliacion", label: "Calidad de cartera" },
+        ]}
+      />
 
       {!hasHoldings && activeTab === "posiciones" ? (
         <EmptyState
           title="Sin posiciones"
           description="Añade tus primeras inversiones para ver el estado de tu cartera."
+          preview={<InvestmentsPreview />}
           action={
             <button
               onClick={openAdd}
@@ -277,13 +258,6 @@ export default function InvestmentsPage() {
                 deltaPositive={isPositive}
               />
             </div>
-          )}
-
-          {largestHolding && largestWeight >= 35 && (
-            <section className="flex items-center justify-between gap-4 rounded-lg border border-accent-warning/35 bg-accent-warning/10 px-5 py-4">
-              <div><p className="text-sm font-semibold text-on-dark">Riesgo de concentracion</p><p className="mt-1 text-xs text-stone">{largestHolding.display_name} representa el {largestWeight.toFixed(1)}% del valor de tu cartera.</p></div>
-              <button type="button" onClick={() => setActiveTab("reconciliacion")} className="ui-pressable mercury-button rounded-lg px-3 py-2 text-xs">Revisar alerta</button>
-            </section>
           )}
 
           {summary && summary.pending_valuation_count > 0 && (
@@ -390,4 +364,3 @@ export default function InvestmentsPage() {
     </div>
   );
 }
-

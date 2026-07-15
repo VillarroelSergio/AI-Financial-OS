@@ -3,7 +3,7 @@ import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 import { formatCurrency } from "@/lib/formatters/currency";
 import type { HoldingEnriched } from "@/lib/types";
 
-const COLORS = ["#5B7EA3", "#2F8F6B", "#C28A4A", "#7D93A6", "#C95B66", "#4D776E", "#A67565"];
+const COLORS = ["#5b5ef7", "var(--positive)", "#f59e0b", "#38bdf8", "#a78bfa", "var(--negative)", "#9CB39A"];
 type View = "asset" | "broker" | "type" | "currency" | "sector";
 
 const VIEWS: { key: View; label: string }[] = [
@@ -74,7 +74,7 @@ export default function DistributionChart({ holdings, accountNames }: Distributi
                 <span className="min-w-0 truncate text-on-dark">{entry.name}</span>
                 <span className="financial-number shrink-0 text-stone">{formatCurrency(entry.value)} · {entry.pct.toFixed(1)}%</span>
               </div>
-              <div className="mt-xs h-2 rounded-full bg-white/5 overflow-hidden">
+              <div className="mt-xs h-2 rounded-full bg-[var(--bg-interactive)] overflow-hidden">
                 <div className="h-full rounded-full" style={{ width: `${Math.max(2, entry.pct)}%`, background: entry.color }} />
               </div>
             </div>

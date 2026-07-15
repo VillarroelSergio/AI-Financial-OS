@@ -9,7 +9,7 @@ import {
 } from "recharts";
 import type { BondSnapshotMI, ForexSnapshotMI } from "@/lib/types/market-intelligence";
 
-const CURVE_COLOR = "#2F8F6B";
+const CURVE_COLOR = "#7c83ff";
 const US_CURVE: Array<{ id: string; maturity: string }> = [
   { id: "us_2y", maturity: "2A" },
   { id: "us_5y", maturity: "5A" },

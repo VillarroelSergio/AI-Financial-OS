@@ -78,11 +78,11 @@ const mockAccounts: Account[] = [
 ];
 
 const mockCategories: Category[] = [
-  { id: "cat-1", name: "Alimentación", parent_id: null, type: "expense", icon: null, color: "#C28A4A", is_system: true, created_at: "2024-01-01T00:00:00", updated_at: "2024-01-01T00:00:00" },
-  { id: "cat-2", name: "Transporte", parent_id: null, type: "expense", icon: null, color: "#5B7EA3", is_system: true, created_at: "2024-01-01T00:00:00", updated_at: "2024-01-01T00:00:00" },
-  { id: "cat-3", name: "Ocio", parent_id: null, type: "expense", icon: null, color: "#C95B66", is_system: true, created_at: "2024-01-01T00:00:00", updated_at: "2024-01-01T00:00:00" },
-  { id: "cat-4", name: "Casa", parent_id: null, type: "expense", icon: null, color: "#C95B66", is_system: true, created_at: "2024-01-01T00:00:00", updated_at: "2024-01-01T00:00:00" },
-  { id: "cat-5", name: "Salario", parent_id: null, type: "income", icon: null, color: "#2F8F6B", is_system: true, created_at: "2024-01-01T00:00:00", updated_at: "2024-01-01T00:00:00" },
+  { id: "cat-1", name: "Alimentación", parent_id: null, type: "expense", icon: null, color: "#ec7e00", is_system: true, created_at: "2024-01-01T00:00:00", updated_at: "2024-01-01T00:00:00" },
+  { id: "cat-2", name: "Transporte", parent_id: null, type: "expense", icon: null, color: "#494fdf", is_system: true, created_at: "2024-01-01T00:00:00", updated_at: "2024-01-01T00:00:00" },
+  { id: "cat-3", name: "Ocio", parent_id: null, type: "expense", icon: null, color: "#2D7B6A", is_system: true, created_at: "2024-01-01T00:00:00", updated_at: "2024-01-01T00:00:00" },
+  { id: "cat-4", name: "Casa", parent_id: null, type: "expense", icon: null, color: "#B34D62", is_system: true, created_at: "2024-01-01T00:00:00", updated_at: "2024-01-01T00:00:00" },
+  { id: "cat-5", name: "Salario", parent_id: null, type: "income", icon: null, color: "#4f55f1", is_system: true, created_at: "2024-01-01T00:00:00", updated_at: "2024-01-01T00:00:00" },
 ];
 
 const mockTransactions: Transaction[] = [
@@ -644,20 +644,35 @@ export function getMockResponse<T>(path: string, init?: RequestInit): T {
 
   if (clean === "/api/accounts") return mockAccounts as T;
   if (clean === "/api/categories") return mockCategories as T;
-  if (clean === "/api/budgets") return [] as T;
-  if (clean === "/api/budgets/comparison") return [] as T;
-  if (clean === "/api/insights" || clean === "/api/insights/refresh") {
-    return {
-      period: "2026-07",
-      generated_at: new Date().toISOString(),
-      data_status: "insufficient",
-      insights: [],
-      summary: { total: 0, positive: 0, info: 0, warning: 0, critical: 0, partial: 0, insufficient: 1 },
-    } as T;
-  }
-  if (clean === "/api/insights/monthly-review") return null as T;
   if (clean === "/api/transactions") return mockTransactions as T;
   if (clean === "/api/dashboard/overview") return mockOverview as T;
+  if (clean === "/api/budgets") return [] as T;
+  if (clean === "/api/budgets/comparison") return [
+    {
+      budget_id: "budget-food",
+      category_id: "cat-food",
+      category_name: "Alimentación",
+      budget_amount: 420,
+      actual_amount: 287.4,
+      remaining: 132.6,
+      consumption_pct: 68.4,
+      alert: false,
+      over_budget: false,
+      period: "2026-07",
+    },
+    {
+      budget_id: "budget-leisure",
+      category_id: "cat-leisure",
+      category_name: "Ocio",
+      budget_amount: 180,
+      actual_amount: 153,
+      remaining: 27,
+      consumption_pct: 85,
+      alert: true,
+      over_budget: false,
+      period: "2026-07",
+    },
+  ] as T;
   if (clean === "/api/dashboard/spending/years") return { years: [2026] } as T;
   if (clean === "/api/dashboard/spending/monthly") return [
     { month: "2026-02", income: "2650.00", expense: "1420.50", savings: "1229.50" },
@@ -824,9 +839,10 @@ export function getMockResponse<T>(path: string, init?: RequestInit): T {
       assets: [
         { key: "liquidez", label: "Liquidez", amount: "12500.00" },
         { key: "cartera", label: "Cartera de mercado", amount: "28000.00" },
+        { key: "vivienda", label: "Vivienda", amount: "86200.00" },
       ],
       liabilities: [{ key: "mortgage", label: "Hipoteca", amount: "85000.00" }],
-      total_assets: "40500.00", total_liabilities: "85000.00", net_worth: "-44500.00",
+      total_assets: "126700.00", total_liabilities: "85000.00", net_worth: "41700.00",
       portfolio_cost: "25000.00", portfolio_gain: "3000.00", net_worth_change: "1200.00",
     } as T;
   }

@@ -42,7 +42,7 @@ export default function ExpenseCategoryDetailDrawer({ category, period, onClose 
               <h2 className="mt-2 text-heading-md text-on-dark">{data?.category ?? category.category}</h2>
               <p className="mt-1 text-body-sm text-stone">{period.mode === "year" ? period.year : period.month}</p>
             </div>
-            <button onClick={onClose} aria-label="Cerrar" className="rounded-lg p-2 text-stone hover:bg-white/5 hover:text-on-dark">
+            <button onClick={onClose} aria-label="Cerrar" className="rounded-lg p-2 text-stone hover:bg-[var(--bg-interactive)] hover:text-on-dark">
               <X size={18} />
             </button>
           </div>
@@ -102,14 +102,14 @@ export default function ExpenseCategoryDetailDrawer({ category, period, onClose 
                   <div key={tx.id} className="grid grid-cols-[1fr_auto] gap-4 px-4 py-3">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2">
-                        {isExpense ? <ArrowDown size={14} className="text-accent-danger" /> : <ArrowUp size={14} className="text-accent-teal" />}
+                        {isExpense ? <ArrowDown size={14} className="text-accent-danger" /> : <ArrowUp size={14} className="text-accent-success" />}
                         <p className="truncate text-body-sm font-medium text-on-dark">{tx.description}</p>
                       </div>
                       <p className="mt-1 text-caption text-stone">{tx.date} · {tx.account_name} · {tx.category}</p>
                       {tx.notes && <p className="mt-1 text-caption text-mute">{tx.notes}</p>}
                     </div>
                     <div className="text-right">
-                      <p className={`financial-number text-body-sm font-semibold ${isExpense ? "text-accent-danger" : "text-accent-teal"}`}>
+                      <p className={`financial-number text-body-sm font-semibold ${isExpense ? "text-accent-danger" : "text-accent-success"}`}>
                         {formatCurrency(tx.amount)}
                       </p>
                       <p className="mt-1 text-caption text-stone">{tx.type === "expense" ? "Gasto" : "Ingreso"}</p>

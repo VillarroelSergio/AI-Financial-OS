@@ -121,7 +121,7 @@ export const snapshotRoutes: SnapshotRoute[] = [
     requiresInteraction: false,
   },
   {
-    path: "/markets?category=indices_eu",
+    path: "/markets?region=eu",
     filename: "markets-europa.png",
     screenName: "Markets Europa",
     state: "mock_data",

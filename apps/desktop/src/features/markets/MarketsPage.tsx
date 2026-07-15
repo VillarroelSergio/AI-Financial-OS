@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Activity, RefreshCw } from "lucide-react";
 import { PageHeader } from "@/components/ui/Dashboard";
 import { getSparklines } from "@/lib/api/market-intelligence";
@@ -27,6 +27,8 @@ function LoadingSkeleton({ isIngesting }: { isIngesting: boolean }) {
 }
 
 export default function MarketsPage() {
+  const [searchParams] = useSearchParams();
+  const region = searchParams.get("region");
   const { market, forex, bonds, ingestStatus, loading, error, refetch } = useMarketsMI();
   const [sparklines, setSparklines] = useState<Record<string, number[]>>({});
   const [activeTab, setActiveTab] = useState<Tab>("indices");
@@ -48,6 +50,9 @@ export default function MarketsPage() {
   const [refreshing, setRefreshing] = useState(false);
   const [lastRefresh, setLastRefresh] = useState<Date | null>(null);
   const isIngesting = ingestStatus?.phase === "running";
+  const visibleIndices = region === "eu"
+    ? (market?.indices ?? []).filter((quote) => ["ES", "EA"].includes(quote.display_country ?? ""))
+    : (market?.indices ?? []);
 
   const ingestFailures = (categories: string[]) =>
     (ingestStatus?.results ?? []).filter((r) => !r.success && categories.includes(r.category));
@@ -84,17 +89,22 @@ export default function MarketsPage() {
   ];
 
   return (
-    <div className="p-8 max-w-[1500px] mx-auto space-y-6">
+    <div className="page-shell space-y-6">
       <PageHeader
         eyebrow="Market intelligence"
         title="Mercados"
         description="Terminal compacto con indices, materias primas, divisas y bonos alimentado por Market Intelligence."
         actions={
           <div className="flex items-center gap-2">
+            {region === "eu" && (
+              <Link to="/markets" className="ui-pressable rounded-lg border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary-bright">
+                Europa
+              </Link>
+            )}
             <button
               onClick={handleRefresh}
               disabled={refreshing || loading}
-              className="flex items-center gap-1.5 rounded-lg bg-white/5 px-3 py-1.5 text-xs text-stone hover:text-on-dark disabled:opacity-50 transition-colors"
+              className="ui-pressable flex items-center gap-1.5 rounded-lg bg-[var(--bg-interactive)] px-3 py-1.5 text-xs text-stone hover:text-on-dark disabled:opacity-50"
             >
               <RefreshCw size={12} className={refreshing ? "animate-spin" : ""} />
               {refreshing
@@ -112,7 +122,7 @@ export default function MarketsPage() {
 
       <section className="premium-card rounded-lg p-5">
         <div className="flex items-center gap-3">
-          <span className="grid h-10 w-10 place-items-center rounded-lg border border-hairline-dark bg-white/[.035] text-primary-bright"><Activity size={18} /></span>
+          <span className="grid h-10 w-10 place-items-center rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] text-primary-bright"><Activity size={18} /></span>
           <div>
             <p className="text-sm font-semibold text-on-dark">Pulso de mercado</p>
             <p className="text-xs text-stone">Vista densa para seguimiento diario y validacion de calidad de dato.</p>
@@ -120,9 +130,9 @@ export default function MarketsPage() {
         </div>
       </section>
 
-      <div className="flex w-fit gap-1 rounded-lg border border-hairline-dark bg-white/[.035] p-1">
+      <div className="flex w-fit gap-1 rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] p-1">
         {tabs.map((tab) => (
-          <button key={tab.key} onClick={() => setActiveTab(tab.key)} className={["rounded-lg px-4 py-2 text-body-sm transition-colors", activeTab === tab.key ? "bg-white/[.08] text-on-dark shadow-[inset_0_0_0_1px_rgba(255,255,255,.08)]" : "text-stone hover:text-on-dark"].join(" ")}>
+          <button key={tab.key} onClick={() => setActiveTab(tab.key)} className={["ui-pressable rounded-lg px-4 py-2 text-body-sm", activeTab === tab.key ? "bg-[var(--bg-interactive)] text-on-dark shadow-[inset_0_0_0_1px_rgba(255,255,255,.08)]" : "text-stone hover:text-on-dark"].join(" ")}>
             {tab.label}
           </button>
         ))}
@@ -149,19 +159,19 @@ export default function MarketsPage() {
 
       {!loading && activeTab === "indices" && (
         <div className="premium-card rounded-lg overflow-hidden">
-          {market && market.indices.length > 0 && (
+          {market && visibleIndices.length > 0 && (
             <>
               <div className="px-6 pt-4 pb-2"><span className="text-caption text-mute uppercase tracking-widest font-medium">Indices</span></div>
-              <div className="divide-y divide-divider-soft">{market.indices.map((q) => <QuoteRow key={q.catalog_item_id} quote={q} sparkline={sparklines[q.catalog_item_id]} />)}</div>
+              <div className="divide-y divide-divider-soft">{visibleIndices.map((q) => <QuoteRow key={q.catalog_item_id} quote={q} sparkline={sparklines[q.catalog_item_id]} />)}</div>
             </>
           )}
-          {market && market.crypto.length > 0 && (
+          {region !== "eu" && market && market.crypto.length > 0 && (
             <>
               <div className="border-t border-hairline-dark px-6 pt-4 pb-2"><span className="text-caption text-mute uppercase tracking-widest font-medium">Criptomonedas</span></div>
               <div className="divide-y divide-divider-soft">{market.crypto.map((q) => <QuoteRow key={q.catalog_item_id} quote={q} sparkline={sparklines[q.catalog_item_id]} />)}</div>
             </>
           )}
-          {(!market || (market.indices.length === 0 && market.crypto.length === 0)) && (
+          {(!market || (visibleIndices.length === 0 && (region === "eu" || market.crypto.length === 0))) && (
             <EmptySection categories={["indices", "crypto"]} fallbackText="Sin datos de indices o cripto. La ingesta no ha devuelto esas secciones." />
           )}
         </div>
@@ -178,7 +188,7 @@ export default function MarketsPage() {
           {forex && forex.rates.length > 0 ? (
             <div className="divide-y divide-divider-soft">
               {forex.rates.map((r) => (
-                <Link key={r.catalog_item_id} to={`/markets/${encodeURIComponent(r.catalog_item_id)}`} className="grid grid-cols-[1fr_120px_100px] items-center gap-4 px-6 py-3 hover:bg-white/[.03] transition-colors">
+                <Link key={r.catalog_item_id} to={`/markets/${encodeURIComponent(r.catalog_item_id)}`} className="grid grid-cols-[1fr_120px_100px] items-center gap-4 px-6 py-3 hover:bg-[var(--bg-interactive)] transition-colors">
                   <div>
                     <p className="text-body-sm text-on-dark">{r.base_currency ?? "-"} / {r.quote_currency ?? "-"}</p>
                   </div>

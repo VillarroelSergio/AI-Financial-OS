@@ -78,13 +78,6 @@ export default function IndicatorCard({ indicator, size = "default" }: Props) {
     ? "—"
     : `${formatValue(indicator.value, indicator.unit)}${unitSuffix}`;
 
-  const qualityColor =
-    indicator.quality_score >= 0.8
-      ? "text-accent-success"
-      : indicator.quality_score >= 0.5
-      ? "text-amber-400"
-      : "text-accent-danger";
-
   const title = indicator.display_name ?? indicator.catalog_item_id.replace(/_/g, " ");
   const history = indicator.history ?? [];
   const delta = indicator.delta;
@@ -106,7 +99,7 @@ export default function IndicatorCard({ indicator, size = "default" }: Props) {
           {title}
         </span>
         <span
-          className={`text-xs ${qualityColor} flex-shrink-0`}
+          className="text-xs text-[var(--economy-accent)] flex-shrink-0"
           title={`Calidad: ${(indicator.quality_score * 100).toFixed(0)}%`}
         >
           ●
@@ -123,10 +116,10 @@ export default function IndicatorCard({ indicator, size = "default" }: Props) {
           <span
             className={`inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-sm font-semibold tabular-nums ${
               delta > 0
-                ? "bg-emerald-500/15 text-emerald-400"
+                ? "bg-[var(--economy-accent-soft)] text-[var(--economy-accent)]"
                 : delta < 0
-                ? "bg-rose-500/15 text-rose-400"
-                : "bg-white/10 text-stone"
+                ? "bg-[var(--economy-negative-soft)] text-[var(--economy-negative)]"
+                : "bg-[var(--bg-interactive)] text-stone"
             }`}
             title={`Variación vs periodo anterior (${formatValue(indicator.previous_value, indicator.unit)})`}
           >
@@ -135,7 +128,7 @@ export default function IndicatorCard({ indicator, size = "default" }: Props) {
           </span>
         )}
         {indicator.data_status && indicator.data_status !== "ok" && (
-          <span className="rounded px-1.5 py-0.5 text-xs font-medium uppercase tracking-wide bg-white/10 text-stone">
+          <span className="rounded px-1.5 py-0.5 text-xs font-medium uppercase tracking-wide bg-[var(--bg-interactive)] text-stone">
             {STATUS_LABELS[indicator.data_status] ?? indicator.data_status}
           </span>
         )}
@@ -147,7 +140,7 @@ export default function IndicatorCard({ indicator, size = "default" }: Props) {
         <div className="text-xs text-mute mt-auto pt-1 border-t border-hairline-dark flex items-center gap-2">
           <span>{indicator.period}</span>
           {stale && (
-            <span className="rounded px-1 py-px text-[10px] font-medium uppercase tracking-wide bg-amber-400/10 text-amber-400">
+            <span className="rounded px-1 py-px text-[10px] font-medium uppercase tracking-wide bg-[var(--economy-negative-soft)] text-[var(--economy-negative)]">
               Antiguo
             </span>
           )}

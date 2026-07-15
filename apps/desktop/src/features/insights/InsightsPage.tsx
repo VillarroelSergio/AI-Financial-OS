@@ -38,7 +38,7 @@ export default function InsightsPage() {
   const [lastDismissedId, setLastDismissedId] = useState<string | null>(null);
 
   // La severidad se filtra en cliente (chips) para que los conteos no colapsen al filtrar.
-  const { data, loading, error, regenerate } = useInsights(
+  const { data, loading, error, refresh } = useInsights(
     {
       period,
       type: typeFilter || undefined,
@@ -102,7 +102,7 @@ export default function InsightsPage() {
   const isEmpty = data?.data_status === "empty" && !loading;
 
   return (
-    <div className="p-8 max-w-[1500px] mx-auto space-y-6">
+    <div className="page-shell space-y-6">
       <PageHeader
         eyebrow="Inteligencia financiera"
         title="Insights"
@@ -117,16 +117,14 @@ export default function InsightsPage() {
             >
               {PERIODS.map((p) => <option key={p} value={p} style={{ backgroundColor: "#1c1c1e", color: "#f5f5f0" }}>{p}</option>)}
             </select>
-            {/* regenerate ejecuta refreshInsights en el hook; no reutiliza la lectura cacheada. */}
             <button
-              onClick={regenerate}
+              onClick={refresh}
               disabled={loading}
-              className="inline-flex items-center gap-2 rounded-lg bg-white/5 px-3 py-2 text-xs text-on-dark hover:bg-white/10 disabled:opacity-50 transition-colors"
+              className="inline-flex items-center gap-2 rounded-lg bg-[var(--bg-interactive)] px-3 py-2 text-xs text-on-dark hover:bg-[var(--bg-interactive)] disabled:opacity-50 transition-colors"
             >
               <RefreshCw size={13} className={loading ? "animate-spin" : ""} />
               Actualizar
             </button>
-            {data?.generated_at && <span className="text-xs text-stone">Actualizado {new Date(data.generated_at).toLocaleString("es-ES", { dateStyle: "medium", timeStyle: "short" })}</span>}
           </div>
         }
       />
@@ -160,7 +158,7 @@ export default function InsightsPage() {
       )}
 
       {lastDismissedId && (
-        <div className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-white/5 px-4 py-2">
+        <div className="flex items-center justify-between gap-3 rounded-lg border border-white/10 bg-[var(--bg-interactive)] px-4 py-2">
           <p className="text-xs text-stone truncate">
             Insight descartado{lastDismissedTitle ? `: ${lastDismissedTitle}` : ""}.
           </p>
@@ -176,8 +174,8 @@ export default function InsightsPage() {
       {error && !loading && (
         <ErrorState
           title="No se han podido generar los insights"
-          description="No se han podido calcular las señales con tus datos locales. Comprueba que el backend esté disponible o importa movimientos de al menos un mes: necesitas datos suficientes para analizar tendencias."
-          onRetry={regenerate}
+          description="Inténtalo de nuevo o revisa el estado del backend."
+          onRetry={refresh}
         />
       )}
 
@@ -212,7 +210,7 @@ export default function InsightsPage() {
               </summary>
               <div className="mt-3 space-y-2">
                 {contextInsights.map((i) => (
-                  <div key={i.id} className="flex items-center justify-between gap-3 rounded-lg bg-white/5 px-3 py-2">
+                  <div key={i.id} className="flex items-center justify-between gap-3 rounded-lg bg-[var(--bg-interactive)] px-3 py-2">
                     <div className="min-w-0">
                       <p className="text-sm text-on-dark truncate">{i.title}</p>
                       <p className="text-xs text-stone truncate">{i.summary}</p>

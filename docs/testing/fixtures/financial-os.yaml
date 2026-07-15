@@ -1,0 +1,20 @@
+version: 1
+policy:
+  environment: ephemeral-local
+  production_data: forbidden
+  external_network: mocked
+  cleanup: discard-database-and-artifacts-after-report
+scenarios:
+  empty-dashboard: { accounts: [], transactions: [] }
+  core-finance: { account: E2E Test Bank, opening_balance: 1000.00, expense: -42.30, income: 500.00 }
+  household-bills: { provider: E2E Iberdrola, previous_amount: 95.00, current_amount: 140.00 }
+  planning: { category: Restaurante, budget: 500.00, recurring: Netflix E2E, recurring_amount: 15.99 }
+  investments: { holding: E2E Manual ETF, ticker: E2ETF, quality_state: MANUAL, currency: EUR }
+  goals: { name: E2E Fondo Test, target: 10000.00, current: 2000.00, monthly_contribution: 300.00 }
+  market-data: { source: fixture-market-v1, quality: complete, forex: { EUR_USD: 1.10, EUR_GBP: 0.85 }, bonds: [2Y, 10Y] }
+  economy-data: { source: fixture-macro-v1, region: ES, inflation: 2.4, unemployment: 11.5 }
+  insights: { status: complete, insight: budget_alert }
+  net-worth: { month: 2026-07, force_partial: true }
+  rag: { document: e2e-deadline.txt, content: "El vencimiento de prueba es 2026-12-31." }
+  ai: { provider: fixture-ai, health: available, question: "¿cuánto he gastado en Restaurante este mes?", answer_amount: 42.30 }
+  security: { backup_name: e2e-backup, integrity: ok }

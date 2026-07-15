@@ -21,7 +21,7 @@ export default function ReconciliationTab() {
     return (
       <div className="flex h-64 flex-col items-center justify-center gap-3">
         <p className="text-sm text-accent-danger">{error}</p>
-        <button onClick={refresh} className="rounded-lg bg-white/5 px-4 py-2 text-sm text-on-dark hover:bg-white/8 transition-colors">
+        <button onClick={refresh} className="rounded-lg bg-[var(--bg-interactive)] px-4 py-2 text-sm text-on-dark hover:bg-[var(--bg-interactive)] transition-colors">
           Reintentar
         </button>
       </div>
@@ -62,7 +62,7 @@ export default function ReconciliationTab() {
         </div>
         <button
           onClick={refresh}
-          className="flex items-center gap-1.5 rounded-lg bg-white/5 px-3 py-2 text-xs text-stone hover:text-on-dark hover:bg-white/8 transition-colors"
+          className="flex items-center gap-1.5 rounded-lg bg-[var(--bg-interactive)] px-3 py-2 text-xs text-stone hover:text-on-dark hover:bg-[var(--bg-interactive)] transition-colors"
         >
           <RefreshCw size={13} />
           Actualizar

@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
 import { Edit3, Plus, Search, SlidersHorizontal, Trash2 } from "lucide-react";
 import { EmptyState, PageHeader } from "@/components/ui/Dashboard";
 import Spinner from "@/components/ui/Spinner";
@@ -29,17 +28,15 @@ const EMPTY_FORM: TransactionCreate = {
 };
 
 export default function TransactionsPage() {
-  const [searchParams] = useSearchParams();
   const [activeType, setActiveType] = useState("");
   const [query, setQuery] = useState("");
   const [accountFilter, setAccountFilter] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState(() => searchParams.get("category") ?? "");
+  const [categoryFilter, setCategoryFilter] = useState("");
   const [fromDate, setFromDate] = useState("");
   const [toDate, setToDate] = useState("");
   const [minAmount, setMinAmount] = useState("");
   const [maxAmount, setMaxAmount] = useState("");
   const [sortBy, setSortBy] = useState<"date_desc" | "date_asc" | "amount_desc" | "amount_asc" | "category_asc">("date_desc");
-  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const filters: TransactionFilters = {
     ...(activeType ? { type: activeType } : {}),
     ...(accountFilter ? { account_id: accountFilter } : {}),
@@ -51,6 +48,7 @@ export default function TransactionsPage() {
   const { accounts } = useAccounts();
   const { categories } = useCategories();
   const [showForm, setShowForm] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [form, setForm] = useState<TransactionCreate>(EMPTY_FORM);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
@@ -85,11 +83,7 @@ export default function TransactionsPage() {
   }, [transactions, minAmount, maxAmount, query, accounts, categories, sortBy]);
 
   const total = visibleTransactions.reduce((sum, tx) => sum + Number(tx.amount), 0);
-  const hasActiveFilters = Boolean(activeType || query || accountFilter || categoryFilter || fromDate || toDate || minAmount || maxAmount || sortBy !== "date_desc");
-  const clearFilters = () => {
-    setActiveType(""); setQuery(""); setAccountFilter(""); setCategoryFilter("");
-    setFromDate(""); setToDate(""); setMinAmount(""); setMaxAmount(""); setSortBy("date_desc");
-  };
+  const advancedCount = [fromDate, toDate, minAmount, maxAmount].filter(Boolean).length;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -145,7 +139,7 @@ export default function TransactionsPage() {
   }
 
   return (
-    <div className="p-8 max-w-[1500px] mx-auto space-y-6">
+    <div className="page-shell space-y-6">
       <PageHeader
         eyebrow="Ledger financiero"
         title="Movimientos"
@@ -159,38 +153,61 @@ export default function TransactionsPage() {
       />
 
       <section className="premium-card rounded-lg p-4">
-        <div className="grid gap-3 lg:grid-cols-[1fr_180px_220px_220px_auto]">
-          <label className="flex items-center gap-2 rounded-lg border border-hairline-dark bg-white/[.035] px-3 py-2">
+        <div className="flex flex-wrap items-center gap-3">
+          <label className="flex min-w-[220px] flex-1 items-center gap-2 rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-3 py-2">
             <Search size={16} className="text-mute" />
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Buscar descripcion, cuenta, categoria..." className="w-full bg-transparent text-sm text-on-dark placeholder:text-mute" />
           </label>
-          <select value={activeType} onChange={(e) => setActiveType(e.target.value)} className="rounded-lg border border-hairline-dark bg-white/[.035] px-3 py-2 text-sm text-on-dark">
+          <select value={activeType} onChange={(e) => setActiveType(e.target.value)} className="rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-3 py-2 text-sm text-on-dark">
             {FILTER_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
           </select>
-          <select value={accountFilter} onChange={(e) => setAccountFilter(e.target.value)} className="rounded-lg border border-hairline-dark bg-white/[.035] px-3 py-2 text-sm text-on-dark">
+          <select value={accountFilter} onChange={(e) => setAccountFilter(e.target.value)} className="rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-3 py-2 text-sm text-on-dark">
             <option value="">Todas las cuentas</option>
             {accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}
           </select>
-          <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="rounded-lg border border-hairline-dark bg-white/[.035] px-3 py-2 text-sm text-on-dark">
+          <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-3 py-2 text-sm text-on-dark">
             <option value="">Todas las categorias</option>
             {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
           </select>
-          <button type="button" onClick={() => setShowAdvancedFilters((value) => !value)} className="ui-pressable flex items-center gap-2 rounded-lg border border-hairline-dark bg-white/[.035] px-3 py-2 text-sm text-stone hover:text-on-dark">
-            <SlidersHorizontal size={16} />
-            Filtros avanzados
-          </button>
+          <div className="relative">
+            <button
+              onClick={() => setShowFilters((v) => !v)}
+              aria-expanded={showFilters}
+              className="mercury-button inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm"
+            >
+              <SlidersHorizontal size={16} />
+              Filtros
+              {advancedCount > 0 && (
+                <span className="grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-[11px] font-semibold text-[var(--on-primary)]">{advancedCount}</span>
+              )}
+            </button>
+            {showFilters && (
+              <>
+                <div className="fixed inset-0 z-10" onClick={() => setShowFilters(false)} />
+                <div className="absolute right-0 z-20 mt-2 w-[300px] space-y-3 rounded-lg border border-hairline-dark bg-[var(--bg-card)] p-4 shadow-[var(--shadow-elevated)]">
+                  <div className="grid grid-cols-2 gap-3">
+                    <label className="space-y-1"><span className="text-[11px] text-stone">Desde</span><input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="w-full rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-3 py-2 text-sm text-on-dark" /></label>
+                    <label className="space-y-1"><span className="text-[11px] text-stone">Hasta</span><input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="w-full rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-3 py-2 text-sm text-on-dark" /></label>
+                    <label className="space-y-1"><span className="text-[11px] text-stone">Importe min.</span><input type="number" step="0.01" value={minAmount} onChange={(e) => setMinAmount(e.target.value)} className="w-full rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-3 py-2 text-sm text-on-dark" /></label>
+                    <label className="space-y-1"><span className="text-[11px] text-stone">Importe max.</span><input type="number" step="0.01" value={maxAmount} onChange={(e) => setMaxAmount(e.target.value)} className="w-full rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-3 py-2 text-sm text-on-dark" /></label>
+                  </div>
+                  <label className="block space-y-1"><span className="text-[11px] text-stone">Orden</span><select value={sortBy} onChange={(e) => setSortBy(e.target.value as typeof sortBy)} className="w-full rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-3 py-2 text-sm text-on-dark"><option value="date_desc">Fecha reciente</option><option value="date_asc">Fecha antigua</option><option value="amount_desc">Importe mayor</option><option value="amount_asc">Importe menor</option><option value="category_asc">Categoria A-Z</option></select></label>
+                  {advancedCount > 0 && (
+                    <button
+                      onClick={() => { setFromDate(""); setToDate(""); setMinAmount(""); setMaxAmount(""); }}
+                      className="w-full rounded-lg border border-hairline-dark py-2 text-xs text-stone transition-colors hover:text-on-dark"
+                    >
+                      Limpiar filtros
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+          <div className="ml-auto flex items-center gap-1.5 text-sm text-stone">
+            <span className="financial-number text-on-dark">{visibleTransactions.length}</span> resultados
+          </div>
         </div>
-        <div className="mt-3 flex items-center justify-between text-xs text-stone">
-          <span><span className="financial-number text-on-dark">{visibleTransactions.length}</span> resultados</span>
-          {hasActiveFilters && <button type="button" onClick={clearFilters} className="ui-pressable text-primary-bright hover:underline">Limpiar filtros</button>}
-        </div>
-        {showAdvancedFilters && <div className="mt-3 grid gap-3 lg:grid-cols-[160px_160px_160px_160px_220px]">
-          <label className="space-y-1"><span className="text-[11px] text-stone">Desde</span><input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="w-full rounded-lg border border-hairline-dark bg-white/[.035] px-3 py-2 text-sm text-on-dark" /></label>
-          <label className="space-y-1"><span className="text-[11px] text-stone">Hasta</span><input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="w-full rounded-lg border border-hairline-dark bg-white/[.035] px-3 py-2 text-sm text-on-dark" /></label>
-          <label className="space-y-1"><span className="text-[11px] text-stone">Importe min.</span><input type="number" step="0.01" value={minAmount} onChange={(e) => setMinAmount(e.target.value)} className="w-full rounded-lg border border-hairline-dark bg-white/[.035] px-3 py-2 text-sm text-on-dark" /></label>
-          <label className="space-y-1"><span className="text-[11px] text-stone">Importe max.</span><input type="number" step="0.01" value={maxAmount} onChange={(e) => setMaxAmount(e.target.value)} className="w-full rounded-lg border border-hairline-dark bg-white/[.035] px-3 py-2 text-sm text-on-dark" /></label>
-          <label className="space-y-1"><span className="text-[11px] text-stone">Orden</span><select value={sortBy} onChange={(e) => setSortBy(e.target.value as typeof sortBy)} className="w-full rounded-lg border border-hairline-dark bg-white/[.035] px-3 py-2 text-sm text-on-dark"><option value="date_desc">Fecha reciente</option><option value="date_asc">Fecha antigua</option><option value="amount_desc">Importe mayor</option><option value="amount_asc">Importe menor</option><option value="category_asc">Categoria A-Z</option></select></label>
-        </div>}
       </section>
 
       {error && <div className="rounded-lg border border-accent-danger/30 bg-accent-danger/5 p-4 text-sm text-accent-danger">No se han podido cargar los movimientos. Revisa el backend local.</div>}
@@ -200,12 +217,12 @@ export default function TransactionsPage() {
         <form onSubmit={handleSubmit} className="premium-card rounded-lg p-xl space-y-lg">
           <h2 className="text-heading-sm text-on-dark">{editingId ? "Editar movimiento" : "Nuevo movimiento"}</h2>
           <div className="grid grid-cols-2 gap-lg">
-            <label className="space-y-xs"><span className="text-caption text-stone">Descripcion</span><input required className="w-full bg-white/[.035] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark" value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="Ej. Mercadona" /></label>
-            <label className="space-y-xs"><span className="text-caption text-stone">Importe</span><input required type="number" step="0.01" className="w-full bg-white/[.035] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark" value={form.amount} onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))} placeholder="Ej. -42.30" /></label>
-            <label className="space-y-xs"><span className="text-caption text-stone">Tipo</span><select className="w-full bg-white/[.035] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark" value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}><option value="expense">Gasto</option><option value="income">Ingreso</option><option value="transfer">Transferencia</option><option value="investment">Inversion</option></select></label>
-            <label className="space-y-xs"><span className="text-caption text-stone">Fecha</span><input required type="date" className="w-full bg-white/[.035] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark" value={form.date} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))} /></label>
-            <label className="space-y-xs"><span className="text-caption text-stone">Cuenta</span><select required={!editingId} className="w-full bg-white/[.035] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark" value={form.account_id} onChange={(e) => setForm((f) => ({ ...f, account_id: e.target.value }))}><option value="">Sin cuenta asignada</option>{accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></label>
-            <label className="space-y-xs"><span className="text-caption text-stone">Categoria</span><select className="w-full bg-white/[.035] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark" value={form.category_id} onChange={(e) => setForm((f) => ({ ...f, category_id: e.target.value }))}><option value="">Sin categoria</option>{categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
+            <label className="space-y-xs"><span className="text-caption text-stone">Descripcion</span><input required className="w-full bg-[var(--bg-interactive)] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark" value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="Ej. Mercadona" /></label>
+            <label className="space-y-xs"><span className="text-caption text-stone">Importe</span><input required type="number" step="0.01" className="w-full bg-[var(--bg-interactive)] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark" value={form.amount} onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))} placeholder="Ej. -42.30" /></label>
+            <label className="space-y-xs"><span className="text-caption text-stone">Tipo</span><select className="w-full bg-[var(--bg-interactive)] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark" value={form.type} onChange={(e) => setForm((f) => ({ ...f, type: e.target.value }))}><option value="expense">Gasto</option><option value="income">Ingreso</option><option value="transfer">Transferencia</option><option value="investment">Inversion</option></select></label>
+            <label className="space-y-xs"><span className="text-caption text-stone">Fecha</span><input required type="date" className="w-full bg-[var(--bg-interactive)] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark" value={form.date} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))} /></label>
+            <label className="space-y-xs"><span className="text-caption text-stone">Cuenta</span><select required={!editingId} className="w-full bg-[var(--bg-interactive)] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark" value={form.account_id} onChange={(e) => setForm((f) => ({ ...f, account_id: e.target.value }))}><option value="">Sin cuenta asignada</option>{accounts.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}</select></label>
+            <label className="space-y-xs"><span className="text-caption text-stone">Categoria</span><select className="w-full bg-[var(--bg-interactive)] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark" value={form.category_id} onChange={(e) => setForm((f) => ({ ...f, category_id: e.target.value }))}><option value="">Sin categoria</option>{categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}</select></label>
           </div>
           <div className="flex gap-sm justify-end">
             <button type="button" onClick={() => { setShowForm(false); setEditingId(null); setForm(EMPTY_FORM); }} className="mercury-button rounded-lg px-lg py-sm text-body-sm">Cancelar</button>
@@ -226,8 +243,8 @@ export default function TransactionsPage() {
             <table className="w-full">
               <thead className="bg-black/20">
                 <tr className="border-b border-hairline-dark">
-                  {["Fecha", "Descripcion", "Cuenta", "Categoria", "Tipo", "Importe", "Acciones"].map((header) => (
-                    <th key={header} className="text-left px-xl py-md text-caption text-stone font-medium">{header}</th>
+                  {["Fecha", "Descripcion", "Cuenta", "Categoria", "Tipo", "Importe", ""].map((header) => (
+                    <th key={header} className={`px-xl py-md text-caption text-stone font-medium ${header === "Importe" ? "text-right" : "text-left"}`}>{header}</th>
                   ))}
                 </tr>
               </thead>
@@ -235,17 +252,17 @@ export default function TransactionsPage() {
                 {visibleTransactions.map((tx) => {
                   const amount = parseFloat(tx.amount);
                   return (
-                    <tr key={tx.id} className="border-b border-divider-soft hover:bg-white/[.025] transition-colors">
+                    <tr key={tx.id} className="border-b border-divider-soft hover:bg-[var(--bg-interactive)] transition-colors">
                       <td className="px-xl py-md text-body-sm text-stone whitespace-nowrap">{tx.date}</td>
                       <td className="px-xl py-md text-body-sm text-on-dark min-w-[220px]">{tx.description}</td>
                       <td className="px-xl py-md text-body-sm text-stone">{accountName(tx)}</td>
-                      <td className="px-xl py-md text-body-sm text-stone">{categoryName(tx.category_id)}</td>
+                      <td className="px-xl py-md"><span className="inline-block rounded-full bg-[var(--bg-interactive)] px-2.5 py-0.5 text-xs text-[var(--text-secondary)]">{categoryName(tx.category_id)}</span></td>
                       <td className="px-xl py-md"><TypeBadge type={tx.type} /></td>
                       <td className={`financial-number px-xl py-md text-right text-body-sm font-medium ${amount >= 0 ? "text-accent-teal" : "text-on-dark"}`}>{formatCurrency(tx.amount, tx.currency)}</td>
                       <td className="px-xl py-md text-right">
                         <div className="flex justify-end gap-2">
-                          <button aria-label={`Editar ${tx.description}`} onClick={() => startEdit(tx.id)} className="ui-pressable inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-stone hover:bg-white/[.05] hover:text-primary-bright"><Edit3 size={14} />Editar</button>
-                          <button aria-label={`Eliminar ${tx.description}`} onClick={() => handleDelete(tx.id, tx.description)} className="ui-pressable inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs text-stone hover:bg-white/[.05] hover:text-accent-danger"><Trash2 size={14} />Eliminar</button>
+                          <button aria-label={`Editar ${tx.description}`} onClick={() => startEdit(tx.id)} className="text-stone hover:text-primary-bright transition-colors"><Edit3 size={15} /></button>
+                          <button aria-label={`Eliminar ${tx.description}`} onClick={() => handleDelete(tx.id, tx.description)} className="text-stone hover:text-accent-danger transition-colors"><Trash2 size={15} /></button>
                         </div>
                       </td>
                     </tr>

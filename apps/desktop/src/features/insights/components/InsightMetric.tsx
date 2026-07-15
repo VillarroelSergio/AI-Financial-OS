@@ -15,7 +15,7 @@ export function InsightMetric({ metric, large = false }: { metric: InsightMetric
       : `${esNumber(metric.value, decimals)} ${metric.unit}`.trim();
 
   return (
-    <div className="rounded-lg bg-white/5 px-3 py-2">
+    <div className="rounded-lg bg-[var(--bg-interactive)] px-3 py-2">
       <p className="text-[10px] text-stone">{metric.label}</p>
       <p className={`font-semibold text-on-dark ${large ? "text-lg" : "text-sm"}`}>{valueStr}</p>
     </div>

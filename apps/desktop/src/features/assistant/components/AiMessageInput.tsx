@@ -52,7 +52,7 @@ export default function AiMessageInput({ onSend, disabled, placeholder, sending,
           <button
             aria-label="Detener respuesta"
             onClick={onCancel}
-            className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-lg bg-accent-danger/80 text-white transition-colors hover:bg-accent-danger"
+            className="ui-pressable grid h-9 w-9 flex-shrink-0 place-items-center rounded-lg bg-accent-danger/80 text-white hover:bg-accent-danger"
           >
             <Square size={12} fill="currentColor" />
           </button>
@@ -61,7 +61,7 @@ export default function AiMessageInput({ onSend, disabled, placeholder, sending,
             aria-label="Enviar mensaje"
             onClick={submit}
             disabled={!text.trim() || disabled}
-            className="grid h-9 w-9 flex-shrink-0 place-items-center rounded-lg bg-primary text-white transition-colors hover:bg-primary-bright disabled:bg-white/[.05] disabled:text-mute"
+            className="ui-pressable grid h-9 w-9 flex-shrink-0 place-items-center rounded-lg bg-primary text-white hover:bg-primary-bright disabled:bg-white/[.05] disabled:text-mute"
           >
             <Send size={14} />
           </button>

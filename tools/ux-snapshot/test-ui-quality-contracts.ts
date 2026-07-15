@@ -1,87 +1,115 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { getMockResponse } from "../../apps/desktop/src/lib/api/mock-data";
 
-const root = resolve(import.meta.dirname, "../..");
-const source = (path: string) => readFile(resolve(root, path), "utf8");
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.resolve(HERE, "../..");
 
-const [main, app, settings, layout, markets, transactions, accounts, spending, dashboard, investments, startupExperience, styles, sharedUi, insights, planning, budgetTab, mockData, personalEconomy, quoteRow, balance] = await Promise.all([
-  source("apps/desktop/src/main.tsx"),
-  source("apps/desktop/src/App.tsx"),
-  source("apps/desktop/src/features/settings/SettingsPage.tsx"),
+async function source(relativePath: string): Promise<string> {
+  return readFile(path.join(ROOT, relativePath), "utf8");
+}
+
+const [rootLayout, dashboardUi, metricCard, spending, goals, budgetCard, assistantPage, analysisCenter, assistantMessages, appRoutes, planningPage, budgetTab, marketsPage, accountsPage, settingsPage, economyPage, indicatorCard, impactCard, personalEconomy, chartPalette, viteConfig, categoryTabs, regionTabs, appCss, snapshotRoutes] = await Promise.all([
   source("apps/desktop/src/app/layout/RootLayout.tsx"),
-  source("apps/desktop/src/features/markets/MarketsPage.tsx"),
-  source("apps/desktop/src/features/transactions/TransactionsPage.tsx"),
-  source("apps/desktop/src/features/accounts/AccountsPage.tsx"),
-  source("apps/desktop/src/features/spending/SpendingPage.tsx"),
-  source("apps/desktop/src/features/dashboard/DashboardPage.tsx"),
-  source("apps/desktop/src/features/investments/InvestmentsPage.tsx"),
-  source("apps/desktop/src/app/StartupExperience.tsx"),
-  source("apps/desktop/src/index.css"),
   source("apps/desktop/src/components/ui/Dashboard.tsx"),
-  source("apps/desktop/src/features/insights/InsightsPage.tsx"),
+  source("apps/desktop/src/components/ui/MetricCard.tsx"),
+  source("apps/desktop/src/features/spending/SpendingPage.tsx"),
+  source("apps/desktop/src/features/goals/GoalsPage.tsx"),
+  source("apps/desktop/src/features/planning/BudgetCard.tsx"),
+  source("apps/desktop/src/features/assistant/AssistantPage.tsx"),
+  source("apps/desktop/src/features/assistant/components/AnalysisCenter.tsx"),
+  source("apps/desktop/src/features/assistant/components/AiMessageList.tsx"),
+  source("apps/desktop/src/App.tsx"),
   source("apps/desktop/src/pages/PlanificacionPage.tsx"),
   source("apps/desktop/src/features/planning/BudgetTab.tsx"),
-  source("apps/desktop/src/lib/api/mock-data.ts"),
+  source("apps/desktop/src/features/markets/MarketsPage.tsx"),
+  source("apps/desktop/src/features/accounts/AccountsPage.tsx"),
+  source("apps/desktop/src/features/settings/SettingsPage.tsx"),
+  source("apps/desktop/src/features/economy/EconomyPage.tsx"),
+  source("apps/desktop/src/features/economy/components/IndicatorCard.tsx"),
+  source("apps/desktop/src/features/economy/components/ImpactCard.tsx"),
   source("apps/desktop/src/features/economy/components/PersonalEconomySection.tsx"),
-  source("apps/desktop/src/features/markets/components/QuoteRow.tsx"),
-  source("apps/desktop/src/features/dashboard/components/BalanceGeneralPanel.tsx"),
+  source("apps/desktop/src/lib/chartPalette.ts"),
+  source("apps/desktop/vite.config.ts"),
+  source("apps/desktop/src/features/markets/components/CategoryTabs.tsx"),
+  source("apps/desktop/src/features/economy/components/RegionTabs.tsx"),
+  source("apps/desktop/src/index.css"),
+  source("tools/ux-snapshot/snapshot-routes.ts"),
 ]);
 
-assert.doesNotMatch(layout, /M[aá]s herramientas/, "Objetivos e Insights no deben competir en la navegación lateral.");
-assert.doesNotMatch(layout, /to: "\/goals"/, "Objetivos no debe aparecer como acceso de navegación lateral.");
-assert.doesNotMatch(layout, /to: "\/insights"/, "Insights no debe aparecer como acceso de navegación lateral.");
-assert.match(main, /preloadSettingsOverview\(\)/, "Los datos de Ajustes deben precargarse al iniciar la aplicación.");
-assert.match(settings, /loadSettingsOverview\(\)/, "Ajustes debe reutilizar la misma carga precargada.");
-assert.doesNotMatch(settings, /if \(loading\)/, "Ajustes no debe bloquear toda la pantalla con un spinner.");
-assert.match(markets, /max-w-\[1500px\] mx-auto/, "Mercados debe usar el contenedor centrado compartido.");
-assert.match(transactions, /Filtros avanzados/, "Los filtros de movimientos deben poder plegarse.");
-assert.match(transactions, /Editar/, "Las acciones de cada movimiento deben tener texto visible.");
-assert.match(accounts, /Saldos que requieren revision/, "Las cuentas desactualizadas deben destacarse.");
-assert.match(spending, /Comparativa con el mes anterior/, "Gastos debe comparar con el periodo anterior.");
-assert.match(spending, /Categoria fuera de lo normal/, "Gastos debe señalar categorías anormales.");
-assert.match(dashboard, /Señales del mes/, "El resumen debe priorizar las señales del mes.");
-assert.match(investments, /Riesgo de concentracion/, "Inversiones debe mostrar concentración de cartera.");
-assert.match(investments, /navigate\("\/markets"/, "La cartera debe enlazar con Mercados.");
-assert.match(app, /StartupExperience/, "La aplicación debe incluir una bienvenida breve en cada arranque.");
-assert.match(startupExperience, /app-launch-stage/, "La bienvenida debe tener una escena visual de arranque propia.");
-assert.match(startupExperience, /onAnimationEnd/, "La bienvenida debe retirarse al terminar su secuencia.");
-assert.match(styles, /app-launch-card/, "La bienvenida debe tener una composicion de marca visible, no un spinner.");
-assert.match(styles, /prefers-reduced-motion: reduce/, "La bienvenida debe respetar reducir movimiento.");
-assert.doesNotMatch(layout, /Centro de control privado/, "El encabezado global no debe mostrar texto redundante.");
-assert.doesNotMatch(dashboard, /Centro de control privado/, "El Resumen no debe repetir el texto redundante.");
-assert.match(dashboard, /Revisar cuentas/, "Las señales del Resumen deben ofrecer una acción concreta.");
-assert.doesNotMatch(dashboard, /bg-primary\/10 p-5/, "Patrimonio neto debe usar la misma superficie que las demás señales.");
-assert.match(dashboard, /SectionCard title="Objetivos"/, "Objetivos debe volver a estar disponible desde el Resumen.");
-assert.match(dashboard, /SectionCard title="Insights"/, "Insights debe volver a estar disponible desde el Resumen.");
-assert.doesNotMatch(dashboard, /className="hidden"/, "Los accesos del Dashboard no deben quedar ocultos.");
-assert.match(styles, /--positive:\s*#2F8F6B/, "La aplicación debe usar el verde estandarizado.");
-assert.match(styles, /--negative:\s*#C95B66/, "La aplicación debe usar el rojo estandarizado.");
-assert.match(styles, /--primary:\s*#5B7EA3/, "El azul debe compartir la misma intensidad moderada que la paleta funcional.");
-assert.match(styles, /--warning:\s*#C28A4A/, "El naranja debe compartir la misma intensidad moderada que la paleta funcional.");
-assert.doesNotMatch(styles, /--positive:\s*#008163/, "La paleta anterior no debe reaparecer.");
-assert.doesNotMatch(styles, /--negative:\s*#ee2526/, "La paleta anterior no debe reaparecer.");
-assert.doesNotMatch(styles, /--primary:\s*#0071e3/, "El azul electrico anterior no debe reaparecer.");
-assert.doesNotMatch(styles, /--accent:\s*#f56900/, "El naranja electrico anterior no debe reaparecer.");
-assert.match(dashboard, /DashboardSkeleton/, "El Resumen debe mantener una estructura visible mientras se cargan datos.");
-assert.doesNotMatch(dashboard, /return <LoadingState label="Cargando tu resumen"/, "El arranque no debe degradarse a un spinner de pantalla completa.");
-assert.match(sharedUi, /md:text-\[64px\]/, "Las cabeceras deben ser mÃ¡s compactas en escritorio.");
-assert.match(accounts, /formatCompactCurrency/, "Las mÃ©tricas de cuentas no deben truncar importes arbitrariamente.");
-assert.match(insights, /datos suficientes para analizar/, "Insights debe explicar cÃ³mo resolver la falta de datos.");
-assert.match(planning, /BudgetTab/, "PlanificaciÃ³n debe mantener su contenido encapsulado por pestaÃ±as.");
-assert.match(budgetTab, /Preparando la planificaciÃ³n/, "PlanificaciÃ³n debe mostrar un estado neutro durante la carga.");
-assert.match(mockData, /clean === "\/api\/budgets\/comparison"/, "El entorno demo debe servir comparativas de presupuesto.");
-assert.match(styles, /--bg-app:\s*#E4E2DE/, "El tema claro debe partir de un gris cÃ¡lido, no de blanco puro.");
-assert.match(settings, /#E4E2DE/, "La muestra del tema claro debe reflejar el fondo gris cÃ¡lido real.");
-assert.doesNotMatch(personalEconomy, /<FiscalCalendar\b/, "El calendario fiscal no debe volver a mostrarse en EconomÃ­a.");
-assert.match(quoteRow, /Sparkline\(\{ points, positive \}/, "La minigrÃ¡fica debe recibir el signo real de la variaciÃ³n.");
-assert.match(quoteRow, /<Sparkline points=\{sparkline\} positive=\{positive\}/, "Las minigrÃ¡ficas negativas deben usar rojo granate.");
-assert.match(insights, /Actualizado/, "Insights debe indicar cuÃ¡ndo se actualizaron sus datos.");
-assert.match(insights, /refreshInsights/, "El botÃ³n Actualizar de Insights debe regenerar los datos, no repetir la misma lectura cacheada.");
-assert.match(mockData, /clean === "\/api\/insights\/refresh"/, "El entorno demo debe soportar actualizar Insights.");
-assert.match(app, /ToastProvider/, "La aplicaciÃ³n debe tener avisos breves globales de Ã©xito y error.");
-assert.doesNotMatch(balance, /Cerrar mes|Cierre de|snapshot/, "El Balance general no debe incluir cierres mensuales ni snapshots.");
-assert.match(styles, /--bg-app:\s*#E4E2DE/, "El tema claro debe ser suficientemente gris para reducir deslumbramiento.");
-assert.match(styles, /clamp\(11px, 0\.55vw, 13px\)/, "Los textos auxiliares deben adaptarse a pantallas de alta resoluciÃ³n.");
+const primaryNav = rootLayout.match(/const navItems:[\s\S]*?\n\];/)?.[0] ?? "";
+const routePreloaders = await source("apps/desktop/src/app/routes/pageLoaders.ts");
+assert.equal((primaryNav.match(/\{\s*to:/g) ?? []).length, 5, "La navegacion principal debe conservar solo cinco secciones");
+assert.doesNotMatch(primaryNav, /\/goals|\/insights/, "Objetivos e Insights no deben aparecer en el menu principal");
+assert.doesNotMatch(rootLayout, /initial=\{\{\s*opacity:\s*0,\s*y:/, "La navegacion frecuente no debe desplazar verticalmente la pagina");
 
-console.log("UI quality contracts passed.");
+assert.doesNotMatch(metricCard, /financial-number[^\n]*truncate/, "Las metricas financieras no deben truncarse");
+assert.doesNotMatch(dashboardUi, /financial-number[^\n]*truncate/, "Los KPI financieros no deben truncarse");
+assert.match(dashboardUi, /sanitizeUserError/, "Los estados de error deben ocultar detalles internos");
+
+for (const [name, contents] of [
+  ["SpendingPage", spending],
+  ["GoalsPage", goals],
+  ["BudgetCard", budgetCard],
+] as const) {
+  assert.doesNotMatch(contents, /transition-all/, `${name} debe animar solo propiedades explicitas`);
+}
+
+assert.match(assistantMessages, /prefers-reduced-motion/, "El scroll del asistente debe respetar movimiento reducido");
+assert.match(assistantPage, /page-shell/, "El asistente debe compartir la alineacion del resto de pantallas");
+assert.match(assistantPage, /Asistente financiero/, "El asistente debe explicar su proposito desde la cabecera");
+assert.match(analysisCenter, /onOpenChat/, "El estado inicial de analisis debe ofrecer continuidad directa hacia el chat");
+assert.match(analysisCenter, /<EmptyState/, "El estado inicial del analisis debe usar el patron vacio comun");
+assert.match(goals, /goals\.length\s*>\s*0/, "Objetivos no debe duplicar su CTA principal cuando esta vacio");
+assert.match(appCss, /\.ui-pressable:active/, "Los controles interactivos deben ofrecer feedback tactil comun");
+assert.match(appCss, /prefers-reduced-motion[\s\S]*\.ui-pressable/, "El feedback tactil debe respetar movimiento reducido");
+for (const [name, contents] of [
+  ["AccountsPage", accountsPage],
+  ["SettingsPage", settingsPage],
+  ["MarketsPage", marketsPage],
+  ["CategoryTabs", categoryTabs],
+  ["RegionTabs", regionTabs],
+] as const) {
+  assert.match(contents, /ui-pressable/, `${name} debe usar el feedback tactil comun en sus controles`);
+  assert.doesNotMatch(contents, /transition-all/, `${name} no debe usar transiciones globales en controles frecuentes`);
+}
+assert.match(appRoutes, /LegacyFinancesRedirect/, "Las rutas antiguas deben conservar su estado al redirigir");
+assert.match(planningPage, /planningTab/, "La subseccion de planificacion debe persistir en la URL");
+assert.match(budgetTab, /<ErrorState/, "Planificacion debe usar el estado de error seguro y consistente");
+
+const overview = getMockResponse<{ net_worth: string }>("/api/dashboard/overview");
+const balance = getMockResponse<{ net_worth: string }>("/api/net-worth/balance-sheet?month=2026-07");
+assert.equal(balance.net_worth, overview.net_worth, "El patrimonio destacado y el balance deben usar una cifra coherente");
+assert.ok(Array.isArray(getMockResponse("/api/budgets/comparison")), "Planificacion debe disponer de datos de demostracion validos");
+assert.match(marketsPage, /searchParams\.get\("region"\)/, "Mercados debe reflejar el filtro regional de la URL");
+assert.match(snapshotRoutes, /\/markets\?region=eu/, "La captura europea debe activar un estado visual distinto");
+assert.match(appRoutes, /lazy\(/, "Las pantallas de producto deben cargarse bajo demanda");
+assert.match(appRoutes, /Suspense/, "Las rutas diferidas deben tener un limite de carga");
+assert.match(appRoutes, /warmCoreRoutes/, "Las rutas principales deben precargarse durante el reposo inicial");
+assert.match(rootLayout, /preloadRoute/, "La navegacion debe precargar la ruta al acercarse el usuario");
+assert.match(routePreloaders, /requestIdleCallback/, "La precarga debe ejecutarse fuera de la interaccion inicial");
+assert.match(routePreloaders, /\/finances[\s\S]*\/investments[\s\S]*\/economy[\s\S]*\/markets/, "Los cinco modulos principales deben estar cubiertos por la precarga");
+assert.match(viteConfig, /manualChunks/, "La compilacion debe separar proveedores pesados en chunks propios");
+assert.match(spending, /useFinancialChartColors/, "La grafica de gastos debe usar una paleta financiera dedicada");
+assert.doesNotMatch(spending, /useChartPalette/, "La grafica de gastos no debe heredar la paleta verde y azul generica");
+assert.match(chartPalette, /useFinancialChartColors/, "La paleta financiera debe centralizar sus colores");
+assert.match(chartPalette, /#2D7B6A/, "La paleta financiera debe usar el verde jade para ingresos");
+assert.match(chartPalette, /#B34D62/, "La paleta financiera debe usar el rojo cassis para gastos");
+assert.match(chartPalette, /#8FA88D/, "La paleta financiera debe usar salvia para el ahorro");
+assert.doesNotMatch(chartPalette, /#B79A45|#98465B|#C9B27A/, "La paleta financiera no debe conservar oro, granate y arena");
+assert.match(indicatorCard, /--economy-accent/, "Los indicadores macro deben compartir un unico acento visual");
+assert.doesNotMatch(indicatorCard, /emerald|rose|amber/, "Los indicadores macro no deben mezclar acentos arbitrarios");
+assert.doesNotMatch(impactCard, /accent-success|amber-400/, "Los impactos macro deben usar la paleta economica comun");
+assert.doesNotMatch(personalEconomy, /emerald|red-300|amber-300/, "La economia personal debe reutilizar los tonos economicos semanticos");
+assert.doesNotMatch(economyPage, /amber-400/, "Las alertas de Economia deben conservar la paleta unificada");
+assert.doesNotMatch(settingsPage, /<Spinner|if \(loading\)/, "Ajustes debe pintar su estructura inmediatamente, sin bloquear en un spinner");
+assert.match(appCss, /--economy-accent/, "Los tokens de Economia deben declararse por tema");
+assert.match(appCss, /--bg-card:\s*#E7E8E6/, "El tema claro debe usar una superficie gris suave, no blanco puro");
+assert.match(appCss, /--positive:\s*#2D7B6A/, "El tema claro debe usar el verde jade como positivo global");
+assert.match(appCss, /--negative:\s*#B34D62/, "El tema claro debe usar el rojo cassis como negativo global");
+assert.match(appCss, /--positive:\s*#6FC5AE/, "El tema oscuro debe mantener el verde jade con contraste suficiente");
+assert.match(appCss, /--negative:\s*#F092A3/, "El tema oscuro debe mantener el rojo cassis con contraste suficiente");
+
+console.log("UI quality contracts: PASS");

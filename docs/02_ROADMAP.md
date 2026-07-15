@@ -54,7 +54,7 @@ Componentes actuales:
 - Ingestion adapters por region/proveedor.
 - `ProviderOrchestrator` para primario, secundarios y fallback.
 - `QualityEngine` para freshness, completeness, validity, outliers y fiabilidad.
-- Persistencia DuckDB con tablas `mi_*`.
+- Persistencia SQLite (WAL) con tablas `mi_*` (ECO-3b; migrado desde DuckDB).
 - API bajo `/api/market-intelligence/*`.
 - Datasheet compacto para IA local.
 

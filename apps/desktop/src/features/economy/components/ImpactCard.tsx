@@ -5,13 +5,13 @@ const SIGNAL_CONFIG = {
   no_data: {
     label: "Sin datos",
     textColor: "text-mute",
-    badgeClass: "bg-white/5 text-mute border-white/10",
+    badgeClass: "bg-[var(--bg-interactive)] text-mute border-white/10",
     Icon: CircleOff,
   },
   positive: {
     label: "Positivo",
-    textColor: "text-accent-success",
-    badgeClass: "bg-accent-success/10 text-accent-success border-accent-success/20",
+    textColor: "text-[var(--economy-accent)]",
+    badgeClass: "bg-[var(--economy-accent-soft)] text-[var(--economy-accent)] border-[var(--economy-accent)]/25",
     Icon: TrendingUp,
   },
   neutral: {
@@ -22,14 +22,14 @@ const SIGNAL_CONFIG = {
   },
   negative: {
     label: "Negativo",
-    textColor: "text-accent-danger",
-    badgeClass: "bg-accent-danger/10 text-accent-danger border-accent-danger/20",
+    textColor: "text-[var(--economy-negative)]",
+    badgeClass: "bg-[var(--economy-negative-soft)] text-[var(--economy-negative)] border-[var(--economy-negative)]/25",
     Icon: TrendingDown,
   },
   warning: {
     label: "Atención",
-    textColor: "text-amber-400",
-    badgeClass: "bg-amber-400/10 text-amber-400 border-amber-400/20",
+    textColor: "text-[var(--economy-negative)]",
+    badgeClass: "bg-[var(--economy-negative-soft)] text-[var(--economy-negative)] border-[var(--economy-negative)]/25",
     Icon: AlertTriangle,
   },
 } as const;

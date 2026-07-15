@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { getInsights, refreshInsights } from "../api/insightsApi";
+import { getInsights } from "../api/insightsApi";
 import type { InsightsSummary, InsightsParams } from "../types/insights.types";
 
 export function useInsights(params: InsightsParams = {}, deps: unknown[] = []) {
@@ -18,17 +18,5 @@ export function useInsights(params: InsightsParams = {}, deps: unknown[] = []) {
 
   useEffect(() => { load(); }, [load]);
 
-  const regenerate = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      setData(await refreshInsights(params.period));
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "No se pudieron actualizar los insights");
-    } finally {
-      setLoading(false);
-    }
-  }, [params.period]);
-
-  return { data, loading, error, refresh: load, regenerate };
+  return { data, loading, error, refresh: load };
 }

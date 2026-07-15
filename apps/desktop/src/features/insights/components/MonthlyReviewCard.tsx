@@ -35,21 +35,21 @@ export function MonthlyReviewCard({ review, onAskAI }: MonthlyReviewCardProps) {
           <p className="mt-1 text-sm text-stone">{review.summary}</p>
         </div>
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-lg bg-white/5 p-3">
+          <div className="rounded-lg bg-[var(--bg-interactive)] p-3">
             <p className="text-[10px] text-stone">Ingresos</p>
             <p className="mt-1 financial-number text-sm text-on-dark">{formatCurrency(review.income)}</p>
           </div>
-          <div className="rounded-lg bg-white/5 p-3">
+          <div className="rounded-lg bg-[var(--bg-interactive)] p-3">
             <p className="text-[10px] text-stone">Gastos</p>
             <p className="mt-1 financial-number text-sm text-on-dark">{formatCurrency(review.expenses)}</p>
           </div>
-          <div className="rounded-lg bg-white/5 p-3">
+          <div className="rounded-lg bg-[var(--bg-interactive)] p-3">
             <p className="text-[10px] text-stone">Ahorro</p>
             <p className={`mt-1 financial-number text-sm ${review.savings >= 0 ? "text-accent-teal" : "text-accent-danger"}`}>
               {formatCurrency(review.savings)}
             </p>
           </div>
-          <div className="rounded-lg bg-white/5 p-3">
+          <div className="rounded-lg bg-[var(--bg-interactive)] p-3">
             <p className="text-[10px] text-stone">Tasa de ahorro</p>
             <p className={`mt-1 financial-number text-sm ${review.savings_rate >= 15 ? "text-accent-teal" : "text-amber-300"}`}>
               {formatPercent(review.savings_rate / 100)}

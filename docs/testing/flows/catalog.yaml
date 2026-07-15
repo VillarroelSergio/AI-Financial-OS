@@ -1,0 +1,365 @@
+version: 1
+flows:
+  - id: FLOW-01
+    phase: A
+    module: Resumen
+    title: Arranque y estado inicial
+    execution: deterministic
+    fixture: empty-dashboard
+    route: /
+    preconditions: [Base efímera vacía]
+    steps: [{ action: Navegar a Resumen, expected: La aplicación termina de cargar }, { action: Guardar T0, expected: Patrimonio y liquidez se pueden leer }]
+    assertions: [{ kind: ui, expected: Valores numéricos o empty state explícito }, { kind: api, expected: GET dashboard overview = 200 }, { kind: console, expected: Sin errores no controlados }]
+    cleanup: []
+  - id: FLOW-02
+    phase: A
+    module: Cuentas
+    title: Crear cuenta bancaria
+    execution: deterministic
+    fixture: core-finance
+    route: /finances?tab=cuentas
+    preconditions: [FLOW-01 completado, Base efímera]
+    steps: [{ action: Pulsar Nueva cuenta, expected: Formulario visible }, { action: Introducir E2E Test Bank, expected: Saldo 1000 EUR aceptado }, { action: Guardar, expected: Cuenta listada }]
+    assertions: [{ kind: api, expected: POST accounts = 201 }, { kind: ui, expected: Nombre sin UUID y saldo 1000.00 visible }]
+    cleanup: [Eliminar cuenta]
+  - id: FLOW-03
+    phase: B
+    module: Movimientos
+    title: Registrar gasto e ingreso
+    execution: deterministic
+    fixture: core-finance
+    route: /finances?tab=movimientos
+    preconditions: [Cuenta E2E Test Bank creada]
+    steps: [{ action: Crear gasto Restaurante -42.30, expected: Movimiento visible }, { action: Crear ingreso Salario 500.00, expected: Movimiento visible }, { action: Filtrar por cuenta o categoría, expected: Lista filtrada }]
+    assertions: [{ kind: api, expected: Dos POST transactions = 201 }, { kind: ui, expected: Signo, importe y descripción correctos }]
+    cleanup: [Eliminar movimientos]
+  - id: FLOW-04
+    phase: B
+    module: Gastos
+    title: Agregación y detalle por categoría
+    execution: deterministic
+    fixture: core-finance
+    route: /finances?tab=gastos
+    preconditions: [Gasto Restaurante creado]
+    steps: [{ action: Abrir Gastos, expected: Restaurante muestra 42.30 }, { action: Pulsar Restaurante, expected: Detalle del gasto visible }]
+    assertions: [{ kind: domain, expected: Porcentaje igual a categoría dividido por gasto total }, { kind: api, expected: GET category detail = 200 }, { kind: ui, expected: E2E lunch test visible }]
+    cleanup: []
+  - id: FLOW-05
+    phase: B
+    module: Resumen
+    title: Consistencia cruzada
+    execution: deterministic
+    fixture: core-finance
+    route: /
+    preconditions: [Cuenta y movimientos creados, T0 guardado]
+    steps: [{ action: Volver a Resumen, expected: Agregados mensuales actualizados }]
+    assertions: [{ kind: domain, expected: Patrimonio aumenta 1000 por saldo inicial }, { kind: domain, expected: Ingreso 500 y gasto 42.30 }, { kind: network, expected: Sin respuesta 5xx }]
+    cleanup: []
+  - id: FLOW-06
+    phase: C
+    module: Facturas
+    title: Alta de factura del hogar
+    execution: deterministic
+    fixture: household-bills
+    route: /planificacion?tab=facturas
+    preconditions: [Base efímera]
+    steps: [{ action: Crear factura E2E Iberdrola 95.00, expected: Factura listada }]
+    assertions: [{ kind: api, expected: POST household bills = 201 }, { kind: ui, expected: Proveedor y tipo electricity visibles }]
+    cleanup: [Eliminar factura]
+  - id: FLOW-07
+    phase: C
+    module: Facturas
+    title: Anomalía y previsión de factura
+    execution: deterministic
+    fixture: household-bills
+    route: /planificacion?tab=facturas
+    preconditions: [Factura previa de 95.00]
+    steps: [{ action: Crear factura 140.00, expected: Resumen recalculado }]
+    assertions: [{ kind: api, expected: GET household bills summary = 200 }, { kind: domain, expected: change_pct mayor de 20 y anomaly true }, { kind: ui, expected: next_estimate visible }]
+    cleanup: [Eliminar factura]
+  - id: FLOW-08
+    phase: D
+    module: Presupuestos
+    title: Crear presupuesto
+    execution: deterministic
+    fixture: planning
+    route: /planificacion?tab=presupuestos
+    preconditions: [Categoría Restaurante disponible]
+    steps: [{ action: Crear presupuesto Restaurante 500 y umbral 80, expected: Tarjeta de presupuesto visible }]
+    assertions: [{ kind: api, expected: POST budgets = 201 }, { kind: ui, expected: Importe y categoría visibles }]
+    cleanup: [Eliminar presupuesto]
+  - id: FLOW-09
+    phase: D
+    module: Presupuestos
+    title: Comparar presupuesto con gasto
+    execution: deterministic
+    fixture: planning
+    route: /planificacion?tab=presupuestos
+    preconditions: [Presupuesto 500 y gasto Restaurante 42.30]
+    steps: [{ action: Consultar comparativa mensual, expected: Consumo de presupuesto visible }]
+    assertions: [{ kind: api, expected: GET comparison = 200 }, { kind: domain, expected: actual_amount 42.30, consumo 8.5 y alert false }]
+    cleanup: []
+  - id: FLOW-10
+    phase: D
+    module: Recurrentes
+    title: Detectar candidatos
+    execution: deterministic
+    fixture: planning
+    route: /planificacion?tab=recurrentes
+    preconditions: [Fixture con ocurrencias periódicas suficientes]
+    steps: [{ action: Abrir Recurrentes, expected: Candidatos detectados visibles }]
+    assertions: [{ kind: api, expected: GET recurring candidates = 200 }, { kind: ui, expected: Nombre, frecuencia, confianza y próxima fecha visibles }]
+    cleanup: []
+  - id: FLOW-11
+    phase: D
+    module: Recurrentes
+    title: Alta manual y calendario
+    execution: deterministic
+    fixture: planning
+    route: /planificacion?tab=recurrentes
+    preconditions: [Base efímera]
+    steps: [{ action: Crear Netflix E2E mensual día 8, expected: Recurrente guardado }, { action: Abrir calendario 60 días, expected: Ocurrencia visible }]
+    assertions: [{ kind: api, expected: POST recurring = 201 y GET calendar = 200 }, { kind: ui, expected: Netflix E2E visible }]
+    cleanup: [Eliminar recurrente]
+  - id: FLOW-12
+    phase: D
+    module: Cashflow
+    title: Previsión con recurrente
+    execution: deterministic
+    fixture: planning
+    route: /planificacion?tab=cashflow
+    preconditions: [Netflix E2E activo]
+    steps: [{ action: Abrir Cashflow tres meses, expected: Gráfico renderizado }]
+    assertions: [{ kind: api, expected: GET forecast = 200 }, { kind: domain, expected: recurring_expenses mayor o igual a 15.99 }, { kind: ui, expected: Gráfico visible }]
+    cleanup: []
+  - id: FLOW-13
+    phase: E
+    module: Inversiones
+    title: Importación manual de cartera
+    execution: deterministic
+    fixture: investments
+    route: /investments
+    preconditions: [Fixture de instrumento manual]
+    steps: [{ action: Abrir entrada rápida, expected: Tabla de revisión visible }, { action: Introducir holding E2E Manual ETF, expected: Estado MANUAL o READY }, { action: Confirmar, expected: Holding listado }]
+    assertions: [{ kind: network, expected: No POST confirm antes de confirmar }, { kind: api, expected: POST import confirm = 200 o 201 }, { kind: ui, expected: Holding visible }]
+    cleanup: [Eliminar holding]
+  - id: FLOW-14
+    phase: E
+    module: Inversiones
+    title: Reconciliación de cartera
+    execution: deterministic
+    fixture: investments
+    route: /investments?tab=quality
+    preconditions: [Holding importado]
+    steps: [{ action: Abrir Calidad de cartera, expected: Reconciliación visible }]
+    assertions: [{ kind: api, expected: GET reconciliation = 200 }, { kind: domain, expected: quality_state válido y porcentajes cercanos a 100 }, { kind: ui, expected: Alertas de concentración si aplican }]
+    cleanup: []
+  - id: FLOW-15
+    phase: E
+    module: Inversiones
+    title: Fondo manual y valoración
+    execution: deterministic
+    fixture: investments
+    route: /investments
+    preconditions: [Fixture de fondo manual]
+    steps: [{ action: Crear fondo y snapshot de valor, expected: Evolución actualizada }]
+    assertions: [{ kind: api, expected: Alta y snapshot = 200 o 201 }, { kind: ui, expected: Serie de valoración visible }]
+    cleanup: [Eliminar fondo y snapshot]
+  - id: FLOW-16
+    phase: F
+    module: Objetivos
+    title: Objetivo y escenarios
+    execution: deterministic
+    fixture: goals
+    route: /goals
+    preconditions: [Base efímera]
+    steps: [{ action: Crear E2E Fondo Test, expected: Objetivo visible }, { action: Abrir simulación, expected: Tres escenarios visibles }]
+    assertions: [{ kind: api, expected: POST goal = 201 y simulate = 200 }, { kind: domain, expected: Progreso 20 por ciento }, { kind: ui, expected: Gráfico y fechas o No alcanzable visibles }]
+    cleanup: [Eliminar objetivo]
+  - id: FLOW-17
+    phase: G
+    module: Mercados
+    title: Snapshot de mercados
+    execution: deterministic
+    fixture: market-data
+    route: /markets
+    preconditions: [Proveedor fixture-market-v1 activo]
+    steps: [{ action: Abrir Mercados, expected: Índices, cripto y commodities renderizados }]
+    assertions: [{ kind: api, expected: GET snapshot market = 200 }, { kind: ui, expected: provider_id, quality_score y badge visibles }]
+    cleanup: []
+  - id: FLOW-18
+    phase: G
+    module: Mercados
+    title: Divisas sin contaminación EUR USD
+    execution: deterministic
+    fixture: market-data
+    route: /markets?tab=forex
+    preconditions: [Fixture con EUR_USD 1.10 y EUR_GBP 0.85]
+    steps: [{ action: Abrir Divisas, expected: Pares renderizados }]
+    assertions: [{ kind: api, expected: GET snapshot forex = 200 }, { kind: domain, expected: EUR_GBP no igual a EUR_USD }, { kind: ui, expected: Valores por par visibles }]
+    cleanup: []
+  - id: FLOW-19
+    phase: G
+    module: Mercados
+    title: Curva de bonos
+    execution: deterministic
+    fixture: market-data
+    route: /markets?tab=bonds
+    preconditions: [Fixture con bonos 2Y y 10Y]
+    steps: [{ action: Abrir Bonos, expected: Tabla no vacía }]
+    assertions: [{ kind: api, expected: GET snapshot bonds = 200 }, { kind: ui, expected: Maturities 2Y y 10Y correctas }]
+    cleanup: []
+  - id: FLOW-20
+    phase: G
+    module: Mercados
+    title: Coherencia de calidad global
+    execution: deterministic
+    fixture: market-data
+    route: /markets
+    preconditions: [Fixture con estados de calidad conocidos]
+    steps: [{ action: Revisar badge global y filas, expected: Estados coherentes }]
+    assertions: [{ kind: api, expected: GET ingest status = 200 y storage file }, { kind: domain, expected: Badge global no contradice filas }]
+    cleanup: []
+  - id: FLOW-21
+    phase: H
+    module: Economía
+    title: Snapshot macroeconómico
+    execution: deterministic
+    fixture: economy-data
+    route: /economy
+    preconditions: [Proveedor fixture-macro-v1 activo]
+    steps: [{ action: Abrir Economía, expected: Indicadores renderizados }]
+    assertions: [{ kind: api, expected: GET snapshot macro = 200 }, { kind: ui, expected: Unidad, delta e historia visibles cuando aplican }, { kind: domain, expected: Sin fallback silencioso entre regiones }]
+    cleanup: []
+  - id: FLOW-22
+    phase: H
+    module: Economía
+    title: Impacto personal honesto
+    execution: deterministic
+    fixture: economy-data
+    route: /economy?tab=impact
+    preconditions: [Perfil de fixture sin deuda]
+    steps: [{ action: Abrir impacto personal, expected: Comparativas aplicables visibles }]
+    assertions: [{ kind: api, expected: GET personal impact = 200 }, { kind: domain, expected: Comparativas no aplicables ausentes y no_data sin veredicto }]
+    cleanup: []
+  - id: FLOW-23
+    phase: I
+    module: Insights
+    title: Listado de insights
+    execution: deterministic
+    fixture: insights
+    route: /insights
+    preconditions: [Fixture con insight budget_alert]
+    steps: [{ action: Abrir Insights, expected: Insight y estado de datos visibles }]
+    assertions: [{ kind: api, expected: GET insights = 200 }, { kind: ui, expected: Badge complete coherente con contenido }]
+    cleanup: []
+  - id: FLOW-24
+    phase: I
+    module: Insights
+    title: Descartar y restaurar insight
+    execution: deterministic
+    fixture: insights
+    route: /insights
+    preconditions: [Insight activo visible]
+    steps: [{ action: Descartar insight, expected: Desaparece de activos }, { action: Restaurar insight, expected: Reaparece }]
+    assertions: [{ kind: api, expected: POST dismiss = 200 y restore = 200 }, { kind: ui, expected: Lista cambia sin recarga manual }]
+    cleanup: []
+  - id: FLOW-25
+    phase: J
+    module: Patrimonio
+    title: Checklist de cierre
+    execution: deterministic
+    fixture: net-worth
+    route: /net-worth
+    preconditions: [Mes de fixture 2026-07]
+    steps: [{ action: Abrir Balance General, expected: Checklist visible }]
+    assertions: [{ kind: api, expected: GET snapshot readiness = 200 }, { kind: domain, expected: ready no es true con items missing }, { kind: ui, expected: CTA para elementos faltantes visible }]
+    cleanup: []
+  - id: FLOW-26
+    phase: J
+    module: Patrimonio
+    title: Crear snapshot asistido
+    execution: deterministic
+    fixture: net-worth
+    route: /net-worth
+    preconditions: [Checklist cargado]
+    steps: [{ action: Pulsar crear cierre, expected: Confirmación explícita }, { action: Confirmar force_partial si aplica, expected: Snapshot creado }]
+    assertions: [{ kind: api, expected: POST snapshots = 201 o 409 controlado }, { kind: domain, expected: net_worth igual a activos menos pasivos }, { kind: ui, expected: Opción force_partial visible ante 409 }]
+    cleanup: [Eliminar snapshot si endpoint disponible]
+  - id: FLOW-27
+    phase: K
+    module: Documentos
+    title: Subir y consultar documento
+    execution: deterministic
+    fixture: rag
+    route: /documents
+    preconditions: [Fixture con e2e-deadline.txt]
+    steps: [{ action: Subir documento, expected: Documento listado }, { action: Preguntar por vencimiento, expected: Respuesta con fuente }]
+    assertions: [{ kind: api, expected: Upload y query = 200 o 201 }, { kind: ui, expected: Fuente y fragmento del documento visibles }]
+    cleanup: [Eliminar documento]
+  - id: FLOW-28
+    phase: L
+    module: Asistente IA
+    title: Healthcheck del proveedor
+    execution: deterministic
+    fixture: ai
+    route: /assistant
+    preconditions: [Proveedor fixture-ai disponible]
+    steps: [{ action: Abrir Asistente, expected: Estado disponible visible }]
+    assertions: [{ kind: api, expected: GET ai health = 200 }, { kind: ui, expected: Sin carga infinita y estado honesto }]
+    cleanup: []
+  - id: FLOW-29
+    phase: L
+    module: Asistente IA
+    title: Chat contextual determinista
+    execution: deterministic
+    fixture: ai
+    route: /finances?tab=gastos
+    preconditions: [Gasto Restaurante 42.30 y provider fixture-ai]
+    steps: [{ action: Abrir copiloto, expected: Panel visible }, { action: Preguntar gasto en Restaurante, expected: Respuesta contextual }]
+    assertions: [{ kind: api, expected: POST ai chat = 200 con tool_calls }, { kind: domain, expected: Respuesta cita 42.30 }, { kind: network, expected: Payload solo usa claves de contexto permitidas }]
+    cleanup: []
+  - id: FLOW-30
+    phase: M
+    module: Ajustes
+    title: Seguridad e integridad
+    execution: deterministic
+    fixture: security
+    route: /settings
+    preconditions: [Base efímera]
+    steps: [{ action: Abrir Ajustes, expected: Estado de seguridad visible }, { action: Ejecutar comprobación de integridad, expected: Resultado ok }]
+    assertions: [{ kind: api, expected: GET security status e integrity = 200 }, { kind: ui, expected: Política demo, estado y tablas visibles }]
+    cleanup: []
+  - id: FLOW-31
+    phase: M
+    module: Ajustes
+    title: Backup manual
+    execution: deterministic
+    fixture: security
+    route: /settings
+    preconditions: [Base efímera]
+    steps: [{ action: Pulsar Crear backup, expected: Backup listado sin recarga }]
+    assertions: [{ kind: api, expected: POST backup = 200 o 201 y GET backups = 200 }, { kind: ui, expected: Fecha, tamaño y contador actualizados }]
+    cleanup: [Descartar base efímera]
+  - id: FLOW-32
+    phase: N
+    module: Resumen
+    title: Consistencia final
+    execution: deterministic
+    fixture: core-finance
+    route: /
+    preconditions: [Fases previas completadas, T0 disponible]
+    steps: [{ action: Volver a Resumen, expected: Estado final renderizado }]
+    assertions: [{ kind: domain, expected: Patrimonio evoluciona según operaciones de fixture }, { kind: console, expected: Sin errores no controlados acumulados }]
+    cleanup: []
+  - id: FLOW-33
+    phase: N
+    module: Limpieza
+    title: Limpiar escenario
+    execution: deterministic
+    fixture: core-finance
+    route: /
+    preconditions: [Recursos E2E creados]
+    steps: [{ action: Eliminar recursos en orden inverso, expected: Base vuelve a estado vacío }, { action: Cerrar runner, expected: Puertos liberados }]
+    assertions: [{ kind: api, expected: DELETE devuelve estado esperado }, { kind: domain, expected: Resumen equivalente a T0 }, { kind: network, expected: Puertos 1420 y 18010 libres }]
+    cleanup: [Eliminar base efímera y artefactos temporales]

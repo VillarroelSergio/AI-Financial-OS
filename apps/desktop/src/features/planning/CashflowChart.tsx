@@ -29,8 +29,8 @@ export default function CashflowChart({ months }: Props) {
             formatter={(value: unknown) => [(value as number).toLocaleString("es-ES", { style: "currency", currency: "EUR" }), ""]}
           />
           <Legend wrapperStyle={{ fontSize: 11, color: "#8d969e" }} />
-          <Bar dataKey="ingresos" name="Ingresos" fill="#2F8F6B" radius={[4, 4, 0, 0]} />
-          <Bar dataKey="gastos" name="Gastos" fill="#C95B66" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="ingresos" name="Ingresos" fill="var(--positive)" radius={[4, 4, 0, 0]} />
+          <Bar dataKey="gastos" name="Gastos" fill="var(--negative)" radius={[4, 4, 0, 0]} />
         </BarChart>
       </ResponsiveContainer>
     </div>

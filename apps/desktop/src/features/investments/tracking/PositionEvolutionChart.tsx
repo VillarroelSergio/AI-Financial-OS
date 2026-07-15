@@ -4,8 +4,8 @@ import Spinner from "@/components/ui/Spinner";
 import { getHoldingPerformance, type HoldingPerformance } from "@/lib/api/investments";
 
 // Mismos colores de estado ganancia/perdida que MiniSparkline (paleta validada)
-const GAIN_COLOR = "#2F8F6B";
-const LOSS_COLOR = "#C95B66";
+const GAIN_COLOR = "var(--positive)";
+const LOSS_COLOR = "var(--negative)";
 const ENTRY_COLOR = "#a8adb3";
 
 const DATE_LABEL = new Intl.DateTimeFormat("es-ES", { month: "short", year: "2-digit" });
