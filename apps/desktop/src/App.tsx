@@ -1,34 +1,19 @@
-import { lazy, Suspense, useEffect } from "react";
-import { MotionConfig } from "framer-motion";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import RootLayout from "@/app/layout/RootLayout";
+import StartupExperience from "@/app/StartupExperience";
+import { ToastProvider } from "@/app/ToastProvider";
+import AssistantPage from "@/features/assistant/AssistantPage";
+import DashboardPage from "@/features/dashboard/DashboardPage";
+import EconomyPage from "@/features/economy/EconomyPage";
+import FinancesPage from "@/features/finances/FinancesPage";
+import GoalsPage from "@/features/goals/GoalsPage";
+import InsightsPage from "@/features/insights/InsightsPage";
+import InvestmentsPage from "@/features/investments/InvestmentsPage";
+import PositionTrackingPage from "@/features/investments/tracking/PositionTrackingPage";
+import PortfolioImportPage from "@/features/investments/import/PortfolioImportPage";
+import MarketsPage from "@/features/markets/MarketsPage";
+import InstrumentDetailPage from "@/features/markets/detail/InstrumentDetailPage";
 import SettingsPage from "@/features/settings/SettingsPage";
-import {
-  loadAssistantPage,
-  loadDashboardPage,
-  loadEconomyPage,
-  loadFinancesPage,
-  loadGoalsPage,
-  loadInsightsPage,
-  loadInstrumentDetailPage,
-  loadInvestmentsPage,
-  loadMarketsPage,
-  loadPortfolioImportPage,
-  loadPositionTrackingPage,
-  warmCoreRoutes,
-} from "@/app/routes/pageLoaders";
-
-const AssistantPage = lazy(loadAssistantPage);
-const DashboardPage = lazy(loadDashboardPage);
-const EconomyPage = lazy(loadEconomyPage);
-const FinancesPage = lazy(loadFinancesPage);
-const GoalsPage = lazy(loadGoalsPage);
-const InsightsPage = lazy(loadInsightsPage);
-const InvestmentsPage = lazy(loadInvestmentsPage);
-const PositionTrackingPage = lazy(loadPositionTrackingPage);
-const PortfolioImportPage = lazy(loadPortfolioImportPage);
-const MarketsPage = lazy(loadMarketsPage);
-const InstrumentDetailPage = lazy(loadInstrumentDetailPage);
 
 type FinancesTab = "cuentas" | "movimientos" | "gastos" | "planificacion" | "importar";
 
@@ -46,12 +31,10 @@ function LegacyFinancesRedirect({ tab }: { tab: FinancesTab }) {
 }
 
 export default function App() {
-  useEffect(() => warmCoreRoutes(), []);
-
   return (
-    <MotionConfig reducedMotion="user">
-    <Suspense fallback={null}>
-    <Routes>
+    <ToastProvider>
+      <StartupExperience />
+      <Routes>
       <Route path="/" element={<RootLayout />}>
         <Route index element={<DashboardPage />} />
         <Route path="finances" element={<FinancesPage />} />
@@ -73,8 +56,7 @@ export default function App() {
         <Route path="settings" element={<SettingsPage />} />
         <Route path="welcome" element={<Navigate to="/" replace />} />
       </Route>
-    </Routes>
-    </Suspense>
-    </MotionConfig>
+      </Routes>
+    </ToastProvider>
   );
 }
