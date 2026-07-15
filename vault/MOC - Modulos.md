@@ -1,7 +1,7 @@
 # MOC — Módulos
 Features y su estado. Cada módulo cruza su doc de diseño con su nota de memoria.
 
-- **Inversiones** — [[project_investments_module]] · [[21_GOALS_SIMULATIONS]] · [[20_PORTFOLIO_IMPORT_ASSISTANT]]
+- **Inversiones** — [[project_investments_module]] · [[project_fund_reported_returns]] · [[project_investment_account_valuation]] · [[21_GOALS_SIMULATIONS]] · [[20_PORTFOLIO_IMPORT_ASSISTANT]]
 - **Economía** — [[project_economy_plan]] · [[07_ECONOMIC_INTELLIGENCE]]
 - **Mercados** — [[project_markets_module]] · [[15_MARKET_PROVIDERS]]
 - **IA** — [[project_ai_module_plan]] · [[06_AI_STRATEGY]] · [[16_INSIGHTS_ENGINE]]

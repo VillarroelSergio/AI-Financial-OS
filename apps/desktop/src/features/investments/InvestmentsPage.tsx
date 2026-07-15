@@ -252,7 +252,7 @@ export default function InvestmentsPage() {
               <MetricCard label="Valor total" value={formatCurrency(summary.total_value)} />
               <MetricCard label="Aportado" value={formatCurrency(summary.total_invested)} />
               <MetricCard
-                label="Rentabilidad"
+                label="P&L sobre aportado"
                 value={formatCurrency(summary.return_absolute)}
                 delta={`${isPositive ? "+" : ""}${returnPct.toFixed(2)}%`}
                 deltaPositive={isPositive}
@@ -266,7 +266,10 @@ export default function InvestmentsPage() {
             </p>
           )}
 
-          <PortfolioByTypeCards holdings={realHoldings} />
+          <PortfolioByTypeCards
+            holdings={realHoldings}
+            fundReportedReturnPercent={summary?.fund_reported_return_percent ?? null}
+          />
 
           <PortfolioEvolutionChart />
 

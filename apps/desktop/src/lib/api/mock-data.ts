@@ -158,6 +158,7 @@ const mockInvestmentSummary: InvestmentSummary = {
   last_updated: null,
   pending_valuation_count: 0,
   pending_valuation_invested: "0.00",
+  fund_reported_return_percent: null,
 };
 
 const mockReconciliation: import("./investments").ReconciliationReport = {
