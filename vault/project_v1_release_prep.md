@@ -1,5 +1,5 @@
 ---
-name: project-v1-release-prep
+name: project_v1_release_prep
 description: Prep de release v1.0 para GitHub (2026-07-14) — cambios sin commitear y pendientes
 metadata: 
   node_type: memory

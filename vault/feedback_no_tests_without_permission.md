@@ -1,5 +1,5 @@
 ---
-name: no-tests-without-permission
+name: feedback_no_tests_without_permission
 description: "No ejecutar tests (pytest, suites, etc.) sin permiso explícito del usuario"
 metadata: 
   node_type: memory

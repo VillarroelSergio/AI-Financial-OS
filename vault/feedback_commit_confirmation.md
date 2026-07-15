@@ -1,5 +1,5 @@
 ---
-name: feedback-commit-confirmation
+name: feedback_commit_confirmation
 description: Always ask user for confirmation before making any git commit
 metadata: 
   node_type: memory

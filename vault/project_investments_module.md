@@ -1,5 +1,5 @@
 ---
-name: project-investments-module
+name: project_investments_module
 description: Decisiones de diseño del rework del módulo de Inversiones (plan INV-1..INV-6)
 metadata: 
   node_type: memory

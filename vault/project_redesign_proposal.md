@@ -1,5 +1,5 @@
 ---
-name: project-redesign-proposal
+name: project_redesign_proposal
 description: "Rediseño UX/UI — usuario ELIGIÓ C·Atelier (2026-07-12); spec completa en docs/20_REDESIGN_ATELIER.md, pendiente de implementar (Opus 4.8)"
 metadata: 
   node_type: memory
