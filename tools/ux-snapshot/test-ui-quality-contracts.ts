@@ -11,7 +11,7 @@ async function source(relativePath: string): Promise<string> {
   return readFile(path.join(ROOT, relativePath), "utf8");
 }
 
-const [rootLayout, dashboardUi, metricCard, spending, goals, budgetCard, assistantPage, analysisCenter, assistantMessages, appRoutes, startupExperience, tauriBootstrap, planningPage, budgetTab, marketsPage, accountsPage, settingsPage, economyPage, indicatorCard, impactCard, personalEconomy, chartPalette, viteConfig, categoryTabs, regionTabs, appCss, snapshotRoutes] = await Promise.all([
+const [rootLayout, dashboardUi, metricCard, spending, goals, budgetCard, assistantPage, analysisCenter, assistantMessages, appRoutes, startupExperience, tauriBootstrap, planningPage, budgetTab, marketsPage, accountsPage, settingsPage, economyPage, indicatorCard, impactCard, personalEconomy, chartPalette, viteConfig, categoryTabs, regionTabs, appCss, snapshotRoutes, tauriConfig, tauriCapabilities, mainEntry, indexHtml] = await Promise.all([
   source("apps/desktop/src/app/layout/RootLayout.tsx"),
   source("apps/desktop/src/components/ui/Dashboard.tsx"),
   source("apps/desktop/src/components/ui/MetricCard.tsx"),
@@ -39,6 +39,10 @@ const [rootLayout, dashboardUi, metricCard, spending, goals, budgetCard, assista
   source("apps/desktop/src/features/economy/components/RegionTabs.tsx"),
   source("apps/desktop/src/index.css"),
   source("tools/ux-snapshot/snapshot-routes.ts"),
+  source("apps/desktop/src-tauri/tauri.conf.json"),
+  source("apps/desktop/src-tauri/capabilities/default.json"),
+  source("apps/desktop/src/main.tsx"),
+  source("apps/desktop/index.html"),
 ]);
 
 const primaryNav = rootLayout.match(/const navItems:[\s\S]*?\n\];/)?.[0] ?? "";
@@ -91,6 +95,11 @@ assert.match(startupExperience, /app-launch-stage/, "La experiencia de inicio de
 assert.match(appCss, /app-launch-stage-exit 2400ms/, "La animacion de inicio debe durar 2,4 segundos");
 assert.doesNotMatch(appRoutes, /lazy\(|Suspense|warmCoreRoutes/, "El arranque no debe volver a diferir las pantallas de producto");
 assert.match(tauriBootstrap, /main_window\.maximize\(\)/, "La ventana debe abrir maximizada por defecto");
+assert.match(tauriConfig, /"visible":\s*false/, "La ventana debe permanecer oculta hasta que la interfaz inicial este montada");
+assert.match(tauriConfig, /"backgroundColor":\s*"#111113"/, "El WebView debe nacer con fondo grafito, nunca blanco");
+assert.match(tauriCapabilities, /core:window:allow-show/, "El frontend debe poder revelar la ventana preparada");
+assert.match(mainEntry, /getCurrentWindow\(\)\.show\(\)/, "La ventana debe mostrarse despues de montar React");
+assert.match(indexHtml, /background:\s*#111113/, "El HTML inicial debe conservar el fondo grafito de respaldo");
 assert.match(viteConfig, /manualChunks/, "La compilacion debe separar proveedores pesados en chunks propios");
 assert.match(spending, /useFinancialChartColors/, "La grafica de gastos debe usar una paleta financiera dedicada");
 assert.doesNotMatch(spending, /useChartPalette/, "La grafica de gastos no debe heredar la paleta verde y azul generica");
