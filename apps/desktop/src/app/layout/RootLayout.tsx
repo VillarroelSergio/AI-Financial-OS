@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { getCopilotContext } from "@/features/assistant/contextualCopilot";
-import { springPanel } from "@/components/ui/motion";
+import { contentEnter, surfaceEnter } from "@/components/ui/motion";
 import ComienzaWidget from "./ComienzaWidget";
 
 interface NavItem {
@@ -55,9 +55,9 @@ export default function RootLayout() {
 
   const copilotPopover = copilotOpen && showCopilot ? (
     <motion.div
-      initial={{ opacity: 0, scale: 0.96 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={springPanel}
+      variants={surfaceEnter}
+      initial="hidden"
+      animate="show"
       style={{ transformOrigin: "top right" }}
       className="absolute right-0 top-10 z-30 w-[344px] rounded-[20px] border border-[var(--border-soft)] bg-[var(--bg-card)] p-5 shadow-[var(--shadow-elevated)]">
       <div className="flex items-start gap-3">
@@ -217,9 +217,9 @@ export default function RootLayout() {
         )}
         <div className="flex min-h-0 flex-1">
           <main className="flex-1 min-w-0 overflow-y-auto">
-            <div key={location.pathname}>
+            <motion.div key={location.pathname} variants={contentEnter} initial="hidden" animate="show">
               <Outlet />
-            </div>
+            </motion.div>
           </main>
         </div>
       </div>

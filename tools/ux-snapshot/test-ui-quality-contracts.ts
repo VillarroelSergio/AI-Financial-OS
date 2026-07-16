@@ -11,9 +11,11 @@ async function source(relativePath: string): Promise<string> {
   return readFile(path.join(ROOT, relativePath), "utf8");
 }
 
-const [rootLayout, financesPage, dashboardUi, metricCard, spending, goals, budgetCard, assistantPage, analysisCenter, assistantMessages, appRoutes, startupExperience, tauriBootstrap, planningPage, budgetTab, marketsPage, accountsPage, settingsPage, economyPage, indicatorCard, impactCard, personalEconomy, chartPalette, viteConfig, tailwindConfig, categoryTabs, regionTabs, appCss, snapshotRoutes, tauriConfig, tauriCapabilities, mainEntry, indexHtml] = await Promise.all([
+const [rootLayout, motionSystem, financesPage, transactionsPage, dashboardUi, metricCard, spending, goals, budgetCard, assistantPage, analysisCenter, assistantMessages, appRoutes, startupExperience, tauriBootstrap, planningPage, budgetTab, marketsPage, accountsPage, settingsPage, economyPage, indicatorCard, impactCard, personalEconomy, chartPalette, viteConfig, tailwindConfig, categoryTabs, regionTabs, appCss, snapshotRoutes, tauriConfig, tauriCapabilities, mainEntry, indexHtml] = await Promise.all([
   source("apps/desktop/src/app/layout/RootLayout.tsx"),
+  source("apps/desktop/src/components/ui/motion.tsx"),
   source("apps/desktop/src/features/finances/FinancesPage.tsx"),
+  source("apps/desktop/src/features/transactions/TransactionsPage.tsx"),
   source("apps/desktop/src/components/ui/Dashboard.tsx"),
   source("apps/desktop/src/components/ui/MetricCard.tsx"),
   source("apps/desktop/src/features/spending/SpendingPage.tsx"),
@@ -77,7 +79,21 @@ assert.match(appCss, /prefers-reduced-motion[\s\S]*\.ui-pressable/, "El feedback
 assert.match(appCss, /button:not\(:disabled\):active/, "Los botones heredados deben conservar feedback tactil");
 assert.match(appCss, /\.bg-surface-card/, "Las superficies de tarjeta heredadas deben compartir microinteraccion");
 assert.match(appCss, /@keyframes card-rise-in/, "Todas las tarjetas deben conservar su entrada desde abajo");
-assert.match(appCss, /card-rise-in[\s\S]*prefers-reduced-motion[\s\S]*animation:\s*none/, "La entrada de tarjetas debe respetar movimiento reducido");
+assert.match(appCss, /card-rise-in[\s\S]*prefers-reduced-motion[\s\S]*reduced-motion-enter/, "La entrada de tarjetas debe reducirse a un fundido accesible");
+assert.match(motionSystem, /contentEnter[\s\S]*opacity:\s*0,\s*y:\s*6[\s\S]*opacity:\s*1,\s*y:\s*0/, "Las paginas deben entrar desde opacidad cero hasta su posicion final");
+assert.match(motionSystem, /staggerItem[\s\S]*opacity:\s*0,\s*y:\s*4[\s\S]*opacity:\s*1,\s*y:\s*0/, "Los elementos escalonados deben usar una entrada sutil");
+assert.match(rootLayout, /motion\.div[^>]*variants=\{contentEnter\}[^>]*initial="hidden"[^>]*animate="show"/, "Todas las rutas deben compartir la transicion de contenido");
+assert.match(appCss, /\.fixed\.inset-0\.z-50[\s\S]*surface-enter/, "Dialogos y drawers deben compartir entrada por opacidad y posicion");
+assert.match(appCss, /tbody\s*>\s*tr[\s\S]*row-enter/, "Las filas deben aparecer con el patron sutil comun");
+assert.match(appCss, /@keyframes content-enter\s*\{[\s\S]*opacity:\s*0[\s\S]*opacity:\s*1/, "Popovers y avisos deben completar su fundido hasta opacidad total");
+const rowEntry = appCss.match(/@keyframes row-enter[\s\S]*?(?=@keyframes scrim-enter)/)?.[0] ?? "";
+const progressEntry = appCss.match(/@keyframes progress-reveal[\s\S]*?(?=@keyframes allocation-reveal)/)?.[0] ?? "";
+const cardEntryRule = appCss.match(/\/\* Las pantallas usan tres superficies[\s\S]*?(?=\/\* Escalonado local)/)?.[0] ?? "";
+assert.doesNotMatch(rowEntry, /transform/, "Las filas de tabla no deben animar transform porque altera su renderizado");
+assert.match(progressEntry, /clip-path/, "Las barras deben revelarse sin sobrescribir el porcentaje almacenado en transform");
+assert.doesNotMatch(progressEntry, /transform/, "La animacion de progreso no debe forzar scaleX(1)");
+assert.doesNotMatch(cardEntryRule, /will-change/, "Las tarjetas no deben crear contextos de apilado permanentes");
+assert.match(transactionsPage, /showFilters\s*\?\s*"z-40"/, "El filtro de movimientos debe elevar su contenedor mientras esta abierto");
 assert.match(appCss, /@keyframes allocation-reveal/, "Las barras de asignacion deben revelarse al cambiar de vista");
 assert.match(appCss, /text-\\\[10px\\\][\s\S]*var\(--font-scale\)/, "Los tamaños arbitrarios deben responder al ajuste global");
 assert.match(tailwindConfig, /"body-md":\s*\["calc\(17px \* var\(--font-scale\)\)"/, "Los tamaños compartidos deben responder al ajuste global");

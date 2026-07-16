@@ -57,7 +57,7 @@ export default function ComienzaWidget() {
 
       {/* Checklist desplegable */}
       {open && (
-        <div id="comienza-checklist" className="mt-1.5 rounded-[10px] border border-[var(--border-soft)] bg-[var(--bg-card)] p-3">
+        <div id="comienza-checklist" className="motion-popover mt-1.5 rounded-[10px] border border-[var(--border-soft)] bg-[var(--bg-card)] p-3">
           <div className="mb-2 flex items-center justify-end">
             <button onClick={dismiss} aria-label="Cerrar guía" className="grid h-6 w-6 place-items-center rounded text-[var(--text-secondary)] hover:bg-[var(--bg-interactive)] hover:text-[var(--text-primary)]">
               <X size={13} />

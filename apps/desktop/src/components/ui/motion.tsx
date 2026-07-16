@@ -2,27 +2,44 @@ import { animate, type Transition, type Variants } from "framer-motion";
 import { useEffect, useRef } from "react";
 
 // ─── Variants reutilizables (Fase 4 · §8) ───
+// Las entradas comparten el mismo gesto: opacidad 0 → 1 y desplazamiento breve
+// hasta la posición final. Sin rebote ni escalado perceptible.
+export const subtleEnterTransition: Transition = {
+  duration: 0.28,
+  ease: [0.22, 1, 0.36, 1],
+};
+
+export const contentEnter: Variants = {
+  hidden: { opacity: 0, y: 6 },
+  show: { opacity: 1, y: 0, transition: subtleEnterTransition },
+};
+
+export const surfaceEnter: Variants = {
+  hidden: { opacity: 0, y: 4 },
+  show: { opacity: 1, y: 0, transition: subtleEnterTransition },
+};
+
 export const staggerContainer: Variants = {
   hidden: {},
-  show: { transition: { staggerChildren: 0.03 } },
+  show: { transition: { staggerChildren: 0.025 } },
 };
 
 export const staggerItem: Variants = {
-  hidden: { opacity: 0, y: 8 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.25, ease: "easeOut" } },
+  hidden: { opacity: 0, y: 4 },
+  show: { opacity: 1, y: 0, transition: subtleEnterTransition },
 };
 
-// Filas de tabla: delay 20ms
+// Filas de tabla: delay 15ms
 export const rowStaggerContainer: Variants = {
   hidden: {},
-  show: { transition: { staggerChildren: 0.02 } },
+  show: { transition: { staggerChildren: 0.015 } },
 };
 
-// Spring para superficies que entran/salen (dialogs, drawers, popover)
+// Spring reservado para cambios de posición interactivos, como el control segmentado.
 export const springPanel: Transition = { type: "spring", stiffness: 260, damping: 24 };
 
-// Transición de ruta: fade + rise 6px, sin animación de salida
-export const routeTransition: Transition = { duration: 0.18, ease: "easeOut" };
+// Alias conservado para consumidores existentes.
+export const routeTransition = subtleEnterTransition;
 
 function prefersReducedMotion(): boolean {
   return typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
