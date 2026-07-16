@@ -19,6 +19,9 @@ metadata:
 - Hotfix del módulo de inversiones: fondos, reasignación de carteras, valoración de cuentas y coherencia del Resumen.
 
 ## Hecho recientemente
+- Corregida la alerta CodeQL de exposición de excepciones en copias de seguridad: el 404 ya no revela detalles internos y registra la causa en servidor. Evidencia en [[docs/testing/codeql_backup_error_exposure.tdd]].
+- Fijadas las cinco Actions de CI a SHA completos, con sus versiones anotadas para Dependabot. Pendiente llevar el workflow a `main` y activar la política remota que obliga a usar SHA completos.
+- Añadida la configuración semanal de Dependabot para `uv`, npm (aplicación y herramientas E2E), Cargo y GitHub Actions. Agrupa actualizaciones menores/parche y deja las mayores en PRs separadas. Pendiente commit/push para que GitHub la active.
 - Corregidos los ocho contratos desalineados que hacían fallar `Backend · Ruff y Pytest` en el PR #36. Validación local: 450/450 pruebas correctas y Ruff correcto; solo queda la advertencia conocida de deprecación de `httpx`. Evidencia en [[docs/testing/github-actions-backend-ci.tdd]].
 - Ejecutada la validación local completa: contratos E2E (33 flujos), casos negativos (15) y aislamiento pasan; la suite de navegador deja 26 PASS y 7 BLOCKED por fixtures/providers aún no deterministas, sin errores de consola ni HTTP 5xx. La primera ejecución de Pytest reprodujo los 8 contratos desalineados que después quedaron corregidos. El runner E2E ya lee contratos desde `vault/docs/testing/` y permite aislar artefactos con `E2E_OUTPUT_DIR`.
 - Corregida la primera CI de GitHub Actions del PR #36: caché de `uv`, lint Ruff y recurso requerido por Tauri en checkouts limpios. Ruff, Pytest y `cargo check --locked` pasan localmente. Pendiente commit/push y nueva ejecución remota.

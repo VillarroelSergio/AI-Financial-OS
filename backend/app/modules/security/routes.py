@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
@@ -12,6 +14,7 @@ from app.modules.security.service import (
 )
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 
 @router.get("/status", response_model=SecurityStatusOut)
@@ -35,7 +38,11 @@ def backup(db: Session = Depends(get_db)) -> dict:
     try:
         return create_backup(str(db.bind.url) if db.bind is not None else None)
     except FileNotFoundError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+        logger.exception("No se pudo crear la copia de seguridad: falta la base de datos")
+        raise HTTPException(
+            status_code=404,
+            detail="No se encontró la base de datos para crear la copia de seguridad.",
+        ) from exc
 
 
 @router.get("/integrity", response_model=IntegrityCheckOut)
