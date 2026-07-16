@@ -1013,13 +1013,16 @@ def create_operation(payload: InvestmentOperationCreate, db: Session = Depends(g
 def get_summary(db: Session = Depends(get_db)):
     holdings = db.query(Holding).all()
     asset_ids = {h.asset_id for h in holdings}
-    fund_asset_ids = {
-        asset.id
+    asset_types = {
+        asset.id: asset.asset_type
         for asset in db.query(InvestmentAsset).filter(
             InvestmentAsset.id.in_(asset_ids),
-            InvestmentAsset.asset_type == "fund",
         ).all()
-    } if asset_ids else set()
+    } if asset_ids else {}
+    fund_asset_ids = {
+        asset_id for asset_id, asset_type in asset_types.items()
+        if asset_type == "fund"
+    }
     fund_ids = [h.id for h in holdings if h.asset_id in fund_asset_ids]
     latest_fund_snapshots: dict[str, FundValuationSnapshot] = {}
     if fund_ids:
@@ -1037,6 +1040,7 @@ def get_summary(db: Session = Depends(get_db)):
             latest_fund_snapshots.setdefault(snapshot.holding_id, snapshot)
     total_value = Decimal("0")
     total_invested = Decimal("0")
+    performance_value = Decimal("0")
     pending_count = 0
     pending_invested = Decimal("0")
     by_account: dict[str, AccountSummaryOut] = {}
@@ -1046,15 +1050,16 @@ def get_summary(db: Session = Depends(get_db)):
 
     for h in holdings:
         cost_basis = h.quantity * h.average_price
+        excluded_from_pnl = asset_types.get(h.asset_id) in {"savings_account", "cash"}
         # Un holding sin valoración (fondo sin snapshot, precio no disponible) no puede
         # entrar en el KPI global: infla "Aportado" contra un valor 0 y rompe la
         # rentabilidad (BUG-INV-1). Se contabiliza aparte para avisar, no en silencio.
         if h.market_value is None:
-            pending_count += 1
-            pending_invested += cost_basis
+            if not excluded_from_pnl:
+                pending_count += 1
+                pending_invested += cost_basis
             continue
 
-        total_invested += cost_basis
         total_value += h.market_value
 
         latest_snapshot = latest_fund_snapshots.get(h.id)
@@ -1069,13 +1074,22 @@ def get_summary(db: Session = Depends(get_db)):
                 account_id=h.account_id, value=Decimal("0"), invested=Decimal("0")
             )
         by_account[h.account_id].value += h.market_value
+
+        # Una cuenta remunerada es ahorro con intereses: forma parte del valor total y
+        # del patrimonio, pero no es capital aportado a una inversión ni debe diluir
+        # el porcentaje de P&L de acciones/fondos.
+        if excluded_from_pnl:
+            continue
+
+        total_invested += cost_basis
+        performance_value += h.market_value
         by_account[h.account_id].invested += cost_basis
 
         if h.current_price_updated_at:
             if last_updated is None or h.current_price_updated_at > last_updated:
                 last_updated = h.current_price_updated_at
 
-    return_absolute = total_value - total_invested
+    return_absolute = performance_value - total_invested
     return_percent = (
         float(return_absolute / total_invested * 100) if total_invested > Decimal("0") else 0.0
     )

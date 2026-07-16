@@ -13,7 +13,6 @@ import {
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { getCopilotContext } from "@/features/assistant/contextualCopilot";
 import { springPanel } from "@/components/ui/motion";
-import { preloadRoute } from "@/app/routes/pageLoaders";
 import ComienzaWidget from "./ComienzaWidget";
 
 interface NavItem {
@@ -136,7 +135,7 @@ export default function RootLayout() {
 
         <nav aria-label="Navegación principal" className="space-y-0.5">
           {navItems.map(({ to, icon: Icon, label, end }) => (
-            <NavLink key={to} to={to} end={end} className={navLinkClass} onPointerEnter={() => preloadRoute(to)} onFocus={() => preloadRoute(to)} onPointerDown={() => preloadRoute(to)}>
+            <NavLink key={to} to={to} end={end} className={navLinkClass}>
               <Icon size={14} />
               <span style={{ fontSize: "14px", lineHeight: "1.43", letterSpacing: "-0.22px" }}>{label}</span>
             </NavLink>
@@ -149,7 +148,7 @@ export default function RootLayout() {
         <div className="flex-1" />
         <nav aria-label="Navegación secundaria" className="mt-4 space-y-0.5 border-t border-[var(--border-soft)] pt-3">
           {footItems.map(({ to, icon: Icon, label }) => (
-            <NavLink key={to} to={to} className={navLinkClass} onPointerEnter={() => preloadRoute(to)} onFocus={() => preloadRoute(to)} onPointerDown={() => preloadRoute(to)}>
+            <NavLink key={to} to={to} className={navLinkClass}>
               <Icon size={14} />
               <span style={{ fontSize: "14px", lineHeight: "1.43", letterSpacing: "-0.22px" }}>{label}</span>
             </NavLink>
@@ -184,9 +183,6 @@ export default function RootLayout() {
               key={to}
               to={to}
               end={end}
-              onPointerEnter={() => preloadRoute(to)}
-              onFocus={() => preloadRoute(to)}
-              onPointerDown={() => preloadRoute(to)}
               className={({ isActive }) =>
                 [
                   "flex min-w-[100px] shrink-0 items-center gap-2 rounded-[10px] border px-3 py-2",

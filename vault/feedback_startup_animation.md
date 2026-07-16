@@ -10,6 +10,8 @@ metadata:
 - Debe mostrarse en **cada arranque** de la aplicación, con la duración acordada de 2,4 s.
 - No debe degradarse a un spinner ni desaparecer al modificar `App.tsx` o `main.tsx`.
 - La carga mantiene todas las pantallas disponibles desde el inicio; no se reintroduce carga diferida por módulo.
+- La ventana de escritorio debe abrir maximizada por defecto, conservando los controles normales de Windows.
+- El contrato de calidad debe proteger estas tres condiciones para que una optimización de carga no vuelva a contradecirlas.
 
 Relacionadas: [[project_constraints]] · [[feedback_ux_snapshots]]
 

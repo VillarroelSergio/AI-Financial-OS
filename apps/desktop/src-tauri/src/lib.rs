@@ -102,9 +102,14 @@ pub fn run() {
         .manage(ApiToken(token.clone()))
         .invoke_handler(tauri::generate_handler![get_api_token])
         .setup(move |_app| {
+            use tauri::Manager;
+            let main_window = _app
+                .get_webview_window("main")
+                .ok_or_else(|| std::io::Error::other("no se encontro la ventana principal"))?;
+            main_window.maximize()?;
+
             #[cfg(not(debug_assertions))]
             {
-                use tauri::Manager;
                 let resource_dir = _app.path().resource_dir()?;
                 if let Some(child) = backend::spawn(&resource_dir, &token)
                     .map_err(std::io::Error::other)?

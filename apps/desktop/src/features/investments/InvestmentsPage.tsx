@@ -250,7 +250,7 @@ export default function InvestmentsPage() {
           {summary && (
             <div className="grid grid-cols-3 gap-xl">
               <MetricCard label="Valor total" value={formatCurrency(summary.total_value)} />
-              <MetricCard label="Aportado" value={formatCurrency(summary.total_invested)} />
+              <MetricCard label="Aportado en inversiones" value={formatCurrency(summary.total_invested)} />
               <MetricCard
                 label="P&L sobre aportado"
                 value={formatCurrency(summary.return_absolute)}

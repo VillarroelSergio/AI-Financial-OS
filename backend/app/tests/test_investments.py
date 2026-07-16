@@ -333,6 +333,32 @@ def test_summary_excludes_unvalued_holdings_from_return(client):
     assert s["return_absolute"] == "100.00"
     assert abs(s["return_percent"] - 33.33) < 0.1
     assert s["pending_valuation_count"] == 1
+
+
+def test_summary_excludes_remunerated_savings_from_investment_pnl(client):
+    account_id, asset_id = _setup_account_and_asset(client)
+    stock = client.post("/api/investments/holdings", json={
+        "account_id": account_id,
+        "asset_id": asset_id,
+        "quantity": "1",
+        "average_price": "100.00",
+        "current_price": "150.00",
+    })
+    assert stock.status_code == 201
+    savings = client.post("/api/investments/savings", json={
+        "new_account_name": "Cuenta remunerada",
+        "opened_at": "2026-01-01",
+        "balance": "1000.00",
+        "rate_source": "fixed",
+        "fixed_rate": "2.00",
+    })
+    assert savings.status_code == 201
+
+    summary = client.get("/api/investments/summary").json()
+    assert summary["total_value"] == "1150.00"  # ahorro incluido en el valor gestionado
+    assert summary["total_invested"] == "100.00"  # ahorro fuera del aportado de inversión
+    assert summary["return_absolute"] == "50.00"
+    assert summary["return_percent"] == 50.0
     assert s["pending_valuation_invested"] == "66000.00"
 
 
