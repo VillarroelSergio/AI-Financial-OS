@@ -14,7 +14,7 @@ Diagnóstico principal: H1 de 80px devora pantalla, Courier New en cifras, sin j
 
 Tres direcciones: A·Ledger (fintech oscuro tipo Linear/Mercury, ⌘K, mono moderna en cifras — RECOMENDADA), B·Terminal (Bloomberg-like, cinta + línea de comandos), C·Atelier (Apple light-first, hero de patrimonio, springs).
 
-DECISIÓN (2026-07-12): el usuario eligió **C·Atelier** (light-first). Esto SUPERSEDE la restricción "Mantener estilo Dark Premium" de [[project-constraints]]; el tema oscuro se mantiene soportado pero el default pasa a claro. Spec de implementación completa (6 fases, tokens exactos, motion spec, criterios de aceptación) en `AI-Financial-OS/docs/20_REDESIGN_ATELIER.md`, escrita para que la implemente Opus 4.8. Única dependencia nueva permitida: framer-motion. Implementación aún NO iniciada.
+DECISIÓN (2026-07-12): el usuario eligió **C·Atelier** (light-first). Esto SUPERSEDE la restricción "Mantener estilo Dark Premium" de [[project_constraints]]; el tema oscuro se mantiene soportado pero el default pasa a claro. Spec de implementación completa (6 fases, tokens exactos, motion spec, criterios de aceptación) en `AI-Financial-OS/docs/20_REDESIGN_ATELIER.md`, escrita para que la implemente Opus 4.8. Única dependencia nueva permitida: framer-motion. Implementación aún NO iniciada.
 
 
 ---

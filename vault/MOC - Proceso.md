@@ -9,7 +9,7 @@ Cómo trabajamos: workflow, releases y preferencias del usuario.
 - [[2026-07-04-mejoras-integrales]] — plan de mejoras integrales
 
 **Convenciones y preferencias (obligatorias):**
-- [[project_constraints]] · [[feedback_commits_and_graphify]] · [[feedback_commit_confirmation]] · [[feedback_no_tests_without_permission]] · [[feedback_ux_snapshots]] · [[feedback_language_spanish]]
+- [[project_constraints]] · [[feedback_follow_project_structure]] · [[feedback_commits_and_graphify]] · [[feedback_commit_confirmation]] · [[feedback_no_tests_without_permission]] · [[feedback_ux_snapshots]] · [[feedback_language_spanish]] · [[feedback_sync_vault_docs]]
 
 Relacionado: [[MOC - Testing]] · [[Home]]
 

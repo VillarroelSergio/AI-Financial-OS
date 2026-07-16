@@ -18,7 +18,7 @@ El cruce heurístico Monefy↔bancos no convenció al usuario ("el cruce es impo
 
 **Why:** El matching heurístico genera desconfianza; con una única fuente los datos cuadran por construcción.
 
-**How to apply:** No reintroducir cruces automáticos entre fuentes ni el estado 'pending'. Ver [[project-constraints]].
+**How to apply:** No reintroducir cruces automáticos entre fuentes ni el estado 'pending'. Ver [[project_constraints]].
 
 
 ---

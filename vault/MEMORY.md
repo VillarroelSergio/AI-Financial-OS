@@ -13,3 +13,7 @@
 - [No Tests Sin Permiso](feedback_no_tests_without_permission.md) — Nunca ejecutar tests sin permiso explícito del usuario
 - [Idioma Español](feedback_language_spanish.md) — Responder SIEMPRE en español, nunca en inglés
 - [Prep v1.0 GitHub](project_v1_release_prep.md) — v1.0 prep 2026-07-14 (sin commit): versión 1.0.0, README nuevo, fix seguridad, docs limpiadas; pendiente rotar API keys
+- [Rentabilidad reportada de fondos](project_fund_reported_returns.md) — Separar porcentaje de plataforma, ganancia simple y aportado; alta sincroniza el primer snapshot
+- [Valoración de cuentas de inversión](project_investment_account_valuation.md) — Efectivo + posiciones calculadas una sola vez; alta permite crear cartera integrada
+- [Sincronizar bóveda con la doc](feedback_sync_vault_docs.md) — Todo cambio que requiera actualizar documentación se refleja en la bóveda (docs/, MOC, ESTADO)
+- [Seguir la estructura del proyecto](feedback_follow_project_structure.md) — Respetar siempre repositorio, arquitectura agéntica y documentación; las reglas de vault prevalecen

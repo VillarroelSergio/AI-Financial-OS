@@ -35,6 +35,11 @@ prevalece como valoración actual y sustituye al `current_balance` en los agrega
 incluyen las cuentas antiguas cuyo contenedor quedó a 0 € y se evita sumar dos veces las que
 tienen el saldo replicado. Resumen, Balance General e IA reutilizan esta misma valoración.
 
+En el módulo de Inversiones, ese saldo remunerado permanece dentro de `total_value` para
+mostrar todo el valor gestionado, pero se excluye de `total_invested`, `return_absolute` y
+`return_percent`. Es ahorro con intereses, no capital aportado a acciones o fondos, y no debe
+diluir el P&L sobre aportado. Lo mismo aplica al asset técnico `cash`.
+
 Relacionadas: [[project_investments_module]] · [[project_fund_reported_returns]] · [[04_DATA_MODEL]] · [[11_API_CONTRACT]]
 
 Tags: #módulo #inversiones #cuentas #patrimonio #decisión

@@ -19,6 +19,13 @@ ponderada de los últimos porcentajes reportados por el capital aportado a cada 
 no presenta el P&L simple como si fuera la métrica TWR/MWR de Finizens. La etiqueta visible
 indica `reportada` para distinguirla.
 
+**Limitación detectada el 15/07/2026:** Finizens reporta la rentabilidad en el nivel del plan
+o cartera (por ejemplo, Global y USA), no necesariamente en el nivel de cada fondo subyacente.
+Una media de porcentajes guardados por fondo no representa esas carteras y puede quedar fuera
+del rango de sus rentabilidades. Queda pendiente mover la rentabilidad externa al nivel
+cartera; hasta entonces el porcentaje agregado de fondos no debe interpretarse como el total
+oficial de Finizens.
+
 El editor genérico de una posición se muestra como modal fijo. Antes se insertaba al inicio
 de la página y, al pulsar `Editar` desde una fila inferior, quedaba fuera del viewport y
 parecía que la acción no funcionaba.

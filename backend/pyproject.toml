@@ -1,6 +1,6 @@
 [project]
 name = "ai-financial-os-backend"
-version = "1.0.0"
+version = "1.1.4"
 requires-python = ">=3.11"
 dependencies = [
     "fastapi[standard]>=0.115.0",
