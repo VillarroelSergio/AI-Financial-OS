@@ -11,6 +11,7 @@ from app.modules.market_intelligence.api.schemas import (
     EconomyOverviewOut,
     ForexRateOut,
     ForexSnapshotOut,
+    HistoryStatsOut,
     MacroDataPoint,
     MacroSnapshotOut,
     MarketSnapshotOut,
@@ -274,10 +275,8 @@ def _downsample(rows: list[dict], max_points: int) -> list[dict]:
     return [rows[i] for i in idx]
 
 
-def _compute_stats(all_rows: list[dict], selected: list[dict]) -> "HistoryStatsOut":
+def _compute_stats(all_rows: list[dict], selected: list[dict]) -> HistoryStatsOut:
     from datetime import timedelta
-
-    from app.modules.market_intelligence.api.schemas import HistoryStatsOut
 
     last = all_rows[-1]
     prev = all_rows[-2] if len(all_rows) >= 2 else None

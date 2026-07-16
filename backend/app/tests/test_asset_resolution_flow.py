@@ -29,9 +29,13 @@ def test_create_asset_autoresolves_bare_ticker(client):
 
 def test_refresh_fetches_price_for_manual_assets_with_ticker(client):
     account_id = _create_broker_account(client)
-    asset = client.post("/api/investments/assets", json={
-        "name": "Activo Desconocido XYZ", "ticker": "XYZ.MC", "asset_type": "stock",
-    }).json()
+    with patch("app.modules.investments.asset_resolution.resolve_asset") as resolver:
+        resolver.return_value.selected = None
+        response = client.post("/api/investments/assets", json={
+            "name": "Fondo Manual XYZ", "ticker": "XYZ.MC", "asset_type": "fund",
+        })
+    assert response.status_code == 201
+    asset = response.json()
     assert asset["price_source"] == "manual"  # no está en el registro
     client.post("/api/investments/holdings", json={
         "account_id": account_id, "asset_id": asset["id"],

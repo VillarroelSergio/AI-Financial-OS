@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from sqlalchemy import inspect
 
 
@@ -228,10 +230,12 @@ def test_price_refresh_marks_manual_assets(client, monkeypatch):
     account = client.post("/api/accounts", json={
         "name": "Finizens", "type": "investment", "currency": "EUR",
     }).json()
-    asset = client.post("/api/investments/assets", json={
-        "name": "Vanguard US 500", "asset_type": "fund",
-        "currency": "EUR", "price_source": "manual",
-    }).json()
+    with patch("app.modules.investments.asset_resolution.resolve_asset") as resolver:
+        resolver.return_value.selected = None
+        asset = client.post("/api/investments/assets", json={
+            "name": "Fondo Manual Sin Ticker", "asset_type": "fund",
+            "currency": "EUR", "price_source": "manual",
+        }).json()
     holding = client.post("/api/investments/holdings", json={
         "account_id": account["id"], "asset_id": asset["id"],
         "quantity": "4.59", "average_price": "420.00",
@@ -333,6 +337,7 @@ def test_summary_excludes_unvalued_holdings_from_return(client):
     assert s["return_absolute"] == "100.00"
     assert abs(s["return_percent"] - 33.33) < 0.1
     assert s["pending_valuation_count"] == 1
+    assert s["pending_valuation_invested"] == "66000.00"
 
 
 def test_summary_excludes_remunerated_savings_from_investment_pnl(client):
@@ -359,7 +364,6 @@ def test_summary_excludes_remunerated_savings_from_investment_pnl(client):
     assert summary["total_invested"] == "100.00"  # ahorro fuera del aportado de inversión
     assert summary["return_absolute"] == "50.00"
     assert summary["return_percent"] == 50.0
-    assert s["pending_valuation_invested"] == "66000.00"
 
 
 def test_merge_duplicate_holdings(client):
@@ -445,7 +449,9 @@ def _create_holding(client):
 def test_fund_snapshot_unique_per_holding_and_date(client):
     from datetime import date
     from decimal import Decimal
+
     from sqlalchemy.exc import IntegrityError
+
     from app.core.database import get_db
     from app.models.investment import FundValuationSnapshot
 
@@ -470,6 +476,7 @@ def test_fund_snapshot_unique_per_holding_and_date(client):
 def test_dfr_csv_parsing_offline(client):
     from datetime import date
     from decimal import Decimal
+
     from app.modules.investments import reference_rate_service as rrs
 
     ecb_csv = (
@@ -491,6 +498,7 @@ def test_dfr_csv_parsing_offline(client):
 def test_get_rate_on_effective_date_lookup(client):
     from datetime import date, datetime, timezone
     from decimal import Decimal
+
     from app.core.database import get_db
     from app.models.investment import ReferenceRateObservation
     from app.modules.investments import reference_rate_service as rrs
@@ -636,6 +644,7 @@ def test_fund_summary_weights_platform_returns_by_contributed_capital(client):
 def test_savings_engine_fixed_compounding():
     from datetime import date
     from decimal import Decimal
+
     from app.modules.investments.savings_service import SavingsInputs, compute_schedule
 
     inp = SavingsInputs(date(2025, 1, 1), Decimal("1000"), "fixed", Decimal("12"), 0, None)
@@ -649,6 +658,7 @@ def test_savings_engine_fixed_compounding():
 def test_savings_engine_mid_period_rate_change(client):
     from datetime import date, datetime, timezone
     from decimal import Decimal
+
     from app.core.database import get_db
     from app.models.investment import ReferenceRateObservation
     from app.modules.investments import reference_rate_service as rrs
@@ -673,6 +683,7 @@ def test_savings_engine_mid_period_rate_change(client):
 def test_savings_contributions_from_transactions(client):
     from datetime import date
     from decimal import Decimal
+
     from app.core.database import get_db
     from app.models.transaction import Transaction
     from app.modules.investments.savings_service import SavingsInputs, compute_schedule
@@ -695,7 +706,12 @@ def test_savings_contributions_from_transactions(client):
 def test_savings_reverse_start_balance():
     from datetime import date
     from decimal import Decimal
-    from app.modules.investments.savings_service import SavingsInputs, compute_schedule, estimate_start_balance
+
+    from app.modules.investments.savings_service import (
+        SavingsInputs,
+        compute_schedule,
+        estimate_start_balance,
+    )
 
     inp = SavingsInputs(date(2025, 1, 1), Decimal("1000"), "fixed", Decimal("12"), 0, None)
     final = compute_schedule(None, inp, as_of=date(2025, 12, 1)).current_balance
@@ -730,10 +746,11 @@ def test_portfolio_evolution_forward_fills_and_sums(client):
 
 def test_reconciliation_classifies_funds_manual_savings_confirmed(client):
     account = client.post("/api/accounts", json={"name": "Finizens", "type": "investment", "currency": "EUR"}).json()
-    fund = client.post("/api/investments/funds", json={
+    fund_response = client.post("/api/investments/funds", json={
         "name": "Fondo C", "account_id": account["id"],
         "contributed": "1000.00", "value": "1000.00", "date": "2025-01-15",
-    }).json()
+    })
+    assert fund_response.status_code == 201
     savings = client.post("/api/investments/savings", json={
         "new_account_name": "Ahorro X", "opened_at": "2025-01-01", "balance": "5000.00",
         "rate_source": "fixed", "fixed_rate": "3.00",
@@ -743,4 +760,6 @@ def test_reconciliation_classifies_funds_manual_savings_confirmed(client):
     report = client.get("/api/investments/reconciliation").json()
     states = {h["display_name"]: h["quality_state"] for h in report["holdings"]}
     assert states["Fondo C"] == "manual"
-    assert states["Ahorro X"] == "confirmed"
+    # Las cuentas remuneradas tienen su panel específico y no forman parte de
+    # la reconciliación de calidad de la cartera negociable.
+    assert "Ahorro X" not in states

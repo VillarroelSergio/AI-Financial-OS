@@ -19,6 +19,7 @@ def test_macro_series_monthly(monkeypatch):
     # el de hace un año respecto a 2026-01 es 2025-01 = 2.0
     _patch_history(monkeypatch, points)
     assert macro_series.latest("x") == 3.0
+    assert macro_series.history("x", limit=2) == [("2025-12", 2.0), ("2026-01", 3.0)]
     assert macro_series.value_year_ago("x") == 2.0
     assert macro_series.change_12m("x") == 50.0  # (3-2)/2*100
 

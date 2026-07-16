@@ -6,8 +6,10 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
+from app.models.account import Account
 from app.models.category import Category
 from app.models.transaction import Transaction
+from app.modules.accounts.valuation_service import build_current_valuation, to_eur
 from app.modules.dashboard.schemas import (
     CategorySpending,
     CategorySpendingDetailOut,
@@ -16,7 +18,6 @@ from app.modules.dashboard.schemas import (
     SpendingOut,
     SpendingYearsOut,
 )
-from app.modules.accounts.valuation_service import build_current_valuation, to_eur
 
 router = APIRouter()
 
