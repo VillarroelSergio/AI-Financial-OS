@@ -10,8 +10,8 @@ import httpx
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.modules.ai.memory import conversation_repository as conv_repo
 from app.modules.ai.action_whitelist import is_allowed_action
+from app.modules.ai.memory import conversation_repository as conv_repo
 from app.modules.ai.prompts.guardrails import enforce_advice_guardrail, sanitize_response
 from app.modules.ai.prompts.system_prompt import get_system_prompt
 from app.modules.ai.providers import AIProvider, AIResponse, LMStudioProvider, OllamaProvider

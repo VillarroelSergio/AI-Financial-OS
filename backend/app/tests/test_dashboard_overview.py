@@ -1,6 +1,6 @@
+import asyncio
 from datetime import datetime, timezone
 from decimal import Decimal
-import asyncio
 
 
 def test_spending_monthly_series(client):

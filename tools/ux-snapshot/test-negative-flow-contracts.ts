@@ -4,7 +4,7 @@ import path from "node:path";
 import { loadNegativeFlowContracts, validateNegativeFlowContracts } from "./flow-contracts.js";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
-const catalogPath = path.resolve(toolDir, "../../docs/testing/flows/negative-cases.yaml");
+const catalogPath = path.resolve(toolDir, "../../vault/docs/testing/flows/negative-cases.yaml");
 
 const catalog = await loadNegativeFlowContracts(catalogPath);
 const errors = validateNegativeFlowContracts(catalog);

@@ -15,7 +15,6 @@ from app.modules.market_intelligence.ingestion.adapters.global_.world_bank impor
 from app.modules.market_intelligence.ingestion.adapters.usa.bls import BLSAdapter
 from app.modules.market_intelligence.ingestion.models import CurrencyRate, MacroIndicator
 
-
 # ── supports(): allowlist honesta (sin red) ──────────────────────────────────
 
 def test_single_series_adapters_only_support_their_indicator():

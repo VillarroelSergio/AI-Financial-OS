@@ -14,9 +14,11 @@ const DESKTOP_DIR = path.join(PROJECT_ROOT, "apps", "desktop");
 const BACKEND_DIR = path.join(PROJECT_ROOT, "backend");
 const BACKEND_PYTHON = path.join(BACKEND_DIR, ".venv", "Scripts", "python.exe");
 const VITE_CLI = path.join(DESKTOP_DIR, "node_modules", "vite", "bin", "vite.js");
-const OUTPUT_DIR = path.join(PROJECT_ROOT, "ux-snapshots", "e2e", "flow-01-05");
-const FLOW_CATALOG_PATH = path.join(PROJECT_ROOT, "docs", "testing", "flows", "catalog.yaml");
-const FIXTURE_PATH = path.join(PROJECT_ROOT, "docs", "testing", "fixtures", "financial-os.yaml");
+const OUTPUT_DIR = process.env.E2E_OUTPUT_DIR
+  ? path.resolve(process.env.E2E_OUTPUT_DIR)
+  : path.join(PROJECT_ROOT, "ux-snapshots", "e2e", "flow-01-05");
+const FLOW_CATALOG_PATH = path.join(PROJECT_ROOT, "vault", "docs", "testing", "flows", "catalog.yaml");
+const FIXTURE_PATH = path.join(PROJECT_ROOT, "vault", "docs", "testing", "fixtures", "financial-os.yaml");
 const E2E_DATA_ROOT = process.env.E2E_DATA_ROOT ?? path.join(tmpdir(), "ai-financial-os-e2e");
 // The backend CORS allow-list uses localhost:1420 for the web frontend.
 const BASE_URL = process.env.E2E_BASE_URL ?? "http://localhost:1420";

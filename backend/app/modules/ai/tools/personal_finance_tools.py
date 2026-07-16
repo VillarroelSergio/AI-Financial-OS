@@ -10,8 +10,8 @@ from sqlalchemy.orm import Session
 from app.models.category import Category
 from app.models.goal import Goal
 from app.models.transaction import Transaction
-from app.modules.ai.tools.registry import ToolDefinition, tool_registry
 from app.modules.accounts.valuation_service import build_current_valuation
+from app.modules.ai.tools.registry import ToolDefinition, tool_registry
 
 
 def _now_month() -> str:
