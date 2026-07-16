@@ -8,6 +8,7 @@ DEFAULT_SETTINGS = [
     ("app.language", "es"),
     ("theme.mode", "dark"),
     ("app.currency", "EUR"),
+    ("app.font_scale", "normal"),
 ]
 
 

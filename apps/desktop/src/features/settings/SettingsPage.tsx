@@ -8,6 +8,7 @@ import type { AiStatus } from "@/features/assistant/types/aiAssistant.types";
 import { createBackup, fetchSecurityStatus, type BackupInfo, type IntegrityCheck, type SecurityStatus } from "@/lib/api/security";
 import type { RagDocument } from "@/lib/api/rag";
 import { useTheme } from "@/lib/useTheme";
+import { FONT_SCALES, type FontScale, useFontScale } from "@/lib/useFontScale";
 import { useToast } from "@/app/ToastProvider";
 import { loadSettingsOverview } from "./settingsOverview";
 
@@ -129,7 +130,23 @@ export default function SettingsPage() {
 
   const lastBackup = backups[0];
   const { theme, setTheme } = useTheme();
+  const { fontScale, setFontScale } = useFontScale();
   const providerStatus = aiStatus?.providers ?? [];
+
+  useEffect(() => {
+    const savedFontScale = settings.find((setting) => setting.key === "app.font_scale");
+    if (!savedFontScale) return;
+    try {
+      setFontScale(JSON.parse(savedFontScale.value_json) as FontScale);
+    } catch {
+      setFontScale(savedFontScale.value_json as FontScale);
+    }
+  }, [settings, setFontScale]);
+
+  const handleFontScale = async (next: FontScale) => {
+    setFontScale(next);
+    await handleUpdate("app.font_scale", next);
+  };
 
   return (
     <div className="page-shell space-y-6">
@@ -191,6 +208,30 @@ export default function SettingsPage() {
                     >
                       {t === "dark" ? "Oscuro" : "Claro"}
                     </p>
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="p-xl">
+              <p className="text-body-md text-on-dark mb-1">Tamaño del texto</p>
+              <p className="text-caption text-stone mb-3">Ajusta la lectura como en tu smartphone. El cambio se aplica al instante en toda la aplicación.</p>
+              <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Tamaño del texto">
+                {(Object.keys(FONT_SCALES) as FontScale[]).map((scale) => (
+                  <button
+                    key={scale}
+                    type="button"
+                    role="radio"
+                    aria-checked={fontScale === scale}
+                    disabled={saving === "app.font_scale"}
+                    onClick={() => void handleFontScale(scale)}
+                    className="ui-pressable rounded-lg border px-3 py-3 text-left text-body-sm disabled:opacity-50"
+                    style={{
+                      borderColor: fontScale === scale ? "var(--primary)" : "var(--border-soft)",
+                      background: fontScale === scale ? "color-mix(in srgb, var(--primary) 12%, var(--bg-card))" : "var(--bg-interactive)",
+                    }}
+                  >
+                    <span className="block font-semibold text-on-dark">{{ compacto: "Compacto", normal: "Normal", grande: "Grande", "muy-grande": "Muy grande" }[scale]}</span>
+                    <span className="mt-1 block text-caption text-stone" style={{ fontSize: `${FONT_SCALES[scale]}em` }}>Así se verá el texto</span>
                   </button>
                 ))}
               </div>

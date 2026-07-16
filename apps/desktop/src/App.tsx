@@ -2,6 +2,7 @@ import { MotionConfig } from "framer-motion";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import RootLayout from "@/app/layout/RootLayout";
 import StartupExperience from "@/app/StartupExperience";
+import { ToastProvider } from "@/app/ToastProvider";
 import AssistantPage from "@/features/assistant/AssistantPage";
 import DashboardPage from "@/features/dashboard/DashboardPage";
 import EconomyPage from "@/features/economy/EconomyPage";
@@ -34,6 +35,7 @@ export default function App() {
   return (
     <MotionConfig reducedMotion="user">
       <StartupExperience />
+      <ToastProvider>
       <Routes>
         <Route path="/" element={<RootLayout />}>
           <Route index element={<DashboardPage />} />
@@ -57,6 +59,7 @@ export default function App() {
           <Route path="welcome" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>
+      </ToastProvider>
     </MotionConfig>
   );
 }

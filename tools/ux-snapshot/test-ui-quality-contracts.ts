@@ -11,8 +11,9 @@ async function source(relativePath: string): Promise<string> {
   return readFile(path.join(ROOT, relativePath), "utf8");
 }
 
-const [rootLayout, dashboardUi, metricCard, spending, goals, budgetCard, assistantPage, analysisCenter, assistantMessages, appRoutes, startupExperience, tauriBootstrap, planningPage, budgetTab, marketsPage, accountsPage, settingsPage, economyPage, indicatorCard, impactCard, personalEconomy, chartPalette, viteConfig, categoryTabs, regionTabs, appCss, snapshotRoutes, tauriConfig, tauriCapabilities, mainEntry, indexHtml] = await Promise.all([
+const [rootLayout, financesPage, dashboardUi, metricCard, spending, goals, budgetCard, assistantPage, analysisCenter, assistantMessages, appRoutes, startupExperience, tauriBootstrap, planningPage, budgetTab, marketsPage, accountsPage, settingsPage, economyPage, indicatorCard, impactCard, personalEconomy, chartPalette, viteConfig, tailwindConfig, categoryTabs, regionTabs, appCss, snapshotRoutes, tauriConfig, tauriCapabilities, mainEntry, indexHtml] = await Promise.all([
   source("apps/desktop/src/app/layout/RootLayout.tsx"),
+  source("apps/desktop/src/features/finances/FinancesPage.tsx"),
   source("apps/desktop/src/components/ui/Dashboard.tsx"),
   source("apps/desktop/src/components/ui/MetricCard.tsx"),
   source("apps/desktop/src/features/spending/SpendingPage.tsx"),
@@ -35,6 +36,7 @@ const [rootLayout, dashboardUi, metricCard, spending, goals, budgetCard, assista
   source("apps/desktop/src/features/economy/components/PersonalEconomySection.tsx"),
   source("apps/desktop/src/lib/chartPalette.ts"),
   source("apps/desktop/vite.config.ts"),
+  source("apps/desktop/tailwind.config.ts"),
   source("apps/desktop/src/features/markets/components/CategoryTabs.tsx"),
   source("apps/desktop/src/features/economy/components/RegionTabs.tsx"),
   source("apps/desktop/src/index.css"),
@@ -49,6 +51,8 @@ const primaryNav = rootLayout.match(/const navItems:[\s\S]*?\n\];/)?.[0] ?? "";
 assert.equal((primaryNav.match(/\{\s*to:/g) ?? []).length, 5, "La navegacion principal debe conservar solo cinco secciones");
 assert.doesNotMatch(primaryNav, /\/goals|\/insights/, "Objetivos e Insights no deben aparecer en el menu principal");
 assert.doesNotMatch(rootLayout, /initial=\{\{\s*opacity:\s*0,\s*y:/, "La navegacion frecuente no debe desplazar verticalmente la pagina");
+assert.doesNotMatch(rootLayout, /sectionTitle|hidden h-14 shrink-0/, "El escritorio no debe repetir el titulo de la seccion en una barra superior");
+assert.doesNotMatch(financesPage, /sticky top-0 z-10 border-b/, "Las pestanas financieras no deben introducir un divisor horizontal redundante");
 
 assert.doesNotMatch(metricCard, /financial-number[^\n]*truncate/, "Las metricas financieras no deben truncarse");
 assert.doesNotMatch(dashboardUi, /financial-number[^\n]*truncate/, "Los KPI financieros no deben truncarse");
@@ -70,6 +74,13 @@ assert.match(analysisCenter, /<EmptyState/, "El estado inicial del analisis debe
 assert.match(goals, /goals\.length\s*>\s*0/, "Objetivos no debe duplicar su CTA principal cuando esta vacio");
 assert.match(appCss, /\.ui-pressable:active/, "Los controles interactivos deben ofrecer feedback tactil comun");
 assert.match(appCss, /prefers-reduced-motion[\s\S]*\.ui-pressable/, "El feedback tactil debe respetar movimiento reducido");
+assert.match(appCss, /button:not\(:disabled\):active/, "Los botones heredados deben conservar feedback tactil");
+assert.match(appCss, /\.bg-surface-card/, "Las superficies de tarjeta heredadas deben compartir microinteraccion");
+assert.match(appCss, /@keyframes card-rise-in/, "Todas las tarjetas deben conservar su entrada desde abajo");
+assert.match(appCss, /card-rise-in[\s\S]*prefers-reduced-motion[\s\S]*animation:\s*none/, "La entrada de tarjetas debe respetar movimiento reducido");
+assert.match(appCss, /@keyframes allocation-reveal/, "Las barras de asignacion deben revelarse al cambiar de vista");
+assert.match(appCss, /text-\\\[10px\\\][\s\S]*var\(--font-scale\)/, "Los tamaños arbitrarios deben responder al ajuste global");
+assert.match(tailwindConfig, /"body-md":\s*\["calc\(17px \* var\(--font-scale\)\)"/, "Los tamaños compartidos deben responder al ajuste global");
 for (const [name, contents] of [
   ["AccountsPage", accountsPage],
   ["SettingsPage", settingsPage],

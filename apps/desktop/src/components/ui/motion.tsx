@@ -60,8 +60,10 @@ export function CountUp({
       onUpdate: (v) => {
         node.textContent = format(v);
       },
+      onComplete: () => {
+        prev.current = value;
+      },
     });
-    prev.current = value;
     return () => controls.stop();
   }, [value, format]);
 

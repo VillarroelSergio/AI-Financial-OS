@@ -13,12 +13,13 @@ metadata:
 
 ## Versión y rama
 - Versión de código: **1.1.5**
-- Rama de trabajo actual: `chore/github-actions-ci`
+- Rama de trabajo actual: `feature/mejoras-balance-inversiones-accesibilidad`
 
 ## En curso
 - Hotfix del módulo de inversiones: fondos, reasignación de carteras, valoración de cuentas y coherencia del Resumen.
 
 ## Hecho recientemente
+- Retirado el cierre mensual de la interfaz del Balance General; el panel conserva activos, pasivos, patrimonio y evolución. Mejorado el modal de precios manuales para explicar el NAV por participación de fondos y calcular el valor resultante. Añadido ajuste persistente de tamaño de texto (compacto, normal, grande, muy grande) y elevada la escala base. Corregido Ajustes: faltaba el `ToastProvider`, que dejaba la pantalla en negro. La escala ya cubre aliases y tamaños arbitrarios de toda la app. Las tarjetas de todos los módulos entran desde abajo con escalonado breve y mantienen hover/press; barras de progreso y asignación se revelan desde la izquierda, sin anular `prefers-reduced-motion`. Corregido el contador de patrimonio en React StrictMode. Eliminada en escritorio la barra superior redundante con el nombre de la sección y sus divisores; el copiloto queda como control flotante y las pestañas conservan solo el indicador activo. Validación: build y contratos UI pasan; capturas dirigidas de Finanzas, Inversiones y Mercados verificadas visualmente; E2E aislada 26 PASS, 7 BLOCKED conocidos, sin errores de consola ni HTTP 5xx. Ver [[project_accessibility_and_investment_price_ux]].
 - Corregida la alerta CodeQL de exposición de excepciones en copias de seguridad: el 404 ya no revela detalles internos y registra la causa en servidor. Evidencia en [[docs/testing/codeql_backup_error_exposure.tdd]].
 - Fijadas las cinco Actions de CI a SHA completos, con sus versiones anotadas para Dependabot. Pendiente llevar el workflow a `main` y activar la política remota que obliga a usar SHA completos.
 - Añadida la configuración semanal de Dependabot para `uv`, npm (aplicación y herramientas E2E), Cargo y GitHub Actions. Agrupa actualizaciones menores/parche y deja las mayores en PRs separadas. Pendiente commit/push para que GitHub la active.

@@ -1,5 +1,7 @@
 # Memory Index
 
+- [Accesibilidad y precios de inversión](project_accessibility_and_investment_price_ux.md) — Escala de texto persistente y distinción clara entre NAV y valor total
+
 > Índice maestro de la bóveda: [[Home]]. Esto es solo el índice de **notas de memoria**.
 
 - [Estado actual](ESTADO.md) — Dónde estamos ahora; leer primero al arrancar
