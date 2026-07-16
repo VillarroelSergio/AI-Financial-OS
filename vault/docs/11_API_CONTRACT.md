@@ -193,6 +193,12 @@ agrega la rentabilidad externa del último snapshot de cada fondo, ponderada por
 `contributed_total` (o coste de la posición como respaldo). Es `null` cuando no hay
 porcentajes reportados.
 
+`total_value` incluye todo el valor gestionado, también cuentas remuneradas y efectivo.
+`total_invested`, `return_absolute` y `return_percent` excluyen assets `savings_account` y
+`cash`: el ahorro forma parte del patrimonio, pero no de la base del P&L de inversiones.
+Por ello `return_absolute` no tiene que ser igual a `total_value - total_invested` cuando
+existe ahorro dentro del módulo.
+
 ### GET `/api/investments/holdings`
 
 ### POST `/api/investments/holdings`

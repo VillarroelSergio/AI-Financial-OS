@@ -21,7 +21,7 @@ NO invocar `/graphify` automáticamente ni al inicio ni al final. Consultar al u
 
 **Why:** Ahorrar tokens de ejecución. El usuario lo pidió explícitamente el 2026-07-04 (sustituye la regla anterior de graphify al inicio y fin).
 
-**How to apply:** Si el grafo podría ayudar o convendría actualizarlo tras cambios, preguntar primero: "¿Quieres que ejecute graphify?". Igual que con los tests (ver [[feedback-no-tests-without-permission]]): nunca sin permiso previo.
+**How to apply:** Si el grafo podría ayudar o convendría actualizarlo tras cambios, preguntar primero: "¿Quieres que ejecute graphify?". Igual que con los tests (ver [[feedback_no_tests_without_permission]]): nunca sin permiso previo.
 
 
 ---

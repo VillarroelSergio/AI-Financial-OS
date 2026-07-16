@@ -18,6 +18,7 @@
 | Reasignar una acción actualiza `account_id` y broker; una cuenta bancaria se rechaza | `test_holding_can_be_reassigned_only_to_an_investment_portfolio` | `PATCH` ignoraba `account_id` | PASS |
 | Una remunerada enlazada a una cuenta a 0 € entra en Resumen | `test_overview_uses_savings_holding_when_container_balance_is_zero` | Resumen no normalizaba la doble representación | PENDIENTE DE EJECUCIÓN |
 | Una remunerada nueva no se cuenta dos veces | `test_overview_counts_new_savings_account_only_once` | Cuenta y holding contenían el mismo saldo | PENDIENTE DE EJECUCIÓN |
+| El ahorro remunerado suma al valor total pero no al P&L sobre aportado | `test_summary_excludes_remunerated_savings_from_investment_pnl` | Los 19.000 € de ahorro diluían el porcentaje global | PENDIENTE DE EJECUCIÓN |
 
 ## Verificación
 
@@ -28,6 +29,7 @@
 - `npm run ux:snapshots:headed`: 21/21 capturas.
 - QA de interacción: el modal ofrece cartera existente, `+ Nueva cartera` y `Usar sin asignar`; el formulario integrado es visible y cabe en el modal.
 - Los dos casos de cuentas remuneradas añadidos el 15/07/2026 no se han ejecutado: requieren permiso explícito del usuario según [[feedback_no_tests_without_permission]].
+- El caso de exclusión del ahorro del P&L tampoco se ha ejecutado por la misma restricción.
 
 No se ejecutó cobertura porcentual global. La prueba nueva atraviesa alta de cuenta, activo,
 holding, listado de cuentas, resumen del panel y herramienta de IA.
