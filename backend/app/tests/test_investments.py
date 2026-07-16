@@ -1,3 +1,5 @@
+from unittest.mock import patch
+
 from sqlalchemy import inspect
 
 
@@ -228,10 +230,12 @@ def test_price_refresh_marks_manual_assets(client, monkeypatch):
     account = client.post("/api/accounts", json={
         "name": "Finizens", "type": "investment", "currency": "EUR",
     }).json()
-    asset = client.post("/api/investments/assets", json={
-        "name": "Vanguard US 500", "asset_type": "fund",
-        "currency": "EUR", "price_source": "manual",
-    }).json()
+    with patch("app.modules.investments.asset_resolution.resolve_asset") as resolver:
+        resolver.return_value.selected = None
+        asset = client.post("/api/investments/assets", json={
+            "name": "Fondo Manual Sin Ticker", "asset_type": "fund",
+            "currency": "EUR", "price_source": "manual",
+        }).json()
     holding = client.post("/api/investments/holdings", json={
         "account_id": account["id"], "asset_id": asset["id"],
         "quantity": "4.59", "average_price": "420.00",
@@ -756,4 +760,6 @@ def test_reconciliation_classifies_funds_manual_savings_confirmed(client):
     report = client.get("/api/investments/reconciliation").json()
     states = {h["display_name"]: h["quality_state"] for h in report["holdings"]}
     assert states["Fondo C"] == "manual"
-    assert states["Ahorro X"] == "confirmed"
+    # Las cuentas remuneradas tienen su panel específico y no forman parte de
+    # la reconciliación de calidad de la cartera negociable.
+    assert "Ahorro X" not in states
