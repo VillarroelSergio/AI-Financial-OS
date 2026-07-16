@@ -85,6 +85,7 @@ class FundValuationSnapshot(Base):
     contributed_total: Mapped[Decimal | None] = mapped_column(Numeric(18, 2), nullable=True)  # aportado acumulado
     units: Mapped[Decimal | None] = mapped_column(Numeric(18, 6), nullable=True)  # nº participaciones (opcional, peso)
     nav: Mapped[Decimal | None] = mapped_column(Numeric(18, 4), nullable=True)  # valor liquidativo por participación
+    reported_return_pct: Mapped[Decimal | None] = mapped_column(Numeric(9, 4), nullable=True)
     currency: Mapped[str] = mapped_column(String, default="EUR")
     source: Mapped[str] = mapped_column(String, default="manual")
     note: Mapped[str | None] = mapped_column(String, nullable=True)

@@ -28,6 +28,7 @@ export interface HoldingCreate {
 }
 
 export interface HoldingUpdate {
+  account_id?: string;
   quantity?: string;
   average_price?: string;
   current_price?: string;
@@ -142,6 +143,7 @@ export interface FundValuationSnapshot {
   contributed_total: string | null;
   units: string | null;
   nav: string | null;
+  reported_return_pct: string | null;
   currency: string;
   source: string;
   note: string | null;
@@ -150,7 +152,7 @@ export interface FundValuationSnapshot {
 
 export const createFund = (data: {
   name: string; account_id: string; contributed: string; value: string; date: string;
-  units?: string | null; nav?: string | null; currency?: string;
+  units?: string | null; nav?: string | null; reported_return_pct?: string | null; currency?: string;
 }) => api.post<HoldingEnriched>("/api/investments/funds", data);
 
 export const getFundSnapshots = (holdingId: string) =>
@@ -158,13 +160,13 @@ export const getFundSnapshots = (holdingId: string) =>
 
 export const addFundSnapshot = (
   holdingId: string,
-  data: { date: string; market_value: string; contributed_total?: string; units?: string | null; nav?: string | null; currency?: string; note?: string },
+  data: { date: string; market_value: string; contributed_total?: string; units?: string | null; nav?: string | null; reported_return_pct?: string | null; currency?: string; note?: string },
 ) =>
   api.post<FundValuationSnapshot>(`/api/investments/funds/${holdingId}/snapshots`, data);
 
 export const updateFundSnapshot = (
   snapshotId: string,
-  data: { date?: string; market_value?: string; contributed_total?: string; note?: string },
+  data: { date?: string; market_value?: string; contributed_total?: string; reported_return_pct?: string | null; note?: string },
 ) =>
   api.put<FundValuationSnapshot>(`/api/investments/funds/snapshots/${snapshotId}`, data);
 

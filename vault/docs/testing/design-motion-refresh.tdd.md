@@ -12,6 +12,8 @@ Journeys and acceptance criteria were derived from the visual review of the 21 U
 - As a user sensitive to bright screens, I see a genuinely grey light theme and a warm financial chart palette without blue, green or violet.
 - As a user, I read every positive and negative financial state with the same jade and cassis semantic colors, in both themes.
 - As a user, I can open a core module for the first time without waiting for its route bundle during the click.
+- As a user, I see the agreed 2.4-second Financial OS entrance on every application launch.
+- As a Windows user, the desktop application opens maximized by default.
 
 - As a user, I can read complete financial figures without truncation.
 - As a user, I see a focused primary navigation with only the five core sections.
@@ -37,6 +39,7 @@ Journeys and acceptance criteria were derived from the visual review of the 21 U
 | Palette refinement after visual review | `npm run test:ui-quality` failed on `La paleta financiera debe usar un oro apagado para ingresos` | `npm run test:ui-quality` -> `UI quality contracts: PASS` |
 | Global jade/cassis standardization | `npm run test:ui-quality` failed on `La paleta financiera debe usar el verde jade para ingresos` | `npm run test:ui-quality` -> `UI quality contracts: PASS` |
 | First navigation route warming | `npm run test:ui-quality` failed because `pageLoaders.ts` did not exist | `npm run test:ui-quality` -> `UI quality contracts: PASS` |
+| Startup animation regression and maximized window | `App.tsx` removed `StartupExperience` and reintroduced deferred routes; Tauri lacked `maximized` | PENDING: contract updated but not executed without user permission |
 
 ## Test specification
 
@@ -58,17 +61,17 @@ Journeys and acceptance criteria were derived from the visual review of the 21 U
 | 14 | Goals avoids a duplicate primary CTA in its empty state | `test-ui-quality-contracts.ts` | UI contract | PASS |
 | 15 | Shared press feedback is transform-only and respects reduced motion | `test-ui-quality-contracts.ts` | Motion/accessibility contract | PASS |
 | 16 | Frequent actions and tab controls in Accounts, Markets, Economy and Settings use the shared press feedback without `transition-all` | `test-ui-quality-contracts.ts` | Motion/accessibility contract | PASS |
-| 17 | Product screens load on demand and heavy vendors are split from the initial bundle | `test-ui-quality-contracts.ts`, `npm run build` | Performance contract | PASS |
+| 17 | Product screens are available from initial load and `App.tsx` does not defer routes | `test-ui-quality-contracts.ts` | Startup contract | PENDING |
 | 18 | Spending uses dedicated violet, terracotta and neutral chart colors | `test-ui-quality-contracts.ts` | Visual contract | PASS |
 | 19 | Economy shares semantic violet and terracotta tokens instead of arbitrary status colors | `test-ui-quality-contracts.ts` | Visual contract | PASS |
 | 20 | Settings renders without a blocking spinner and the light theme uses warm off-white cards | `test-ui-quality-contracts.ts`, snapshots | Performance/visual contract | PASS |
 | 21 | Financial chart uses muted gold, burgundy and sand; the light cards use a soft grey surface | `test-ui-quality-contracts.ts`, snapshots | Visual contract | PASS |
 | 22 | Positive and negative states share jade and cassis tokens across financial charts, market performance, economy and status feedback | `test-ui-quality-contracts.ts`, snapshots | Visual contract | PASS |
-| 23 | Core routes preload during browser idle time and when a navigation item receives pointer, focus or press intent | `test-ui-quality-contracts.ts`, `npm run build` | Performance contract | PASS |
+| 23 | Startup experience mounts on every launch, lasts 2.4 s and the Tauri window starts maximized | `test-ui-quality-contracts.ts` | Startup/desktop contract | PENDING |
 
 ## Coverage and known gaps
 
-The latest production build now splits routes and heavy vendors; the largest generated vendor chunk is 407 kB (118 kB gzip), below the previous monolithic entry bundle.
+The previous route-splitting optimization contradicted [[feedback_startup_animation]] and was reverted. No new build or visual run has been executed for this restoration because project rules require explicit user permission.
 
 The desktop package does not declare a unit-test coverage runner, so a numeric 80% statement cannot be produced without adding a new testing stack. The repository's existing Playwright snapshot harness, flow contracts, negative-flow contracts, TypeScript build and manual image review were used instead. The build retains its pre-existing warning that the main JavaScript chunk exceeds 500 kB.
 

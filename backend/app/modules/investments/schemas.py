@@ -64,6 +64,7 @@ class HoldingMerge(BaseModel):
 
 
 class HoldingUpdate(BaseModel):
+    account_id: str | None = None
     quantity: Decimal | None = None
     average_price: Decimal | None = None
     current_price: Decimal | None = None
@@ -162,6 +163,7 @@ class FundCreate(BaseModel):
     currency: str = "EUR"
     units: Decimal | None = None   # nº participaciones (opcional)
     nav: Decimal | None = None     # valor liquidativo por participación (opcional)
+    reported_return_pct: Decimal | None = None  # porcentaje mostrado por la plataforma
 
 
 class FundSnapshotCreate(BaseModel):
@@ -170,6 +172,7 @@ class FundSnapshotCreate(BaseModel):
     contributed_total: Decimal | None = None
     units: Decimal | None = None
     nav: Decimal | None = None
+    reported_return_pct: Decimal | None = None
     currency: str = "EUR"
     note: str | None = None
 
@@ -180,6 +183,7 @@ class FundSnapshotUpdate(BaseModel):
     contributed_total: Decimal | None = None
     units: Decimal | None = None
     nav: Decimal | None = None
+    reported_return_pct: Decimal | None = None
     note: str | None = None
 
 
@@ -191,6 +195,7 @@ class FundSnapshotOut(BaseModel):
     contributed_total: Decimal | None
     units: Decimal | None
     nav: Decimal | None
+    reported_return_pct: Decimal | None
     currency: str
     source: str
     note: str | None
@@ -202,7 +207,7 @@ class FundSnapshotOut(BaseModel):
     def serialize_value(self, v: Decimal) -> str:
         return str(v)
 
-    @field_serializer("contributed_total", "units", "nav")
+    @field_serializer("contributed_total", "units", "nav", "reported_return_pct")
     def serialize_optional_decimal(self, v: Decimal | None) -> str | None:
         return str(v) if v is not None else None
 
@@ -335,6 +340,7 @@ class InvestmentSummaryOut(BaseModel):
     last_updated: datetime | None
     pending_valuation_count: int = 0
     pending_valuation_invested: Decimal = Decimal("0")
+    fund_reported_return_percent: float | None = None
 
     @field_serializer("total_value", "total_invested", "return_absolute", "pending_valuation_invested")
     def serialize_decimal(self, v: Decimal) -> str:

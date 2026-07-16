@@ -17,14 +17,22 @@ const BUCKETS: Bucket[] = [
   { key: "ahorro", label: "Ahorro", types: ["savings_account", "cash"], badge: "Calculado", badgeClass: "bg-sky-500/15 text-sky-400" },
 ];
 
-export default function PortfolioByTypeCards({ holdings }: { holdings: HoldingEnriched[] }) {
+export default function PortfolioByTypeCards({
+  holdings,
+  fundReportedReturnPercent,
+}: {
+  holdings: HoldingEnriched[];
+  fundReportedReturnPercent: number | null;
+}) {
   const cards = BUCKETS.map((b) => {
     const items = holdings.filter((h) => b.types.includes(h.asset.asset_type));
     const value = items.reduce((s, h) => s + Number(h.market_value ?? 0), 0);
     const invested = items.reduce((s, h) => s + Number(h.invested_amount ?? 0), 0);
     const pending = items.filter((h) => h.market_value === null).length;
-    const returnPct = invested > 0 ? ((value - invested) / invested) * 100 : null;
-    return { ...b, count: items.length, value, returnPct, pending };
+    const simpleReturnPct = invested > 0 ? ((value - invested) / invested) * 100 : null;
+    const usesReportedReturn = b.key === "fondos" && fundReportedReturnPercent !== null;
+    const returnPct = usesReportedReturn ? fundReportedReturnPercent : simpleReturnPct;
+    return { ...b, count: items.length, value, returnPct, pending, usesReportedReturn };
   }).filter((c) => c.count > 0);
 
   if (cards.length === 0) return null;
@@ -44,6 +52,7 @@ export default function PortfolioByTypeCards({ holdings }: { holdings: HoldingEn
               {c.returnPct !== null && (
                 <span className={`text-caption ${positive ? "text-accent-teal" : "text-accent-danger"}`}>
                   {positive ? "+" : ""}{c.returnPct.toFixed(2)}%
+                  <span className="ml-1 text-mute">{c.usesReportedReturn ? "reportada" : "s/aportado"}</span>
                 </span>
               )}
               <span className="text-caption text-mute">{c.count} posición{c.count === 1 ? "" : "es"}</span>

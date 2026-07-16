@@ -1,5 +1,5 @@
 ---
-name: project-constraints
+name: project_constraints
 description: Restricciones obligatorias del proyecto AI Financial OS — qué no implementar y stack requerido
 metadata: 
   node_type: memory

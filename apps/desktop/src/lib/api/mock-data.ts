@@ -150,14 +150,15 @@ const mockHoldings: HoldingEnriched[] = [
 
 const mockInvestmentSummary: InvestmentSummary = {
   total_value: "5000.00",
-  total_invested: "5000.00",
+  total_invested: "0.00",
   return_absolute: "0.00",
   return_percent: 0,
   currency: "EUR",
-  by_account: [{ account_id: "mock-acc-tr-savings", value: "5000.00", invested: "5000.00" }],
+  by_account: [{ account_id: "mock-acc-tr-savings", value: "5000.00", invested: "0.00" }],
   last_updated: null,
   pending_valuation_count: 0,
   pending_valuation_invested: "0.00",
+  fund_reported_return_percent: null,
 };
 
 const mockReconciliation: import("./investments").ReconciliationReport = {

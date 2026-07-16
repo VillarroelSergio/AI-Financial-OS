@@ -78,6 +78,48 @@ def test_holdings_crud_and_enrichment(client):
     assert r.status_code == 204
 
 
+def test_holding_can_be_reassigned_only_to_an_investment_portfolio(client):
+    source_id, asset_id = _setup_account_and_asset(client)
+    target = client.post("/api/accounts", json={
+        "name": "Cartera USA", "type": "investment", "currency": "EUR",
+    }).json()
+    bank = client.post("/api/accounts", json={
+        "name": "Cuenta corriente", "type": "bank", "currency": "EUR",
+    }).json()
+    invalid_create = client.post("/api/investments/holdings", json={
+        "account_id": bank["id"],
+        "asset_id": asset_id,
+        "quantity": "1",
+        "average_price": "100.00",
+    })
+    assert invalid_create.status_code == 422
+    holding = client.post("/api/investments/holdings", json={
+        "account_id": source_id,
+        "asset_id": asset_id,
+        "quantity": "2",
+        "average_price": "100.00",
+    }).json()
+
+    moved = client.patch(
+        f"/api/investments/holdings/{holding['id']}",
+        json={"account_id": target["id"]},
+    )
+    assert moved.status_code == 200
+    assert moved.json()["account_id"] == target["id"]
+    assert moved.json()["broker"] == "Cartera USA"
+
+    rejected = client.patch(
+        f"/api/investments/holdings/{holding['id']}",
+        json={"account_id": bank["id"]},
+    )
+    assert rejected.status_code == 422
+    persisted = next(
+        item for item in client.get("/api/investments/holdings").json()
+        if item["id"] == holding["id"]
+    )
+    assert persisted["account_id"] == target["id"]
+
+
 def test_holdings_savings_account_accrued_interest(client):
     account = client.post("/api/accounts", json={
         "name": "TR Ahorro", "type": "savings", "currency": "EUR",
@@ -291,6 +333,32 @@ def test_summary_excludes_unvalued_holdings_from_return(client):
     assert s["return_absolute"] == "100.00"
     assert abs(s["return_percent"] - 33.33) < 0.1
     assert s["pending_valuation_count"] == 1
+
+
+def test_summary_excludes_remunerated_savings_from_investment_pnl(client):
+    account_id, asset_id = _setup_account_and_asset(client)
+    stock = client.post("/api/investments/holdings", json={
+        "account_id": account_id,
+        "asset_id": asset_id,
+        "quantity": "1",
+        "average_price": "100.00",
+        "current_price": "150.00",
+    })
+    assert stock.status_code == 201
+    savings = client.post("/api/investments/savings", json={
+        "new_account_name": "Cuenta remunerada",
+        "opened_at": "2026-01-01",
+        "balance": "1000.00",
+        "rate_source": "fixed",
+        "fixed_rate": "2.00",
+    })
+    assert savings.status_code == 201
+
+    summary = client.get("/api/investments/summary").json()
+    assert summary["total_value"] == "1150.00"  # ahorro incluido en el valor gestionado
+    assert summary["total_invested"] == "100.00"  # ahorro fuera del aportado de inversión
+    assert summary["return_absolute"] == "50.00"
+    assert summary["return_percent"] == 50.0
     assert s["pending_valuation_invested"] == "66000.00"
 
 
@@ -463,6 +531,106 @@ def test_fund_flow_snapshots_and_performance(client):
     assert perf["entry_source"] == "fund_snapshot"
     assert perf["current_price"] == 11000.0
     assert perf["change_pct"] == 10.0
+
+
+def test_create_fund_is_immediately_valued_in_holdings_and_summary(client):
+    """El primer snapshot debe valorar el fondo en la misma operación de alta."""
+    account = client.post(
+        "/api/accounts",
+        json={"name": "Finizens", "type": "investment", "currency": "EUR"},
+    ).json()
+
+    response = client.post("/api/investments/funds", json={
+        "name": "Vanguard Emerging Market Index Inst Plus",
+        "account_id": account["id"],
+        "contributed": "732.40",
+        "value": "997.06",
+        "date": "2026-07-15",
+        "reported_return_pct": "58.05",
+    })
+
+    assert response.status_code == 201
+    created = response.json()
+    assert created["market_value"] == "997.06"
+    assert created["return_absolute"] == "264.66"
+    assert created["return_percent"] == 58.05
+
+    holding = next(
+        item for item in client.get("/api/investments/holdings").json()
+        if item["id"] == created["id"]
+    )
+    assert holding["market_value"] == "997.06"
+    assert holding["return_absolute"] == "264.66"
+    assert holding["return_percent"] == 58.05
+
+    summary = client.get("/api/investments/summary").json()
+    assert summary["total_value"] == "997.06"
+    assert summary["total_invested"] == "732.40"
+    assert summary["return_absolute"] == "264.66"
+
+
+def test_fund_snapshot_preserves_platform_reported_return(client):
+    account = client.post(
+        "/api/accounts",
+        json={"name": "Finizens", "type": "investment", "currency": "EUR"},
+    ).json()
+    fund = client.post("/api/investments/funds", json={
+        "name": "Fondo Finizens",
+        "account_id": account["id"],
+        "contributed": "732.40",
+        "value": "997.06",
+        "date": "2026-07-15",
+        "reported_return_pct": "58.05",
+    }).json()
+
+    snapshots = client.get(
+        f"/api/investments/funds/{fund['id']}/snapshots"
+    ).json()
+    assert snapshots[0]["reported_return_pct"] == "58.0500"
+
+    response = client.post(f"/api/investments/funds/{fund['id']}/snapshots", json={
+        "date": "2026-08-15",
+        "market_value": "1100.00",
+        "contributed_total": "800.00",
+        "reported_return_pct": "61.25",
+    })
+    assert response.status_code == 201
+
+    holding = next(
+        item for item in client.get("/api/investments/holdings").json()
+        if item["id"] == fund["id"]
+    )
+    assert holding["market_value"] == "1100.00"
+    assert holding["cost_basis"] == "800.0000"
+    assert holding["return_absolute"] == "300.00"
+    assert holding["return_percent"] == 61.25
+
+
+def test_fund_summary_weights_platform_returns_by_contributed_capital(client):
+    """El total de fondos debe usar la métrica reportada, no el P&L simple."""
+    account = client.post(
+        "/api/accounts",
+        json={"name": "Finizens", "type": "investment", "currency": "EUR"},
+    ).json()
+
+    for name, contributed, value, reported_return in (
+        ("Plan de Inversión", "5400.00", "6607.41", "34.38"),
+        ("Plan USA", "4800.00", "5765.85", "28.02"),
+    ):
+        response = client.post("/api/investments/funds", json={
+            "name": name,
+            "account_id": account["id"],
+            "contributed": contributed,
+            "value": value,
+            "date": "2026-07-15",
+            "reported_return_pct": reported_return,
+        })
+        assert response.status_code == 201
+
+    summary = client.get("/api/investments/summary").json()
+
+    expected = (34.38 * 5400 + 28.02 * 4800) / (5400 + 4800)
+    assert abs(summary["fund_reported_return_percent"] - expected) < 0.0001
 
 
 def test_savings_engine_fixed_compounding():

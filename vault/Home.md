@@ -14,7 +14,10 @@ Empieza por los mapas por área (MOC = *Map of Content*).
 - [[MOC - Testing]] — E2E, cobertura, evidencia TDD
 
 ## Memoria viva
+- [[ESTADO]] — **dónde estamos ahora** (léelo primero al arrancar sesión)
 - [[MEMORY]] — índice de notas de memoria (feedback, restricciones, estado de tareas)
+- [[GLOSARIO]] — términos de dominio y nombres de entidades del modelo
+- [[templates/_template_nota_memoria|Plantillas]] — nota de memoria y ADR
 
 > Convención: una nota = un hecho; enlaza con `[[nombre_de_fichero]]` (nombre exacto, guion bajo);
 > etiqueta con `#tag`. Instrucciones para agentes en `../AGENTS.md`.

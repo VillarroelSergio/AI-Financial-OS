@@ -2,6 +2,8 @@
 
 > Índice maestro de la bóveda: [[Home]]. Esto es solo el índice de **notas de memoria**.
 
+- [Estado actual](ESTADO.md) — Dónde estamos ahora; leer primero al arrancar
+- [Glosario](GLOSARIO.md) — Dominio y nombres de entidades del modelo
 - [Animación de Inicio](feedback_startup_animation.md) — Ejecutarla en cada arranque; no reintroducir carga diferida por módulo
 
 - [Project Constraints](project_constraints.md) — Restricciones obligatorias y stack requerido (Prompt Maestro)

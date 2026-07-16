@@ -5,6 +5,8 @@ Pruebas end-to-end, cobertura y evidencia TDD.
 - [[coverage-matrix]] — matriz de cobertura E2E
 - [[UX Flow Testing end-to-end]] — flujo UX end-to-end
 - [[design-motion-refresh.tdd]] — evidencia TDD del motion refresh
+- [[fund-investment-hotfix.tdd]] — alta inmediata y rentabilidad reportada de fondos
+- [[investment-account-valuation.tdd]] — cuentas de inversión calculadas y patrimonio sin duplicados
 
 Relacionado: [[MOC - Proceso]] · [[Home]]
 

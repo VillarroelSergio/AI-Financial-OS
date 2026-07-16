@@ -1,7 +1,7 @@
+import { MotionConfig } from "framer-motion";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import RootLayout from "@/app/layout/RootLayout";
 import StartupExperience from "@/app/StartupExperience";
-import { ToastProvider } from "@/app/ToastProvider";
 import AssistantPage from "@/features/assistant/AssistantPage";
 import DashboardPage from "@/features/dashboard/DashboardPage";
 import EconomyPage from "@/features/economy/EconomyPage";
@@ -32,31 +32,31 @@ function LegacyFinancesRedirect({ tab }: { tab: FinancesTab }) {
 
 export default function App() {
   return (
-    <ToastProvider>
+    <MotionConfig reducedMotion="user">
       <StartupExperience />
       <Routes>
-      <Route path="/" element={<RootLayout />}>
-        <Route index element={<DashboardPage />} />
-        <Route path="finances" element={<FinancesPage />} />
-        {/* Rutas antiguas → pestañas de Movimientos y cuentas */}
-        <Route path="accounts" element={<LegacyFinancesRedirect tab="cuentas" />} />
-        <Route path="transactions" element={<LegacyFinancesRedirect tab="movimientos" />} />
-        <Route path="spending" element={<LegacyFinancesRedirect tab="gastos" />} />
-        <Route path="planificacion" element={<LegacyFinancesRedirect tab="planificacion" />} />
-        <Route path="imports" element={<LegacyFinancesRedirect tab="importar" />} />
-        <Route path="investments" element={<InvestmentsPage />} />
-        <Route path="investments/tracking" element={<PositionTrackingPage />} />
-        <Route path="investments/import" element={<PortfolioImportPage />} />
-        <Route path="economy" element={<EconomyPage />} />
-        <Route path="markets" element={<MarketsPage />} />
-        <Route path="markets/:indicatorCode" element={<InstrumentDetailPage />} />
-        <Route path="goals" element={<GoalsPage />} />
-        <Route path="insights" element={<InsightsPage />} />
-        <Route path="assistant" element={<AssistantPage />} />
-        <Route path="settings" element={<SettingsPage />} />
-        <Route path="welcome" element={<Navigate to="/" replace />} />
-      </Route>
+        <Route path="/" element={<RootLayout />}>
+          <Route index element={<DashboardPage />} />
+          <Route path="finances" element={<FinancesPage />} />
+          {/* Rutas antiguas → pestañas de Movimientos y cuentas */}
+          <Route path="accounts" element={<LegacyFinancesRedirect tab="cuentas" />} />
+          <Route path="transactions" element={<LegacyFinancesRedirect tab="movimientos" />} />
+          <Route path="spending" element={<LegacyFinancesRedirect tab="gastos" />} />
+          <Route path="planificacion" element={<LegacyFinancesRedirect tab="planificacion" />} />
+          <Route path="imports" element={<LegacyFinancesRedirect tab="importar" />} />
+          <Route path="investments" element={<InvestmentsPage />} />
+          <Route path="investments/tracking" element={<PositionTrackingPage />} />
+          <Route path="investments/import" element={<PortfolioImportPage />} />
+          <Route path="economy" element={<EconomyPage />} />
+          <Route path="markets" element={<MarketsPage />} />
+          <Route path="markets/:indicatorCode" element={<InstrumentDetailPage />} />
+          <Route path="goals" element={<GoalsPage />} />
+          <Route path="insights" element={<InsightsPage />} />
+          <Route path="assistant" element={<AssistantPage />} />
+          <Route path="settings" element={<SettingsPage />} />
+          <Route path="welcome" element={<Navigate to="/" replace />} />
+        </Route>
       </Routes>
-    </ToastProvider>
+    </MotionConfig>
   );
 }

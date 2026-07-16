@@ -1,5 +1,5 @@
 ---
-name: project-reconciliation-design
+name: project_reconciliation_design
 description: Diseño acordado de conciliación Monify↔bancos - Monify manda en analítica personal
 metadata: 
   node_type: memory

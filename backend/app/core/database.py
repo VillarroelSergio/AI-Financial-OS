@@ -74,6 +74,10 @@ def _migrate_investment_domain() -> None:
             connection.exec_driver_sql("ALTER TABLE fund_valuation_snapshots ADD COLUMN units NUMERIC")
         if fund_cols and "nav" not in fund_cols:
             connection.exec_driver_sql("ALTER TABLE fund_valuation_snapshots ADD COLUMN nav NUMERIC")
+        if fund_cols and "reported_return_pct" not in fund_cols:
+            connection.exec_driver_sql(
+                "ALTER TABLE fund_valuation_snapshots ADD COLUMN reported_return_pct NUMERIC"
+            )
 
 
 def _migrate_transactions_scope() -> None:

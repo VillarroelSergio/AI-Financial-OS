@@ -1,5 +1,5 @@
 ---
-name: feedback-commits-and-graphify
+name: feedback_commits_and_graphify
 description: Commits siempre manuales por el usuario; graphify al inicio y fin de cada instrucción
 metadata: 
   node_type: memory

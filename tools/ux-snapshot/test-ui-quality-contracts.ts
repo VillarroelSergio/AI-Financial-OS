@@ -11,7 +11,7 @@ async function source(relativePath: string): Promise<string> {
   return readFile(path.join(ROOT, relativePath), "utf8");
 }
 
-const [rootLayout, dashboardUi, metricCard, spending, goals, budgetCard, assistantPage, analysisCenter, assistantMessages, appRoutes, planningPage, budgetTab, marketsPage, accountsPage, settingsPage, economyPage, indicatorCard, impactCard, personalEconomy, chartPalette, viteConfig, categoryTabs, regionTabs, appCss, snapshotRoutes] = await Promise.all([
+const [rootLayout, dashboardUi, metricCard, spending, goals, budgetCard, assistantPage, analysisCenter, assistantMessages, appRoutes, startupExperience, tauriBootstrap, planningPage, budgetTab, marketsPage, accountsPage, settingsPage, economyPage, indicatorCard, impactCard, personalEconomy, chartPalette, viteConfig, categoryTabs, regionTabs, appCss, snapshotRoutes] = await Promise.all([
   source("apps/desktop/src/app/layout/RootLayout.tsx"),
   source("apps/desktop/src/components/ui/Dashboard.tsx"),
   source("apps/desktop/src/components/ui/MetricCard.tsx"),
@@ -22,6 +22,8 @@ const [rootLayout, dashboardUi, metricCard, spending, goals, budgetCard, assista
   source("apps/desktop/src/features/assistant/components/AnalysisCenter.tsx"),
   source("apps/desktop/src/features/assistant/components/AiMessageList.tsx"),
   source("apps/desktop/src/App.tsx"),
+  source("apps/desktop/src/app/StartupExperience.tsx"),
+  source("apps/desktop/src-tauri/src/lib.rs"),
   source("apps/desktop/src/pages/PlanificacionPage.tsx"),
   source("apps/desktop/src/features/planning/BudgetTab.tsx"),
   source("apps/desktop/src/features/markets/MarketsPage.tsx"),
@@ -40,7 +42,6 @@ const [rootLayout, dashboardUi, metricCard, spending, goals, budgetCard, assista
 ]);
 
 const primaryNav = rootLayout.match(/const navItems:[\s\S]*?\n\];/)?.[0] ?? "";
-const routePreloaders = await source("apps/desktop/src/app/routes/pageLoaders.ts");
 assert.equal((primaryNav.match(/\{\s*to:/g) ?? []).length, 5, "La navegacion principal debe conservar solo cinco secciones");
 assert.doesNotMatch(primaryNav, /\/goals|\/insights/, "Objetivos e Insights no deben aparecer en el menu principal");
 assert.doesNotMatch(rootLayout, /initial=\{\{\s*opacity:\s*0,\s*y:/, "La navegacion frecuente no debe desplazar verticalmente la pagina");
@@ -85,12 +86,11 @@ assert.equal(balance.net_worth, overview.net_worth, "El patrimonio destacado y e
 assert.ok(Array.isArray(getMockResponse("/api/budgets/comparison")), "Planificacion debe disponer de datos de demostracion validos");
 assert.match(marketsPage, /searchParams\.get\("region"\)/, "Mercados debe reflejar el filtro regional de la URL");
 assert.match(snapshotRoutes, /\/markets\?region=eu/, "La captura europea debe activar un estado visual distinto");
-assert.match(appRoutes, /lazy\(/, "Las pantallas de producto deben cargarse bajo demanda");
-assert.match(appRoutes, /Suspense/, "Las rutas diferidas deben tener un limite de carga");
-assert.match(appRoutes, /warmCoreRoutes/, "Las rutas principales deben precargarse durante el reposo inicial");
-assert.match(rootLayout, /preloadRoute/, "La navegacion debe precargar la ruta al acercarse el usuario");
-assert.match(routePreloaders, /requestIdleCallback/, "La precarga debe ejecutarse fuera de la interaccion inicial");
-assert.match(routePreloaders, /\/finances[\s\S]*\/investments[\s\S]*\/economy[\s\S]*\/markets/, "Los cinco modulos principales deben estar cubiertos por la precarga");
+assert.match(appRoutes, /<StartupExperience\s*\/>/, "La animacion acordada debe montarse en cada arranque");
+assert.match(startupExperience, /app-launch-stage/, "La experiencia de inicio debe conservar su escenario animado");
+assert.match(appCss, /app-launch-stage-exit 2400ms/, "La animacion de inicio debe durar 2,4 segundos");
+assert.doesNotMatch(appRoutes, /lazy\(|Suspense|warmCoreRoutes/, "El arranque no debe volver a diferir las pantallas de producto");
+assert.match(tauriBootstrap, /main_window\.maximize\(\)/, "La ventana debe abrir maximizada por defecto");
 assert.match(viteConfig, /manualChunks/, "La compilacion debe separar proveedores pesados en chunks propios");
 assert.match(spending, /useFinancialChartColors/, "La grafica de gastos debe usar una paleta financiera dedicada");
 assert.doesNotMatch(spending, /useChartPalette/, "La grafica de gastos no debe heredar la paleta verde y azul generica");

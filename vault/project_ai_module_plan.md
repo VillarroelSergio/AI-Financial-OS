@@ -1,5 +1,5 @@
 ---
-name: project-ai-module-plan
+name: project_ai_module_plan
 description: "Estado del plan de mejora del módulo IA (PROPUESTA_ASISTENTE_IA v1/v2) — AI-1 core hecho, AI-2/3/4/5 pendientes"
 metadata: 
   node_type: memory

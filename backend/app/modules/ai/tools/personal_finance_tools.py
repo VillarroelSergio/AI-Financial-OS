@@ -7,11 +7,11 @@ from typing import Any
 
 from sqlalchemy.orm import Session
 
-from app.models.account import Account
 from app.models.category import Category
 from app.models.goal import Goal
 from app.models.transaction import Transaction
 from app.modules.ai.tools.registry import ToolDefinition, tool_registry
+from app.modules.accounts.valuation_service import build_current_valuation
 
 
 def _now_month() -> str:
@@ -19,16 +19,12 @@ def _now_month() -> str:
 
 
 async def _get_net_worth(db: Session, **_: Any) -> dict[str, Any]:
-    accounts = db.query(Account).filter(Account.is_active == True).all()  # noqa: E712
-    net_worth = sum(float(a.current_balance) for a in accounts)
-    by_type: dict[str, float] = {}
-    for a in accounts:
-        by_type[a.type] = by_type.get(a.type, 0.0) + float(a.current_balance)
+    valuation = build_current_valuation(db)
     return {
-        "net_worth": round(net_worth, 2),
+        "net_worth": round(float(valuation.net_worth), 2),
         "currency": "EUR",
-        "by_type": by_type,
-        "accounts_count": len(accounts),
+        "by_type": {key: round(float(value), 2) for key, value in valuation.by_type.items()},
+        "accounts_count": len(valuation.accounts),
         "observed_at": datetime.now(timezone.utc).isoformat(),
         "quality_score": 1.0,
         "sources": [{"type": "personal_accounts", "provider": "local_db"}],
