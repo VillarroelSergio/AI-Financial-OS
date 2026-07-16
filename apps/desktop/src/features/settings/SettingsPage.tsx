@@ -1,16 +1,18 @@
 import { useEffect, useState } from "react";
 import { Bot, Copy, Database, HardDrive, Lock, ShieldCheck } from "lucide-react";
 import { PageHeader } from "@/components/ui/Dashboard";
-import { fetchSettings, updateSetting, type AppSetting } from "@/lib/api/settings";
+import { updateSetting, type AppSetting } from "@/lib/api/settings";
 import { reassignCurrency } from "@/lib/api/transactions";
 import { purgeInactiveAccounts } from "@/lib/api/accounts";
-import { getAiStatus } from "@/features/assistant/api/aiAssistantApi";
 import type { AiStatus } from "@/features/assistant/types/aiAssistant.types";
-import { createBackup, fetchBackups, fetchIntegrity, fetchSecurityStatus, type BackupInfo, type IntegrityCheck, type SecurityStatus } from "@/lib/api/security";
-import { fetchRagDocuments, type RagDocument } from "@/lib/api/rag";
+import { createBackup, fetchSecurityStatus, type BackupInfo, type IntegrityCheck, type SecurityStatus } from "@/lib/api/security";
+import type { RagDocument } from "@/lib/api/rag";
 import { useTheme } from "@/lib/useTheme";
+import { useToast } from "@/app/ToastProvider";
+import { loadSettingsOverview } from "./settingsOverview";
 
 export default function SettingsPage() {
+  const { notify } = useToast();
   const [settings, setSettings] = useState<AppSetting[]>([]);
   const [aiStatus, setAiStatus] = useState<AiStatus | null>(null);
   const [security, setSecurity] = useState<SecurityStatus | null>(null);
@@ -27,17 +29,15 @@ export default function SettingsPage() {
   const [purgeMessage, setPurgeMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    Promise.allSettled([fetchSettings(), getAiStatus(), fetchSecurityStatus(), fetchBackups(), fetchIntegrity(), fetchRagDocuments()])
-      .then(([settingsResult, aiResult, securityResult, backupsResult, integrityResult, documentsResult]) => {
-        if (settingsResult.status === "fulfilled") setSettings(settingsResult.value);
-        if (aiResult.status === "fulfilled") setAiStatus(aiResult.value);
-        else setAiError("No disponible");
-        if (securityResult.status === "fulfilled") setSecurity(securityResult.value);
-        if (backupsResult.status === "fulfilled") setBackups(backupsResult.value);
-        if (integrityResult.status === "fulfilled") setIntegrity(integrityResult.value);
-        if (documentsResult.status === "fulfilled") setDocuments(documentsResult.value);
-      })
-      .catch(() => undefined);
+    loadSettingsOverview().then((overview) => {
+      setSettings(overview.settings);
+      setAiStatus(overview.aiStatus);
+      setAiError(overview.aiError);
+      setSecurity(overview.security);
+      setBackups(overview.backups);
+      setIntegrity(overview.integrity);
+      setDocuments(overview.documents);
+    });
   }, []);
 
   const getValue = (key: string): string => {
@@ -55,6 +55,9 @@ export default function SettingsPage() {
     try {
       const updated = await updateSetting(key, JSON.stringify(value));
       setSettings((prev) => prev.map((s) => (s.key === key ? updated : s)));
+      notify("Preferencia actualizada", "success");
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "No se pudo actualizar la preferencia", "error");
     } finally {
       setSaving(null);
     }
@@ -68,8 +71,10 @@ export default function SettingsPage() {
       setBackups((prev) => [backup, ...prev.filter((item) => item.filename !== backup.filename)]);
       const status = await fetchSecurityStatus();
       setSecurity(status);
+      notify("Copia de seguridad creada", "success");
     } catch (e) {
       setSystemError(e instanceof Error ? e.message : "No se ha podido crear el backup");
+      notify(e instanceof Error ? e.message : "No se ha podido crear la copia", "error");
     } finally {
       setBackupBusy(false);
     }
