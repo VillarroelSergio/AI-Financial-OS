@@ -2,10 +2,11 @@ import { useMemo, useState } from "react";
 import { CalendarDays, ChevronLeft, ChevronRight, ReceiptText, TrendingDown, TrendingUp, Wallet } from "lucide-react";
 import { Bar, ComposedChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { ChartCard, EmptyState, KpiCard, LoadingState, PageHeader } from "@/components/ui/Dashboard";
+import { CATEGORY_CHART_COLORS, CategoryIcon, getCategoryAccent, type CategoryVisual } from "@/components/ui/CategoryBadge";
 import { useSpending, useSpendingMonthly, useSpendingYears } from "@/lib/hooks/useDashboard";
+import { useCategories } from "@/lib/hooks/useCategories";
 import { formatCurrency, formatPercent } from "@/lib/formatters/currency";
 import type { CategorySpending } from "@/lib/api/dashboard";
-import { useFinancialChartColors } from "@/lib/chartPalette";
 import ExpenseCategoryDetailDrawer from "./ExpenseCategoryDetailDrawer";
 
 const MONTH_LABEL = new Intl.DateTimeFormat("es-ES", { month: "short" });
@@ -18,11 +19,15 @@ export default function SpendingPage() {
   const [year, setYear] = useState(initialYear);
   const [mode, setMode] = useState<"month" | "year">("month");
   const [selectedCategory, setSelectedCategory] = useState<CategorySpending | null>(null);
-  const chartColors = useFinancialChartColors();
-  const { income: INCOME_COLOR, expense: EXPENSE_COLOR, savings: SAVINGS_LINE } = chartColors;
+  const { income: INCOME_COLOR, expense: EXPENSE_COLOR, savings: SAVINGS_LINE } = CATEGORY_CHART_COLORS;
   const loadedYears = useSpendingYears();
   const yearOptions = loadedYears.length ? loadedYears : [year];
   const { data, loading } = useSpending({ mode, month, year });
+  const { categories: categoryDefinitions } = useCategories();
+  const categoryDefinitionsById = useMemo(
+    () => new Map(categoryDefinitions.map((category) => [category.id, category])),
+    [categoryDefinitions],
+  );
   const monthly = useSpendingMonthly(12, mode === "year" ? year : undefined);
   const trendData = useMemo(
     () =>
@@ -50,6 +55,9 @@ export default function SpendingPage() {
     }), { category: "Otros", category_id: "otros", amount: "0", percentage: 0 });
     return [...major, other];
   }, [data]);
+  const categoryVisual = (category: CategorySpending): CategoryVisual =>
+    (category.category_id ? categoryDefinitionsById.get(category.category_id) : undefined)
+    ?? { name: category.category, type: "expense" };
 
   if (loading) return <LoadingState label="Analizando el periodo" />;
 
@@ -130,20 +138,27 @@ export default function SpendingPage() {
 
           <ChartCard className="col-span-6" title="Gasto por categoria" description="Importe y porcentaje sobre el gasto del periodo">
             <div className="space-y-5">
-              {categories.map((cat) => (
-                <button key={cat.category_id ?? cat.category} type="button" onClick={() => setSelectedCategory(cat)} className="block w-full rounded-lg text-left transition-colors hover:bg-[var(--bg-interactive)] focus:outline-none focus:ring-1 focus:ring-primary">
-                  <div className="flex items-center justify-between gap-4">
-                    <span className="truncate text-sm">{cat.category}</span>
-                    <div className="financial-number text-right text-sm shrink-0">
-                      <span>{formatCurrency(cat.amount)}</span>
-                      <span className="ml-3 inline-block w-16 text-stone">{cat.percentage.toFixed(1)}%</span>
+              {categories.map((cat) => {
+                const visual = categoryVisual(cat);
+                const accent = getCategoryAccent(visual);
+                return (
+                  <button key={cat.category_id ?? cat.category} type="button" onClick={() => setSelectedCategory(cat)} className="block w-full rounded-lg text-left transition-colors hover:bg-[var(--bg-interactive)] focus:outline-none focus:ring-1 focus:ring-primary">
+                    <div className="flex items-center justify-between gap-4">
+                      <span className="flex min-w-0 items-center gap-2 text-sm">
+                        <CategoryIcon category={visual} />
+                        <span className="truncate">{cat.category}</span>
+                      </span>
+                      <div className="financial-number text-right text-sm shrink-0">
+                        <span>{formatCurrency(cat.amount)}</span>
+                        <span className="ml-3 inline-block w-16 text-stone">{cat.percentage.toFixed(1)}%</span>
+                      </div>
                     </div>
-                  </div>
-                  <div className="mt-2.5 h-2 rounded-full bg-[var(--bg-interactive)] overflow-hidden">
-                    <div className="progress-fill h-full rounded-full" style={{ transform: `scaleX(${Math.max(2, cat.percentage) / 100})`, background: EXPENSE_COLOR }} />
-                  </div>
-                </button>
-              ))}
+                    <div className="mt-2.5 h-2 rounded-full bg-[var(--bg-interactive)] overflow-hidden">
+                      <div className="progress-fill h-full rounded-full" style={{ transform: `scaleX(${Math.max(2, cat.percentage) / 100})`, background: accent }} />
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </ChartCard>
 

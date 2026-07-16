@@ -28,6 +28,12 @@ El sistema de entrada de contenido es transversal y sutil: empieza en opacidad 0
 
 **Chrome minimalista (2026-07-16):** en escritorio se retira la barra superior que repetía el nombre de la sección y su divisor horizontal. Las pestañas de Finanzas dejan de dibujar un segundo divisor, pero conservan el indicador azul de selección. El copiloto contextual pasa a ser un control flotante discreto para mantener la funcionalidad sin recuperar una barra vacía. La cabecera móvil se conserva porque aporta contexto y navegación en pantallas estrechas.
 
+**Categorías accesibles (2026-07-16):** la tabla de Movimientos representa cada categoría mediante texto, icono y color. El texto sigue siendo la identificación principal; icono y color son señales redundantes para mejorar el reconocimiento sin depender de la percepción cromática. El componente reutilizable consume los campos `icon` y `color` del modelo, infiere iconos conocidos para datos antiguos y aplica un fallback neutro a categorías personalizadas o sin metadatos. Los iconos decorativos quedan ocultos a lectores de pantalla para evitar anuncios duplicados.
+
+La misma resolución visual se aplica a “Gasto por categoría”: cada fila reutiliza el icono y el color de Movimientos, y su barra toma el mismo acento. La longitud y el porcentaje textual siguen comunicando el valor, por lo que el significado nunca depende únicamente del color. Las categorías agregadas como “Otros” y los datos antiguos usan los mismos fallbacks compartidos.
+
+“Evolución mensual” también consume la familia cromática común: verde de categorías para ingresos, rojo para gastos e índigo para ahorro. Se elimina la paleta financiera pastel paralela para que leyenda, barras, línea y desglose por categoría pertenezcan al mismo lenguaje visual.
+
 ---
 **Relacionadas:** [[project_investments_module]] · [[20_REDESIGN_ATELIER]] · [[GLOSARIO]]
 
