@@ -3,6 +3,7 @@ import { Edit3, Plus, Search, SlidersHorizontal, Trash2 } from "lucide-react";
 import { EmptyState, PageHeader } from "@/components/ui/Dashboard";
 import Spinner from "@/components/ui/Spinner";
 import TypeBadge from "@/components/ui/TypeBadge";
+import CategoryBadge from "@/components/ui/CategoryBadge";
 import { useTransactions } from "@/lib/hooks/useTransactions";
 import { useAccounts } from "@/lib/hooks/useAccounts";
 import { useCategories } from "@/lib/hooks/useCategories";
@@ -56,7 +57,9 @@ export default function TransactionsPage() {
 
   const accountName = (tx: { account_id: string; account_name?: string | null }) =>
     tx.account_name ?? accounts.find((a) => a.id === tx.account_id)?.name ?? "Cuenta sin nombre";
-  const categoryName = (id: string | null) => id ? (categories.find((c) => c.id === id)?.name ?? "Sin categoria") : "Sin categoria";
+  const categoriesById = useMemo(() => new Map(categories.map((category) => [category.id, category])), [categories]);
+  const categoryFor = (id: string | null) => id ? (categoriesById.get(id) ?? null) : null;
+  const categoryName = (id: string | null) => categoryFor(id)?.name ?? "Sin categoría";
 
   const visibleTransactions = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -256,7 +259,7 @@ export default function TransactionsPage() {
                       <td className="px-xl py-md text-body-sm text-stone whitespace-nowrap">{tx.date}</td>
                       <td className="px-xl py-md text-body-sm text-on-dark min-w-[220px]">{tx.description}</td>
                       <td className="px-xl py-md text-body-sm text-stone">{accountName(tx)}</td>
-                      <td className="px-xl py-md"><span className="inline-block rounded-full bg-[var(--bg-interactive)] px-2.5 py-0.5 text-xs text-[var(--text-secondary)]">{categoryName(tx.category_id)}</span></td>
+                      <td className="px-xl py-md"><CategoryBadge category={categoryFor(tx.category_id)} /></td>
                       <td className="px-xl py-md"><TypeBadge type={tx.type} /></td>
                       <td className={`financial-number px-xl py-md text-right text-body-sm font-medium ${amount >= 0 ? "text-accent-teal" : "text-on-dark"}`}>{formatCurrency(tx.amount, tx.currency)}</td>
                       <td className="px-xl py-md text-right">
