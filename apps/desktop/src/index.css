@@ -25,20 +25,21 @@
   --info: #1b73e6;
   --accent: #f56900;
   --on-primary: #ffffff;
+  --font-scale: 1;
 
   /* Tipografía — Familias */
   --font-sf-pro-display: 'SF Pro Display', Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-sf-pro-text: 'SF Pro Text', Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 
   /* Tipografía — Escala exacta DESIGN.md */
-  --text-caption: 10px;      --leading-caption: 1.83;     --tracking-caption: -0.37px;
-  --text-body: 14px;         --leading-body: 1.43;        --tracking-body: -0.22px;
-  --text-heading-sm: 19px;   --leading-heading-sm: 1.21;  --tracking-heading-sm: -0.28px;
-  --text-heading: 24px;      --leading-heading: 1.17;     --tracking-heading: -0.24px;
-  --text-heading-lg: 32px;   --leading-heading-lg: 1.14;  --tracking-heading-lg: -0.32px;
-  --text-display: 56px;      --leading-display: 1.07;     --tracking-display: -0.84px;
-  --text-hero: 80px;         --leading-hero: 1.05;        --tracking-hero: -0.24px;
-  --text-hero-value: 40px;   /* cifra hero patrimonio */
+  --text-caption: calc(12px * var(--font-scale));      --leading-caption: 1.65;     --tracking-caption: -0.2px;
+  --text-body: calc(16px * var(--font-scale));         --leading-body: 1.5;         --tracking-body: -0.15px;
+  --text-heading-sm: calc(20px * var(--font-scale));   --leading-heading-sm: 1.25;  --tracking-heading-sm: -0.2px;
+  --text-heading: calc(26px * var(--font-scale));      --leading-heading: 1.2;      --tracking-heading: -0.2px;
+  --text-heading-lg: calc(34px * var(--font-scale));   --leading-heading-lg: 1.15;  --tracking-heading-lg: -0.3px;
+  --text-display: calc(56px * var(--font-scale));      --leading-display: 1.07;     --tracking-display: -0.84px;
+  --text-hero: calc(80px * var(--font-scale));         --leading-hero: 1.05;        --tracking-hero: -0.24px;
+  --text-hero-value: calc(40px * var(--font-scale));   /* cifra hero patrimonio */
 
   /* Tipografía — Pesos */
   --font-weight-regular: 400;
@@ -162,6 +163,10 @@ body,
   text-rendering: geometricPrecision;
 }
 
+html {
+  font-size: calc(16px * var(--font-scale));
+}
+
 body {
   overflow: hidden;
 }
@@ -193,6 +198,19 @@ textarea:focus-visible {
 .text-display    { font-size: var(--text-display);    line-height: var(--leading-display);    letter-spacing: var(--tracking-display); font-family: var(--font-sf-pro-display); }
 .text-hero       { font-size: var(--text-hero);       line-height: var(--leading-hero);       letter-spacing: var(--tracking-hero);    font-family: var(--font-sf-pro-display); }
 
+/* Lectura cómoda por defecto. Las utilidades estándar siguen la preferencia de tamaño. */
+@layer utilities {
+  .text-xs { font-size: 0.8125rem; line-height: 1.45; }
+  .text-sm { font-size: 0.9375rem; line-height: 1.5; }
+  .text-base { font-size: 1rem; line-height: 1.5; }
+  .text-\[9px\] { font-size: calc(9px * var(--font-scale)); }
+  .text-\[10px\] { font-size: calc(10px * var(--font-scale)); }
+  .text-\[11px\] { font-size: calc(11px * var(--font-scale)); }
+  .text-\[12px\] { font-size: calc(12px * var(--font-scale)); }
+  .text-\[13px\] { font-size: calc(13px * var(--font-scale)); }
+  .text-\[20px\] { font-size: calc(20px * var(--font-scale)); }
+}
+
 /* ─── Números financieros ─── */
 .financial-number {
   font-family: var(--font-sf-pro-display);
@@ -222,10 +240,38 @@ textarea:focus-visible {
   padding-inline: 32px;
 }
 
+/* Lenguaje de entrada global: breve, opaco al final y sin rebote. */
+.motion-popover,
+.motion-toast {
+  animation: content-enter 280ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+/* Diálogos y drawers comparten fundido de scrim y llegada de superficie. */
+.fixed.inset-0.z-50 {
+  animation: scrim-enter 180ms ease-out backwards;
+}
+
+.fixed.inset-0.z-50 > :is(div, aside, section, form) {
+  animation: surface-enter 280ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+/* Las filas se incorporan con un escalonado muy corto, limitado visualmente. */
+tbody > tr {
+  animation: row-enter 240ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+tbody > tr:nth-child(2) { animation-delay: 15ms; }
+tbody > tr:nth-child(3) { animation-delay: 30ms; }
+tbody > tr:nth-child(4) { animation-delay: 45ms; }
+tbody > tr:nth-child(5) { animation-delay: 60ms; }
+tbody > tr:nth-child(6) { animation-delay: 75ms; }
+tbody > tr:nth-child(n + 7) { animation-delay: 90ms; }
+
 .progress-fill {
   width: 100%;
   transform-origin: left center;
   transition: transform 240ms cubic-bezier(0.23, 1, 0.32, 1);
+  animation: progress-reveal 480ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
 .ui-pressable {
@@ -240,6 +286,85 @@ textarea:focus-visible {
 .ui-pressable:disabled {
   cursor: not-allowed;
   opacity: 0.5;
+}
+
+/* Feedback consistente también en los controles heredados que no usan ui-pressable. */
+button:not(:disabled) {
+  transition: transform 120ms cubic-bezier(0.23, 1, 0.32, 1), filter 150ms ease, background-color 150ms ease, border-color 150ms ease, color 150ms ease;
+  transform-origin: center;
+}
+
+button:not(:disabled):active {
+  transform: scale(0.98);
+}
+
+/* Las pantallas usan tres superficies equivalentes; todas comparten el mismo gesto. */
+:is(.premium-card, .mercury-panel, .bg-surface-card, .bg-surface-elevated.rounded-xl, .bg-surface-elevated.rounded-2xl) {
+  transition: box-shadow 150ms ease, transform 150ms ease;
+  animation: card-rise-in 300ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+}
+
+/* Escalonado local: funciona en grids, listas y paneles sin retrasar la pantalla. */
+.page-shell :is(.premium-card, .mercury-panel, .bg-surface-card, .bg-surface-elevated.rounded-xl, .bg-surface-elevated.rounded-2xl):nth-child(2) { animation-delay: 35ms; }
+.page-shell :is(.premium-card, .mercury-panel, .bg-surface-card, .bg-surface-elevated.rounded-xl, .bg-surface-elevated.rounded-2xl):nth-child(3) { animation-delay: 70ms; }
+.page-shell :is(.premium-card, .mercury-panel, .bg-surface-card, .bg-surface-elevated.rounded-xl, .bg-surface-elevated.rounded-2xl):nth-child(4) { animation-delay: 105ms; }
+.page-shell :is(.premium-card, .mercury-panel, .bg-surface-card, .bg-surface-elevated.rounded-xl, .bg-surface-elevated.rounded-2xl):nth-child(n + 5) { animation-delay: 120ms; }
+
+/* Los KPI de Resumen ya entran con Framer Motion; evita duplicar su desplazamiento. */
+.dashboard-grid :is(.premium-card, .mercury-panel, .bg-surface-card) {
+  animation: none;
+}
+
+.portfolio-allocation-bar {
+  transform-origin: left center;
+  animation: allocation-reveal 440ms cubic-bezier(0.16, 1, 0.3, 1) backwards;
+}
+
+@media (hover: hover) {
+  :is(.premium-card, .mercury-panel, .bg-surface-card, .bg-surface-elevated.rounded-xl, .bg-surface-elevated.rounded-2xl):hover {
+    box-shadow: var(--shadow-card-hover);
+    transform: translateY(-1px);
+  }
+}
+
+@keyframes card-rise-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes content-enter {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes surface-enter {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes row-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scrim-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes reduced-motion-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes progress-reveal {
+  from { clip-path: inset(0 100% 0 0); opacity: 0; }
+  to { clip-path: inset(0 0 0 0); opacity: 1; }
+}
+
+@keyframes allocation-reveal {
+  from { transform: scaleX(0); opacity: 0; }
+  to { transform: scaleX(1); opacity: 1; }
 }
 
 /* ─── Componentes globales ─── */
@@ -344,9 +469,19 @@ table {
     scroll-behavior: auto !important;
   }
 
-  .progress-fill { transition-duration: .01ms; }
+  .progress-fill { transition-duration: .01ms; animation: none; }
   .ui-pressable { transition-property: filter, background-color, border-color, color; }
   .ui-pressable:active:not(:disabled) { transform: none; }
+  button:not(:disabled) { transition-property: filter, background-color, border-color, color; }
+  button:not(:disabled):active { transform: none; }
+  :is(.premium-card, .mercury-panel, .bg-surface-card, .bg-surface-elevated.rounded-xl, .bg-surface-elevated.rounded-2xl),
+  .motion-popover,
+  .motion-toast,
+  .fixed.inset-0.z-50,
+  .fixed.inset-0.z-50 > :is(div, aside, section, form),
+  tbody > tr { transition-duration: .01ms; animation: reduced-motion-enter 120ms linear backwards; }
+  :is(.premium-card, .mercury-panel, .bg-surface-card, .bg-surface-elevated.rounded-xl, .bg-surface-elevated.rounded-2xl):hover { transform: none; }
+  .portfolio-allocation-bar { animation: none; }
   .live-dot { animation: none; }
   .app-launch-stage,
   .app-launch-card,
@@ -380,19 +515,19 @@ table {
 }
 
 .app-launch-glyph { position: relative; display: flex; align-items: end; gap: 4px; width: 52px; height: 46px; overflow: hidden; }
-.app-launch-bar { width: 11px; border-radius: 999px; transform: scaleY(0); transform-origin: bottom; animation: app-launch-bar-arrive 420ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.app-launch-bar { width: 11px; border-radius: 999px; opacity: 0; transform: scaleY(0.85); transform-origin: bottom; animation: app-launch-bar-arrive 420ms cubic-bezier(0.16, 1, 0.3, 1) both; }
 .app-launch-bar-jade { height: 25px; background: var(--positive); animation-delay: 120ms; }
 .app-launch-bar-blue { height: 39px; background: var(--primary); animation-delay: 190ms; }
 .app-launch-bar-garnet { height: 19px; background: var(--negative); animation-delay: 260ms; }
-.app-launch-trace { position: absolute; right: 0; bottom: 3px; left: 0; height: 3px; border-radius: 999px; background: var(--text-primary); transform: scaleX(0); transform-origin: left; animation: app-launch-trace-arrive 320ms 340ms cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+.app-launch-trace { position: absolute; right: 0; bottom: 3px; left: 0; height: 3px; border-radius: 999px; background: var(--text-primary); opacity: 0; transform: scaleX(0.8); transform-origin: left; animation: app-launch-trace-arrive 320ms 340ms cubic-bezier(0.16, 1, 0.3, 1) both; }
 .app-launch-copy { display: grid; gap: 2px; }
 .app-launch-title { color: var(--text-primary); font-size: 18px; font-weight: 650; letter-spacing: -0.025em; }
 .app-launch-subtitle { color: var(--text-secondary); font-size: 12px; letter-spacing: 0.01em; }
 
 @keyframes app-launch-stage-exit { 0%, 82% { opacity: 1; visibility: visible; } 100% { opacity: 0; visibility: hidden; } }
-@keyframes app-launch-card-arrive { 0% { opacity: 0; transform: translateY(16px) scale(0.94); } 24%, 82% { opacity: 1; transform: translateY(0) scale(1); } 100% { opacity: 0; transform: translateY(-7px) scale(1.015); } }
-@keyframes app-launch-bar-arrive { to { transform: scaleY(1); } }
-@keyframes app-launch-trace-arrive { to { transform: scaleX(1); } }
+@keyframes app-launch-card-arrive { 0% { opacity: 0; transform: translateY(6px); } 24%, 82% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-3px); } }
+@keyframes app-launch-bar-arrive { from { opacity: 0; transform: scaleY(0.85); } to { opacity: 1; transform: scaleY(1); } }
+@keyframes app-launch-trace-arrive { from { opacity: 0; transform: scaleX(0.8); } to { opacity: 1; transform: scaleX(1); } }
 
 ::-webkit-scrollbar {
   width: 8px;

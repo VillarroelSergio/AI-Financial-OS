@@ -7,11 +7,13 @@ import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { preloadAppData } from "./app/preloadAppData";
 import { preloadSettingsOverview } from "./features/settings/settingsOverview";
+import { applyFontScale, loadStoredFontScale } from "./lib/useFontScale";
 import "./index.css";
 
 // Aplicar tema antes del primer render para evitar flash
 const savedTheme = localStorage.getItem("theme") || "dark";
 document.documentElement.setAttribute("data-theme", savedTheme);
+applyFontScale(loadStoredFontScale());
 
 void preloadSettingsOverview();
 void preloadAppData();

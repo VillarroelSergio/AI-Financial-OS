@@ -29,7 +29,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {toasts.map((toast) => {
           const tone = TONE[toast.tone];
           const Icon = tone.icon;
-          return <div key={toast.id} className={`flex items-center gap-3 rounded-xl border px-4 py-3 text-sm shadow-lg ${tone.className}`}>
+          return <div key={toast.id} className={`motion-toast flex items-center gap-3 rounded-xl border px-4 py-3 text-sm shadow-lg ${tone.className}`}>
             <Icon size={17} /><span className="text-on-dark">{toast.message}</span>
           </div>;
         })}

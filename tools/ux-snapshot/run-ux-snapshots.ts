@@ -194,6 +194,18 @@ async function main(): Promise<void> {
   const browser = await chromium.launch({ headless: !headed });
   const context = await browser.newContext({ viewport: VIEWPORTS[selectedViewports[0]] });
   const page = await context.newPage();
+  const runtimeErrors: string[] = [];
+
+  page.on("pageerror", (error) => {
+    runtimeErrors.push(error.message);
+    console.error(`Error de página: ${error.message}`);
+  });
+  page.on("console", (message) => {
+    if (message.type() === "error") {
+      runtimeErrors.push(message.text());
+      console.error(`Error de consola: ${message.text()}`);
+    }
+  });
 
   const screenshots: ScreenshotMeta[] = [];
   const generatedAt = new Date().toISOString();
@@ -229,7 +241,18 @@ async function main(): Promise<void> {
 
         console.log(`Capturando ${filename}...`);
         await page.goto(`${BASE_URL}${route.path}`, { waitUntil: "networkidle" });
-        await page.waitForSelector('[data-app-ready="true"]', { timeout: 10_000 });
+        try {
+          await page.waitForSelector('[data-app-ready="true"]', { timeout: 10_000 });
+          await page.waitForFunction(() => {
+            const startup = document.querySelector(".app-launch-stage");
+            if (!startup) return true;
+            const style = window.getComputedStyle(startup);
+            return style.visibility === "hidden" || Number(style.opacity) === 0;
+          }, { timeout: 4_000 });
+        } catch (error) {
+          const details = runtimeErrors.length ? ` Errores detectados: ${runtimeErrors.join(" | ")}` : "";
+          throw new Error(`La ruta ${route.path} no montó la aplicación.${details}`, { cause: error });
+        }
         await page.waitForTimeout(600);
 
         const outPath = path.join(OUTPUT_DIR, filename);

@@ -1,6 +1,6 @@
 # UX Review Context - AI Financial OS
 
-> Generated: 2026-07-15T17:05:54.083Z
+> Generated: 2026-07-16T14:32:01.009Z
 > Viewports: desktop 1440x900
 > Data: mock (no datos reales de usuario)
 
@@ -17,27 +17,8 @@ Para regenerar desktop/tablet/mobile: `npm run snapshots:responsive`.
 
 | Archivo | Pantalla | Viewport | Estado | Descripcion |
 |---------|----------|----------|--------|-------------|
-| `finances-cuentas.png` | Movimientos y cuentas | desktop | mock_data | Vista principal de cuentas con pestañas de movimientos, gastos, planificación e importar |
-| `investments-tracking.png` | Position Tracking | desktop | mock_data | Seguimiento de posiciones: evolución de cada acción desde el precio de entrada |
-| `overview.png` | Overview | desktop | mock_data | Dashboard principal con patrimonio neto, liquidez, inversiones y métricas del mes |
-| `spending.png` | Spending | desktop | mock_data | Análisis de gastos mensual con pie chart por categoría y desglose |
-| `investments.png` | Investments | desktop | mock_data | Portfolio tracker con TR stocks, Finizens funds y cuenta remunerada |
-| `investments-quality.png` | Investments Quality | desktop | mock_data | Calidad de cartera con confianza, precios, FX y posiciones manuales |
-| `investments-empty.png` | Investments (empty) | desktop | empty | Estado vacío sin posiciones registradas |
-| `goals.png` | Goals | desktop | empty | Objetivos financieros — estado inicial sin objetivos |
-| `economy.png` | Economy | desktop | empty | Indicadores macroeconómicos — estado inicial |
-| `insights.png` | Insights | desktop | empty | Insights personalizados — estado inicial sin análisis |
-| `imports-empty.png` | Imports (empty) | desktop | empty | Centro de importación — estado vacío antes de seleccionar archivo |
-| `imports-preview.png` | Imports (preview) | desktop | preview_demo | Centro de importación — preview y validación con datos ficticios |
-| `settings.png` | Settings | desktop | mock_data | Configuración de la aplicación — idioma, moneda y tema |
 | `markets.png` | Markets | desktop | mock_data | Market Watch con 36 activos en 8 categorías, tab Todos |
 | `markets-europa.png` | Markets Europa | desktop | mock_data | Market Watch filtrado por categoría Europa |
-| `planificacion.png` | Planificacion | desktop | mock_data | Planificacion con presupuestos, recurrentes asistidos y cashflow |
-| `planificacion-recurrentes.png` | Planificacion Recurrentes | desktop | mock_data | Deteccion asistida de recurrentes con candidatos confirmables |
-| `planificacion-facturas.png` | Planificacion Facturas | desktop | mock_data | Facturas del hogar con comparativa, anomalias y proximo recibo |
-| `transactions.png` | Transactions | desktop | mock_data | Ledger con busqueda, filtros, nombres legibles y acciones seguras |
-| `assistant.png` | Assistant | desktop | provider_offline | Copiloto IA contextual con provider local no disponible |
-| `portfolio-import.png` | Portfolio Import | desktop | empty | Importacion de cartera con capturas, texto fallback y entrada manual |
 
 
 ## Notas para agentes

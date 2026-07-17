@@ -152,7 +152,7 @@ export default function TransactionsPage() {
         }
       />
 
-      <section className="premium-card rounded-lg p-4">
+      <section className={`premium-card relative rounded-lg p-4 ${showFilters ? "z-40" : ""}`}>
         <div className="flex flex-wrap items-center gap-3">
           <label className="flex min-w-[220px] flex-1 items-center gap-2 rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-3 py-2">
             <Search size={16} className="text-mute" />
@@ -184,7 +184,7 @@ export default function TransactionsPage() {
             {showFilters && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setShowFilters(false)} />
-                <div className="absolute right-0 z-20 mt-2 w-[300px] space-y-3 rounded-lg border border-hairline-dark bg-[var(--bg-card)] p-4 shadow-[var(--shadow-elevated)]">
+                <div className="motion-popover absolute right-0 z-20 mt-2 w-[300px] space-y-3 rounded-lg border border-hairline-dark bg-[var(--bg-card)] p-4 shadow-[var(--shadow-elevated)]">
                   <div className="grid grid-cols-2 gap-3">
                     <label className="space-y-1"><span className="text-[11px] text-stone">Desde</span><input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className="w-full rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-3 py-2 text-sm text-on-dark" /></label>
                     <label className="space-y-1"><span className="text-[11px] text-stone">Hasta</span><input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className="w-full rounded-lg border border-hairline-dark bg-[var(--bg-interactive)] px-3 py-2 text-sm text-on-dark" /></label>

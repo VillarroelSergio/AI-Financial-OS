@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { getCopilotContext } from "@/features/assistant/contextualCopilot";
-import { springPanel } from "@/components/ui/motion";
+import { contentEnter, surfaceEnter } from "@/components/ui/motion";
 import ComienzaWidget from "./ComienzaWidget";
 
 interface NavItem {
@@ -51,19 +51,15 @@ export default function RootLayout() {
   const showCopilot = location.pathname !== "/assistant" && location.pathname !== "/settings";
   const [copilotOpen, setCopilotOpen] = useState(false);
 
-  const allNav = [...navItems, ...footItems];
-  const sectionTitle =
-    allNav.find((n) => (n.to === "/" ? location.pathname === "/" : location.pathname.startsWith(n.to)))?.label ?? "";
-
   useEffect(() => { setCopilotOpen(false); }, [location.pathname]);
 
   const copilotPopover = copilotOpen && showCopilot ? (
     <motion.div
-      initial={{ opacity: 0, scale: 0.96 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={springPanel}
+      variants={surfaceEnter}
+      initial="hidden"
+      animate="show"
       style={{ transformOrigin: "top right" }}
-      className="absolute right-4 top-12 z-30 w-[344px] rounded-[20px] border border-[var(--border-soft)] bg-[var(--bg-card)] p-5 shadow-[var(--shadow-elevated)]">
+      className="absolute right-0 top-10 z-30 w-[344px] rounded-[20px] border border-[var(--border-soft)] bg-[var(--bg-card)] p-5 shadow-[var(--shadow-elevated)]">
       <div className="flex items-start gap-3">
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-[10px] bg-[var(--primary)] text-white">
           <Bot size={16} />
@@ -202,15 +198,9 @@ export default function RootLayout() {
       </div>
 
       {/* Contenido principal */}
-      <div className="flex min-h-0 min-w-0 flex-1 flex-col" style={{ background: "var(--bg-app)" }}>
-        <header
-          className="relative hidden h-14 shrink-0 items-center justify-between px-6 lg:flex"
-          style={{ borderBottom: "1px solid var(--border-soft)" }}
-        >
-          <span className="font-semibold text-[var(--text-primary)]" style={{ fontSize: "14px", lineHeight: "1.21", letterSpacing: "-0.2px" }}>
-            {sectionTitle}
-          </span>
-          {showCopilot && (
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col" style={{ background: "var(--bg-app)" }}>
+        {showCopilot && (
+          <div className="absolute right-5 top-4 z-30 hidden lg:block">
             <button
               onClick={() => setCopilotOpen((open) => !open)}
               aria-label="Copiloto contextual"
@@ -222,14 +212,14 @@ export default function RootLayout() {
             >
               <Sparkles size={15} />
             </button>
-          )}
-          {copilotPopover}
-        </header>
+            {copilotPopover}
+          </div>
+        )}
         <div className="flex min-h-0 flex-1">
           <main className="flex-1 min-w-0 overflow-y-auto">
-            <div key={location.pathname}>
+            <motion.div key={location.pathname} variants={contentEnter} initial="hidden" animate="show">
               <Outlet />
-            </div>
+            </motion.div>
           </main>
         </div>
       </div>
