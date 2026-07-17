@@ -69,13 +69,13 @@ export default function DistributionChart({ holdings, accountNames }: Distributi
       ) : useBars ? (
         <div className="space-y-md">
           {rows.map((entry) => (
-            <div key={entry.name}>
+            <div key={`${view}-${entry.name}`}>
               <div className="flex items-center justify-between gap-md text-body-sm">
                 <span className="min-w-0 truncate text-on-dark">{entry.name}</span>
                 <span className="financial-number shrink-0 text-stone">{formatCurrency(entry.value)} · {entry.pct.toFixed(1)}%</span>
               </div>
               <div className="mt-xs h-2 rounded-full bg-[var(--bg-interactive)] overflow-hidden">
-                <div className="h-full rounded-full" style={{ width: `${Math.max(2, entry.pct)}%`, background: entry.color }} />
+                <div className="portfolio-allocation-bar h-full rounded-full" style={{ width: `${Math.max(2, entry.pct)}%`, background: entry.color }} />
               </div>
             </div>
           ))}

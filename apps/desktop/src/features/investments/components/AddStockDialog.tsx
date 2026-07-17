@@ -135,7 +135,7 @@ export default function AddStockDialog({ open, accountId, onClose, onSuccess }: 
               <Search size={14} className={`absolute right-2.5 top-1/2 -translate-y-1/2 ${searching ? "text-primary-bright animate-pulse" : "text-stone"}`} />
             </div>
             {showCandidates && candidates.length > 0 && (
-              <ul className="absolute z-20 mt-1 w-full rounded-md border border-hairline-dark bg-surface-elevated shadow-lg overflow-hidden">
+              <ul className="motion-popover absolute z-20 mt-1 w-full rounded-md border border-hairline-dark bg-surface-elevated shadow-lg overflow-hidden">
                 {candidates.map((c) => (
                   <li key={c.ticker}>
                     <button

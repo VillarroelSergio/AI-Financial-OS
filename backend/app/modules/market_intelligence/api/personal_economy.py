@@ -281,7 +281,10 @@ def compute_personal_economy(db: Session) -> dict:
             "value": euribor,
             "year_ago": euribor_year_ago,
             "history": _safe(
-                lambda: [{"period": p, "value": v} for p, v in _macro_series("euribor_12m")[-24:]],
+                lambda: [
+                    {"period": period, "value": value}
+                    for period, value in macro_series.history("euribor_12m", limit=24)
+                ],
                 [],
             ),
         },

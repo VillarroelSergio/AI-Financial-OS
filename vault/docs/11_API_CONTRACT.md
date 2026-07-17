@@ -29,7 +29,19 @@ Respuesta:
 
 ### GET `/api/accounts`
 
-Devuelve cuentas.
+Devuelve cuentas. Además de `current_balance`, incluye importes derivados en EUR:
+
+- `cash_balance_eur`: efectivo disponible (`current_balance` convertido).
+- `portfolio_value_eur`: suma de posiciones valoradas enlazadas.
+- `total_value_eur`: efectivo + posiciones, sin duplicados.
+- `position_count`: posiciones enlazadas.
+
+En cuentas `broker` e `investment`, `current_balance` representa efectivo disponible, no
+el valor total de la cartera.
+
+En cuentas `savings`, el holding `savings_account` es la fuente canónica del saldo actual:
+se incluye en `liquidity`, `investments` y `net_worth`, pero solo una vez aunque
+`Account.current_balance` contenga el mismo importe.
 
 ### POST `/api/accounts`
 
@@ -176,9 +188,29 @@ omite filas inválidas o duplicadas al confirmar y conserva el lote tras un roll
 
 ### GET `/api/investments/summary`
 
+Además de los totales simples, devuelve `fund_reported_return_percent`. Esta métrica
+agrega la rentabilidad externa del último snapshot de cada fondo, ponderada por su
+`contributed_total` (o coste de la posición como respaldo). Es `null` cuando no hay
+porcentajes reportados.
+
+`total_value` incluye todo el valor gestionado, también cuentas remuneradas y efectivo.
+`total_invested`, `return_absolute` y `return_percent` excluyen assets `savings_account` y
+`cash`: el ahorro forma parte del patrimonio, pero no de la base del P&L de inversiones.
+Por ello `return_absolute` no tiene que ser igual a `total_value - total_invested` cuando
+existe ahorro dentro del módulo.
+
 ### GET `/api/investments/holdings`
 
 ### POST `/api/investments/holdings`
+
+Para acciones, ETF, fondos, bonos y cripto, `account_id` debe identificar una cuenta activa
+de tipo `broker` o `investment`. Otros tipos de cuenta se rechazan con `422` y código
+`INVALID_PORTFOLIO_ACCOUNT`.
+
+### PATCH `/api/investments/holdings/{holding_id}`
+
+Acepta `account_id` para reasignar una posición a otra cartera. Se aplica la misma validación
+de tipo que en el alta y la respuesta enriquecida refleja el nuevo broker.
 
 ### POST `/api/investments/holdings/merge`
 
@@ -204,9 +236,9 @@ determinista) y resto (histórico guardado o market_value). Solo datos en BD, si
 ### Fondos (INV-3)
 
 ```txt
-POST   /api/investments/funds                          # alta: name, account_id, contributed, value, date
+POST   /api/investments/funds                          # alta: name, account_id, contributed, value, date, reported_return_pct?
 GET    /api/investments/funds/{holding_id}/snapshots
-POST   /api/investments/funds/{holding_id}/snapshots   # { date, market_value, contributed_total? } — upsert por fecha
+POST   /api/investments/funds/{holding_id}/snapshots   # { date, market_value, contributed_total?, reported_return_pct? } — upsert por fecha
 PUT    /api/investments/funds/snapshots/{id}
 DELETE /api/investments/funds/snapshots/{id}
 ```

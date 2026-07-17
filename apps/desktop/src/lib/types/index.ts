@@ -31,6 +31,10 @@ export interface Account {
   is_liability: boolean;
   created_at: string;
   updated_at: string;
+  cash_balance_eur?: string;
+  portfolio_value_eur?: string;
+  total_value_eur?: string;
+  position_count?: number;
 }
 
 export interface Category {
@@ -196,6 +200,7 @@ export interface InvestmentSummary {
   last_updated: string | null;
   pending_valuation_count: number;
   pending_valuation_invested: string;
+  fund_reported_return_percent: number | null;
 }
 
 export interface PriceRefreshResult {

@@ -8,8 +8,8 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.models.account import Account
 from app.models.category import Category
-from app.models.investment import Holding
 from app.models.transaction import Transaction
+from app.modules.accounts.valuation_service import build_current_valuation, to_eur
 from app.modules.dashboard.schemas import (
     CategorySpending,
     CategorySpendingDetailOut,
@@ -33,40 +33,12 @@ def _period_filter(month: str | None, year: int | None) -> tuple[str, str, int]:
 
 
 def _to_eur(amount: Decimal, currency: str | None, rates: dict[str, float | None]) -> Decimal:
-    currency = (currency or "EUR").upper()
-    if currency == "EUR" or not amount:
-        return amount
-    if currency not in rates:
-        from app.modules.investments.price_coverage_audit import fetch_fx_rate
-
-        rates[currency] = fetch_fx_rate(currency)[0]
-    rate = rates[currency]
-    # ponytail: sin tipo de cambio disponible se suma sin convertir (comportamiento previo)
-    if not rate:
-        return amount
-    return (amount / Decimal(str(rate))).quantize(Decimal("0.01"))
+    return to_eur(amount, currency, rates)
 
 
 @router.get("/overview", response_model=OverviewOut)
 def get_overview(db: Session = Depends(get_db)) -> OverviewOut:
-    accounts = db.query(Account).filter(Account.is_active == True).all()  # noqa: E712
-
-    rates: dict[str, float | None] = {}
-    balances = {a.id: _to_eur(a.current_balance, a.currency, rates) for a in accounts}
-    liquidity = sum(
-        (balances[a.id] for a in accounts if a.type in ("cash", "bank", "savings")),
-        Decimal("0"),
-    )
-    # Valoración de cartera (market_value ya está en EUR, igual que /investments/summary)
-    portfolio_value = sum(
-        (h.market_value for h in db.query(Holding).all() if h.market_value is not None),
-        Decimal("0"),
-    )
-    investments = (
-        sum((balances[a.id] for a in accounts if a.type in ("broker", "investment")), Decimal("0"))
-        + portfolio_value
-    )
-    net_worth = sum(balances.values(), Decimal("0")) + portfolio_value
+    valuation = build_current_valuation(db)
 
     month_prefix = datetime.now(timezone.utc).strftime("%Y-%m")
     month_txs = (
@@ -84,9 +56,9 @@ def get_overview(db: Session = Depends(get_db)) -> OverviewOut:
     savings_rate = float(monthly_savings / monthly_income) if monthly_income > 0 else 0.0
 
     return OverviewOut(
-        net_worth=str(net_worth),
-        liquidity=str(liquidity),
-        investments=str(investments),
+        net_worth=str(valuation.net_worth),
+        liquidity=str(valuation.liquidity),
+        investments=str(valuation.investments),
         monthly_income=str(monthly_income),
         monthly_expense=str(monthly_expense),
         monthly_savings=str(monthly_savings),

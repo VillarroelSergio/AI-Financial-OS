@@ -3,7 +3,6 @@ sintéticas de meses completos y lleva su dedupe_key propio.
 
 Se prueban las reglas de forma directa sembrando la BD temporal del fixture `client`.
 """
-from datetime import datetime, timezone
 from decimal import Decimal
 
 from app.core import database as db_module

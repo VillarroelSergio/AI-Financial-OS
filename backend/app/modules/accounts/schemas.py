@@ -34,9 +34,18 @@ class AccountOut(BaseModel):
     is_liability: bool
     created_at: datetime
     updated_at: datetime
+    cash_balance_eur: Decimal = Decimal("0.00")
+    portfolio_value_eur: Decimal = Decimal("0.00")
+    total_value_eur: Decimal = Decimal("0.00")
+    position_count: int = 0
 
     model_config = {"from_attributes": True}
 
-    @field_serializer("current_balance")
+    @field_serializer(
+        "current_balance",
+        "cash_balance_eur",
+        "portfolio_value_eur",
+        "total_value_eur",
+    )
     def serialize_balance(self, v: Decimal) -> str:
         return str(v)

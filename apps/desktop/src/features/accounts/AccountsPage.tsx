@@ -27,6 +27,11 @@ const EMPTY_FORM: AccountCreate = {
   is_liability: false,
 };
 
+const isPortfolioAccount = (account: Pick<Account, "type">) => ["broker", "investment"].includes(account.type);
+const cashValue = (account: Account) => Number(account.cash_balance_eur ?? account.current_balance);
+const portfolioValue = (account: Account) => Number(account.portfolio_value_eur ?? 0);
+const totalValue = (account: Account) => Number(account.total_value_eur ?? account.current_balance);
+
 export default function AccountsPage() {
   const { accounts, loading, add, update, remove } = useAccounts();
   const [showForm, setShowForm] = useState(false);
@@ -34,9 +39,9 @@ export default function AccountsPage() {
   const [editing, setEditing] = useState<Account | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const total = accounts.reduce((sum, account) => sum + Number(account.current_balance), 0);
-  const liquidity = accounts.filter((account) => ["cash", "bank", "savings"].includes(account.type)).reduce((sum, account) => sum + Number(account.current_balance), 0);
-  const savings = accounts.filter((account) => account.type === "savings").reduce((sum, account) => sum + Number(account.current_balance), 0);
+  const total = accounts.reduce((sum, account) => sum + totalValue(account), 0);
+  const liquidity = accounts.filter((account) => ["cash", "bank", "savings"].includes(account.type)).reduce((sum, account) => sum + cashValue(account), 0);
+  const savings = accounts.filter((account) => account.type === "savings").reduce((sum, account) => sum + cashValue(account), 0);
   const lastUpdated = accounts.reduce<string | null>((latest, account) => !latest || account.updated_at > latest ? account.updated_at : latest, null);
 
   const resetForm = () => {
@@ -92,7 +97,7 @@ export default function AccountsPage() {
       <PageHeader
         eyebrow="Liquidez local"
         title="Cuentas"
-        description="Resumen operativo de liquidez, ahorro y brokers con pesos sobre patrimonio."
+        description="Liquidez y carteras con sus posiciones calculadas automáticamente, sin duplicar el patrimonio."
         actions={
         <button onClick={openNew} className="ui-pressable mercury-button-primary px-lg py-sm text-button-md rounded-lg">
           Nueva cuenta
@@ -123,8 +128,11 @@ export default function AccountsPage() {
               </select>
             </label>
             <label className="space-y-xs">
-              <span className="text-caption text-stone">Saldo</span>
+              <span className="text-caption text-stone">{["broker", "investment"].includes(form.type) ? "Efectivo disponible" : "Saldo"}</span>
               <input type="number" step="0.01" className="w-full bg-[var(--bg-interactive)] border border-hairline-dark rounded-lg px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary" value={form.current_balance} onChange={(e) => setForm((f) => ({ ...f, current_balance: e.target.value }))} />
+              {["broker", "investment"].includes(form.type) && (
+                <span className="block text-[11px] text-mute">El valor de fondos y acciones se suma automáticamente.</span>
+              )}
             </label>
             <label className="space-y-xs">
               <span className="text-caption text-stone">Divisa</span>
@@ -153,7 +161,10 @@ export default function AccountsPage() {
       ) : (
         <div className="space-y-sm">
           {accounts.map((account) => {
-            const share = liquidity > 0 && ["cash", "bank", "savings"].includes(account.type) ? (Number(account.current_balance) / liquidity) * 100 : 0;
+            const portfolio = isPortfolioAccount(account);
+            const accountTotal = totalValue(account);
+            const shareBase = portfolio ? total : liquidity;
+            const share = shareBase > 0 ? (accountTotal / shareBase) * 100 : 0;
             return (
               <div key={account.id} className="premium-card rounded-lg p-xl grid grid-cols-[1fr_auto] gap-lg">
                 <div>
@@ -162,12 +173,17 @@ export default function AccountsPage() {
                     {account.is_liability && <span className="ml-sm rounded-full bg-accent-danger/10 px-2 py-0.5 text-caption text-accent-danger align-middle">Pasivo</span>}
                   </p>
                   <p className="text-caption text-stone mt-xs">{ACCOUNT_TYPE_LABELS[account.type] ?? account.type}{account.institution ? ` · ${account.institution}` : ""}</p>
-                  <p className="text-caption text-stone mt-xs">{share.toFixed(1)}% sobre liquidez total · {account.is_liability ? "Resta del patrimonio neto" : "Incluida en patrimonio neto"}</p>
+                  <p className="text-caption text-stone mt-xs">{share.toFixed(1)}% sobre {portfolio ? "patrimonio" : "liquidez"} · {account.is_liability ? "Resta del patrimonio neto" : "Incluida en patrimonio neto"}</p>
+                  {portfolio && (
+                    <p className="text-caption text-mute mt-xs">
+                      {formatCurrency(portfolioValue(account))} en {account.position_count ?? 0} posiciones · {formatCurrency(cashValue(account))} de efectivo
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-xl">
                   <div className="text-right">
-                    <p className="text-heading-sm text-on-dark">{formatCurrency(account.current_balance, account.currency)}</p>
-                    <p className="text-caption text-stone">{account.currency}</p>
+                    <p className="text-heading-sm text-on-dark">{formatCurrency(accountTotal)}</p>
+                    <p className="text-caption text-stone">EUR{portfolio ? " · total cartera" : ""}</p>
                   </div>
                   <button onClick={() => openEdit(account)} className="ui-pressable text-stone hover:text-on-dark" aria-label="Editar cuenta"><Pencil size={16} /></button>
                   <button onClick={() => remove(account.id)} className="ui-pressable text-stone hover:text-accent-danger" aria-label="Eliminar cuenta"><Trash2 size={16} /></button>

@@ -4,8 +4,8 @@ import path from "node:path";
 import { loadFlowContracts, validateFlowContracts } from "./flow-contracts.js";
 
 const toolDir = path.dirname(fileURLToPath(import.meta.url));
-const catalogPath = path.resolve(toolDir, "../../docs/testing/flows/catalog.yaml");
-const fixturePath = path.resolve(toolDir, "../../docs/testing/fixtures/financial-os.yaml");
+const catalogPath = path.resolve(toolDir, "../../vault/docs/testing/flows/catalog.yaml");
+const fixturePath = path.resolve(toolDir, "../../vault/docs/testing/fixtures/financial-os.yaml");
 
 const catalog = await loadFlowContracts(catalogPath, fixturePath);
 const errors = validateFlowContracts(catalog);

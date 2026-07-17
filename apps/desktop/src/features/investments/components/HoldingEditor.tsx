@@ -3,6 +3,7 @@ import type { FormEvent } from "react";
 import { Save, Search, X } from "lucide-react";
 import type { Account, AssetType, HoldingEnriched } from "@/lib/types";
 import { createAsset, createHolding, searchAssetCandidates, updateAsset, updateHolding, type AssetSearchCandidate } from "@/lib/api/investments";
+import InvestmentAccountPicker from "./InvestmentAccountPicker";
 
 const ASSET_TYPES: { value: AssetType; label: string }[] = [
   { value: "stock", label: "Accion" },
@@ -22,11 +23,10 @@ interface HoldingEditorProps {
 }
 
 export default function HoldingEditor({ holding, accounts, onClose, onSaved }: HoldingEditorProps) {
-  const defaultAccount = accounts.find((a) => ["broker", "investment", "savings"].includes(a.type)) ?? accounts[0];
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
-    account_id: defaultAccount?.id ?? "",
+    account_id: "",
     name: "",
     ticker: "",
     asset_type: "stock" as AssetType,
@@ -118,6 +118,7 @@ export default function HoldingEditor({ holding, accounts, onClose, onSaved }: H
       if (holding) {
         await updateAsset(holding.asset_id, assetPayload);
         await updateHolding(holding.id, {
+          account_id: form.account_id,
           quantity: form.quantity,
           average_price: form.average_price,
           current_price: form.current_price || undefined,
@@ -144,20 +145,25 @@ export default function HoldingEditor({ holding, accounts, onClose, onSaved }: H
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-surface-card border border-hairline-dark rounded-md p-xl space-y-lg">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-lg"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="holding-editor-title"
+    >
+      <form onSubmit={handleSubmit} className="bg-surface-elevated border border-hairline-dark rounded-xl p-xl space-y-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
       <div className="flex items-center justify-between gap-md">
-        <h2 className="text-heading-sm text-on-dark">{holding ? "Editar activo" : "Anadir activo"}</h2>
+        <h2 id="holding-editor-title" className="text-heading-sm text-on-dark">{holding ? "Editar activo" : "Anadir activo"}</h2>
         <button type="button" onClick={onClose} className="text-stone hover:text-on-dark" aria-label="Cerrar">
           <X size={18} />
         </button>
       </div>
       <div className="grid grid-cols-2 gap-md">
-        <label className="space-y-xs">
-          <span className="text-caption text-stone">Cuenta / broker</span>
-          <select className="w-full bg-surface-elevated border border-hairline-dark rounded-sm px-md py-sm text-body-sm text-on-dark" value={form.account_id} onChange={(e) => set("account_id", e.target.value)} disabled={Boolean(holding)}>
-            {accounts.map((account) => <option key={account.id} value={account.id}>{account.name}</option>)}
-          </select>
-        </label>
+        <InvestmentAccountPicker
+          accounts={accounts}
+          value={form.account_id}
+          onChange={(accountId) => set("account_id", accountId)}
+        />
         <label className="space-y-xs">
           <span className="text-caption text-stone">Tipo</span>
           <select className="w-full bg-surface-elevated border border-hairline-dark rounded-sm px-md py-sm text-body-sm text-on-dark" value={form.asset_type} onChange={(e) => set("asset_type", e.target.value as AssetType)}>
@@ -177,7 +183,7 @@ export default function HoldingEditor({ holding, accounts, onClose, onSaved }: H
             <Search size={14} className={`absolute right-2.5 top-1/2 -translate-y-1/2 ${searching ? "text-primary-bright animate-pulse" : "text-stone"}`} />
           </div>
           {showCandidates && candidates.length > 0 && (
-            <ul className="absolute z-20 mt-1 w-[130%] min-w-[280px] rounded-md border border-hairline-dark bg-surface-elevated shadow-lg overflow-hidden">
+            <ul className="motion-popover absolute z-20 mt-1 w-[130%] min-w-[280px] rounded-md border border-hairline-dark bg-surface-elevated shadow-lg overflow-hidden">
               {candidates.map((c) => (
                 <li key={c.ticker}>
                   <button
@@ -233,6 +239,7 @@ export default function HoldingEditor({ holding, accounts, onClose, onSaved }: H
           {saving ? "Guardando..." : "Guardar"}
         </button>
       </div>
-    </form>
+      </form>
+    </div>
   );
 }

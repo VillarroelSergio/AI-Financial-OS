@@ -21,6 +21,8 @@ export default function FundValuationDialog({ holding, onClose, onChanged }: Fun
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [newValue, setNewValue] = useState("");
+  const [newGain, setNewGain] = useState("");
+  const [newReturnPct, setNewReturnPct] = useState("");
   const [newDate, setNewDate] = useState(today());
   const [chartKey, setChartKey] = useState(0);
 
@@ -28,6 +30,8 @@ export default function FundValuationDialog({ holding, onClose, onChanged }: Fun
     if (!holding) return;
     setError(null);
     setNewValue("");
+    setNewGain("");
+    setNewReturnPct("");
     setNewDate(today());
     setLoading(true);
     getFundSnapshots(holding.id)
@@ -47,13 +51,23 @@ export default function FundValuationDialog({ holding, onClose, onChanged }: Fun
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+    const value = Number(newValue);
+    const gain = Number(newGain);
+    if (newGain && (!Number.isFinite(gain) || gain >= value)) {
+      setError("La ganancia no puede ser igual o superior al valor actual");
+      return;
+    }
     try {
       await addFundSnapshot(holding.id, {
         date: newDate,
         market_value: newValue,
+        contributed_total: newGain ? (value - gain).toFixed(2) : undefined,
+        reported_return_pct: newReturnPct || null,
         currency: holding.currency,
       });
       setNewValue("");
+      setNewGain("");
+      setNewReturnPct("");
       await afterChange();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error al guardar");
@@ -100,13 +114,29 @@ export default function FundValuationDialog({ holding, onClose, onChanged }: Fun
           </div>
         )}
 
-        <form onSubmit={handleAdd} className="flex items-end gap-md mb-lg">
-          <div className="flex-1">
+        <form onSubmit={handleAdd} className="grid grid-cols-2 gap-md mb-lg">
+          <div>
             <label className="text-caption text-stone block mb-xs">Valor del fondo ({holding.currency})</label>
             <input
               type="number" step="0.01" min="0" required
               className="w-full bg-canvas-dark border border-hairline-dark rounded-md px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary"
               value={newValue} onChange={(e) => setNewValue(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="text-caption text-stone block mb-xs">Ganancia reportada ({holding.currency})</label>
+            <input
+              type="number" step="0.01"
+              className="w-full bg-canvas-dark border border-hairline-dark rounded-md px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary"
+              value={newGain} onChange={(e) => setNewGain(e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="text-caption text-stone block mb-xs">Rentabilidad reportada (%)</label>
+            <input
+              type="number" step="0.01"
+              className="w-full bg-canvas-dark border border-hairline-dark rounded-md px-md py-sm text-body-sm text-on-dark focus:outline-none focus:border-primary"
+              value={newReturnPct} onChange={(e) => setNewReturnPct(e.target.value)}
             />
           </div>
           <div>
@@ -117,7 +147,7 @@ export default function FundValuationDialog({ holding, onClose, onChanged }: Fun
               value={newDate} onChange={(e) => setNewDate(e.target.value)}
             />
           </div>
-          <button type="submit" className="px-lg py-sm rounded-md text-body-sm bg-primary text-on-primary hover:bg-primary/90">
+          <button type="submit" className="col-span-2 justify-self-end px-lg py-sm rounded-md text-body-sm bg-primary text-on-primary hover:bg-primary/90">
             Guardar
           </button>
         </form>
@@ -142,6 +172,11 @@ export default function FundValuationDialog({ holding, onClose, onChanged }: Fun
                   onBlur={(e) => handleEditValue(snap, e.target.value)}
                 />
                 <span className="text-caption text-mute w-16 shrink-0">{snap.source}</span>
+                {snap.reported_return_pct !== null && (
+                  <span className="text-caption text-accent-teal w-16 shrink-0 text-right">
+                    {Number(snap.reported_return_pct) >= 0 ? "+" : ""}{Number(snap.reported_return_pct).toFixed(2)}%
+                  </span>
+                )}
                 <button onClick={() => handleDelete(snap)} className="text-caption text-stone hover:text-accent-danger shrink-0">
                   Borrar
                 </button>

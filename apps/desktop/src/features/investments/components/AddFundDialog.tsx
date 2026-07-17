@@ -2,6 +2,7 @@ import { useState } from "react";
 import { createFund } from "@/lib/api/investments";
 import { formatCurrency } from "@/lib/formatters/currency";
 import type { Account } from "@/lib/types";
+import InvestmentAccountPicker from "./InvestmentAccountPicker";
 
 interface AddFundDialogProps {
   open: boolean;
@@ -15,12 +16,12 @@ type Mode = "return" | "units";
 
 const today = () => new Date().toISOString().slice(0, 10);
 
-export default function AddFundDialog({ open, accountId, accounts, onClose, onSuccess }: AddFundDialogProps) {
+export default function AddFundDialog({ open, accounts, onClose, onSuccess }: AddFundDialogProps) {
   const [mode, setMode] = useState<Mode>("return");
-  // El fondo debe colgar de una cuenta real; el default fijado por tipo puede no existir.
-  const [account, setAccount] = useState(accountId || accounts[0]?.id || "");
+  const [account, setAccount] = useState("");
   const [name, setName] = useState("");
   const [returnPct, setReturnPct] = useState("");
+  const [reportedGain, setReportedGain] = useState("");
   const [value, setValue] = useState("");     // valor actual (vía rendimiento)
   const [units, setUnits] = useState("");     // nº participaciones (vía participaciones)
   const [nav, setNav] = useState("");         // valor liquidativo (vía participaciones)
@@ -31,8 +32,8 @@ export default function AddFundDialog({ open, accountId, accounts, onClose, onSu
   if (!open) return null;
 
   const reset = () => {
-    setMode("return"); setAccount(accountId || accounts[0]?.id || "");
-    setName(""); setReturnPct(""); setValue("");
+    setMode("return"); setAccount("");
+    setName(""); setReturnPct(""); setReportedGain(""); setValue("");
     setUnits(""); setNav(""); setDate(today()); setError(null);
   };
   const handleClose = () => { reset(); onClose(); };
@@ -43,11 +44,18 @@ export default function AddFundDialog({ open, accountId, accounts, onClose, onSu
     ? parseFloat(value)
     : (Number.isFinite(u) && Number.isFinite(n) ? u * n : NaN);
 
-  // Aportado derivado del % rendimiento: aportado = valor / (1 + %/100).
+  // La rentabilidad reportada por plataformas como Finizens puede ser TWR/MWR y
+  // no tiene por qué cuadrar con la ganancia simple. Si existe ganancia en euros,
+  // esta es la fuente fiable para derivar lo aportado.
   const pct = parseFloat(returnPct);
+  const gainInput = parseFloat(reportedGain);
   const factor = 1 + (Number.isFinite(pct) ? pct : 0) / 100;
-  const contributed = factor > 0 && Number.isFinite(currentValue) ? currentValue / factor : NaN;
-  const gain = Number.isFinite(currentValue) && Number.isFinite(contributed) ? currentValue - contributed : null;
+  const contributed = Number.isFinite(currentValue) && Number.isFinite(gainInput)
+    ? currentValue - gainInput
+    : (factor > 0 && Number.isFinite(currentValue) ? currentValue / factor : NaN);
+  const gain = Number.isFinite(currentValue) && Number.isFinite(contributed)
+    ? currentValue - contributed
+    : null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,6 +64,10 @@ export default function AddFundDialog({ open, accountId, accounts, onClose, onSu
       return;
     }
     if (factor <= 0) { setError("El % de rendimiento no puede ser ≤ −100%"); return; }
+    if (!Number.isFinite(contributed) || contributed <= 0) {
+      setError("La ganancia no puede ser igual o superior al valor actual");
+      return;
+    }
     if (!account) { setError("Selecciona una cuenta"); return; }
     setSaving(true);
     setError(null);
@@ -65,6 +77,7 @@ export default function AddFundDialog({ open, accountId, accounts, onClose, onSu
         contributed: contributed.toFixed(2), value: currentValue.toFixed(2), date,
         units: mode === "units" ? u.toString() : null,
         nav: mode === "units" ? n.toString() : null,
+        reported_return_pct: Number.isFinite(pct) ? pct.toString() : null,
       });
       reset();
       onSuccess();
@@ -100,13 +113,7 @@ export default function AddFundDialog({ open, accountId, accounts, onClose, onSu
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-md">
-          <div>
-            <label className="text-caption text-stone block mb-xs">Cuenta</label>
-            <select className={inputCls} value={account} onChange={e => setAccount(e.target.value)} required>
-              {accounts.length === 0 && <option value="">Sin cuentas</option>}
-              {accounts.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
-            </select>
-          </div>
+          <InvestmentAccountPicker accounts={accounts} value={account} onChange={setAccount} />
           <div>
             <label className="text-caption text-stone block mb-xs">Nombre del fondo</label>
             <input className={inputCls} value={name} onChange={e => setName(e.target.value)}
@@ -136,15 +143,21 @@ export default function AddFundDialog({ open, accountId, accounts, onClose, onSu
 
           <div className="grid grid-cols-2 gap-md">
             <div>
-              <label className="text-caption text-stone block mb-xs">Rendimiento (%)</label>
+              <label className="text-caption text-stone block mb-xs">Rentabilidad reportada (%)</label>
               <input type="number" step="0.01" className={inputCls} value={returnPct}
                 onChange={e => setReturnPct(e.target.value)} placeholder="8.50" />
             </div>
             <div>
-              <label className="text-caption text-stone block mb-xs">Fecha de valoración</label>
-              <input type="date" required className={inputCls} value={date}
-                onChange={e => setDate(e.target.value)} />
+              <label className="text-caption text-stone block mb-xs">Ganancia reportada (EUR)</label>
+              <input type="number" step="0.01" className={inputCls} value={reportedGain}
+                onChange={e => setReportedGain(e.target.value)} placeholder="264.66" />
             </div>
+          </div>
+
+          <div>
+            <label className="text-caption text-stone block mb-xs">Fecha de valoración</label>
+            <input type="date" required className={inputCls} value={date}
+              onChange={e => setDate(e.target.value)} />
           </div>
 
           {Number.isFinite(currentValue) && (
@@ -154,7 +167,7 @@ export default function AddFundDialog({ open, accountId, accounts, onClose, onSu
                 <span className="text-on-dark">{formatCurrency(currentValue.toFixed(2))}</span>
               </div>
               <div className="flex justify-between text-caption">
-                <span className="text-stone">Aportado (derivado)</span>
+                <span className="text-stone">Aportado {Number.isFinite(gainInput) ? "(desde ganancia)" : "(estimado)"}</span>
                 <span className="text-on-dark">{Number.isFinite(contributed) ? formatCurrency(contributed.toFixed(2)) : "—"}</span>
               </div>
               {gain !== null && (
@@ -170,6 +183,7 @@ export default function AddFundDialog({ open, accountId, accounts, onClose, onSu
 
           <p className="text-caption text-mute">
             Sin cotización automática: actualiza el valor cuando quieras con "Actualizar valor"; se guarda un histórico editable.
+            {Number.isFinite(gainInput) && Number.isFinite(pct) && " La ganancia y la rentabilidad reportadas se conservan por separado."}
             {mode === "units" && " El nº de participaciones ayuda a ver el peso del fondo."}
           </p>
           {error && <p className="text-caption text-accent-danger">{error}</p>}

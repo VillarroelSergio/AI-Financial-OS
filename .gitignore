@@ -51,3 +51,6 @@ Thumbs.db
 # Graphify semantic cache (regenerated, not product code) — solo GRAPH_REPORT.md se versiona
 graphify-out/*
 !graphify-out/GRAPH_REPORT.md
+
+# Obsidian (config personal de la boveda)
+vault/.obsidian/

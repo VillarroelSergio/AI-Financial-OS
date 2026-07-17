@@ -15,7 +15,7 @@ from app.models.account import Account
 from app.models.investment import Holding, InvestmentAsset
 from app.models.net_worth_snapshot import NetWorthSnapshot
 from app.models.transaction import Transaction
-from app.modules.dashboard.routes import _to_eur
+from app.modules.accounts.valuation_service import build_current_valuation
 from app.modules.net_worth.schemas import (
     BalanceLineOut,
     BalanceSheetOut,
@@ -60,13 +60,13 @@ def _account_class(acc: Account) -> str:
 
 
 def build_balance_sheet(db: Session, month: str) -> BalanceSheetOut:
-    accounts = db.query(Account).filter(Account.is_active == True).all()  # noqa: E712
-    rates: dict[str, float | None] = {}
+    valuation = build_current_valuation(db)
+    accounts = valuation.accounts
 
     assets: dict[str, Decimal] = {}
     liabilities: dict[str, Decimal] = {}
     for a in accounts:
-        eur = _to_eur(a.current_balance or Decimal("0"), a.currency, rates)
+        eur = valuation.cash_by_account[a.id]
         if a.is_liability:
             # el pasivo se muestra en positivo; un saldo negativo es la deuda
             liabilities[a.id] = (liabilities.get(a.id, Decimal("0")) + abs(eur))
@@ -75,15 +75,26 @@ def build_balance_sheet(db: Session, month: str) -> BalanceSheetOut:
             assets[cls] = assets.get(cls, Decimal("0")) + eur
 
     # Cartera de mercado (market_value ya en EUR). Fondos separados del resto.
-    fund_ids = {
-        aid for (aid,) in db.query(InvestmentAsset.id).filter(InvestmentAsset.asset_type == "fund").all()
+    asset_types = {
+        asset.id: asset.asset_type
+        for asset in db.query(InvestmentAsset).all()
     }
+    account_ids = {account.id for account in accounts}
     portfolio_cost = Decimal("0")
-    for h in db.query(Holding).all():
+    holdings = (
+        db.query(Holding).filter(Holding.account_id.in_(account_ids)).all()
+        if account_ids
+        else []
+    )
+    for h in holdings:
+        asset_type = asset_types.get(h.asset_id)
+        if asset_type == "savings_account":
+            # Ya está incluido como saldo canónico de la cuenta remunerada.
+            continue
         mv = h.market_value
         if mv is None:
             continue
-        cls = "fondos" if h.asset_id in fund_ids else "cartera"
+        cls = "fondos" if asset_type == "fund" else "cartera"
         assets[cls] = assets.get(cls, Decimal("0")) + mv
         portfolio_cost += (h.quantity or Decimal("0")) * (h.average_price or Decimal("0"))
 

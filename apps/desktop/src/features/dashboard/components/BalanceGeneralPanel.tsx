@@ -1,6 +1,5 @@
-import { AlertTriangle, Check, ChevronDown, ChevronRight } from "lucide-react";
+import { ChevronDown, ChevronRight } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import {
   CartesianGrid,
   Line,
@@ -10,68 +9,13 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { createSnapshot, useBalanceSheet, useReadiness, useSnapshots } from "@/lib/hooks/useNetWorth";
-import type { ReadinessItem, ReadinessStatus } from "@/lib/api/net-worth";
+import { useBalanceSheet, useSnapshots } from "@/lib/hooks/useNetWorth";
 import { formatCurrency } from "@/lib/formatters/currency";
-
-function currentMonth(): string {
-  return new Date().toISOString().slice(0, 7);
-}
-
-const STATUS_STYLE: Record<ReadinessStatus, { icon: typeof Check; cls: string; label: string }> = {
-  ok: { icon: Check, cls: "text-accent-teal", label: "OK" },
-  stale: { icon: AlertTriangle, cls: "text-accent-warning", label: "Desactualizado" },
-  missing: { icon: AlertTriangle, cls: "text-accent-danger", label: "Falta" },
-};
-
-function ChecklistRow({ item }: { item: ReadinessItem }) {
-  const navigate = useNavigate();
-  const s = STATUS_STYLE[item.status];
-  const Icon = s.icon;
-  return (
-    <div className="flex items-center justify-between border-t border-divider-soft py-2 text-sm first:border-0">
-      <span className="flex items-center gap-2">
-        <Icon size={15} className={s.cls} />
-        <span>{item.label}</span>
-        {item.detail && <span className="text-xs text-stone">— {item.detail}</span>}
-      </span>
-      {item.status !== "ok" && item.cta_route && (
-        <button
-          onClick={() => navigate(item.cta_route!)}
-          className="shrink-0 text-xs text-primary-bright hover:underline"
-        >
-          Resolver
-        </button>
-      )}
-    </div>
-  );
-}
 
 export default function BalanceGeneralPanel() {
   const [open, setOpen] = useState(true);
-  const [busy, setBusy] = useState(false);
-  const month = currentMonth();
-  const { data: sheet, loading } = useBalanceSheet(month);
-  const { data: readiness, reload: reloadReadiness } = useReadiness(month);
-  const { data: snapshots, reload: reloadSnapshots } = useSnapshots();
-
-  async function close(forcePartial: boolean) {
-    const msg = forcePartial
-      ? "¿Cerrar el mes como PARCIAL? Se registrará qué información faltaba."
-      : "¿Cerrar el mes y crear el snapshot de patrimonio?";
-    if (!window.confirm(msg)) return;
-    setBusy(true);
-    try {
-      await createSnapshot(month, forcePartial);
-      await Promise.all([reloadReadiness(), reloadSnapshots()]);
-    } catch (e) {
-      window.alert(e instanceof Error ? e.message : "No se pudo cerrar el mes.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  const closed = readiness?.snapshot_exists ?? false;
+  const { data: sheet, loading } = useBalanceSheet();
+  const { data: snapshots } = useSnapshots();
   const chartData = (snapshots ?? []).map((s) => ({ month: s.month, net_worth: Number(s.net_worth) }));
 
   return (
@@ -83,19 +27,6 @@ export default function BalanceGeneralPanel() {
         <span className="flex items-center gap-2 font-semibold">
           {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
           Balance General
-        </span>
-        <span
-          className={`rounded-full px-2.5 py-0.5 text-xs ${
-            closed
-              ? "bg-accent-teal/10 text-accent-teal"
-              : "bg-accent-warning/10 text-accent-warning"
-          }`}
-        >
-          {closed
-            ? readiness?.snapshot_state === "partial"
-              ? "Cerrado (parcial)"
-              : "Cerrado"
-            : "Pendiente de cierre"}
         </span>
       </button>
 
@@ -172,37 +103,6 @@ export default function BalanceGeneralPanel() {
             </div>
           )}
 
-          {readiness && (
-            <div className="rounded-lg border border-hairline-dark p-4">
-              <p className="mb-2 text-sm font-semibold">
-                Cierre de {month}
-                {!readiness.ready && (
-                  <span className="ml-2 text-xs font-normal text-stone">
-                    {readiness.items.filter((i) => i.status === "ok").length} de {readiness.items.length} elementos actualizados
-                  </span>
-                )}
-              </p>
-              {readiness.items.map((i) => (
-                <ChecklistRow key={i.key} item={i} />
-              ))}
-              <div className="mt-3 flex gap-2">
-                <button
-                  disabled={!readiness.ready || busy}
-                  onClick={() => close(false)}
-                  className="mercury-button-primary rounded-lg px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  Cerrar mes y crear snapshot
-                </button>
-                <button
-                  disabled={busy}
-                  onClick={() => close(true)}
-                  className="rounded-lg border border-hairline-dark px-3 py-2 text-sm text-stone hover:text-on-dark disabled:opacity-40"
-                >
-                  Cerrar como parcial
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       )}
     </div>

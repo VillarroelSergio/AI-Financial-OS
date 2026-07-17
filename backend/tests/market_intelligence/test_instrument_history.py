@@ -36,12 +36,12 @@ def test_stats_computed_from_series():
 
 
 def test_available_ranges_honest_with_short_series(monkeypatch):
-    # Serie de ~2 meses: solo cubre 1m (y max), nunca 1y/5y.
+    # Serie de ~2 meses: cubre ventanas cortas y 1m, pero nunca 1y/5y.
     base = date.today() - timedelta(days=60)
     rows = [_row(base + timedelta(days=i), 100.0 + i) for i in range(61)]
     monkeypatch.setattr(service.repository, "read_historical", lambda code: rows)
     out = service.get_instrument_history("ibex35", range_key="5y")
-    assert out.available_ranges == ["1m", "max"]
+    assert out.available_ranges == ["1d", "5d", "1m", "max"]
     assert out.range == "max"  # 5y no disponible → cae a max, no finge
     assert out.currency == "EUR" and out.provider_id == "stooq"
 

@@ -22,17 +22,12 @@ from app.modules.investments.schemas import (
     FundSnapshotOut,
     FundSnapshotUpdate,
     HoldingCreate,
-    HoldingOut,
     HoldingMerge,
+    HoldingOut,
     HoldingUpdate,
     HoldingValueHistoryCreate,
     HoldingValueHistoryOut,
     HoldingValueHistoryUpdate,
-    SavingsConfigOut,
-    SavingsConfigUpdate,
-    SavingsCreate,
-    SavingsMonthPointOut,
-    SavingsProjectionOut,
     InvestmentAssetCreate,
     InvestmentAssetOut,
     InvestmentAssetUpdate,
@@ -40,6 +35,11 @@ from app.modules.investments.schemas import (
     InvestmentOperationOut,
     InvestmentSummaryOut,
     PriceRefreshResultOut,
+    SavingsConfigOut,
+    SavingsConfigUpdate,
+    SavingsCreate,
+    SavingsMonthPointOut,
+    SavingsProjectionOut,
 )
 
 router = APIRouter()
@@ -53,6 +53,28 @@ ASSET_TYPE_MAP = {
     "cash": "cash",
     "savings_account": "cash",
 }
+
+
+def _get_portfolio_account_or_error(account_id: str, db: Session) -> Account:
+    account = db.query(Account).filter(
+        Account.id == account_id,
+        Account.is_active == True,  # noqa: E712
+    ).first()
+    if not account:
+        raise HTTPException(
+            status_code=404,
+            detail={"error": {"code": "NOT_FOUND", "message": "Cartera no encontrada", "details": {}}},
+        )
+    if account.type not in {"broker", "investment"}:
+        raise HTTPException(
+            status_code=422,
+            detail={"error": {
+                "code": "INVALID_PORTFOLIO_ACCOUNT",
+                "message": "Las acciones y fondos deben estar vinculados a una cartera o broker",
+                "details": {"account_type": account.type},
+            }},
+        )
+    return account
 
 
 # ── Assets ────────────────────────────────────────────────────────────────────
@@ -153,7 +175,12 @@ def delete_asset(asset_id: str, db: Session = Depends(get_db)):
 
 # ── Holdings helpers ──────────────────────────────────────────────────────────
 
-def _enrich_holding(h: Holding, asset: InvestmentAsset, account_name: str | None = None) -> HoldingOut:
+def _enrich_holding(
+    h: Holding,
+    asset: InvestmentAsset,
+    account_name: str | None = None,
+    reported_return_pct: Decimal | None = None,
+) -> HoldingOut:
     cost_basis = (h.quantity * h.average_price).quantize(Decimal("0.0001"))
     return_absolute: Decimal | None = None
     return_percent: float | None = None
@@ -163,6 +190,8 @@ def _enrich_holding(h: Holding, asset: InvestmentAsset, account_name: str | None
         return_absolute = (h.market_value - cost_basis).quantize(Decimal("0.01"))
         if cost_basis > Decimal("0"):
             return_percent = float(return_absolute / cost_basis * 100)
+        if reported_return_pct is not None:
+            return_percent = float(reported_return_pct)
 
     if (
         asset.asset_type == "savings_account"
@@ -266,6 +295,10 @@ def _sync_holding_from_latest_snapshot(db: Session, holding: Holding) -> None:
         holding.market_value = latest.market_value.quantize(Decimal("0.01"))
         holding.current_price_currency = latest.currency
         holding.current_price_updated_at = latest.created_at
+        if latest.contributed_total is not None and holding.quantity > 0:
+            holding.average_price = (
+                latest.contributed_total / holding.quantity
+            ).quantize(Decimal("0.0001"))
         if holding.quantity and holding.quantity > 0:
             holding.current_price = (latest.market_value / holding.quantity).quantize(Decimal("0.0001"))
     else:
@@ -369,12 +402,49 @@ def list_holdings(account_id: str | None = None, db: Session = Depends(get_db)):
         a.id: a.name
         for a in db.query(Account).filter(Account.id.in_(account_ids)).all()
     } if account_ids else {}
-    return [_enrich_holding(h, _get_asset_or_404(h.asset_id, db), account_names.get(h.account_id)) for h in holdings]
+    asset_ids = {h.asset_id for h in holdings}
+    assets = {
+        asset.id: asset
+        for asset in db.query(InvestmentAsset).filter(
+            InvestmentAsset.id.in_(asset_ids)
+        ).all()
+    } if asset_ids else {}
+    fund_ids = {
+        h.id for h in holdings
+        if assets[h.asset_id].asset_type == "fund"
+    }
+    latest_reported_returns: dict[str, Decimal | None] = {}
+    if fund_ids:
+        snapshots = (
+            db.query(FundValuationSnapshot)
+            .filter(FundValuationSnapshot.holding_id.in_(fund_ids))
+            .order_by(
+                FundValuationSnapshot.holding_id,
+                FundValuationSnapshot.date.desc(),
+                FundValuationSnapshot.created_at.desc(),
+            )
+            .all()
+        )
+        for snapshot in snapshots:
+            latest_reported_returns.setdefault(
+                snapshot.holding_id, snapshot.reported_return_pct
+            )
+    return [
+        _enrich_holding(
+            h,
+            assets[h.asset_id],
+            account_names.get(h.account_id),
+            latest_reported_returns.get(h.id),
+        )
+        for h in holdings
+    ]
 
 
 @router.post("/holdings", response_model=HoldingOut, status_code=201)
 def create_holding(payload: HoldingCreate, db: Session = Depends(get_db)):
     asset = _get_asset_or_404(payload.asset_id, db)
+    if asset.asset_type not in {"cash", "savings_account"}:
+        _get_portfolio_account_or_error(payload.account_id, db)
     data = payload.model_dump()
     if asset.asset_type in {"stock", "etf"}:
         # Una posición en acciones sin cantidad o sin precio de compra no tiene sentido.
@@ -409,8 +479,13 @@ def update_holding(holding_id: str, payload: HoldingUpdate, db: Session = Depend
             status_code=404,
             detail={"error": {"code": "NOT_FOUND", "message": "Holding no encontrado", "details": {}}},
         )
-    price_changed = "current_price" in payload.model_dump(exclude_none=True)
-    for field, value in payload.model_dump(exclude_none=True).items():
+    changes = payload.model_dump(exclude_none=True)
+    if "account_id" in changes:
+        asset = _get_asset_or_404(holding.asset_id, db)
+        if asset.asset_type not in {"cash", "savings_account"}:
+            _get_portfolio_account_or_error(changes["account_id"], db)
+    price_changed = "current_price" in changes
+    for field, value in changes.items():
         setattr(holding, field, value)
     if holding.current_price is not None:
         holding.market_value = (holding.quantity * holding.current_price).quantize(Decimal("0.01"))
@@ -497,12 +572,7 @@ def _fund_snapshot_out(entry: FundValuationSnapshot) -> FundSnapshotOut:
 @router.post("/funds", response_model=HoldingOut, status_code=201)
 def create_fund(payload: FundCreate, db: Session = Depends(get_db)):
     """Alta de fondo: crea asset(fund, manual) + holding + primer snapshot (spec §3)."""
-    account = db.query(Account).filter(Account.id == payload.account_id).first()
-    if not account:
-        raise HTTPException(
-            status_code=404,
-            detail={"error": {"code": "NOT_FOUND", "message": "Cuenta no encontrada", "details": {}}},
-        )
+    account = _get_portfolio_account_or_error(payload.account_id, db)
     asset = InvestmentAsset(
         name=payload.name, asset_type="fund", currency=payload.currency, price_source="manual",
     )
@@ -519,12 +589,18 @@ def create_fund(payload: FundCreate, db: Session = Depends(get_db)):
     db.add(FundValuationSnapshot(
         holding_id=holding.id, date=payload.date, market_value=payload.value,
         contributed_total=payload.contributed, units=payload.units, nav=payload.nav,
+        reported_return_pct=payload.reported_return_pct,
         currency=payload.currency, source="manual",
     ))
+    # SessionLocal usa autoflush=False: el snapshot debe persistirse antes de
+    # consultarlo para sincronizar el valor inicial del holding.
+    db.flush()
     _sync_holding_from_latest_snapshot(db, holding)
     db.commit()
     db.refresh(holding)
-    return _enrich_holding(holding, asset, account.name)
+    return _enrich_holding(
+        holding, asset, account.name, payload.reported_return_pct
+    )
 
 
 @router.get("/funds/{holding_id}/snapshots", response_model=list[FundSnapshotOut])
@@ -640,6 +716,7 @@ def create_savings(payload: SavingsCreate, db: Session = Depends(get_db)):
     """Alta de cuenta remunerada: cuenta (existente o nueva) + holding + config (spec §3)."""
     if payload.account_id:
         account = _get_account_or_404(payload.account_id, db)
+        account.current_balance = payload.balance
     elif payload.new_account_name:
         account = Account(
             name=payload.new_account_name, type="savings", institution=payload.institution,
@@ -935,40 +1012,91 @@ def create_operation(payload: InvestmentOperationCreate, db: Session = Depends(g
 @router.get("/summary", response_model=InvestmentSummaryOut)
 def get_summary(db: Session = Depends(get_db)):
     holdings = db.query(Holding).all()
+    asset_ids = {h.asset_id for h in holdings}
+    asset_types = {
+        asset.id: asset.asset_type
+        for asset in db.query(InvestmentAsset).filter(
+            InvestmentAsset.id.in_(asset_ids),
+        ).all()
+    } if asset_ids else {}
+    fund_asset_ids = {
+        asset_id for asset_id, asset_type in asset_types.items()
+        if asset_type == "fund"
+    }
+    fund_ids = [h.id for h in holdings if h.asset_id in fund_asset_ids]
+    latest_fund_snapshots: dict[str, FundValuationSnapshot] = {}
+    if fund_ids:
+        snapshots = (
+            db.query(FundValuationSnapshot)
+            .filter(FundValuationSnapshot.holding_id.in_(fund_ids))
+            .order_by(
+                FundValuationSnapshot.holding_id,
+                FundValuationSnapshot.date.desc(),
+                FundValuationSnapshot.created_at.desc(),
+            )
+            .all()
+        )
+        for snapshot in snapshots:
+            latest_fund_snapshots.setdefault(snapshot.holding_id, snapshot)
     total_value = Decimal("0")
     total_invested = Decimal("0")
+    performance_value = Decimal("0")
     pending_count = 0
     pending_invested = Decimal("0")
     by_account: dict[str, AccountSummaryOut] = {}
     last_updated = None
+    fund_reported_weighted_sum = Decimal("0")
+    fund_reported_weight = Decimal("0")
 
     for h in holdings:
         cost_basis = h.quantity * h.average_price
+        excluded_from_pnl = asset_types.get(h.asset_id) in {"savings_account", "cash"}
         # Un holding sin valoración (fondo sin snapshot, precio no disponible) no puede
         # entrar en el KPI global: infla "Aportado" contra un valor 0 y rompe la
         # rentabilidad (BUG-INV-1). Se contabiliza aparte para avisar, no en silencio.
         if h.market_value is None:
-            pending_count += 1
-            pending_invested += cost_basis
+            if not excluded_from_pnl:
+                pending_count += 1
+                pending_invested += cost_basis
             continue
 
-        total_invested += cost_basis
         total_value += h.market_value
+
+        latest_snapshot = latest_fund_snapshots.get(h.id)
+        if latest_snapshot and latest_snapshot.reported_return_pct is not None:
+            weight = latest_snapshot.contributed_total or cost_basis
+            if weight > Decimal("0"):
+                fund_reported_weighted_sum += latest_snapshot.reported_return_pct * weight
+                fund_reported_weight += weight
 
         if h.account_id not in by_account:
             by_account[h.account_id] = AccountSummaryOut(
                 account_id=h.account_id, value=Decimal("0"), invested=Decimal("0")
             )
         by_account[h.account_id].value += h.market_value
+
+        # Una cuenta remunerada es ahorro con intereses: forma parte del valor total y
+        # del patrimonio, pero no es capital aportado a una inversión ni debe diluir
+        # el porcentaje de P&L de acciones/fondos.
+        if excluded_from_pnl:
+            continue
+
+        total_invested += cost_basis
+        performance_value += h.market_value
         by_account[h.account_id].invested += cost_basis
 
         if h.current_price_updated_at:
             if last_updated is None or h.current_price_updated_at > last_updated:
                 last_updated = h.current_price_updated_at
 
-    return_absolute = total_value - total_invested
+    return_absolute = performance_value - total_invested
     return_percent = (
         float(return_absolute / total_invested * 100) if total_invested > Decimal("0") else 0.0
+    )
+    fund_reported_return_percent = (
+        float(fund_reported_weighted_sum / fund_reported_weight)
+        if fund_reported_weight > Decimal("0")
+        else None
     )
     cents = Decimal("0.01")
 
@@ -982,6 +1110,7 @@ def get_summary(db: Session = Depends(get_db)):
         last_updated=last_updated,
         pending_valuation_count=pending_count,
         pending_valuation_invested=pending_invested.quantize(cents),
+        fund_reported_return_percent=fund_reported_return_percent,
     )
 
 

@@ -33,6 +33,11 @@ created_at
 updated_at
 ```
 
+Para `broker` e `investment`, `current_balance` es efectivo disponible. El valor de la
+cuenta no se persiste por duplicado: se deriva como efectivo convertido a EUR más la suma
+de `Holding.market_value`. La API expone `cash_balance_eur`, `portfolio_value_eur`,
+`total_value_eur` y `position_count`.
+
 > `mortgage` se migra a `is_liability=true` por defecto; el resto a `false`. Un saldo
 > negativo transitorio (descubierto) NO reclasifica la cuenta; el flag es explícito y editable.
 
@@ -202,7 +207,8 @@ updated_at
 ### FundValuationSnapshot
 
 Valor manual de un fondo en una fecha (modal "Actualizar valor"). Un snapshot por
-`(holding_id, date)` — constraint único. Rendimiento en t = market_value(t) − contributed_total(t).
+`(holding_id, date)` — constraint único. Ganancia simple en t = market_value(t) − contributed_total(t).
+El porcentaje reportado por el proveedor puede ser TWR/MWR y se conserva por separado.
 
 ```txt
 id
@@ -210,6 +216,7 @@ holding_id            -> holdings.id (asset_type=fund, price_source=manual)
 date
 market_value          # valor total de la posición (Decimal)
 contributed_total     # aportado acumulado a esa fecha, opcional
+reported_return_pct   # rentabilidad % mostrada por la plataforma, opcional
 currency
 source                # manual | import
 note
