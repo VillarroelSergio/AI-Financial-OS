@@ -49,7 +49,23 @@ def test_transactions_include_account_name_even_if_account_inactive(client):
 
 
 def test_currency_reassign_preview_and_apply(client, monkeypatch):
-    _import_monefy(client, CSV_USD)
+    account = client.post(
+        "/api/accounts",
+        json={"name": "Cuenta USD", "type": "checking", "currency": "USD"},
+    ).json()
+    for index, amount in enumerate(("-12.50", "2000.00"), start=1):
+        response = client.post(
+            "/api/transactions",
+            json={
+                "account_id": account["id"],
+                "date": f"2026-06-2{index}",
+                "description": f"Movimiento USD {index}",
+                "amount": amount,
+                "currency": "USD",
+                "type": "expense" if amount.startswith("-") else "income",
+            },
+        )
+        assert response.status_code == 201
     monkeypatch.setattr(
         "app.modules.transactions.routes.create_backup", lambda: {"filename": "test.db"}
     )

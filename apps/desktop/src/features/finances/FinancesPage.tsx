@@ -23,10 +23,10 @@ export default function FinancesPage() {
   return (
     <div className="flex min-h-full flex-col">
       <div
-        className="sticky top-0 z-10 border-b"
-        style={{ background: "var(--bg-app)", borderColor: "var(--border-soft)" }}
+        className="sticky top-0 z-10"
+        style={{ background: "var(--bg-app)" }}
       >
-        <div className="page-tabs flex gap-1 pt-3">
+        <div className="page-tabs flex gap-1 py-3">
           {TABS.map(({ id, label }) => (
             <button
               key={id}

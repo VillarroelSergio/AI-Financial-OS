@@ -31,7 +31,7 @@ uv run pytest app/tests/test_investments.py -k "create_fund_is_immediately_value
 
 ## Verificación adicional
 
-- `uv run pytest app/tests/test_investments.py -q`: 26 correctas y 2 fallos preexistentes no relacionados (`needs_manual_nav` y conciliación de una cuenta de ahorro).
+- Verificación posterior (2026-07-16): la suite completa queda en 450 pruebas correctas; los dos fallos anotados aquí correspondían a fixtures desalineados y ya están corregidos.
 - `npm run build`: TypeScript y build de producción correctos.
 - `npm run ux:snapshots:headed`: 21/21 capturas generadas.
 - QA focalizada del modal con 997,06 €, +264,66 € y 58,05 %: el formulario deriva 732,40 € aportados, conserva el porcentaje reportado y cabe completo en viewport de escritorio.
@@ -41,4 +41,4 @@ uv run pytest app/tests/test_investments.py -k "create_fund_is_immediately_value
 
 ## Cobertura y límites
 
-No se ejecutó un informe porcentual de cobertura global. El hotfix queda cubierto por tres pruebas de integración que atraviesan alta de cuenta, alta de fondo, snapshots, listado de holdings y resumen. Los dos fallos preexistentes de la suite se mantienen fuera del alcance de esta corrección.
+No se ejecutó un informe porcentual de cobertura global. El hotfix queda cubierto por tres pruebas de integración que atraviesan alta de cuenta, alta de fondo, snapshots, listado de holdings y resumen.

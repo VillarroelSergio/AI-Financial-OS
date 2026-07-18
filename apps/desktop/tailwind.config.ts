@@ -79,20 +79,20 @@ export default {
 
       fontSize: {
         /* Escala DESIGN.md */
-        "caption":    ["10px", { lineHeight: "1.83", letterSpacing: "-0.37px" }],
-        "body":       ["14px", { lineHeight: "1.43", letterSpacing: "-0.22px" }],
-        "heading-sm": ["19px", { lineHeight: "1.21", letterSpacing: "-0.28px", fontWeight: "600" }],
-        "heading":    ["24px", { lineHeight: "1.17", letterSpacing: "-0.24px", fontWeight: "600" }],
-        "heading-lg": ["32px", { lineHeight: "1.14", letterSpacing: "-0.32px", fontWeight: "700" }],
-        "display":    ["56px", { lineHeight: "1.07", letterSpacing: "-0.84px", fontWeight: "700" }],
-        "hero":       ["80px", { lineHeight: "1.05", letterSpacing: "-0.24px", fontWeight: "700" }],
+        "caption":    ["calc(12px * var(--font-scale))", { lineHeight: "1.65", letterSpacing: "-0.2px" }],
+        "body":       ["calc(16px * var(--font-scale))", { lineHeight: "1.5", letterSpacing: "-0.15px" }],
+        "heading-sm": ["calc(20px * var(--font-scale))", { lineHeight: "1.25", letterSpacing: "-0.2px", fontWeight: "600" }],
+        "heading":    ["calc(26px * var(--font-scale))", { lineHeight: "1.2", letterSpacing: "-0.2px", fontWeight: "600" }],
+        "heading-lg": ["calc(34px * var(--font-scale))", { lineHeight: "1.15", letterSpacing: "-0.3px", fontWeight: "700" }],
+        "display":    ["calc(56px * var(--font-scale))", { lineHeight: "1.07", letterSpacing: "-0.84px", fontWeight: "700" }],
+        "hero":       ["calc(80px * var(--font-scale))", { lineHeight: "1.05", letterSpacing: "-0.24px", fontWeight: "700" }],
 
         /* Aliases de compatibilidad (mantienen TSX existentes) */
-        "display-lg": ["56px", { lineHeight: "1.07", letterSpacing: "-0.84px", fontWeight: "700" }],
-        "heading-md": ["32px", { lineHeight: "1.14", letterSpacing: "-0.32px", fontWeight: "700" }],
-        "body-md":    ["17px", { lineHeight: "1.47", letterSpacing: "-0.22px" }],
-        "body-sm":    ["14px", { lineHeight: "1.43", letterSpacing: "-0.22px" }],
-        "button-md":  ["14px", { lineHeight: "1.43", letterSpacing: "-0.22px", fontWeight: "600" }],
+        "display-lg": ["calc(56px * var(--font-scale))", { lineHeight: "1.07", letterSpacing: "-0.84px", fontWeight: "700" }],
+        "heading-md": ["calc(34px * var(--font-scale))", { lineHeight: "1.15", letterSpacing: "-0.3px", fontWeight: "700" }],
+        "body-md":    ["calc(17px * var(--font-scale))", { lineHeight: "1.47", letterSpacing: "-0.15px" }],
+        "body-sm":    ["calc(15px * var(--font-scale))", { lineHeight: "1.5", letterSpacing: "-0.15px" }],
+        "button-md":  ["calc(15px * var(--font-scale))", { lineHeight: "1.5", letterSpacing: "-0.15px", fontWeight: "600" }],
       },
 
       borderRadius: {

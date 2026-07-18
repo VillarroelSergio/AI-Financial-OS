@@ -11,8 +11,12 @@ async function source(relativePath: string): Promise<string> {
   return readFile(path.join(ROOT, relativePath), "utf8");
 }
 
-const [rootLayout, dashboardUi, metricCard, spending, goals, budgetCard, assistantPage, analysisCenter, assistantMessages, appRoutes, startupExperience, tauriBootstrap, planningPage, budgetTab, marketsPage, accountsPage, settingsPage, economyPage, indicatorCard, impactCard, personalEconomy, chartPalette, viteConfig, categoryTabs, regionTabs, appCss, snapshotRoutes, tauriConfig, tauriCapabilities, mainEntry, indexHtml] = await Promise.all([
+const [rootLayout, motionSystem, financesPage, transactionsPage, categoryBadge, dashboardUi, metricCard, spending, goals, budgetCard, assistantPage, analysisCenter, assistantMessages, appRoutes, startupExperience, tauriBootstrap, planningPage, budgetTab, marketsPage, accountsPage, settingsPage, economyPage, indicatorCard, impactCard, personalEconomy, chartPalette, viteConfig, tailwindConfig, categoryTabs, regionTabs, appCss, snapshotRoutes, tauriConfig, tauriCapabilities, mainEntry, indexHtml] = await Promise.all([
   source("apps/desktop/src/app/layout/RootLayout.tsx"),
+  source("apps/desktop/src/components/ui/motion.tsx"),
+  source("apps/desktop/src/features/finances/FinancesPage.tsx"),
+  source("apps/desktop/src/features/transactions/TransactionsPage.tsx"),
+  source("apps/desktop/src/components/ui/CategoryBadge.tsx"),
   source("apps/desktop/src/components/ui/Dashboard.tsx"),
   source("apps/desktop/src/components/ui/MetricCard.tsx"),
   source("apps/desktop/src/features/spending/SpendingPage.tsx"),
@@ -35,6 +39,7 @@ const [rootLayout, dashboardUi, metricCard, spending, goals, budgetCard, assista
   source("apps/desktop/src/features/economy/components/PersonalEconomySection.tsx"),
   source("apps/desktop/src/lib/chartPalette.ts"),
   source("apps/desktop/vite.config.ts"),
+  source("apps/desktop/tailwind.config.ts"),
   source("apps/desktop/src/features/markets/components/CategoryTabs.tsx"),
   source("apps/desktop/src/features/economy/components/RegionTabs.tsx"),
   source("apps/desktop/src/index.css"),
@@ -49,6 +54,8 @@ const primaryNav = rootLayout.match(/const navItems:[\s\S]*?\n\];/)?.[0] ?? "";
 assert.equal((primaryNav.match(/\{\s*to:/g) ?? []).length, 5, "La navegacion principal debe conservar solo cinco secciones");
 assert.doesNotMatch(primaryNav, /\/goals|\/insights/, "Objetivos e Insights no deben aparecer en el menu principal");
 assert.doesNotMatch(rootLayout, /initial=\{\{\s*opacity:\s*0,\s*y:/, "La navegacion frecuente no debe desplazar verticalmente la pagina");
+assert.doesNotMatch(rootLayout, /sectionTitle|hidden h-14 shrink-0/, "El escritorio no debe repetir el titulo de la seccion en una barra superior");
+assert.doesNotMatch(financesPage, /sticky top-0 z-10 border-b/, "Las pestanas financieras no deben introducir un divisor horizontal redundante");
 
 assert.doesNotMatch(metricCard, /financial-number[^\n]*truncate/, "Las metricas financieras no deben truncarse");
 assert.doesNotMatch(dashboardUi, /financial-number[^\n]*truncate/, "Los KPI financieros no deben truncarse");
@@ -70,6 +77,35 @@ assert.match(analysisCenter, /<EmptyState/, "El estado inicial del analisis debe
 assert.match(goals, /goals\.length\s*>\s*0/, "Objetivos no debe duplicar su CTA principal cuando esta vacio");
 assert.match(appCss, /\.ui-pressable:active/, "Los controles interactivos deben ofrecer feedback tactil comun");
 assert.match(appCss, /prefers-reduced-motion[\s\S]*\.ui-pressable/, "El feedback tactil debe respetar movimiento reducido");
+assert.match(appCss, /button:not\(:disabled\):active/, "Los botones heredados deben conservar feedback tactil");
+assert.match(appCss, /\.bg-surface-card/, "Las superficies de tarjeta heredadas deben compartir microinteraccion");
+assert.match(appCss, /@keyframes card-rise-in/, "Todas las tarjetas deben conservar su entrada desde abajo");
+assert.match(appCss, /card-rise-in[\s\S]*prefers-reduced-motion[\s\S]*reduced-motion-enter/, "La entrada de tarjetas debe reducirse a un fundido accesible");
+assert.match(motionSystem, /contentEnter[\s\S]*opacity:\s*0,\s*y:\s*6[\s\S]*opacity:\s*1,\s*y:\s*0/, "Las paginas deben entrar desde opacidad cero hasta su posicion final");
+assert.match(motionSystem, /staggerItem[\s\S]*opacity:\s*0,\s*y:\s*4[\s\S]*opacity:\s*1,\s*y:\s*0/, "Los elementos escalonados deben usar una entrada sutil");
+assert.match(rootLayout, /motion\.div[^>]*variants=\{contentEnter\}[^>]*initial="hidden"[^>]*animate="show"/, "Todas las rutas deben compartir la transicion de contenido");
+assert.match(appCss, /\.fixed\.inset-0\.z-50[\s\S]*surface-enter/, "Dialogos y drawers deben compartir entrada por opacidad y posicion");
+assert.match(appCss, /tbody\s*>\s*tr[\s\S]*row-enter/, "Las filas deben aparecer con el patron sutil comun");
+assert.match(appCss, /@keyframes content-enter\s*\{[\s\S]*opacity:\s*0[\s\S]*opacity:\s*1/, "Popovers y avisos deben completar su fundido hasta opacidad total");
+const rowEntry = appCss.match(/@keyframes row-enter[\s\S]*?(?=@keyframes scrim-enter)/)?.[0] ?? "";
+const progressEntry = appCss.match(/@keyframes progress-reveal[\s\S]*?(?=@keyframes allocation-reveal)/)?.[0] ?? "";
+const cardEntryRule = appCss.match(/\/\* Las pantallas usan tres superficies[\s\S]*?(?=\/\* Escalonado local)/)?.[0] ?? "";
+assert.doesNotMatch(rowEntry, /transform/, "Las filas de tabla no deben animar transform porque altera su renderizado");
+assert.match(progressEntry, /clip-path/, "Las barras deben revelarse sin sobrescribir el porcentaje almacenado en transform");
+assert.doesNotMatch(progressEntry, /transform/, "La animacion de progreso no debe forzar scaleX(1)");
+assert.doesNotMatch(cardEntryRule, /will-change/, "Las tarjetas no deben crear contextos de apilado permanentes");
+assert.match(transactionsPage, /showFilters\s*\?\s*"z-40"/, "El filtro de movimientos debe elevar su contenedor mientras esta abierto");
+assert.match(transactionsPage, /<CategoryBadge category=\{categoryFor\(tx\.category_id\)\}/, "La tabla de movimientos debe representar cada categoria con el patron accesible comun");
+assert.match(categoryBadge, /data-category-visual/, "Las categorias deben exponer una senal visual reutilizable");
+assert.match(categoryBadge, /aria-hidden="true"[\s\S]*<Icon/, "El icono decorativo no debe duplicar el nombre para lectores de pantalla");
+assert.match(categoryBadge, /category\?\.name \?\? "Sin categoría"/, "Las categorias deben conservar siempre una etiqueta textual");
+assert.match(categoryBadge, /category\?\.color/, "El color configurado debe actuar como apoyo visual de la categoria");
+assert.match(spending, /<CategoryIcon category=\{visual\}/, "El gasto por categoria debe reutilizar la misma iconografia que Movimientos");
+assert.match(spending, /getCategoryAccent\(visual\)/, "El gasto por categoria debe resolver el color desde el catalogo visual comun");
+assert.match(spending, /progress-fill[^>]*background:\s*accent/, "Cada barra de gasto debe usar el color coherente de su categoria");
+assert.match(appCss, /@keyframes allocation-reveal/, "Las barras de asignacion deben revelarse al cambiar de vista");
+assert.match(appCss, /text-\\\[10px\\\][\s\S]*var\(--font-scale\)/, "Los tamaños arbitrarios deben responder al ajuste global");
+assert.match(tailwindConfig, /"body-md":\s*\["calc\(17px \* var\(--font-scale\)\)"/, "Los tamaños compartidos deben responder al ajuste global");
 for (const [name, contents] of [
   ["AccountsPage", accountsPage],
   ["SettingsPage", settingsPage],
@@ -101,12 +137,10 @@ assert.match(tauriCapabilities, /core:window:allow-show/, "El frontend debe pode
 assert.match(mainEntry, /getCurrentWindow\(\)\.show\(\)/, "La ventana debe mostrarse despues de montar React");
 assert.match(indexHtml, /background:\s*#111113/, "El HTML inicial debe conservar el fondo grafito de respaldo");
 assert.match(viteConfig, /manualChunks/, "La compilacion debe separar proveedores pesados en chunks propios");
-assert.match(spending, /useFinancialChartColors/, "La grafica de gastos debe usar una paleta financiera dedicada");
+assert.match(spending, /CATEGORY_CHART_COLORS/, "La evolucion mensual debe reutilizar la familia cromatica de categorias");
+assert.doesNotMatch(spending, /useFinancialChartColors/, "La evolucion mensual no debe conservar una paleta financiera paralela");
 assert.doesNotMatch(spending, /useChartPalette/, "La grafica de gastos no debe heredar la paleta verde y azul generica");
-assert.match(chartPalette, /useFinancialChartColors/, "La paleta financiera debe centralizar sus colores");
-assert.match(chartPalette, /#2D7B6A/, "La paleta financiera debe usar el verde jade para ingresos");
-assert.match(chartPalette, /#B34D62/, "La paleta financiera debe usar el rojo cassis para gastos");
-assert.match(chartPalette, /#8FA88D/, "La paleta financiera debe usar salvia para el ahorro");
+assert.match(categoryBadge, /CATEGORY_CHART_COLORS[\s\S]*salario[\s\S]*salud[\s\S]*ahorros/, "La evolucion mensual debe derivar sus tres series del catalogo visual comun");
 assert.doesNotMatch(chartPalette, /#B79A45|#98465B|#C9B27A/, "La paleta financiera no debe conservar oro, granate y arena");
 assert.match(indicatorCard, /--economy-accent/, "Los indicadores macro deben compartir un unico acento visual");
 assert.doesNotMatch(indicatorCard, /emerald|rose|amber/, "Los indicadores macro no deben mezclar acentos arbitrarios");

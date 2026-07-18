@@ -1,6 +1,6 @@
+import asyncio
 from datetime import datetime, timezone
 from decimal import Decimal
-import asyncio
 
 
 def test_spending_monthly_series(client):
@@ -57,9 +57,10 @@ def test_overview_converts_fx_and_includes_portfolio(client, monkeypatch):
     session.close()
 
     overview = client.get("/api/dashboard/overview").json()
-    # 8000 USD a rate 2.0 → 4000 EUR
+    # 8000 USD a rate 2.0 → 4000 EUR; el ahorro remunerado cuenta también
+    # como inversión, sin duplicarse en el patrimonio.
     assert overview["liquidity"] == "8000.00"
-    assert overview["investments"] == "1500.00"
+    assert overview["investments"] == "5500.00"
     assert overview["net_worth"] == "9500.00"
 
 

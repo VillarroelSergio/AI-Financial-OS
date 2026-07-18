@@ -1,6 +1,8 @@
 # MOC — Diseño
 Rediseño, estilos y motion.
 
+- [[project_accessibility_and_investment_price_ux]] — tamaño de texto configurable y legibilidad base
+
 - [[20_REDESIGN_ATELIER]] — rediseño "Atelier" (spec de implementación)
 - [[DESIGN]] — referencia de estilo (Apple España)
 - [[design-motion-refresh.tdd]] — evidencia TDD del refresh de motion

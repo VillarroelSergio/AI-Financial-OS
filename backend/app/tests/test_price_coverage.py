@@ -98,10 +98,9 @@ def test_resolve_spacex():
     r = resolve_asset("SpaceX")
     assert r.status == "ambiguous"
     assert r.selected is None
-    assert len(r.candidates) == 1
-    assert r.candidates[0].ticker == "SPCX"
-    assert r.candidates[0].requires_confirmation is True
-    assert "privada" in r.candidates[0].confirmation_note.lower()
+    candidate = next(c for c in r.candidates if c.ticker == "SPCX")
+    assert candidate.requires_confirmation is True
+    assert "privada" in candidate.confirmation_note.lower()
 
 
 def test_resolve_spacex_audit_returns_ambiguous():

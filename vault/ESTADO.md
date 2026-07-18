@@ -12,8 +12,8 @@ metadata:
 **Última actualización:** 2026-07-16
 
 ## Versión y rama
-- Versión de código: **1.1.4**
-- Rama de trabajo actual: `develop`
+- Versión de código: **1.1.5**
+- Rama de trabajo actual: `feature/mejoras-balance-inversiones-accesibilidad`
 
 ## En curso
 - Hotfix del módulo de inversiones: fondos, reasignación de carteras, valoración de cuentas y coherencia del Resumen.

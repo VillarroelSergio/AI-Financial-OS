@@ -47,6 +47,12 @@ def latest(indicator_id: str) -> float | None:
     return points[-1][1] if points else None
 
 
+def history(indicator_id: str, limit: int | None = None) -> list[tuple[str, float]]:
+    """Histórico canónico, limitado a las observaciones más recientes si se solicita."""
+    points = _points(indicator_id)
+    return points[-limit:] if limit is not None else points
+
+
 def value_year_ago(indicator_id: str) -> float | None:
     """Valor ~12 meses atrás: la observación más reciente con periodo <= (último − 1 año).
 
