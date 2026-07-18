@@ -8,6 +8,8 @@ Pruebas end-to-end, cobertura y evidencia TDD.
 - [[fund-investment-hotfix.tdd]] — alta inmediata y rentabilidad reportada de fondos
 - [[investment-account-valuation.tdd]] — cuentas de inversión calculadas y patrimonio sin duplicados
 
+- [[docs/testing/codeql_regex_guardrails.tdd]] — límites de importación y sanitización segura de respuestas IA
+
 Relacionado: [[MOC - Proceso]] · [[Home]]
 
 Tags: #moc #testing

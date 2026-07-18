@@ -12,7 +12,7 @@ import base64
 from typing import Optional
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
@@ -32,7 +32,7 @@ router = APIRouter()
 # ── Pydantic schemas ──────────────────────────────────────────────────────────
 
 class ParseTextRequest(BaseModel):
-    text: str
+    text: str = Field(min_length=1, max_length=100_000)
 
 
 class RawPositionOut(BaseModel):

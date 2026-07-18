@@ -16,17 +16,23 @@ import re
 
 # Emoji + pictographic ranges (BMP + astral). Deliberately broad; financial copy
 # has no legitimate use for them.
-_EMOJI = re.compile(
-    "["
-    "\U0001F300-\U0001FAFF"  # symbols, pictographs, emoji
-    "\U00002600-\U000027BF"  # misc symbols + dingbats
-    "\U0001F1E6-\U0001F1FF"  # regional indicators (flags)
-    "\U00002190-\U000021FF"  # arrows
-    "\U0000FE00-\U0000FE0F"  # variation selectors
-    "\U00002B00-\U00002BFF"  # misc symbols and arrows
-    "]",
-    flags=re.UNICODE,
+_PICTOGRAPHIC_RANGES = (
+    (0x1F300, 0x1FAFF),
+    (0x2600, 0x27BF),
+    (0x1F1E6, 0x1F1FF),
+    (0x2190, 0x21FF),
+    (0xFE00, 0xFE0F),
+    (0x2B00, 0x2BFF),
 )
+
+
+def _strip_pictographs(text: str) -> str:
+    """Remove emoji and pictographs without an overly broad regex range."""
+    return "".join(
+        character
+        for character in text
+        if not any(start <= ord(character) <= end for start, end in _PICTOGRAPHIC_RANGES)
+    )
 
 # Markdown horizontal rules: *** / --- / ___ (3+), on their own line.
 _HR = re.compile(r"^\s*([*_-])\1{2,}\s*$", flags=re.MULTILINE)
@@ -67,7 +73,7 @@ def sanitize_response(text: str | None) -> str | None:
     """Clean an LLM reply. None/empty passes through unchanged."""
     if not text:
         return text
-    text = _EMOJI.sub("", text)
+    text = _strip_pictographs(text)
     text = _HR.sub("", text)
     text = _MULTI_NL.sub("\n\n", text)
     # Trim trailing spaces per line and surrounding blank lines.
@@ -79,7 +85,7 @@ if __name__ == "__main__":
     # Self-check: run `python -m app.modules.ai.prompts.guardrails`
     assert sanitize_response(None) is None
     assert sanitize_response("") == ""
-    assert sanitize_response("Hola 👋 mundo 🚀") == "Hola  mundo"
+    assert sanitize_response("Hola \U0001F44B mundo \U0001F680") == "Hola  mundo"
     assert sanitize_response("uno\n***\ndos") == "uno\n\ndos"
     assert sanitize_response("uno\n---\ndos") == "uno\n\ndos"
     assert sanitize_response("a\n\n\n\n\nb") == "a\n\nb"

@@ -49,13 +49,27 @@ _CURRENCY_SYMBOLS: dict[str, str] = {
 _CURRENCY_CODES = {"EUR", "USD", "GBP", "AUD", "CHF", "JPY"}
 
 
+def _is_spanish_thousands_number(value: str) -> bool:
+    """Return whether value uses the Spanish thousands format (1.234,56)."""
+    integer, separator, decimal = value.partition(",")
+    groups = integer.split(".")
+    return (
+        bool(separator)
+        and decimal.isdecimal()
+        and len(groups) > 1
+        and 1 <= len(groups[0]) <= 3
+        and groups[0].isdecimal()
+        and all(len(group) == 3 and group.isdecimal() for group in groups[1:])
+    )
+
+
 def _parse_number(s: str) -> Optional[float]:
     """Parse a number string that may use comma or dot as decimal separator."""
     s = s.strip().replace(" ", "").replace("\xa0", "")
     if not s:
         return None
     # Spanish thousands format: 1.234,56
-    if re.match(r"\d{1,3}(\.\d{3})+,\d+$", s):
+    if _is_spanish_thousands_number(s):
         return float(s.replace(".", "").replace(",", "."))
     if "," in s and "." not in s:
         return float(s.replace(",", "."))

@@ -19,6 +19,7 @@ metadata:
 - Hotfix del módulo de inversiones: fondos, reasignación de carteras, valoración de cuentas y coherencia del Resumen.
 
 ## Hecho recientemente
+- Corregidas dos alertas CodeQL de regex: el parseo de miles españoles ya no usa una expresión regular repetitiva y la importación de cartera rechaza textos de más de 100.000 caracteres; el sanitizador de IA elimina emojis sin usar un rango Unicode dentro de una expresión regular. Validación focalizada: 35 pruebas correctas y Ruff correcto. Evidencia en [[docs/testing/codeql_regex_guardrails.tdd]].
 - Bóveda operativa: `Home` + 8 MOCs + 32 docs migrados a `vault/docs/` + notas de memoria. Todos los wikilinks resuelven.
 - Plantillas y glosario añadidos ([[templates/_template_nota_memoria]], [[GLOSARIO]]).
 - Las cuentas remuneradas usan su holding como saldo canónico y computan una sola vez en Resumen, Balance General e IA; ver [[project_investment_account_valuation]].
