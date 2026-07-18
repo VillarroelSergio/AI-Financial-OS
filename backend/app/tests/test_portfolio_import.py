@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 import pytest
 
+from app.modules.investments import portfolio_import_service
 from app.modules.investments.portfolio_import_service import (
     _parse_number,
     estimate_cost,
@@ -56,6 +57,15 @@ def test_parse_number_comma_decimal():
 
 
 def test_parse_number_spanish_thousands():
+    assert _parse_number("1.234,56") == pytest.approx(1234.56)
+
+
+def test_parse_number_spanish_thousands_does_not_use_regex_match(monkeypatch):
+    def unexpected_regex_match(*args, **kwargs):
+        raise AssertionError("El parseo de miles no debe depender de una regex")
+
+    monkeypatch.setattr(portfolio_import_service.re, "match", unexpected_regex_match)
+
     assert _parse_number("1.234,56") == pytest.approx(1234.56)
 
 
@@ -255,6 +265,12 @@ def test_parse_text_endpoint(client):
 
 def test_parse_text_endpoint_empty(client):
     r = client.post("/api/investments/import/parse-text", json={"text": ""})
+    assert r.status_code == 422
+
+
+def test_parse_text_endpoint_rejects_oversized_payload(client):
+    r = client.post("/api/investments/import/parse-text", json={"text": "x" * 100_001})
+
     assert r.status_code == 422
 
 
