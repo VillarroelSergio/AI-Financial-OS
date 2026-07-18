@@ -85,7 +85,7 @@ struct ApiToken(String);
 /// 32 bytes aleatorios en hex. Fuente criptográfica del SO vía getrandom.
 fn generate_token() -> String {
     let mut bytes = [0u8; 32];
-    getrandom::getrandom(&mut bytes).expect("no hay fuente de aleatoriedad");
+    getrandom::fill(&mut bytes).expect("no hay fuente de aleatoriedad");
     bytes.iter().map(|b| format!("{b:02x}")).collect()
 }
 
