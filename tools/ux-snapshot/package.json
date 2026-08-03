@@ -22,8 +22,8 @@
     "report": "tsx report.ts"
   },
   "devDependencies": {
-    "@types/node": "^26.1.1",
-    "playwright": "^1.61.1",
+    "@types/node": "^26.1.2",
+    "playwright": "^1.62.1",
     "tsx": "^4.23.1",
     "yaml": "^2.9.0"
   }
